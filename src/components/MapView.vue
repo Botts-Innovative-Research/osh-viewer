@@ -25,9 +25,7 @@ const featureVisualizations = computed(() => {
   return visualizationStore.getVisualizationsByType('pointmarker-feature')
 })
 
-
-
-// Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3ZWYzYjhiMy0wMzcwLTQxMTktOGY1OS0wYzM1NzNlOTI3NDMiLCJpZCI6Mzk4MzMsImlhdCI6MTc0ODIwNDA4OX0.HBox4N50pESMU1yJs33-0cNd22sTvIv0KetnMAJMdXU'
+const cesiumToken = import.meta.env.VITE_CESIUM_ION_ACCESS_TOKEN
 
 
 
@@ -44,22 +42,23 @@ onMounted(() => {
 
   } else {
 
-    /*const customViewer = new Cesium.Viewer('cesiumContainer', {
-      terrain: Cesium.Terrain.fromWorldTerrain(),
-      baseLayer: Cesium.ImageryLayer.fromProviderAsync(
-        Cesium.IonImageryProvider.fromAssetId(3), {}
-      ),
-      timeline: false,
-      homeButton: false,
-      navigationInstructionsInitiallyVisible: false,
-      navigationHelpButton: true,
-      geocoder: true,
-      animation: false,
-      fullscreenButton: false,
-      baseLayerPicker: true
-    })*/
+    // TODO: make an env file
+    Ion.defaultAccessToken = cesiumToken;
 
-    Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzZDlhZDVkOC0yMWZmLTQyMzYtYTU5Zi0yNTQ3MjAxYzFiM2YiLCJpZCI6Mzk4MzMsImlhdCI6MTc1MTk1MTk0OH0.0eS77LohXhxKTRDy9yhLo-wmYGTn9mz31-f4xer7eT0'
+    // const customViewer = new Cesium.Viewer('cesiumContainer', {
+    //   terrain: Cesium.Terrain.fromWorldTerrain(),
+    //   baseLayer: Cesium.ImageryLayer.fromProviderAsync(
+    //     Cesium.IonImageryProvider.fromAssetId(3), {}
+    //   ),
+    //   timeline: false,
+    //   homeButton: false,
+    //   navigationInstructionsInitiallyVisible: false,
+    //   navigationHelpButton: true,
+    //   geocoder: true,
+    //   animation: false,
+    //   fullscreenButton: false,
+    //   baseLayerPicker: true
+    // })
 
     const cesiumView = new CesiumView({
       container: 'cesiumContainer',
@@ -67,23 +66,7 @@ onMounted(() => {
     })
     mapView.value = cesiumView
 
-    /*mapView.value.addMarker({
-      location: {
-        x: 0,
-        y: 0,
-        z: 0
-      },
-      label: 'TEST',
-      labelOffset: [0, 0],
-      icon: '/icons/map/map-marker.svg',
-      iconSize: [32, 32],
-      iconAnchor: [16, 32],
-      id: 'test-marker',
-      markerId: 'test-marker' + '-feature' + randomUUID()
-    })*/
-
-    // TEST: remove this later
-    // addCesiumMarker()
+    console.log('[MapView] CesiumView created:', cesiumView)
   }
 })
 
