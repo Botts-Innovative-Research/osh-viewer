@@ -276,7 +276,8 @@ export function CreateVideoViewProps(ds: OSHDatastream, selectedProperty: any, v
   const videoLayer: IVideoLayerProperties = {
     dataSourceId: ds.datastream.properties.id,
     getFrameData(rec, timestamp) {
-        return rec[selectedProperty.name]
+
+      return rec[selectedProperty.name] ? rec[selectedProperty.name] : rec.img
     },
     getTimestamp(rec, timestamp) {
         return rec.timestamp

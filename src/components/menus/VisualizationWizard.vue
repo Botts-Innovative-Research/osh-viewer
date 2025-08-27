@@ -89,6 +89,7 @@ function createVisualization() {
       }
       break;
     case 'video':
+      debugger
       // Add video-specific properties if needed
       const videoResult = CreateVideoViewProps(selectedDatastream.value, selectedDSProperty.value,
         selectedVisualizationOptions.value, vizStore.currentVisDataStreamOptions);
