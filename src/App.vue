@@ -3,6 +3,7 @@ import { RouterView } from 'vue-router'
 import HeaderToolbar from '@/components/HeaderToolbar.vue'
 import { storeToRefs } from 'pinia'
 import { useUIStore } from '@/stores/uistore'
+import DatasourceContext from './views/DatasourceContext.vue'
 
 
 const uistore = useUIStore()
@@ -13,10 +14,12 @@ const { theme } = storeToRefs(uistore)
 <template>
   <VApp>
     <v-sheet class="background" :theme="theme">
-      <HeaderToolbar />
-      <div class="router-content">
-        <RouterView />
-      </div>
+      <DatasourceContext>
+        <HeaderToolbar />
+        <div class="router-content">
+          <RouterView />
+        </div>
+      </DatasourceContext>
     </v-sheet>
   </VApp>
 </template>
