@@ -1,28 +1,26 @@
 <script setup>
 import { onMounted, watch } from 'vue'
 
-import { ref } from 'vue'
+import { ref, watchEffect } from 'vue'
 import { useSystemStore } from '@/stores/systemstore.ts'
 import { useNodeStore } from '@/stores/nodestore.js'
 import { useOSHConnectStore } from '@/stores/oshconnectstore.js'
 import { useDataStreamStore } from '@/stores/datastreamstore.js'
 import { useUIStore } from '@/stores/uistore.ts'
 import { useVisualizationStore } from '@/stores/visualizationstore.js'
-import { checkDSForProp, CreateVideoViewProps, mineDatasourceObsProps } from '@/lib/DatasourceUtils.js'
+import { CreateVideoViewProps } from '@/lib/DatasourceUtils.js'
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs'
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js'
 import { Geometry } from '@/lib/OSHConnectDefinitions'
 import { storeToRefs } from 'pinia'
-import { VisualizationComponents } from '@/lib/VisualizationHelpers'
 import { Mode } from 'osh-js/source/core/datasource/Mode.js'
 
   const videoProperty = "http://sensorml.com/ont/swe/property/RasterImage";
 
   const oshConnect = useOSHConnectStore().getInstance()
   const nodeStore = useNodeStore()
-  // const systems = useSystemStore().systems;
   const systemStore = useSystemStore();
-  const { systems } = storeToRefs(systemStore)
+  const { systems } = storeToRefs(useSystemStore());
   const datastreamStore = useDataStreamStore();
   const datastreams = useDataStreamStore().dataStreams;
   const visualizationStore = useVisualizationStore()
@@ -30,13 +28,12 @@ import { Mode } from 'osh-js/source/core/datasource/Mode.js'
 
   // Define reactive variables for the form fields
   const nodeName = ref('Demo')
-  const nodeHost = ref('localhost') // TODO: Change to localhost
-  const nodePort = ref('8282') // TODO: Change to 8282
+  const nodeHost = ref('localhost')
+  const nodePort = ref('8282')
   const nodePath = ref('sensorhub/api')
   const nodeUser = ref('admin')
-  const nodePassword = ref('oscar')
+  const nodePassword = ref('admin')
 
-  // 1. Create default node for demo
   function createNode() {
     oshConnect.createNode(
       nodeName.value,
@@ -50,67 +47,64 @@ import { Mode } from 'osh-js/source/core/datasource/Mode.js'
   }
 
   onMounted(() => {
+    console.log('[DataSource Context] Component is mounted!')
 
-    console.log('Component is mounted!')
-
-    createNode()
     fetchResources()
 
-  })
-
-
-  watch(systems.systems, () => {
-    addAllSamplingFeaturePMs();
+    setTimeout(() => {
+      if(systems.value.length > 0)
+        addAllSamplingFeaturePMs();
+    }, 2000);
   });
 
   watch(datastreams, () => {
+    console.log('[DataSourceContext] Adding Visualization!')
     createVisualizations();
   });
 
 
   function fetchResources() {
-    console.log('Fetching resources for demo')
+    console.log('[DataSourceContext] Fetching resources')
+    createNode()
     oshConnect.fetchSlowResources()
   }
 
   function addAllSamplingFeaturePMs() {
-    console.log('Add All Sampling Feature PMs button clicked: ', systems)
-    systems.forEach((system) => {
-      console.log('SYSTEM: ', system)
-      debugger
+    if(systems.value == null || systems.value.length  === 0){
+      console.warn("[DataSourceContext] No systems available");
+      return;
+    }
+    console.log('Add All Sampling Feature PMs')
+    systems.value.forEach((system) => {
       system.samplingFeatures.forEach((feature) => {
-        console.log('[SystemBrowser] Adding feature marker for:', feature)
-        const geom = new Geometry(
-          feature.properties.id,
-          feature.properties?.geometry.type,
-          feature.properties?.geometry.coordinates,
-          feature.properties,
-          feature.properties?.bbox,
-        )
-        let newViz = new OSHVisualization(
-          'featuremarker-' + randomUUID(),
-          `${feature.properties.properties.name}`,
+        console.log('[DataSourceContext] Adding feature marker for:', feature);
+        const geom = new Geometry(feature.properties.id, feature.properties.geometry.type, feature.properties.geometry.coordinates, feature.properties, feature.properties.bbox)
+
+        let newViz = new OSHVisualization('featuremarker-' + randomUUID(),
+          `${feature.properties.properties.name}` ,
           'pointmarker-feature',
           null,
-          undefined,
-        )
+          undefined
+        );
         newViz.geometry = geom
 
-        visualizationStore.addVisualization(newViz)
-      })
-    })
+        visualizationStore.addVisualization(newViz);
+      });
+    });
   }
 
   function createVisualizations() {
 
-    if(datastreams.length == 0) return;
+    if(datastreams.length == 0) {
+      console.warn("[DataSourceContext] No datastreams found");
+      return;
+    }
 
     datastreams.forEach((datastream) => {
-      console.log(datastream);
       if(!isVideoDataStream(datastream)) return;
 
       const newViz = new OSHVisualization(`visualization-${randomUUID()}`,
-        "video name",
+        datastream.name,
         "video",
         null,
         datastream);
@@ -137,7 +131,6 @@ import { Mode } from 'osh-js/source/core/datasource/Mode.js'
     });
   }
 
-
   function isVideoDataStream(datastream){
     let isVid = datastream.datastream.properties.observedProperties[0].definition == videoProperty;
    return isVid;
@@ -146,5 +139,5 @@ import { Mode } from 'osh-js/source/core/datasource/Mode.js'
 </script>
 
 <template>
-  <slot></slot>
+  <slot />
 </template>
