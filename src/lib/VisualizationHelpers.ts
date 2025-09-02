@@ -75,12 +75,39 @@ export interface IVideoViewProperties extends DataViewProperties {
   videoType: string
 }
 
+export interface ILineOfBearingLayerProperties extends DataLayerProperties {
+  dataSourceId: string;
+  getLocation: (rec: any) => { x: number, y: number, z: number };
+  getColor: (rec: any) => {
+    r: string,
+    g:string,
+    b: string,
+    a: string,
+    rgba: string,
+    hex: string
+  };
+  getPolylineId: (rec: any) => { frequency: number };
+  weight: number;
+  opacity:number;
+  smoothFactor: number;
+  maxPoints: number;
+  clampToGround: boolean;
+  name: string;
+}
+
 export interface IMapLayerProperties extends DataLayerProperties {
   dataSourceId: string;
   getCoordinates: (rec: any) => { lat: number, lon: number };
   markerColor?: string;
   markerIcon?: string;
   name: string;
+}
+
+export interface ILineOfBearingViewProperties extends DataViewProperties {
+  container: string;
+  layers: ILineOfBearingLayerProperties[];
+  css?: string;
+  refreshRate?: number;
 }
 
 export interface IMapViewProperties extends DataViewProperties {
