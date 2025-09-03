@@ -10,7 +10,7 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs'
 import { createLocationDataSource } from '@/components/visualizations/DataComposables'
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js'
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js'
-import LineOfBearingLayer from 'osh-js/source/core/ui/layer/LineOfBearingLayer'
+import LineLayer from 'osh-js/source/core/ui/layer/LineLayer'
 import { colorHash, findInObject } from '@/utils'
 
 const visualizationStore = useVisualizationStore()
@@ -223,78 +223,18 @@ watch(lobVisualizations, (updated) => {
 
     const layerOpts = viz.visualizationComponents.dataLayer
 
-    const lobLayer = new LineOfBearingLayer({
-      name: viz.name,
-      // getLocation: layerOpts.getLocation,
-      // getPolyLine: layerOpts.getPolyLine,
-      // getColor: layerOpts.getColor,
-      getLocation: {
+    const lobLayer = new LineLayer({
+      getStartLocationAndBearing: {
         dataSourceIds: [dsInstance.getId()],
-        handler: (rec: any) => {
-          const locationArray: any = []
-
-          const location: any = findInObject(rec, 'location')
-          console.log("location: ", location)
-          const lon: any = findInObject(location, 'lon | x')
-          const lat: any = findInObject(location, 'lat | Y')
-          const alt: any = findInObject(location, 'alt | z')
-
-          const bearing: any = (findInObject(rec, 'raw-lob') * Math.PI) / 180
-
-          console.log('bearing', bearing)
-          // Push the start position as lat, lon, alt
-          locationArray.push({
-            x: lon,
-            y: lat,
-            z: alt ?? 0,
-          })
-
-          // Convert to radians
-          const startPosRadians = {
-            lat: (lat * Math.PI) / 180,
-            lon: lon < 0 ? ((360 + lon) * Math.PI) / 180 : (lon * Math.PI) / 180,
-            alt: alt,
+        handler: function (rec: any) {
+          return {
+            startLocation: {
+              x: findInObject(rec, 'lon'),
+              y: findInObject(rec, 'lat'),
+              z: findInObject(rec, 'alt'),
+            },
+            bearing: findInObject(rec, 'raw-lob') * Math.PI / 180
           }
-
-          const distanceKm = 5
-          const earthRadius = 6371
-          const computedDistance: number = ((distanceKm * 1000) / earthRadius) * 1000
-
-          // Get new endpoint from start point, distance, and earth's radius
-          const endLatRadians = Math.asin(
-            Math.sin(startPosRadians.lat) * Math.cos(computedDistance) +
-            Math.cos(startPosRadians.lat) * Math.sin(computedDistance) * Math.cos(bearing),
-          )
-          const endLonRadians =
-            startPosRadians.lon +
-            Math.atan2(
-              Math.sin(bearing) * Math.sin(computedDistance) * Math.cos(startPosRadians.lat),
-              Math.cos(computedDistance) - Math.sin(startPosRadians.lat) * Math.sin(endLatRadians),
-            )
-          let endPosLon: number = (endLonRadians * 180) / Math.PI
-
-          if (endPosLon > 180) {
-            endPosLon -= 360
-          }
-
-          if (endPosLon < -180) {
-            endPosLon += 360
-          }
-
-          const endPos = {
-            lat: (endLatRadians * 180) / Math.PI,
-            lon: endPosLon,
-            alt: alt,
-          }
-
-          // Push the end position as lat, lon, alt
-          locationArray.push({
-            x: endPos.lon,
-            y: endPos.lat,
-            z: endPos.alt,
-          })
-
-          return locationArray
         }
       },
       getPolylineId: {
@@ -309,14 +249,13 @@ watch(lobVisualizations, (updated) => {
           return colorHash(findInObject(rec, 'frequency'), 0.8).rgba
         },
       },
-      weight: 10,
+      color: colorHash(viz.name, 0.80).rgba,
+      weight: 5,
       opacity: 0.5,
-      smoothFactor: 1,
-      maxPoints: 2,
-      clampToGround: false,
+      distanceKm: 1,
     });
     lobLayers.value.push(lobLayer)
-    console.log('[MapView] Creating LOBLayer:', lobLayer)
+    console.log('[MapView] Creating LOB Layer:', lobLayer)
 
     mapView.value.addLayer(lobLayer)
     dsInstance.connect();
