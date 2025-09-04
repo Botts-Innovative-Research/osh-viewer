@@ -7,6 +7,7 @@ export const useUIStore = defineStore('ui', () => {
   const leftSidebarOpen = ref(true)
   const rightSidebarOpen = ref(false)
   const visualizationWizardOpen = ref(false)
+  const nodeConfigFormOpen = ref(false)
 
   // Focused map (could be an ID or name)
   const focusedMap = ref<string | null>(null)
@@ -59,6 +60,12 @@ export const useUIStore = defineStore('ui', () => {
   function openVisualizationWizard() {
     visualizationWizardOpen.value = true
   }
+  function toggleNodeConfigForm() {
+    nodeConfigFormOpen.value = !nodeConfigFormOpen.value
+  }
+  function openNodeConfigForm() {
+    nodeConfigFormOpen.value = true
+  }
 
   return {
     leftSidebarOpen,
@@ -79,6 +86,9 @@ export const useUIStore = defineStore('ui', () => {
     toggleTheme,
     visualizationWizardOpen,
     toggleVisualizationWizard,
-    openVisualizationWizard
+    openVisualizationWizard,
+    nodeConfigFormOpen,
+    toggleNodeConfigForm,
+    openNodeConfigForm
   }
 })

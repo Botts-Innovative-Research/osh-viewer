@@ -26,7 +26,7 @@ export function createDefaultDataSource(datastream: OSHDatastream) {
   //   datasource.value = new ConSysApi(datastream.name, {
   //     endpointUrl: datastream.datastream.networkProperties.endpointUrl,
   //     resource: `/datastreams/${datastream.datastream.properties.id}/observations`,
-  //     tls: false,
+  //     tls: true,
   //     startTime: 'now',
   //     endTime: '2025-08-01T00:00:00Z',
   //     mode: Mode.REAL_TIME,
@@ -59,7 +59,7 @@ export function createVideoDataSource(datastream: OSHDatastream) {
   //   datasource.value = new ConSysApi(datastream.name, {
   //     endpointUrl: datastream.datastream.networkProperties.endpointUrl,
   //     resource: `/datastreams/${datastream.datastream.properties.id}/observations`,
-  //     tls: false,
+  //     tls: true,
   //     startTime: 'now',
   //     endTime: '2025-08-01T00:00:00Z',
   //     mode: Mode.REAL_TIME,

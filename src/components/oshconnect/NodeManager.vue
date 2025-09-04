@@ -1,5 +1,9 @@
 <script setup>
 
+/**
+ * TODO: DEPRECATED -> Now in NodeConfigForm.vue
+ */
+
 import { ref } from 'vue'
 import { useOSHConnectStore } from '@/stores/oshconnectstore.js'
 

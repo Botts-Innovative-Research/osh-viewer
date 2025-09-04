@@ -4,6 +4,7 @@ import HeaderToolbar from '@/components/HeaderToolbar.vue'
 import { storeToRefs } from 'pinia'
 import { useUIStore } from '@/stores/uistore'
 
+
 const uistore = useUIStore()
 const { theme } = storeToRefs(uistore)
 
