@@ -17,6 +17,7 @@ import {
   ILineOfBearingLayerProperties,
   ILineOfBearingViewProperties,
 } from '@/lib/VisualizationHelpers'
+import { colorHash } from '@/utils'
 
 
 export function mineDatasourceObsProps(): {ds: any, observedProps: any} {
@@ -399,27 +400,23 @@ export function CreateLobViewProps(ds: OSHDatastream, selectedProperty: any, vis
   // Build MapLayerProperties
   const lobLayer: ILineOfBearingLayerProperties = {
     dataSourceId: ds.datastream.properties.id,
-    getLocation: (rec: any) => {
-      // Assumes the selectedProperty is an object with lat/lon or similar
-      // You may need to adjust this logic based on your schema
+    getStartLocationAndBearing: (rec: any) => {
       return {
-        x: rec[selectedProperty.name].lon,
-        y: rec[selectedProperty.name].lat,
-        z: rec[selectedProperty.name].alt || 0 // Default to 0 if altitude is not provided
+        startLocation: {
+          x: rec[selectedProperty.name].lon,
+          y: rec[selectedProperty.name].lat,
+          z: rec[selectedProperty.name].alt || 0, // Default to 0 if altitude is not provided
+        },
+        bearing: (rec[selectedProperty.name].raw_lob * Math.PI) / 180,
       }
     },
-    getColor: (rec: any) => {
-      return  visOptions.color || '#655560'
-    },
     getPolylineId: (rec: any) => {
-      console.log("rec: ", rec)
       return { frequency: rec[selectedProperty.name].frequency }
     },
-    weight: visOptions.weight || 10,
-    opacity: visOptions.weight || 0.5,
-    smoothFactor: visOptions.weight || 1,
-    maxPoints: visOptions.weight || 2,
-    clampToGround: visOptions.weight || false,
+    color: visOptions.color,
+    weight: visOptions.weight,
+    opacity: visOptions.opacity,
+    distanceKm: visOptions.distanceKm,
     name: parentSystem.name
   }
 

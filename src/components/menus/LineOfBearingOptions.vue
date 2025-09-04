@@ -15,7 +15,27 @@ const obsProps = ref<{ 'definition': string, 'label': string }[]>([])
 const dsSchema = ref<any>(null)
 const uiStore = useUIStore()
 
-const emit = defineEmits(['update:selectedProperty'])
+const color = defineModel('color', {
+  type: String,
+  default: 'Blue'
+});
+
+const weight = defineModel('weight', {
+  type: Number,
+  default: 10
+});
+
+const opacity = defineModel('opacity', {
+  type: Number,
+  default: 0.5
+});
+
+const distanceKm = defineModel('distanceKm', {
+  type: Number,
+  default: 1
+});
+
+const emit = defineEmits(['update:selectedProperty', 'update:color', 'update:opacity', 'update:distanceKm','update:weight' ])
 
 const startTime = ref<string | null>(null)
 const endTime = ref<string | null>(null)
@@ -44,6 +64,27 @@ onMounted(async () => {
 watch(selectedProperty, (val) => {
   emit('update:selectedProperty', val)
 })
+
+watch(color, (val) => {
+  console.log('[ColorOptions] Color changed:', val)
+  emit('update:color', val)
+})
+
+watch(opacity, (val) => {
+  console.log('[OpacityOptions] Opacity changed:', val)
+  emit('update:opacity', val)
+})
+
+watch(distanceKm, (val) => {
+  console.log('[DistanceKm Options] Distance Km changed:', val)
+  emit('update:distanceKm', val)
+})
+
+watch(weight, (val) => {
+  console.log('[WeightOptions] Weight changed:', val)
+  emit('update:weight', val)
+})
+
 </script>
 
 <template>
@@ -59,8 +100,28 @@ watch(selectedProperty, (val) => {
       item-value="value"
       label="Playback Mode"
       variant="solo"
-      density="compact">
-    </v-combobox>
+      density="compact"
+    />
+    <v-card class="pa-4" elevation="2">
+      <h3>Color</h3>
+      <v-radio-group v-model="color">
+        <v-radio :value="'#0000FF'" label="Blue" />
+        <v-radio :value="'#FF0000'" label="Red" />
+        <v-radio :value="'#ec18a7'" label="Pink" />
+      </v-radio-group>
+    </v-card>
+    <v-card class="pa-4" elevation="2">
+      <h3>Weight</h3>
+      <input :value="10">
+    </v-card>
+    <v-card class="pa-4" elevation="2">
+      <h3>Opacity</h3>
+      <input :value="0.5">
+    </v-card>
+    <v-card class="pa-4" elevation="2">
+      <h3>Distance (Km)</h3>
+      <input :value="1">
+    </v-card>
   </v-card>
 </template>
 

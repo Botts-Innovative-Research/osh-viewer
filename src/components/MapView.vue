@@ -12,6 +12,7 @@ import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js'
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js'
 import LineLayer from 'osh-js/source/core/ui/layer/LineLayer'
 import { colorHash, findInObject } from '@/utils'
+import { CreateLobViewProps } from '@/lib/DatasourceUtils'
 
 const visualizationStore = useVisualizationStore()
 const mapLayerType = ref('leaflet')
@@ -123,6 +124,7 @@ watch(
       })
       console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstance)
       const layerOpts = viz.visualizationComponents.dataLayer
+
       const pmLayer = new PointMarkerLayer({
         name: viz.name,
         dataSourceIds: [dsInstance.id],
@@ -209,6 +211,7 @@ watch(lobVisualizations, (updated) => {
 
   for (const viz of newFiltered) {
     currentVisualizations.value.push(viz)
+
     let dsInstance = new SweApi('lob-datasource-' + randomUUID(), {
       endpointUrl: viz.visualizationComponents.dataSource.endpointUrl,
       resource: viz.visualizationComponents.dataSource.resource,
@@ -218,8 +221,6 @@ watch(lobVisualizations, (updated) => {
       endTime: viz.visualizationComponents.dataSource.endTime,
       mode: viz.visualizationComponents.dataSource.mode,
     });
-
-    console.log('dsInstance', dsInstance)
 
     const layerOpts = viz.visualizationComponents.dataLayer
 
@@ -233,7 +234,7 @@ watch(lobVisualizations, (updated) => {
               y: findInObject(rec, 'lat'),
               z: findInObject(rec, 'alt'),
             },
-            bearing: findInObject(rec, 'raw-lob') * Math.PI / 180
+            bearing: findInObject(rec, 'raw_lob') * Math.PI / 180
           }
         }
       },
@@ -243,17 +244,12 @@ watch(lobVisualizations, (updated) => {
           return findInObject(rec, 'frequency')
         },
       },
-      getColor: {
-        dataSourceIds: [dsInstance.getId()],
-        handler: (rec: any) => {
-          return colorHash(findInObject(rec, 'frequency'), 0.8).rgba
-        },
-      },
-      color: colorHash(viz.name, 0.80).rgba,
-      weight: 5,
-      opacity: 0.5,
-      distanceKm: 1,
+      color: '#FF0000',
+      weight: 5, //thickness of line
+      opacity: 0.5, // opaqueness of line
+      distanceKm: 10, // length of line in km
     });
+
     lobLayers.value.push(lobLayer)
     console.log('[MapView] Creating LOB Layer:', lobLayer)
 
