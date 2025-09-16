@@ -4,7 +4,7 @@ import { DateTime } from 'luxon'
 import { useVisualizationStore } from '@/stores/visualizationstore'
 
 const props = defineProps<{ title: string }>()
-const emit = defineEmits(['update:timeInstant'])
+const emit = defineEmits(['update:formattedDate'])
 const visualizationStore = useVisualizationStore()
 
 // Split the incoming timeInstant into date and time parts
@@ -66,7 +66,7 @@ const formattedDate = computed({
 
 watch(formattedDate, (newVal, oldVal) => {
   if (newVal !== oldVal && !manualInputError.value) {
-    emit('update:timeInstant', newVal)
+    emit('update:formattedDate', newVal)
     console.log('[TimePicker] Time instant updated:', newVal)
   }
 })
