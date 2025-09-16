@@ -103,6 +103,11 @@ import { Mode } from 'osh-js/source/core/datasource/Mode.js'
     datastreams.forEach((datastream) => {
       if(!isVideoDataStream(datastream)) return;
 
+      if(hasVizForDatastream(datastream.id)){
+        console.log("Visualization already exists")
+        return;
+      }
+
       const newViz = new OSHVisualization(`visualization-${randomUUID()}`,
         datastream.name,
         "video",
@@ -134,6 +139,12 @@ import { Mode } from 'osh-js/source/core/datasource/Mode.js'
   function isVideoDataStream(datastream){
     let isVid = datastream.datastream.properties.observedProperties[0].definition == videoProperty;
    return isVid;
+  }
+
+  function hasVizForDatastream(datastreamId) {
+    return visualizationStore.visualizations.some(viz => {
+      return viz.parentDatastream.datastream.properties.id && viz.parentDatastream.datastream.properties.id == datastreamId;
+    })
   }
 
 </script>
