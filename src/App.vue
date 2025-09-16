@@ -5,7 +5,6 @@ import { storeToRefs } from 'pinia'
 import { useUIStore } from '@/stores/uistore'
 import DatasourceContext from './views/DatasourceContext.vue'
 
-
 const uistore = useUIStore()
 const { theme } = storeToRefs(uistore)
 
