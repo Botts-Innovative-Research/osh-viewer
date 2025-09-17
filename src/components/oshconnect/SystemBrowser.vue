@@ -21,40 +21,41 @@ const datastreamStore = useDataStreamStore()
 const visualizationStore = useVisualizationStore()
 const uiStore = storeToRefs(useUIStore())
 const setSelectedDatastream = useUIStore().setSelectedDatastream
-const activeTab = ref('systems') // Default active tab
-const tabLabels = ref(['Systems', 'DataStreams', 'Nodes'])
+const activeTab = ref('nodes') // Default active tab
+//const tabLabels = ref(['Systems', 'DataStreams', 'Nodes'])
+const tabLabels = ref(['Nodes', 'Systems', 'DataStreams'])
 const visualizationWizardOpen = uiStore.visualizationWizardOpen
 const openVisualizationWizard = useUIStore().openVisualizationWizard
 const nodeConfigFormOpen = uiStore.nodeConfigFormOpen
 const openNodeConfigForm = useUIStore().openNodeConfigForm
 
-/*
-const getSystems = () => {
-  // This function will be called when the button is clicked
-  console.log('Get Systems button clicked')
 
-  nodeStore.nodes.forEach((node) => {
-    console.log('Node:', node)
-    node.getAllSystems()
-  })
-  // node.getAllSystems()
-}
+// const getSystems = () => {
+//   // This function will be called when the button is clicked
+//   console.log('Get Systems button clicked')
 
-const getAllDatastreams = () => {
-  console.log('Get Data Streams button clicked')
-  nodeStore.nodes.forEach((node) => {
-    console.log('Node:', node)
-    node.getAllDataStreams()
-  })
-}
-*/
+//   nodeStore.nodes.forEach((node) => {
+//     console.log('Node:', node)
+//     node.getAllSystems()
+//   })
+//   // node.getAllSystems()
+// }
+
+// const getAllDatastreams = () => {
+//   console.log('Get Data Streams button clicked')
+//   nodeStore.nodes.forEach((node) => {
+//     console.log('Node:', node)
+//     node.getAllDataStreams()
+//   })
+// }
+
 
 const fetchResources = () => {
   console.log('Fetch Resources button clicked', oshConnect)
   oshConnect.fetchSlowResources();
 }
 
-const addVisualization = (item) => {
+const addVisualization = (item: any) => {
   console.log('Item properties:', Object.keys(item));
   console.log('Add Visualization button clicked for item:', item);
   setSelectedDatastream(item)
@@ -66,7 +67,7 @@ const openNodeConfig = () => {
   openNodeConfigForm()
 }
 
-const addFeatureMarker = (item) => {
+const addFeatureMarker = (item: any) => {
   console.log('Add Feature Marker button clicked for item:', item)
   const oshSystem: OSHSystem = item as OSHSystem
 
@@ -108,11 +109,17 @@ const addAllSamplingFeaturePMs = () => {
   })
 }
 
-const getItemChildren = computed(() => {
-  return (item) => {
+const getSystemDatastreams = computed(() => {
+  return (item: any) => {
     return item?.getDSChildren ? item.getDSChildren() : []
   }
 })
+
+// const getItemChildren = computed(() => {
+//   return (item) => {
+//     return item?.getDSChildren ? item.getDSChildren() : []
+//   }
+// })
 
 </script>
 <template>
@@ -126,41 +133,6 @@ const getItemChildren = computed(() => {
   <v-btn @click="addAllSamplingFeaturePMs">All PMS</v-btn>
 
   <v-tabs-window v-model="activeTab">
-    <v-tabs-window-item value="systems" class="tab">
-      <v-treeview width="100%" :items="systems" item-value="uuid" item-title="name" :item-children="getItemChildren"
-        color="primary" activatable>
-        <template v-slot:prepend>
-          <v-icon icon="mdi-cogs"></v-icon>
-        </template>
-        <template v-slot:append="{ item }">
-          <v-btn icon="mdi-map-marker-plus" @click="() => addFeatureMarker(item)"></v-btn>
-        </template>
-      </v-treeview>
-    </v-tabs-window-item>
-
-    <v-tabs-window-item value="datastreams" class="tab">
-      <v-treeview width="100%" :items="datastreamStore.dataStreams" item-value="uuid" item-title="name" color="primary"
-        activatable>
-
-        <template v-slot:prepend>
-          <v-icon icon="mdi-cable-data"></v-icon>
-        </template>
-
-        <template v-slot:append="{ item }">
-          <v-tooltip text="Add Visualization" location="bottom">
-            <template #activator="{ props }">
-              <v-btn v-bind="props" icon="mdi-eye-plus" size="small" @click="() => addVisualization(item)"></v-btn>
-            </template>
-          </v-tooltip>
-          <v-tooltip text="Properties" location="bottom">
-            <template #activator="{ props }">
-              <v-btn v-bind="props" icon="mdi-list-box-outline" size="small"></v-btn>
-            </template>
-          </v-tooltip>
-        </template>
-
-      </v-treeview>
-    </v-tabs-window-item>
 
     <v-tabs-window-item value="nodes" class="tab">
       <v-btn block prepend-icon="mdi-plus-circle" variant="flat" color="success" @click="() => openNodeConfig()">
@@ -172,7 +144,41 @@ const getItemChildren = computed(() => {
         </template>
       </v-treeview>
     </v-tabs-window-item>
+
+    <v-tabs-window-item value="systems" class="tab">
+
+
+      <v-treeview width="100%" :items="systems" :item-children="getSystemDatastreams" item-value="uuid"
+        item-title="name" color="primary" activatable>
+        <!-- PREPEND ICON -->
+        <template v-slot:prepend="{ item }">
+          <v-icon v-if="item.dataStreams" icon="mdi-cogs"></v-icon> <!-- System -->
+          <v-icon v-else icon="mdi-cable-data"></v-icon> <!-- Datastream -->
+        </template>
+
+        <!-- APPEND ACTION BUTTONS -->
+        <template v-slot:append="{ item }">
+          <v-tooltip v-if="item.children && item.children.length" text="Add Feature Marker" location="bottom">
+            <template #activator="{ props }">
+              <v-btn v-bind="props" icon="mdi-map-marker-plus" size="small" @click.stop="addFeatureMarker(item)" />
+            </template>
+          </v-tooltip>
+
+          <!-- Otherwise it's a datastream, show "Add Visualization" button -->
+          <v-tooltip v-else text="Add Visualization" location="bottom">
+            <template #activator="{ props }">
+              <v-btn v-bind="props" icon="mdi-eye-plus" size="small" @click.stop="addVisualization(item)" />
+            </template>
+          </v-tooltip>
+
+
+
+        </template>
+      </v-treeview>
+    </v-tabs-window-item>
+
   </v-tabs-window>
+
 
   <v-dialog v-model="visualizationWizardOpen" max-width="540">
     <VisualizationWizard />
