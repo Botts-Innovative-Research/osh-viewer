@@ -37,7 +37,8 @@ export class OSHConnect {
     port: string | number,
     endpoint: string,
     username: string,
-    password: string
+    password: string,
+    tls: boolean = false
   ): OSHNode {
     const newNode = new OSHNode(
       name,
@@ -46,6 +47,7 @@ export class OSHConnect {
       endpoint,
       username,
       password,
+      tls,
       this
     );
     this.nodeStore.addNode(newNode);
@@ -92,6 +94,7 @@ export class OSHNode {
   apiRoot: string = '';
   systems: OSHSystem[] = [];
   oshConnect: OSHConnect;
+  tls: boolean;
 
   constructor(
     name: string,
@@ -100,7 +103,8 @@ export class OSHNode {
     apiRoot: string,
     username: string,
     password: string,
-    oshConnect: OSHConnect
+    tls: boolean,
+    oshConnect: OSHConnect,
   ) {
     this.uuid = randomUUID();
     this.name = name;
@@ -109,13 +113,17 @@ export class OSHNode {
     this.apiRoot = apiRoot;
     this.username = username;
     this.password = password;
+    this.tls = tls;
     this.children = [];
     this.oshConnect = oshConnect;
   }
 
   async collectAndStoreSystems(): Promise<OSHSystem[]> {
     // make request
-    const systems: any = new Systems({ endpointUrl: this.getEndpointUrl(), tls: false });
+    console.log("MAKING REQUEST!!!!!")
+    console.log(this.tls);
+    //const systems: any = new Systems({ endpointUrl: this.getEndpointUrl(), tls: false });
+    const systems: any = new Systems({ endpointUrl: this.getEndpointUrl(), tls: this.tls });
     let retrievedSystems: any[] = [];
     const results: System = await systems.searchSystems(new SystemFilter(), 100);
 

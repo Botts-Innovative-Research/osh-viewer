@@ -18,6 +18,8 @@ const nodeUser = ref('admin')
 const nodePassword = ref('admin')
 
 const createNode = () => {
+  const secure = true;
+
   // This function will be called when the button is clicked
   console.log('Create Node button clicked')
   console.log('Node Name:', nodeName.value)
@@ -25,8 +27,9 @@ const createNode = () => {
   console.log('Node Port:', nodePort.value)
   console.log('Node Path:', nodePath.value)
   console.log('Node User:', nodeUser.value)
+  console.log('TLS:', secure)
 
-  oshconnect.createNode(nodeName.value, nodeHost.value, nodePort.value, nodePath.value, nodeUser.value, nodePassword.value, this)
+  oshconnect.createNode(nodeName.value, nodeHost.value, nodePort.value, nodePath.value, nodeUser.value, nodePassword.value, secure, this)
 }
 
 function sanitizeAPIRoot(path) {
