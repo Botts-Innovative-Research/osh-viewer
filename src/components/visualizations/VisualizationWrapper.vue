@@ -36,7 +36,6 @@ const VisualizationComponent = computed(() => visualizationMap[props.vizType]);
 .visualization-wrapper {
   position: relative;
   padding: 0.5rem;
-  background: #fff;
   border-radius: 8px;
 }
 
