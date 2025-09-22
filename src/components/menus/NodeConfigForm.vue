@@ -14,6 +14,7 @@ const nodePort = ref('8282')
 const nodePath = ref('sensorhub/api')
 const nodeUser = ref('admin')
 const nodePassword = ref('admin')
+const tls = ref(false)
 
 const createNode = () => {
   // This function will be called when the button is clicked
@@ -23,8 +24,9 @@ const createNode = () => {
   console.log('Node Port:', nodePort.value)
   console.log('Node Path:', nodePath.value)
   console.log('Node User:', nodeUser.value)
-
-  oshconnect.createNode(nodeName.value, nodeHost.value, nodePort.value, nodePath.value, nodeUser.value, nodePassword.value, this)
+  console.log("TLS:", tls.value)
+  
+  oshconnect.createNode(nodeName.value, nodeHost.value, nodePort.value, nodePath.value, nodeUser.value, nodePassword.value, tls.value, this)
   cancelForm();
 }
 
@@ -55,6 +57,7 @@ function sanitizeAPIRoot(path) {
         <v-text-field label="Node Path" v-model="nodePath" placeholder="sensorhub/api" />
         <v-text-field label="Node User" v-model="nodeUser" />
         <v-text-field label="Node Password" v-model="nodePassword" type="password" />
+        <v-checkbox label="TLS: Secure" v-model="tls"></v-checkbox>
 
         <!-- Buttons inside the form -->
         <v-card-actions>
