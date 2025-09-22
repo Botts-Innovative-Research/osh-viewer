@@ -77,14 +77,14 @@ function addVideo() {
     <!--    <AddChartModal :onAddChart="addChart" :observedProps="dsProps.values" :dsName="'test'"></AddChartModal>-->
     <!--    <v-btn @click="addVideo">Add Video</v-btn>-->
     <v-sheet class="visualization-list">
-      <div
-        v-for="viz in visualizations"
-        :key="viz.id"
-        class="visualization-item"
-      >
-        <VisualizationWrapper
-          :viz="viz"
-        />
+      <div v-for="viz in visualizations" :key="viz.id" class="visualization-item">
+        <VisualizationWrapper :viz="viz">
+          <template #overlay>
+            <v-btn aria-label="Remove" class="ma-2" icon="mdi-close" size="x-small"
+              @click="visualizationStore.removeVisualization(viz)"
+              style="position: absolute; top: 8px; right: 8px; z-index: 10;"></v-btn>
+          </template>
+        </VisualizationWrapper>
       </div>
     </v-sheet>
   </v-card>

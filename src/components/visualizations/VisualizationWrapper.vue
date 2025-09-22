@@ -4,11 +4,6 @@ import Chart from '@/components/visualizations/Chart.vue'
 import Video from '@/components/visualizations/Video.vue'
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 
-// const props = defineProps({
-//   vizType: { type: String, required: true },
-//   vizProps: { type: Object, default: () => ({}) },
-//   customClass: { type: String, default: '' },
-// });
 const props = defineProps({
   viz: { type: OSHVisualization, required: true },
   customClass: { type: String, default: '' },
@@ -40,11 +35,9 @@ const VisualizationComponent = computed(() => visualizationMap[props.vizType]);
 <style scoped>
 .visualization-wrapper {
   position: relative;
-  padding: 1rem;
+  padding: 0.5rem;
   background: #fff;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  margin-bottom: 1rem;
 }
 
 .visualization-content {
