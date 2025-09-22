@@ -11,6 +11,7 @@ import { useVisualizationStore } from '@/stores/visualizationstore'
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs'
 import VisualizationWizard from './menus/VisualizationWizard.vue'
 import { storeToRefs } from 'pinia'
+import VisualizationWrapper from './visualizations/VisualizationWrapper.vue'
 
 // Each visualization can be represented by an object with a unique id
 // const visualizations = ref<VisualizationMetadata[]>([])
@@ -76,17 +77,14 @@ function addVideo() {
     <!--    <AddChartModal :onAddChart="addChart" :observedProps="dsProps.values" :dsName="'test'"></AddChartModal>-->
     <!--    <v-btn @click="addVideo">Add Video</v-btn>-->
     <v-sheet class="visualization-list">
-      <div
-        v-for="viz in visualizations"
-        :key="viz.id"
-        class="visualization-item"
-      >
-        <Chart :visualization="viz" v-if="viz.type==='chart'" :datasource="viz.visualizationComponents.dataSource"
-               :curve-layer="viz.visualizationComponents.dataLayer"
-               :chart-view="viz.visualizationComponents.dataView"></Chart>
-        <Video :visualization="viz" :datasource="viz.visualizationComponents.dataSource"
-               :video-layer="viz.visualizationComponents.dataLayer" :video-view="viz.visualizationComponents.dataView"
-               v-if="viz.type === 'video'"></Video>
+      <div v-for="viz in visualizations" :key="viz.id" class="visualization-item">
+        <VisualizationWrapper :viz="viz">
+          <template #overlay>
+            <v-btn aria-label="Remove" class="ma-2" icon="mdi-close" size="x-small"
+              @click="visualizationStore.removeVisualization(viz)"
+              style="position: absolute; top: 8px; right: 8px; z-index: 10;"></v-btn>
+          </template>
+        </VisualizationWrapper>
       </div>
     </v-sheet>
   </v-card>
