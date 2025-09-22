@@ -11,6 +11,7 @@ import { useVisualizationStore } from '@/stores/visualizationstore'
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs'
 import VisualizationWizard from './menus/VisualizationWizard.vue'
 import { storeToRefs } from 'pinia'
+import VisualizationWrapper from './visualizations/VisualizationWrapper.vue'
 
 // Each visualization can be represented by an object with a unique id
 // const visualizations = ref<VisualizationMetadata[]>([])
@@ -81,12 +82,9 @@ function addVideo() {
         :key="viz.id"
         class="visualization-item"
       >
-        <Chart :visualization="viz" v-if="viz.type==='chart'" :datasource="viz.visualizationComponents.dataSource"
-               :curve-layer="viz.visualizationComponents.dataLayer"
-               :chart-view="viz.visualizationComponents.dataView"></Chart>
-        <Video :visualization="viz" :datasource="viz.visualizationComponents.dataSource"
-               :video-layer="viz.visualizationComponents.dataLayer" :video-view="viz.visualizationComponents.dataView"
-               v-if="viz.type === 'video'"></Video>
+        <VisualizationWrapper
+          :viz="viz"
+        />
       </div>
     </v-sheet>
   </v-card>
