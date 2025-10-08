@@ -10,8 +10,6 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs'
 import { createLocationDataSource } from '@/components/visualizations/DataComposables'
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js'
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js'
-import PanTiltControl from '@/components/PanTiltControl.vue'
-import PTZTaskingComponent from './PTZTaskingComponent.vue'
 
 const visualizationStore = useVisualizationStore()
 const mapLayerType = ref('leaflet')
@@ -229,7 +227,6 @@ function addCesiumMarker(viz: any) {
 <template>
   <div class="maphero">
     <!--    <v-btn @click="addCesiumMarker" position="absolute">Add Cesium Marker</v-btn>-->
-    <PTZTaskingComponent />
     <div class="cesium-container maphero" id="cesiumContainer"></div>
 
   </div>

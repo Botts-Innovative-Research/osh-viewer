@@ -1,6 +1,5 @@
 <script setup lang="ts">
-
-type Direction = "up" | "down" | "left" | "right" | "up-left" | "up-right" | "down-left" | "down-right" | "home" | "zoomIn" | "zoomOut";
+import { Direction } from '@/types/types';
 
 interface PanTiltControlProps {
   onMove: (direction: Direction) => void;
@@ -17,6 +16,7 @@ function handleStop() {
   props.onStop();
 }
 
+// Used for positioning buttons in a circle
 const buttonConfig = [
   { dir: "right", angle: 0, rot: 90, scale: 1 },
   // { dir: 'down-right', angle: 45,  rot: 135, scale: 1 },

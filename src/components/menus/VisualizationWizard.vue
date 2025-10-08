@@ -19,6 +19,7 @@ const vizStore = useVisualizationStore();
 const step = ref(0)
 const selectedType = ref('')
 const selectedDSProperty = ref(null)
+const selectedCS = ref(null)
 const selectedVisualizationOptions = ref(null)
 const selectedMarkerProperty = ref(null)
 
@@ -74,9 +75,8 @@ function submitWizard() {
 }
 
 function createVisualization() {
-
   const newViz = new OSHVisualization(`visualization-${randomUUID()}`, visualizationName.value,
-    selectedType.value, null, selectedDatastream.value);
+    selectedType.value, null, selectedDatastream.value, selectedCS.value);
 
   let visualizationComponents: VisualizationComponents | undefined = undefined;
   switch (newViz.type) {
@@ -176,7 +176,8 @@ watch(selectedVisualizationOptions, (val) => {
       </div>
       <div v-else-if="selectedType === 'video'">
         <VideoOptions v-model:selectedProperty="selectedDSProperty"
-                      v-model:videoType="selectedVisualizationOptions" />
+                      v-model:videoType="selectedVisualizationOptions"
+                      v-model:selectedControlStream="selectedCS" />
       </div>
       <div v-else-if="selectedType === 'pointmarker'">
         <PointMarkerOptions v-model:selectedProperty="selectedMarkerProperty" />
