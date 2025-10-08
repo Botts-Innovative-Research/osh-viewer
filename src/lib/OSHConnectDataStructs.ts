@@ -188,6 +188,8 @@ export class OSHSystem {
     this.system = system;
     this.parentNode = parentNode;
     this.children = [];
+
+    console.log(`[OSHConnect-System] Created system: ${this.name} (ID: ${this.id})`);
   }
 
   async getDataStreams(): Promise<any[]> {

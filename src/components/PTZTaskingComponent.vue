@@ -4,7 +4,7 @@ import { Direction } from '@/types/types';
 import { Command } from '@/types/types';
 
 // Take in the control stream ID as a prop
-const props = defineProps<{ commandBaseUrl: string, controlStreamID: string }>();
+const props = defineProps<{ commandBaseUrl: string, controlStreamId: string }>();
 
 function handleMove(direction: Direction) {
 
@@ -30,7 +30,7 @@ function handleMove(direction: Direction) {
       command = { params: { rzoom: -3.0 } };
       break;
     case "home":
-      command = { params: { preset: "1" } };
+      command = { params: { preset: "Home" } };
       break;
     default:
       return;
@@ -49,10 +49,28 @@ const command = {
 }
 
 function sendCommand(command: Command) {
-  console.log(`Sending command to ${props.commandBaseUrl}/controlstreams/${props.controlStreamID}/commands: `, command);
+  console.log(`Sending command to ${props.commandBaseUrl}/controlstreams/${props.controlStreamId}/commands: `, command);
+
+  // // Command sending logic
+  // fetch(`http://localhost:8181/sensorhub/api/controlstreams/7nmmockh9ea96/commands`, {
+  //   method: 'POST',
+  //   headers: {
+  //     'Content-Type': 'application/json'
+  //   },
+  //   body: JSON.stringify(command)
+  // }).then(response => {
+  //   if (!response.ok) {
+  //     throw new Error('API call failed: ' + response.statusText);
+  //   }
+  //   return response.json();
+  // }).then(data => {
+  //   console.log('Camera pan/tilt successful: ', data);
+  // }).catch(error => {
+  //   console.error('Error sending command: ', error);
+  // })
 
   // Command sending logic
-  fetch(`http://localhost:8181/sensorhub/api/controlstreams/7nmmockh9ea96/commands`, {
+  fetch(`${props.commandBaseUrl}/controlstreams/${props.controlStreamId}/commands`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
