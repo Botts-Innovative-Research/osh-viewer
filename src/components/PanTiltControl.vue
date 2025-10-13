@@ -15,7 +15,7 @@ function sendCommand() {
   if (isAbsolute.value) {
     command = {
       params: {
-        absolute: {
+        ptzPos: {
           pan: absPan.value ?? 0.0,
           tilt: absTilt.value ?? 0.0,
           zoom: absZoom.value ?? 0.0
@@ -23,8 +23,13 @@ function sendCommand() {
       }
     };
   } else if (singleValue.value != null) {
-    command = { params: { [selectedCommand.value]: singleValue.value } } as Command;
-    console.log("COMMAND COMMAND:", command)
+    const value =
+      selectedCommand.value === 'preset'
+        ? String(singleValue.value)
+        : Number(singleValue.value);
+
+    command = { params: { [selectedCommand.value]: value } } as Command;
+    console.log("COMMAND COMMAND:", command);
   }
 
   if (command) {
@@ -92,7 +97,7 @@ const center = containerSize / 2;
 const commandOptions = ['rpan', 'rtilt', 'rzoom', 'pan', 'tilt', 'zoom', 'preset', 'absolute'];
 const selectedCommand = ref<typeof commandOptions[number]>('rpan');
 
-const singleValue = ref<number>(0.0);
+const singleValue = ref<number | string>(0.0);
 const absPan = ref<number>(0.0);
 const absTilt = ref<number>(0.0);
 const absZoom = ref<number>(0.0);
@@ -127,7 +132,8 @@ const isAbsolute = computed(() => selectedCommand.value === 'absolute');
         <v-select v-model="selectedCommand" :items="commandOptions" label="Command Type" class="command-select" />
 
         <div v-if="!isAbsolute" class="input-section">
-          <v-text-field v-model.number="singleValue" type="number" :label="selectedCommand" placeholder="Enter value" />
+          <v-text-field v-model="singleValue" :type="selectedCommand === 'preset' ? 'text' : 'number'"
+            :label="selectedCommand" placeholder="Enter value" />
         </div>
 
         <div v-else class="absolute-inputs">

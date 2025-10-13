@@ -22,4 +22,4 @@ export type Command =
   | { params: { tilt: number } }
   | { params: { zoom: number } }
   | { params: { preset: string } }
-  | { params: { absolute: { pan: number; tilt: number; zoom: number } } };  // CHECK -> ptzPos is the field name for this camera
+  | { params: { ptzPos: { pan: number; tilt: number; zoom: number } } };  // CHECK -> ptzPos is the field name for Axis camera
