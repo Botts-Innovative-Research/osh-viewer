@@ -317,6 +317,7 @@ export function CreateMapViewProps(ds: OSHDatastream, selectedProperty: any, vis
   mapLayer: IMapLayerProperties,
   mapView: IMapViewProperties
 } {
+
   console.log('[DatasourceUtils] Creating Map View for Datastream:', ds)
   const parentSystem = ds.getParentSystem()
   // Build SweApiDataSourceProperties
@@ -344,6 +345,73 @@ export function CreateMapViewProps(ds: OSHDatastream, selectedProperty: any, vis
         z: rec[selectedProperty.name].alt || 0 // Default to 0 if altitude is not provided
       }
     },
+    markerColor: visOptions.markerColor || 'red',
+    markerIcon: visOptions.markerIcon || undefined,
+    name: parentSystem.name
+  }
+
+  // Build MapViewProperties
+  const mapView: IMapViewProperties = {
+    container: `map-container-${randomUUID()}`,
+    layers: [mapLayer],
+    css: 'map-view',
+    refreshRate: 1000
+  }
+
+  return {
+    dataSource,
+    mapLayer,
+    mapView
+  }
+}
+
+export function CreateLOBViewProperties(ds: OSHDatastream, selectedProperty: any, visOptions: any): {
+  dataSource: ISweApiDataSourceProperties,
+  mapLayer: IMapLayerProperties,
+  mapView: IMapViewProperties
+} {
+
+  console.log('[DatasourceUtils] Creating Map View for Datastream:', ds)
+  const parentSystem = ds.getParentSystem()
+  // Build SweApiDataSourceProperties
+  const dataSource: ISweApiDataSourceProperties = {
+    endpointUrl: ds.datastream.networkProperties.endpointUrl,
+    resource: `/datastreams/${ds.datastream.properties.id}/observations`,
+    tls: false,
+    protocol: 'ws',
+    startTime: visOptions.startTime || 'now',
+    endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
+    mode: Mode.REAL_TIME,
+    responseFormat: 'application/swe+json'
+  }
+
+  console.log('[DatasourceUtils] Creating PM Layer for property:', selectedProperty)
+  // Build MapLayerProperties
+  const mapLayer: IMapLayerProperties = {
+    dataSourceId: ds.datastream.properties.id,
+    getLocation: (rec: any) => {
+      // Assumes the selectedProperty is an object with lat/lon or similar
+      // You may need to adjust this logic based on your schema
+      return {
+        x: rec[selectedProperty.location].lon,
+        y: rec[selectedProperty.location].lat,
+        z: rec[selectedProperty.location].alt || 0 // Default to 0 if altitude is not provided
+      }
+    },
+
+    getStartLocationAndBearing: (rec: any) => ({
+      startLocation: {
+        x: rec[selectedProperty.location].lon,
+        y: rec[selectedProperty.location].lat,
+        z: rec[selectedProperty.location].alt || 0
+      },
+      bearing: rec[selectedProperty.bearing] * Math.PI / 180
+    }),
+
+    color: selectedProperty.color,
+    weight: selectedProperty.weight,
+    opacity: selectedProperty.opacity,
+    distanceKm: selectedProperty.distanceKm,
     markerColor: visOptions.markerColor || 'red',
     markerIcon: visOptions.markerIcon || undefined,
     name: parentSystem.name
