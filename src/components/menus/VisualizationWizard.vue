@@ -9,8 +9,9 @@ import { useVisualizationStore } from '@/stores/visualizationstore'
 import { storeToRefs } from 'pinia'
 import VideoOptions from '@/components/menus/VideoOptions.vue'
 import PointMarkerOptions from '@/components/menus/PointMarkerOptions.vue'
-import { CreateChartViewProps, CreateMapViewProps, CreateVideoViewProps } from '@/lib/DatasourceUtils'
+import { CreateChartViewProps, CreateLOBViewProperties, CreateMapViewProps, CreateVideoViewProps } from '@/lib/DatasourceUtils'
 import IconPicker from '@/components/menus/IconPicker.vue'
+import LOBOptions from './LOBOptions.vue'
 
 const uiStore = useUIStore();
 const { selectedDatastream } = storeToRefs(uiStore);
@@ -22,6 +23,7 @@ const selectedDSProperty = ref(null)
 const selectedCS = ref(null)
 const selectedVisualizationOptions = ref(null)
 const selectedMarkerProperty = ref(null)
+const selectedLOBProperties = ref(null)
 
 const visualizationName = ref('')
 const visualizationComponents = ref<VisualizationComponents | undefined>(undefined)
@@ -33,10 +35,13 @@ const steps = [
   { title: 'Visualization Customization' }
 ]
 
+console.log("[LOB PROPERTIES]: " + selectedLOBProperties)
+
 const visualizationTypes = [
   { label: 'Chart', value: 'chart', icon: 'mdi-chart-line' },
   { label: 'Video', value: 'video', icon: 'mdi-video' },
   { label: 'Point Marker', value: 'pointmarker', icon: 'mdi-map' },
+  { label: 'LOB', value: 'lob', icon: 'mdi-ruler-square-compass' },
   { label: 'Text', value: 'text', icon: 'mdi-format-text' }
 ]
 
@@ -105,6 +110,14 @@ function createVisualization() {
         dataSource: pmResult.dataSource,
         dataLayer: pmResult.mapLayer,
         dataView: pmResult.mapView
+      }
+      break;
+    case 'lob':
+      const lobResult = CreateLOBViewProperties(selectedDatastream.value, selectedLOBProperties.value, vizStore.currentVisDataStreamOptions)
+      visualizationComponents = {
+        dataSource: lobResult.dataSource,
+        dataLayer: lobResult.mapLayer,
+        dataView: lobResult.mapView
       }
       break;
     case 'text':
@@ -181,6 +194,9 @@ watch(selectedVisualizationOptions, (val) => {
       </div>
       <div v-else-if="selectedType === 'pointmarker'">
         <PointMarkerOptions v-model:selectedProperty="selectedMarkerProperty" />
+      </div>
+      <div v-else-if="selectedType === 'lob'">
+        <LOBOptions v-model:layerProperties="selectedLOBProperties" />
       </div>
       <div v-else-if="selectedType === 'text'">
         <v-alert type="info">Text options coming soon...</v-alert>
