@@ -312,11 +312,13 @@ export function CreateVideoViewProps(ds: OSHDatastream, selectedProperty: any, v
  * @param visOptions
  * @constructor
  */
-export function CreateMapViewProps(ds: OSHDatastream, selectedProperty: any, visOptions: any): {
+export function CreateMapViewProps(ds: OSHDatastream, selectedProperty: any, selectedIconProperties: any, visOptions: any): {
   dataSource: ISweApiDataSourceProperties,
   mapLayer: IMapLayerProperties,
   mapView: IMapViewProperties
 } {
+
+  console.log('[MY ICON PROPERTIES]: ' + selectedIconProperties)
 
   console.log('[DatasourceUtils] Creating Map View for Datastream:', ds)
   const parentSystem = ds.getParentSystem()
@@ -346,7 +348,7 @@ export function CreateMapViewProps(ds: OSHDatastream, selectedProperty: any, vis
       }
     },
     markerColor: visOptions.markerColor || 'red',
-    markerIcon: visOptions.markerIcon || undefined,
+    markerIcon: selectedIconProperties || undefined,
     name: parentSystem.name
   }
 
@@ -365,7 +367,7 @@ export function CreateMapViewProps(ds: OSHDatastream, selectedProperty: any, vis
   }
 }
 
-export function CreateLOBViewProperties(ds: OSHDatastream, selectedProperty: any, visOptions: any): {
+export function CreateLOBViewProperties(ds: OSHDatastream, selectedProperty: any, selectedIconProperties: any, visOptions: any): {
   dataSource: ISweApiDataSourceProperties,
   mapLayer: IMapLayerProperties,
   mapView: IMapViewProperties
@@ -412,8 +414,8 @@ export function CreateLOBViewProperties(ds: OSHDatastream, selectedProperty: any
     weight: selectedProperty.weight,
     opacity: selectedProperty.opacity,
     distanceKm: selectedProperty.distanceKm,
-    markerColor: visOptions.markerColor || 'red',
-    markerIcon: visOptions.markerIcon || undefined,
+    // markerColor: visOptions.markerColor || 'red',
+    markerIcon: selectedIconProperties || undefined,
     name: parentSystem.name
   }
 

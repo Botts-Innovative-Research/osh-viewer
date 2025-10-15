@@ -125,6 +125,7 @@ watch(mapVisualizations, (updated) => {
     })
     console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstance)
     const layerOpts = viz.visualizationComponents.dataLayer
+    console.log('[HERES MY ICON]: ' + layerOpts.markerIcon)
     const pmLayer = new PointMarkerLayer({
       name: viz.name,
       dataSourceIds: [dsInstance.id],
@@ -137,9 +138,11 @@ watch(mapVisualizations, (updated) => {
       //   }
       // },
       label: viz.visualizationComponents.dataLayer.name,
-      icon: '/icons/map/map-marker.svg',
+      // icon: '/icons/map/map-marker.svg',
+      icon: `data:image/svg+xml;base64,${btoa(layerOpts.markerIcon)}`,
       iconSize: [32, 32],
-      labelOffset: [-16, -32],
+      iconAnchor: [16, 16],
+      labelOffset: [-12, -24],
     })
     pmLayers.value.push(pmLayer)
     mapView.value.addLayer(pmLayer)
@@ -193,9 +196,11 @@ watch(lobVisualizations, (updated) => {
       //   }
       // },
       label: viz.visualizationComponents.dataLayer.name,
-      icon: '/icons/map/map-marker.svg',
+      // icon: '/icons/map/map-marker.svg',
+      icon: `data:image/svg+xml;base64,${btoa(layerOpts.markerIcon)}`,
       iconSize: [32, 32],
-      labelOffset: [-16, -32],
+      iconAnchor: [16, 16],
+      labelOffset: [-32, -12],
     })
     pmLayers.value.push(pmLayer)
     mapView.value.addLayer(pmLayer)
@@ -254,7 +259,7 @@ watch(featureVisualizations, (updated) => {
         labelOffset: [0, 0],
         icon: '/icons/map/map-marker.svg',
         iconSize: [32, 32],
-        iconAnchor: [16, 32],
+        iconAnchor: [16, 16],
         id: viz.id,
         markerId: viz.id + '-feature' + randomUUID()
       })
@@ -289,7 +294,7 @@ function addCesiumMarker(viz: any) {
     labelOffset: [0, 0],
     icon: '/icons/map/map-marker.svg',
     iconSize: [32, 32],
-    iconAnchor: [16, 32],
+    iconAnchor: [16, 16],
     id: viz.id,
     markerId: viz.id + '-feature' + randomUUID()
   }

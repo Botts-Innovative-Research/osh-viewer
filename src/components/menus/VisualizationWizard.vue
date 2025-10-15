@@ -24,6 +24,7 @@ const selectedCS = ref(null)
 const selectedVisualizationOptions = ref(null)
 const selectedMarkerProperty = ref(null)
 const selectedLOBProperties = ref(null)
+const selectedIconProperties = ref(null)
 
 const visualizationName = ref('')
 const visualizationComponents = ref<VisualizationComponents | undefined>(undefined)
@@ -34,8 +35,6 @@ const steps = [
   { title: 'Datasource Options' },
   { title: 'Visualization Customization' }
 ]
-
-console.log("[LOB PROPERTIES]: " + selectedLOBProperties)
 
 const visualizationTypes = [
   { label: 'Chart', value: 'chart', icon: 'mdi-chart-line' },
@@ -104,16 +103,24 @@ function createVisualization() {
       }
       break;
     case 'pointmarker':
-      const pmResult = CreateMapViewProps(selectedDatastream.value, selectedMarkerProperty.value,
-        vizStore.currentVisDataStreamOptions)
+      const pmResult = CreateMapViewProps(
+        selectedDatastream.value, 
+        selectedMarkerProperty.value,
+        selectedIconProperties.value,
+        vizStore.currentVisDataStreamOptions
+      )
       visualizationComponents = {
         dataSource: pmResult.dataSource,
         dataLayer: pmResult.mapLayer,
-        dataView: pmResult.mapView
+        dataView: pmResult.mapView,
       }
       break;
     case 'lob':
-      const lobResult = CreateLOBViewProperties(selectedDatastream.value, selectedLOBProperties.value, vizStore.currentVisDataStreamOptions)
+      const lobResult = CreateLOBViewProperties(
+        selectedDatastream.value, 
+        selectedLOBProperties.value,
+        selectedIconProperties.value, 
+        vizStore.currentVisDataStreamOptions)
       visualizationComponents = {
         dataSource: lobResult.dataSource,
         dataLayer: lobResult.mapLayer,
@@ -207,7 +214,7 @@ watch(selectedVisualizationOptions, (val) => {
     </div>
     <div v-else-if="step === 2">
       <h2 class="mb-4 text-center">Visualization Customization</h2>
-      <IconPicker></IconPicker>
+      <IconPicker v-model:iconProperties="selectedIconProperties"></IconPicker>
     </div>
 
     <v-row class="mt-6" justify="end">
