@@ -9,13 +9,12 @@ import { useStartEndTimeSync, usePlaybackModeSync } from '@/composables/DataSour
 import { Mode } from 'osh-js/source/core/datasource/Mode.js'
 import DataSourceDropdown from '@/components/menus//DataSourceDropdown.vue'
 import LineLayerPicker from './LineLayerPicker.vue'
+import DataSourceSelector from '@/components/menus/DataSourceSelector.vue'
 
-const visualizationStore = useVisualizationStore()
 const markerDS = ref<any>(null)
-const selectedProperty = ref<SchemaFieldProperty | null>(null)
 const obsProps = ref<{ 'definition': string, 'label': string }[]>([])
 const dsSchema = ref<any>(null)
-const uiStore = useUIStore()
+
 
 const selectedLocation = ref<SchemaFieldProperty | null>(null)
 const selectedLOB = ref<SchemaFieldProperty | null>(null)
@@ -30,8 +29,17 @@ async function fetchProps() {
   markerDS.value = ds
   obsProps.value = observedProps
 
-  const schema = await fetchSchema(ds.datastream)
-  dsSchema.value = schema
+  // const schema = await fetchSchema(ds.datastream)
+  // dsSchema.value = schema
+  const schemas: any[] = []
+  for (const dss of ds) {
+    const schema = await fetchSchema(dss.datastream)
+    schemas.push(schema)
+  }
+  console.log('schemas:', schemas)
+
+  dsSchema.value = schemas
+
 }
 
 onMounted(async () => {

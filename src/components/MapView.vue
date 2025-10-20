@@ -173,7 +173,7 @@ watch(lobVisualizations, (updated) => {
   console.log('New visualizations:', newFiltered)
   for (const viz of newFiltered) {
     currentVisualizations.value.push(viz)
-    let dsInstance = new SweApi('pm-datasource-' + randomUUID(), {
+    let dsInstance = new SweApi('lob-datasource-' + randomUUID(), {
       endpointUrl: viz.visualizationComponents.dataSource.endpointUrl,
       resource: viz.visualizationComponents.dataSource.resource,
       tls: viz.visualizationComponents.dataSource.tls,
@@ -181,9 +181,11 @@ watch(lobVisualizations, (updated) => {
       startTime: viz.visualizationComponents.dataSource.startTime,
       endTime: viz.visualizationComponents.dataSource.endTime,
       mode: viz.visualizationComponents.dataSource.mode,
-    })
-    console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstance)
+    });
+
+    console.log('[MapView] Creating datasource for LobLayer:', dsInstance)
     const layerOpts = viz.visualizationComponents.dataLayer
+
     const pmLayer = new PointMarkerLayer({
       name: viz.name,
       dataSourceIds: [dsInstance.id],
@@ -217,10 +219,7 @@ watch(lobVisualizations, (updated) => {
     })
     pmLayers.value.push(lineLayer)
     mapView.value.addLayer(lineLayer)
-    console.log('[MapView] Creating PointMarkerLayer:', lineLayer)
-
-
-
+    console.log('[MapView] Creating LineLayer:', lineLayer)
 
     dsInstance.connect()
   }

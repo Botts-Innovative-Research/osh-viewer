@@ -12,9 +12,10 @@ import PointMarkerOptions from '@/components/menus/PointMarkerOptions.vue'
 import { CreateChartViewProps, CreateLOBViewProperties, CreateMapViewProps, CreateVideoViewProps } from '@/lib/DatasourceUtils'
 import IconPicker from '@/components/menus/IconPicker.vue'
 import LOBOptions from './LOBOptions.vue'
+import DataSourceSelector from '@/components/menus/DataSourceSelector.vue'
 
 const uiStore = useUIStore();
-const { selectedDatastream } = storeToRefs(uiStore);
+const { selectedDatastreams } = storeToRefs(uiStore);
 
 const vizStore = useVisualizationStore();
 const step = ref(0)
@@ -30,6 +31,9 @@ const visualizationName = ref('')
 const visualizationComponents = ref<VisualizationComponents | undefined>(undefined)
 const visualizationSweApi = ref(null)
 
+function handleAddDatastream(ds: any) {
+  uiStore.addSelectedDatastreams(ds)
+}
 const steps = [
   { title: 'Choose Type' },
   { title: 'Datasource Options' },
@@ -79,13 +83,15 @@ function submitWizard() {
 }
 
 function createVisualization() {
+  const firstDS = selectedDatastreams.value[0]
+
   const newViz = new OSHVisualization(`visualization-${randomUUID()}`, visualizationName.value,
-    selectedType.value, null, selectedDatastream.value, selectedCS.value);
+    selectedType.value, null, firstDS, selectedCS.value);
 
   let visualizationComponents: VisualizationComponents | undefined = undefined;
   switch (newViz.type) {
     case 'chart':
-      const chartResult = CreateChartViewProps(selectedDatastream.value, selectedDSProperty.value, vizStore.currentVisDataStreamOptions)
+      const chartResult = CreateChartViewProps(firstDS, selectedDSProperty.value, vizStore.currentVisDataStreamOptions)
       visualizationComponents = {
         dataSource: chartResult.dataSource,
         dataLayer: chartResult.chartLayer,
@@ -94,7 +100,7 @@ function createVisualization() {
       break;
     case 'video':
       // Add video-specific properties if needed
-      const videoResult = CreateVideoViewProps(selectedDatastream.value, selectedDSProperty.value,
+      const videoResult = CreateVideoViewProps(firstDS, selectedDSProperty.value,
         selectedVisualizationOptions.value, vizStore.currentVisDataStreamOptions);
       visualizationComponents = {
         dataSource: videoResult.dataSource,
@@ -104,7 +110,7 @@ function createVisualization() {
       break;
     case 'pointmarker':
       const pmResult = CreateMapViewProps(
-        selectedDatastream.value, 
+        firstDS,
         selectedMarkerProperty.value,
         selectedIconProperties.value,
         vizStore.currentVisDataStreamOptions
@@ -117,7 +123,7 @@ function createVisualization() {
       break;
     case 'lob':
       const lobResult = CreateLOBViewProperties(
-        selectedDatastream.value, 
+        selectedDatastreams,
         selectedLOBProperties.value,
         selectedIconProperties.value, 
         vizStore.currentVisDataStreamOptions)
@@ -151,11 +157,20 @@ watch(selectedVisualizationOptions, (val) => {
 <template>
   <v-card class="pa-4 vwizard-card" elevation="4">
     <v-card-title class="text-h4 text-center">Visualization Wizard</v-card-title>
-    <div v-if="selectedDatastream">
-      <v-alert type="info" class="mb-2" density="compact" border="start" border-color="primary">
-        <strong>Datastream:</strong> {{ selectedDatastream.name || selectedDatastream.id || selectedDatastream }}
+    <div v-if="selectedDatastreams.length > 0">
+      <v-alert
+        v-for="ds in selectedDatastreams"
+        :key="ds.id"
+        type="info" class="mb-1" density="compact" border="start" border-color="primary">
+        <strong>Datastream:</strong> {{ ds.name || ds.id || ds }}
       </v-alert>
     </div>
+
+    <DataSourceSelector
+      title="Add another DataSource"
+      @update:addDatastream="handleAddDatastream"
+    />
+
     <v-breadcrumbs :items="steps.map((s, i) => ({
         title: s.title,
         disabled: i > step,
@@ -195,9 +210,11 @@ watch(selectedVisualizationOptions, (val) => {
         <ChartOptions v-model:selectedProperty="selectedDSProperty"/>
       </div>
       <div v-else-if="selectedType === 'video'">
-        <VideoOptions v-model:selectedProperty="selectedDSProperty"
-                      v-model:videoType="selectedVisualizationOptions"
-                      v-model:selectedControlStream="selectedCS" />
+        <VideoOptions
+          v-model:selectedProperty="selectedDSProperty"
+          v-model:videoType="selectedVisualizationOptions"
+          v-model:selectedControlStream="selectedCS"
+        />
       </div>
       <div v-else-if="selectedType === 'pointmarker'">
         <PointMarkerOptions v-model:selectedProperty="selectedMarkerProperty" />

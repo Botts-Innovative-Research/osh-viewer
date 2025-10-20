@@ -25,7 +25,9 @@ const selectedControlStream = defineModel('selectedControlStream', {
 })
 const controlStreams = computed(() => {
   const uiStore = useUIStore()
-  return uiStore.selectedDatastream?.getParentSystem().getCSChildren() || []
+  const firstDS = uiStore.selectedDatastreams[0]
+
+  return firstDS?.getParentSystem().getCSChildren() || []
 })
 
 const videoType = defineModel('videoType', {

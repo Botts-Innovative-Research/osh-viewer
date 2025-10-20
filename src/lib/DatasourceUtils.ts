@@ -9,27 +9,34 @@ import { OSHDatastream } from '@/lib/OSHConnectDataStructs'
 import {
   IChartViewProperties,
   ICurveLayerProperties,
-  ISweApiDataSourceProperties, IVideoLayerProperties,
+  ISweApiDataSourceProperties,
+  IVideoLayerProperties,
   IVideoViewProperties,
   IMapLayerProperties,
-  IMapViewProperties
+  IMapViewProperties,
+  ILineOfBearingLayerProperties,
+  ILineOfBearingViewProperties,
 } from '@/lib/VisualizationHelpers'
 
 
 export function mineDatasourceObsProps(): {ds: any, observedProps: any} {
 
   const uiStore = useUIStore()
-  const ds = uiStore.selectedDatastream
+  const ds = uiStore.selectedDatastreams
 
+  console.log('selected Datastreams', ds)
   if (!ds) {
     console.warn('No datastream selected');
   }
 
-  const observedProps = ds.datastream.properties?.observedProperties || []
-  console.log('[DS-Utils] Observed Properties:', observedProps)
+  const observedProps: any[] = [];
 
-  // fetchSchema(ds.datastream);
+  ds.forEach((dss) => {
+    const obs = dss.datastream.properties?.observedProperties || []
+    observedProps.push(...obs);
+    console.log('[DS-Utils] Observed Properties:', observedProps)
 
+  })
   return { ds, observedProps };
 }
 
@@ -132,9 +139,8 @@ export class SchemaFieldProperty {
 
 // deprecated
 export function CreateChartView(ds: OSHDatastream, selectedProperty: any, visOptions: any): any {
-  console.log('[DatasourceUtils] Creating Chart View for Datastream:', OSHDatastream)
-  // const ds = OSHDatastream.datastream;
   console.log('[DatasourceUtils] Creating Chart View for Datastream:', ds)
+  // const ds = OSHDatastream.datastream;
   // create a datastruct for DataSource props
   const dataSource = new SweApi(ds.name, {
     endpointUrl: ds.datastream.networkProperties.endpointUrl,
@@ -318,8 +324,6 @@ export function CreateMapViewProps(ds: OSHDatastream, selectedProperty: any, sel
   mapView: IMapViewProperties
 } {
 
-  console.log('[MY ICON PROPERTIES]: ' + selectedIconProperties)
-
   console.log('[DatasourceUtils] Creating Map View for Datastream:', ds)
   const parentSystem = ds.getParentSystem()
   // Build SweApiDataSourceProperties
@@ -367,18 +371,19 @@ export function CreateMapViewProps(ds: OSHDatastream, selectedProperty: any, sel
   }
 }
 
-export function CreateLOBViewProperties(ds: OSHDatastream, selectedProperty: any, selectedIconProperties: any, visOptions: any): {
+export function CreateLOBViewProperties(ds: any, selectedProperty: any, selectedIconProperties: any, visOptions: any): {
   dataSource: ISweApiDataSourceProperties,
-  mapLayer: IMapLayerProperties,
-  mapView: IMapViewProperties
+  mapLayer: ILineOfBearingLayerProperties,
+  mapView: ILineOfBearingViewProperties
 } {
 
-  console.log('[DatasourceUtils] Creating Map View for Datastream:', ds)
-  const parentSystem = ds.getParentSystem()
+
+  const firstDS = ds.value[0]
+  const parentSystem = firstDS.getParentSystem()
   // Build SweApiDataSourceProperties
   const dataSource: ISweApiDataSourceProperties = {
-    endpointUrl: ds.datastream.networkProperties.endpointUrl,
-    resource: `/datastreams/${ds.datastream.properties.id}/observations`,
+    endpointUrl: firstDS.datastream.networkProperties.endpointUrl,
+    resource: `/datastreams/${firstDS.datastream.properties.id}/observations`,
     tls: false,
     protocol: 'ws',
     startTime: visOptions.startTime || 'now',
@@ -387,19 +392,19 @@ export function CreateLOBViewProperties(ds: OSHDatastream, selectedProperty: any
     responseFormat: 'application/swe+json'
   }
 
-  console.log('[DatasourceUtils] Creating PM Layer for property:', selectedProperty)
+  console.log("selectedProperty.bearing",selectedProperty.bearing)
   // Build MapLayerProperties
-  const mapLayer: IMapLayerProperties = {
-    dataSourceId: ds.datastream.properties.id,
-    getLocation: (rec: any) => {
-      // Assumes the selectedProperty is an object with lat/lon or similar
-      // You may need to adjust this logic based on your schema
-      return {
-        x: rec[selectedProperty.location].lon,
-        y: rec[selectedProperty.location].lat,
-        z: rec[selectedProperty.location].alt || 0 // Default to 0 if altitude is not provided
-      }
-    },
+  const mapLayer: ILineOfBearingLayerProperties = {
+    dataSourceId: firstDS.datastream.properties.id,
+    // getLocation: (rec: any) => {
+    //   // Assumes the selectedProperty is an object with lat/lon or similar
+    //   // You may need to adjust this logic based on your schema
+    //   return {
+    //     x: rec[selectedProperty.location].lat,
+    //     y: rec[selectedProperty.location].lon,
+    //     z: rec[selectedProperty.location].alt || 0 // Default to 0 if altitude is not provided
+    //   }
+    // },
 
     getStartLocationAndBearing: (rec: any) => ({
       startLocation: {
@@ -410,18 +415,20 @@ export function CreateLOBViewProperties(ds: OSHDatastream, selectedProperty: any
       bearing: rec[selectedProperty.bearing] * Math.PI / 180
     }),
 
+    getPolylineId: (rec: any) => {
+      return { frequency: 1 }
+    },
     color: selectedProperty.color,
     weight: selectedProperty.weight,
     opacity: selectedProperty.opacity,
     distanceKm: selectedProperty.distanceKm,
-    // markerColor: visOptions.markerColor || 'red',
-    markerIcon: selectedIconProperties || undefined,
+    // markerIcon: selectedIconProperties || undefined,
     name: parentSystem.name
   }
 
   // Build MapViewProperties
-  const mapView: IMapViewProperties = {
-    container: `map-container-${randomUUID()}`,
+  const mapView: ILineOfBearingViewProperties = {
+    container: `lob-container-${randomUUID()}`,
     layers: [mapLayer],
     css: 'map-view',
     refreshRate: 1000
