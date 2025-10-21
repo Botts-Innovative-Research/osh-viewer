@@ -26,7 +26,7 @@ export function mineDatasourceObsProps(): {ds: any, observedProps: any} {
   }
 
   const observedProps = ds.datastream.properties?.observedProperties || []
-  console.log('[DS-Utils] Observed Properties:', observedProps)
+  console.log('[DS-Utils] Observed Properties:', ds.datastream.properties)
 
   // fetchSchema(ds.datastream);
 
