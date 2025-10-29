@@ -7,7 +7,7 @@ import { useUIStore } from '@/stores/uistore'
 /**
  * Fetch the schema for a control stream
  */
-export async function fetchControlStreamSchema(controlstream: any, ds: any) {
+export async function fetchControlStreamSchema(controlstream: any, networkProperties: any) {
   
   const props = {
     id: controlstream.id,
@@ -15,10 +15,8 @@ export async function fetchControlStreamSchema(controlstream: any, ds: any) {
     name: controlstream.name,
     type: controlstream.type
   }
-  // Fetch network properties from the associated datastream
-  const networkProps = ds.networkProperties;
 
-  const control = new Control(props, networkProps)
+  const control = new Control(props, networkProperties)
   
   console.log('[ControlstreamUtils] Fetching schema for controlstream:', control)
 

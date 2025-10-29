@@ -4,6 +4,7 @@ import { fetchControlStreamSchema } from '@/lib/ControlstreamUtils'
 import { onMounted, ref, watch } from 'vue'
 import { useVisualizationStore } from '@/stores/visualizationstore'
 import { useUIStore } from '@/stores/uistore'
+import { useControlStreamStore } from '@/stores/controlstreamstore'
 import DataSourcePicker from '@/components/menus/DataSourcePicker.vue'
 import TimePicker from '@/components/menus/TimePicker.vue'
 import { useStartEndTimeSync, usePlaybackModeSync } from '@/composables/DataSourceOptions'
@@ -56,7 +57,7 @@ async function fetchProps() {
 
   // Fetch control stream schemas
   for (const cs of controlStreams.value) {
-    const csSchema = await fetchControlStreamSchema(cs, ds.datastream)
+    const csSchema = await fetchControlStreamSchema(cs, ds.datastream.networkProperties)
     csSchemas.value[cs.id] = csSchema
   }
 }
