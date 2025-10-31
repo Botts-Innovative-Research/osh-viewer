@@ -30,7 +30,7 @@ function sendCommand(command: Command) {
 </script>
 
 <template>
-  <PanTiltControl :onSend="sendCommand" />
+  <PanTiltControl :onSend="sendCommand" :controlStreamId="props.controlStreamId" />
 </template>
 
 <style scoped></style>

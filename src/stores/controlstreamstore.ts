@@ -5,7 +5,9 @@ import { OSHControlStream } from '@/lib/OSHConnectDataStructs'
 
 export const useControlStreamStore = defineStore('controlstreams', () => {
   const controlStreams: Ref<OSHControlStream[]> = ref([])
+  const schemas: Ref<Record<number, any>> = ref({})
 
+  /* Control Stream management */
   const addControlStream = (controlStream: OSHControlStream): void => {
     controlStreams.value.push(controlStream)
 
@@ -28,6 +30,16 @@ export const useControlStreamStore = defineStore('controlstreams', () => {
     return controlStreams.value.filter((controlStream) => ids.includes(controlStream.id))
   }
 
+  /* Schema management */
+  const addCSSchema = (id: number, schema: any): void => {
+    schemas.value[id] = schema
+  }
+
+  const getCSSchemaById = (id: number): any | undefined => {
+    return schemas.value[id]
+  }
+
+
   return {
     controlStreams,
     addControlStream,
@@ -35,5 +47,8 @@ export const useControlStreamStore = defineStore('controlstreams', () => {
     getControlStreamByName,
     checkIfControlStreamExists,
     getControlStreamsById,
+    schemas,
+    addCSSchema,
+    getCSSchemaById
   }
 })

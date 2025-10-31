@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { Direction, Command } from '@/types/types';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useControlStreamStore } from '@/stores/controlstreamstore'
 
 interface PanTiltControlProps {
   onSend: (command: Command) => void;
+  id: number;
 }
 
 const props = defineProps<PanTiltControlProps>();
@@ -93,9 +95,46 @@ const containerSize = 200;
 const radius = 75;
 const center = containerSize / 2;
 
+
+
+
+
+
+
+
+
 // Input properties
-const commandOptions = ['rpan', 'rtilt', 'rzoom', 'pan', 'tilt', 'zoom', 'preset', 'absolute'];
-const selectedCommand = ref<typeof commandOptions[number]>('rpan');
+const controlStreamStore = useControlStreamStore()
+const controlStreamSchema = computed(() => {
+  console.log(controlStreamStore?.getCSSchemaById(props.id))
+  return controlStreamStore?.getCSSchemaById(props.id) || {}
+})
+
+const commandOptions = computed(() => {
+  return Object.keys(controlStreamSchema.value)
+})
+
+const selectedCommand = ref(commandOptions.value[0] || '');
+watch (commandOptions, (newOptions) => {
+  if (!newOptions.includes(selectedCommand.value)) {
+    selectedCommand.value = newOptions[0] || '';
+  }
+}, {immediate: true});
+
+// Determine relative and preset type availability
+const hasRelative = computed(() => {
+  return commandOptions.value.includes('rpan') &&
+         commandOptions.value.includes('rtilt') &&
+         commandOptions.value.includes('rzoom');
+})
+const hasPreset = computed(() => {
+  return commandOptions.value.includes('preset');
+})
+
+const isPreset = computed(() => selectedCommand.value === 'preset');
+const isDataRecord = computed(() => {
+  
+})
 
 const singleValue = ref<number | string>(0.0);
 const absPan = ref<number>(0.0);
@@ -103,13 +142,11 @@ const absTilt = ref<number>(0.0);
 const absZoom = ref<number>(0.0);
 const increment = ref(5.0); // Default increment for relative commands
 
-const isAbsolute = computed(() => selectedCommand.value === 'absolute');
-
 </script>
 
 <template>
   <div class="wrapper">
-    <div class="controlPadWrapper">
+    <div class="controlPadWrapper" v-if="hasRelative">
       <div class="controlPadContainer">
         <button v-for="({ dir, angle, rot, scale }, index) in buttonConfig" :key="dir" @mousedown="handleMove(dir)"
           class="button" :style="{

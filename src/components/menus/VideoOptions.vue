@@ -103,6 +103,7 @@ usePlaybackModeSync(playbackMode, visualizationStore)
         <v-radio v-for="cs in controlStreams" :key="cs.id" :value="cs" :label="cs.name">
           <template #label>
             <div>
+              
               <p>{{ cs.name || 'Unnamed Stream' }}</p>
               <div class="text-caption text-grey">
                 {{ cs.description || 'No description' }}
