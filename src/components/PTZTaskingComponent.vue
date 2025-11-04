@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import PanTiltControl from './PanTiltControl.vue';
-import { Command } from '@/types/types';
 
 // Take in the control stream ID as a prop
 const props = defineProps<{ commandBaseUrl: string, controlStreamId: string }>();
 
-function sendCommand(command: Command) {
+function sendCommand(command: any) {
   console.log(`Sending command to ${props.commandBaseUrl}/controlstreams/${props.controlStreamId}/commands: `, command);
 
   // Command sending logic
@@ -30,7 +29,7 @@ function sendCommand(command: Command) {
 </script>
 
 <template>
-  <PanTiltControl :onSend="sendCommand" :controlStreamId="props.controlStreamId" />
+  <PanTiltControl :onSend="sendCommand" :id="props.controlStreamId" />
 </template>
 
 <style scoped></style>

@@ -2,6 +2,11 @@ import ControlFilter from 'osh-js/source/core/sweapi/control/ControlFilter'
 import Control from 'osh-js/source/core/sweapi/control/Control'
 import { useControlStreamStore } from '@/stores/controlstreamstore'
 
+type CommandType = {
+  type: string
+  details: { [key: string]: any }
+}
+
 /**
  * Fetch the schema for a control stream
  */
@@ -25,9 +30,10 @@ export async function fetchControlStreamSchema(controlstream: any, networkProper
     .then((schema: any) => {
       if (schema) {
         console.log('[ControlstreamUtils] Schema fetched:', schema)
+        console.log('[ControlstreamUtils] Schema id', controlstream.id)
         // Add schema to store
-        controlStreamStore.addCSSchema(controlstream.id, schema)
-        return getCommandSchema(schema.paramsSchema.items)
+        getCommandType(schema.paramsSchema.items, controlstream.id)
+        return schema.paramsSchema.items
       }
     })
     .catch((error: any) => {
@@ -36,64 +42,82 @@ export async function fetchControlStreamSchema(controlstream: any, networkProper
     })
 }
 
-export function getCommandSchema(schema: any[]) {
+export function getCommandType(schema: any[], id: string) {
+  const controlStreamStore = useControlStreamStore()
+
   // Start with empty command schema
-  let commandSchema: any = { params: {} }
+  let commandType: CommandType | undefined
+  let commandSchema: any = {}
 
   // Check for PTZ camera command schema
   if (schema.some((item: any) => item.name === 'pan' || item.name === 'rpan')) {
-    return { }
+    const type = 'PTZCam'
+    let isRelative = false
+    let isPreset = false
+    let isDataRecord = false
 
-    // TO DO IMPLEMENT ISPRESET, ISDATARECORD, etc. HERE
+    // Check for relative commands
+    if (schema.some((item: any) => item.name === 'rpan')) isRelative = true
+    // Check for preset commands
+    if (schema.some((item: any) => item.name === 'preset')) isPreset = true
+    // Check for DataRecord commands
+    if (schema.some((item: any) => item.type === 'DataRecord')) isDataRecord = true
 
-    // if (schema.some((item: any) => item.name === 'pan')) {
-    //   // Add absolute PTZ command schema
-    //   commandSchema.params.pan = { type: 'number', constraint: schema.find((item: any) => item.name === 'pan').constraint.intervals }
-    //   commandSchema.params.tilt = { type: 'number', constraint: schema.find((item: any) => item.name === 'tilt').constraint.intervals }
-    //   commandSchema.params.zoom = { type: 'number', constraint: schema.find((item: any) => item.name === 'zoom').constraint.intervals }
-    // }
-    // if (schema.some((item: any) => item.name === 'rpan')) {
-    //   // Add relative PTZ command schema
-    //   commandSchema.params.rpan = { type: 'number', constraint: schema.find((item: any) => item.name === 'rpan').constraint.intervals }
-    //   commandSchema.params.rtilt = { type: 'number', constraint: schema.find((item: any) => item.name === 'rtilt').constraint.intervals }
-    //   commandSchema.params.rzoom = { type: 'number', constraint: schema.find((item: any) => item.name === 'rzoom').constraint.intervals }
-    // }
-    // if (schema.some((item: any) => item.name === 'preset')) {
-    //   // Add Preset PTZ command schema
-    //   const presetItem = schema.find((item: any) => item.name === 'preset')
-    //   // Add all possible preset values as an array
-    //   commandSchema.params.preset = { type: presetItem.type, values: presetItem.constraint.values }
-    // }
-    // if (schema.some((item: any) => item.type === 'DataRecord')) {
-    //   // Add DataRecord PTZ command schema
-    //   const dataRecItem = schema.find((item: any) => item.type === 'DataRecord')
-    //   commandSchema.params[dataRecItem.name] = { type: dataRecItem.type pan: 'number', tilt: 'number', zoom: 'number' }
-    // }
+    commandType = {
+      type: type,
+      details: {
+        hasRelative: isRelative,
+        hasPreset: isPreset,
+        hasDataRecord: isDataRecord,
+      },
+    }
+
+    if (schema.some((item: any) => item.name === 'pan')) {
+      // Add absolute PTZ command schema
+      commandSchema.pan = {
+        type: 'number',
+        constraint: schema.find((item: any) => item.name === 'pan').constraint.intervals,
+      }
+      commandSchema.tilt = {
+        type: 'number',
+        constraint: schema.find((item: any) => item.name === 'tilt').constraint.intervals,
+      }
+      commandSchema.zoom = {
+        type: 'number',
+        constraint: schema.find((item: any) => item.name === 'zoom').constraint.intervals,
+      }
+    }
+    if (schema.some((item: any) => item.name === 'rpan')) {
+      // Add relative PTZ command schema
+      commandSchema.rpan = {
+        type: 'number',
+      }
+      commandSchema.rtilt = {
+        type: 'number',
+      }
+      commandSchema.rzoom = {
+        type: 'number',
+      }
+    }
+    if (schema.some((item: any) => item.name === 'preset')) {
+      // Add Preset PTZ command schema
+      const presetItem = schema.find((item: any) => item.name === 'preset')
+      // Add all possible preset values as an array
+      commandSchema.preset = { type: presetItem.type, values: presetItem.constraint.values }
+    }
+    if (schema.some((item: any) => item.type === 'DataRecord')) {
+      // Add DataRecord PTZ command schema
+      const dataRecItem = schema.find((item: any) => item.type === 'DataRecord')
+      commandSchema[dataRecItem.name] = {
+        type: dataRecItem.type,
+        pan: { type: 'number', constraint: commandSchema.pan.constraint },
+        tilt: { type: 'number', constraint: commandSchema.tilt.constraint },
+        zoom: { type: 'number', constraint: commandSchema.zoom.constraint },
+      }
+    }
   }
 
-  return commandSchema
+  console.log(id, 'commandType:', commandType, 'commandSchema:', commandSchema)
+
+  controlStreamStore.addCSSchema(id, commandType, commandSchema)
 }
-
-/**
- * Class representing Control Stream schema field property
- */
-// export class CSSchemaFieldProperty {
-//   definition: string;
-//   name: string;
-//   type: string;
-//   uom?: any;
-//   children? : CSSchemaFieldProperty[];
-
-//   constructor(definition: string, name: string, type: string, uom?: string, children?: any[]) {
-//     this.definition = definition;
-//     this.name = name;
-//     this.type = type;
-//     this.uom = uom;
-//     this.children = children?.forEach(child => return new CSSchemaFieldProperty(
-//       child.definition,
-//       child.name,
-//       child.type,
-//       child.uom,
-//     ));
-//   }
-// }
