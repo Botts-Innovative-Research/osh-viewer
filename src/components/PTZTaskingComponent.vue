@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import PanTiltControl from './PanTiltControl.vue';
+import { showToast } from '@/composables/useToast'
+
 
 // Take in the control stream ID as a prop
 const props = defineProps<{ commandBaseUrl: string, controlStreamId: string }>();
@@ -23,6 +25,7 @@ function sendCommand(command: any) {
     console.log('Camera pan/tilt successful: ', data);
   }).catch(error => {
     console.error('Error sending command: ', error);
+    showToast('Error sending command.', 'ERROR')
   })
 }
 

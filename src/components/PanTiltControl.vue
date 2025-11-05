@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { Direction } from '@/types/types';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useControlStreamStore } from '@/stores/controlstreamstore'
 import { storeToRefs } from 'pinia';
+import { showToast } from '@/composables/useToast'
+
 
 interface PanTiltControlProps {
   onSend: (command: any) => void;
@@ -72,10 +74,12 @@ function handleMove(direction: Direction) {
       command = { params: { rzoom: -increment.value } };
       break;
     case "home":
-      if (isPreset.value && presetOptions.value.includes("Home"))
+      if (presetOptions.value.includes("Home"))
         command = { params: { preset: "Home" } };
-      else
+      else {
         console.error("Home preset not available.");
+        showToast('Home preset is not available.', 'ERROR')
+      }
       break;
     default:
       return;
