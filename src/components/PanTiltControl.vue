@@ -118,7 +118,6 @@ const controlStreamType = computed(() => schemas.value[props.id]?.type || {})
 // List of command options based on schema
 const commandOptions = computed(() => {
   console.log('Control Stream Schema:', Object.keys(controlStreamSchema.value));
-  console.log(controlStreamSchema.value['preset'].values);
   return Object.keys(controlStreamSchema.value)
 })
 

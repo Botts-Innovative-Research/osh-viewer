@@ -1,3 +1,4 @@
+import { h, ref } from 'vue'
 import ControlFilter from 'osh-js/source/core/sweapi/control/ControlFilter'
 import Control from 'osh-js/source/core/sweapi/control/Control'
 import { useControlStreamStore } from '@/stores/controlstreamstore'
@@ -9,10 +10,12 @@ type CommandType = {
 
 /**
  * Fetch the schema for a control stream
+ *
+ * @param controlstream
+ * @param networkProperties
+ * @returns
  */
 export async function fetchControlStreamSchema(controlstream: any, networkProperties: any) {
-  const controlStreamStore = useControlStreamStore()
-
   const props = {
     id: controlstream.id,
     'system@id': controlstream.parentId,
@@ -30,10 +33,9 @@ export async function fetchControlStreamSchema(controlstream: any, networkProper
     .then((schema: any) => {
       if (schema) {
         console.log('[ControlstreamUtils] Schema fetched:', schema)
-        console.log('[ControlstreamUtils] Schema id', controlstream.id)
-        // Add schema to store
-        getCommandType(schema.paramsSchema.items, controlstream.id)
-        return schema.paramsSchema.items
+        // Add to store and fetch beautified command schema
+        const prettySchema = getCommandType(schema.paramsSchema.items, controlstream.id)
+        return prettySchema
       }
     })
     .catch((error: any) => {
@@ -42,6 +44,13 @@ export async function fetchControlStreamSchema(controlstream: any, networkProper
     })
 }
 
+/**
+ * Get command type and simplified schema, add to control stream store
+ *
+ * @param schema
+ * @param id
+ * @returns
+ */
 export function getCommandType(schema: any[], id: string) {
   const controlStreamStore = useControlStreamStore()
 
@@ -117,7 +126,10 @@ export function getCommandType(schema: any[], id: string) {
     }
   }
 
-  console.log(id, 'commandType:', commandType, 'commandSchema:', commandSchema)
-
+  // Add to store
   controlStreamStore.addCSSchema(id, commandType, commandSchema)
+
+  console.log(commandSchema)
+
+  return commandSchema
 }

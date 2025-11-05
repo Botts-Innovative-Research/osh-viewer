@@ -103,15 +103,13 @@ usePlaybackModeSync(playbackMode, visualizationStore)
         <v-radio v-for="cs in controlStreams" :key="cs.id" :value="cs" :label="cs.name">
           <template #label>
             <div>
-              
               <p>{{ cs.name || 'Unnamed Stream' }}</p>
               <div class="text-caption text-grey">
-                {{ cs.description || 'No description' }}
               </div>
               <div v-if="csSchemas[cs.id]" class="mt-1 text-body-2">
-                <pre style="overflow:auto;">
-            {{ JSON.stringify(csSchemas[cs.id], null, 2) }}
-          </pre>
+                <p style="overflow:auto;">
+                  {{ Object.keys(csSchemas[cs.id]) }}
+                </p>
               </div>
             </div>
           </template>
