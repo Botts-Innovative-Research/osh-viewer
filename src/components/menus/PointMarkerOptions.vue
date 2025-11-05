@@ -7,6 +7,7 @@ import DataSourcePicker from '@/components/menus/DataSourcePicker.vue'
 import TimePicker from '@/components/menus/TimePicker.vue'
 import { useStartEndTimeSync, usePlaybackModeSync } from '@/composables/DataSourceOptions'
 import { Mode } from 'osh-js/source/core/datasource/Mode.js'
+import DataSourceDropdown from "@/components/menus/DataSourceDropdown.vue";
 
 const visualizationStore = useVisualizationStore()
 const markerDS = ref<any>(null)
@@ -48,10 +49,18 @@ watch(selectedProperty, (val) => {
 
 <template>
   <v-card>
-    <DataSourcePicker title="Point Marker Options" v-model:selectedProperty="selectedProperty" />
-    <TimePicker title="Start Time" v-model:formattedDate="startTime" />
-    <TimePicker title="End Time" v-model:formattedDate="endTime" />
-
+    <DataSourceDropdown
+        title="Point Marker Options"
+        v-model:selectedProperty="selectedProperty"
+    />
+    <TimePicker
+        title="Start Time"
+        v-model:formattedDate="startTime"
+    />
+    <TimePicker
+        title="End Time"
+        v-model:formattedDate="endTime"
+    />
     <v-combobox
       v-model="playbackMode"
       :items="playbackModes"

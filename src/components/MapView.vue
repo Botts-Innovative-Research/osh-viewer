@@ -184,7 +184,7 @@ watch(lobVisualizations, (updated) => {
     });
 
     console.log('[MapView] Creating datasource for LobLayer:', dsInstance)
-    const layerOpts = viz.visualizationComponents.dataLayer
+    const layerOpts  = viz.visualizationComponents.dataLayer
 
     const pmLayer = new PointMarkerLayer({
       name: viz.name,

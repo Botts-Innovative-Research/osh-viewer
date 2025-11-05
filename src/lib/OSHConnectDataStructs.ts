@@ -10,6 +10,7 @@ import { useSystemStore } from '@/stores/systemstore'
 import { useDataStreamStore } from '@/stores/datastreamstore'
 import { useControlStreamStore } from '@/stores/controlstreamstore'
 import { VisualizationComponents } from '@/lib/VisualizationHelpers'
+import {showToast} from "@/composables/useToast";
 
 let sharedStores: any = null;
 
@@ -33,28 +34,38 @@ export class OSHConnect {
     this.nodeStore = stores.nodeStore
   }
 
-  createNode(
+  async createNode(
     name: string,
     host: string,
     port: string | number,
-    endpoint: string,
+    oshPath: string,
+    apiPath: string,
     username: string,
     password: string,
     tls: boolean = false
-  ): OSHNode {
+  ): Promise<OSHNode | null> {
     const newNode = new OSHNode(
       name,
       host,
       port,
-      endpoint,
+      oshPath,
+      apiPath,
       username,
       password,
       tls,
       this
     );
+
+    const reachable = await newNode.checkIsReachable();
+    if (!reachable) {
+        showToast(`Node ${newNode.name} is not reachable`, 'ERROR')
+        return null;
+    }
+
     this.nodeStore.addNode(newNode);
     return newNode;
   }
+
 
   // Fetch all resources that are relatively static
   fetchSlowResources(): void {
@@ -67,7 +78,7 @@ export class OSHConnect {
           console.log(`Collected ${systems.length} systems for node ${node.name}`);
         })
         .catch((error: any) => {
-          console.error(`Error collecting systems for node ${node.name}:`, error);
+            console.error(`Error collecting systems for node ${node.name}:`, error);
         });
     }
   }
@@ -105,6 +116,7 @@ export class OSHNode {
   username: string = '';
   password: string = '';
   apiRoot: string = '';
+  oshPathRoot: string = '';
   systems: OSHSystem[] = [];
   oshConnect: OSHConnect;
   tls: boolean;
@@ -113,6 +125,7 @@ export class OSHNode {
     name: string,
     host: string,
     port: number | string,
+    oshPathRoot: string,
     apiRoot: string,
     username: string,
     password: string,
@@ -123,7 +136,9 @@ export class OSHNode {
     this.name = name;
     this.host = host;
     this.port = port;
-    this.apiRoot = apiRoot;
+      this.oshPathRoot = oshPathRoot;
+
+      this.apiRoot = apiRoot
     this.username = username;
     this.password = password;
     this.tls = tls;
@@ -163,8 +178,37 @@ export class OSHNode {
   }
 
   getEndpointUrl(): string {
-    return `${this.host}:${this.port}/${this.apiRoot}`;
+    return `${this.host}:${this.port}${this.oshPathRoot}${this.apiRoot}`;
   }
+  getConnectedSystemsEndpoint(): string {
+      let protocol = this.tls ? 'https' : 'http';
+      return `${protocol}://${this.host}:${this.port}${this.oshPathRoot}${this.apiRoot}`
+  }
+
+    getBasicAuthHeader() {
+        const encoded = btoa(`${this.username}:${this.password}`);
+        return {"Authorization": `Basic ${encoded}`};
+    }
+
+    async checkIsReachable(): Promise<boolean> {
+      let endpoint = this.getConnectedSystemsEndpoint();
+
+      console.log("endpoint", endpoint)
+      try {
+          const response = await fetch(endpoint, {
+              method: 'GET',
+              mode: 'cors',
+              headers: {
+                  ...this.getBasicAuthHeader(),
+                  'Content-Type': 'application/sml+json'
+              }
+          })
+          return response.ok;
+      } catch (e) {
+          console.error("Node is not reachable: ", e)
+          return false;
+      }
+    }
 }
 
 export class OSHSystem {

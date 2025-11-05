@@ -9,6 +9,7 @@ import { useStartEndTimeSync, usePlaybackModeSync } from '@/composables/DataSour
 import { Mode } from 'osh-js/source/core/datasource/Mode.js'
 import { OSHControlStream } from '@/lib/OSHConnectDataStructs'
 import { computed, PropType } from 'vue'
+import DataSourceDropdown from "@/components/menus/DataSourceDropdown.vue";
 
 
 const visualizationStore = useVisualizationStore()
@@ -76,9 +77,21 @@ usePlaybackModeSync(playbackMode, visualizationStore)
 
 <template>
   <v-card>
-    <DataSourcePicker title="Video Options" v-model:selectedProperty="selectedProperty" />
-    <TimePicker title="Start Time" v-model:formattedDate="startTime" />
-    <TimePicker title="End Time" v-model:formattedDate="endTime" />
+    <DataSourceDropdown
+        title="Video Options"
+        v-model:selectedProperty="selectedProperty"
+    />
+
+    <TimePicker
+        title="Start Time"
+        v-model:formattedDate="startTime"
+    />
+
+    <TimePicker
+        title="End Time"
+        v-model:formattedDate="endTime"
+    />
+
     <v-combobox
       v-model="playbackMode"
       :items="playbackModes"

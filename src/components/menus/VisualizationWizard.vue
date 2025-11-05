@@ -123,9 +123,9 @@ function createVisualization() {
       break;
     case 'lob':
       const lobResult = CreateLOBViewProperties(
-        selectedDatastreams,
+        firstDS, //todo pass all datastreams perhaps
         selectedLOBProperties.value,
-        selectedIconProperties.value, 
+        selectedIconProperties.value,
         vizStore.currentVisDataStreamOptions)
       visualizationComponents = {
         dataSource: lobResult.dataSource,

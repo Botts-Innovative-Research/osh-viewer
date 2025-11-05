@@ -371,72 +371,62 @@ export function CreateMapViewProps(ds: OSHDatastream, selectedProperty: any, sel
   }
 }
 
-export function CreateLOBViewProperties(ds: any, selectedProperty: any, selectedIconProperties: any, visOptions: any): {
-  dataSource: ISweApiDataSourceProperties,
-  mapLayer: ILineOfBearingLayerProperties,
-  mapView: ILineOfBearingViewProperties
-} {
+export function CreateLOBViewProperties(ds: any, selectedProperty: any, selectedIconProperties: any, visOptions: any) {
+
+    // for (const dss of ds.value) {
+        const parentSystem = ds.getParentSystem();
+
+        const dataSource: ISweApiDataSourceProperties = {
+            endpointUrl: ds.datastream.networkProperties.endpointUrl,
+            resource: `/datastreams/${ds.datastream.properties.id}/observations`,
+            tls: false,
+            protocol: 'ws',
+            startTime: visOptions.startTime || 'now',
+            endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
+            mode: Mode.REAL_TIME,
+            responseFormat: 'application/swe+json'
+        };
+
+        const mapLayer: ILineOfBearingLayerProperties = {
+            dataSourceId: ds.datastream.properties.id,
+            getLocation: (rec: any) => ({
+                x: rec[selectedProperty.location].lon,
+                y: rec[selectedProperty.location].lat,
+                z: rec[selectedProperty.location].alt || 0
+            }),
+            getStartLocationAndBearing: (rec: any) => ({
+                startLocation: {
+                    x: rec[selectedProperty.location].lon,
+                    y: rec[selectedProperty.location].lat,
+                    z: rec[selectedProperty.location].alt || 0
+                },
+                bearing: rec[selectedProperty.bearing] * Math.PI / 180
+            }),
+            getPolylineId: (rec: any) => ({ frequency: 1 }),
+            color: selectedProperty.color || 'red',
+            weight: selectedProperty.weight || 3,
+            opacity: selectedProperty.opacity || 0.75,
+            distanceKm: selectedProperty.distanceKm || 10,
+            markerIcon: selectedIconProperties || undefined,
+            name: parentSystem.name
+        };
+
+        const mapView: ILineOfBearingViewProperties = {
+            container: `lob-container-${randomUUID()}`,
+            layers: [mapLayer],
+            css: 'map-view',
+            refreshRate: 1000
+        };
+        return {
+            dataSource,
+            mapLayer,
+            mapView
+        };
+    //     dataSources.push(dataSource);
+    //     mapLayers.push(mapLayer);
+    //     mapViews.push(mapView);
+    // }
 
 
-  const firstDS = ds.value[0]
-  const parentSystem = firstDS.getParentSystem()
-  // Build SweApiDataSourceProperties
-  const dataSource: ISweApiDataSourceProperties = {
-    endpointUrl: firstDS.datastream.networkProperties.endpointUrl,
-    resource: `/datastreams/${firstDS.datastream.properties.id}/observations`,
-    tls: false,
-    protocol: 'ws',
-    startTime: visOptions.startTime || 'now',
-    endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
-    mode: Mode.REAL_TIME,
-    responseFormat: 'application/swe+json'
-  }
-
-  console.log("selectedProperty.bearing",selectedProperty.bearing)
-  // Build MapLayerProperties
-  const mapLayer: ILineOfBearingLayerProperties = {
-    dataSourceId: firstDS.datastream.properties.id,
-    // getLocation: (rec: any) => {
-    //   // Assumes the selectedProperty is an object with lat/lon or similar
-    //   // You may need to adjust this logic based on your schema
-    //   return {
-    //     x: rec[selectedProperty.location].lat,
-    //     y: rec[selectedProperty.location].lon,
-    //     z: rec[selectedProperty.location].alt || 0 // Default to 0 if altitude is not provided
-    //   }
-    // },
-
-    getStartLocationAndBearing: (rec: any) => ({
-      startLocation: {
-        x: rec[selectedProperty.location].lon,
-        y: rec[selectedProperty.location].lat,
-        z: rec[selectedProperty.location].alt || 0
-      },
-      bearing: rec[selectedProperty.bearing] * Math.PI / 180
-    }),
-
-    getPolylineId: (rec: any) => {
-      return { frequency: 1 }
-    },
-    color: selectedProperty.color,
-    weight: selectedProperty.weight,
-    opacity: selectedProperty.opacity,
-    distanceKm: selectedProperty.distanceKm,
-    // markerIcon: selectedIconProperties || undefined,
-    name: parentSystem.name
-  }
-
-  // Build MapViewProperties
-  const mapView: ILineOfBearingViewProperties = {
-    container: `lob-container-${randomUUID()}`,
-    layers: [mapLayer],
-    css: 'map-view',
-    refreshRate: 1000
-  }
-
-  return {
-    dataSource,
-    mapLayer,
-    mapView
-  }
 }
+

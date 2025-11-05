@@ -76,14 +76,16 @@ export interface IVideoViewProperties extends DataViewProperties {
 }
 
 export interface ILineOfBearingLayerProperties extends DataLayerProperties {
-  dataSourceId: string;
-  getStartLocationAndBearing: (rec: any) => { startLocation: { x: number, y: number, z: number }, bearing: number };
-  getPolylineId: (rec: any) => { frequency: number };
-  color: any;
-  weight: number;
-  opacity: number;
-  distanceKm: number;
-  name: string;
+    dataSourceId: string;
+    getLocation: (rec: any) => { x: number, y: number, z: number };
+    getStartLocationAndBearing: (rec: any) => { startLocation: { x: number, y: number, z: number }, bearing: number };
+    getPolylineId: (rec: any) => { frequency: number };
+    color: any;
+    weight: number;
+    opacity: number;
+    distanceKm: number;
+    markerIcon?: string;
+    name: string;
 }
 
 export interface ILineOfBearingViewProperties extends DataViewProperties {

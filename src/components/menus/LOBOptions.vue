@@ -77,10 +77,16 @@ onMounted(() => {
 
 <template>
   <v-card>
-    <DataSourceDropdown title="Location" v-model:selectedProperty="selectedLocation" />
-    <DataSourceDropdown title="Line of Bearing" v-model:selectedProperty="selectedLOB" />
+    <DataSourceDropdown
+        title="Location"
+        v-model:selectedProperty="selectedLocation"
+    />
+    <DataSourceDropdown
+        title="Line of Bearing"
+        v-model:selectedProperty="selectedLOB"
+    />
     <LineLayerPicker
-      title="Select Color and Opacity for LOB"
+      title="Select Line Options for Line of Bearing"
       v-model:lobLineProperties="selectedLobProps"
     />
   </v-card>

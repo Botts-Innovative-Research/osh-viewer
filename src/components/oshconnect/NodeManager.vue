@@ -13,23 +13,25 @@ const oshconnect = useOSHConnectStore().getInstance();
 const nodeName = ref('Test')
 const nodeHost = ref('localhost')
 const nodePort = ref('8282')
-const nodePath = ref('sensorhub/api')
+const nodeOshPath = ref('/sensorhub')
+const nodeApiPath = ref('/api')
 const nodeUser = ref('admin')
 const nodePassword = ref('admin')
+const tls = ref(false)
 
 const createNode = () => {
-  const secure = true;
-
   // This function will be called when the button is clicked
-  console.log('Create Node button clicked')
-  console.log('Node Name:', nodeName.value)
-  console.log('Node Host:', nodeHost.value)
-  console.log('Node Port:', nodePort.value)
-  console.log('Node Path:', nodePath.value)
-  console.log('Node User:', nodeUser.value)
-  console.log('TLS:', secure)
-
-  oshconnect.createNode(nodeName.value, nodeHost.value, nodePort.value, nodePath.value, nodeUser.value, nodePassword.value, secure, this)
+  oshconnect.createNode(
+      nodeName.value,
+      nodeHost.value,
+      nodePort.value,
+      nodeOshPath.value,
+      nodeApiPath.value,
+      nodeUser.value,
+      nodePassword.value,
+      tls.value,
+      this
+  )
 }
 
 function sanitizeAPIRoot(path) {
@@ -44,20 +46,18 @@ function sanitizeAPIRoot(path) {
 </script>
 
 <template>
-  <v-card width="100%" height="100%" class="pa-2 ma-2" elevation="2"
-          title="Node Manager">
-    <v-form>
-      <v-text-field label="Node Name" v-model="nodeName" placeholder="Test"/>
-      <v-text-field label="Node Host" v-model="nodeHost" placeholder="localhost"/>
-      <v-text-field label="Node Port" v-model="nodePort" placeholder="8181"/>
-      <v-text-field label="Node Path" v-model="nodePath" placeholder="sensorhub/api"/>
-      <v-text-field label="Node User" v-model="nodeUser" />
-      <v-text-field label="Node Password" v-model="nodePassword" type="password" />
-      <v-btn @click="createNode">Create Node</v-btn>
-    </v-form>
-  </v-card>
+  <v-form width="100%" height="100%" class="pa-2 ma-2" elevation="2">
+    <v-text-field label="Node Name" v-model="nodeName" placeholder="Test"/>
+    <v-text-field label="Node Host" v-model="nodeHost" placeholder="localhost"/>
+    <v-text-field label="Node Port" v-model="nodePort" placeholder="8181"/>
+    <v-text-field label="Node OSH Path" v-model="nodeOshPath" placeholder="/sensorhub"/>
+    <v-text-field label="Node API Path" v-model="nodeApiPath" placeholder="/api"/>
+    <v-text-field label="Node User" v-model="nodeUser" />
+    <v-text-field label="Node Password" v-model="nodePassword" type="password" />
+    <v-checkbox label="Enable TLS" v-model="tls"></v-checkbox>
 
-
+    <v-btn @click="createNode">Create Node</v-btn>
+  </v-form>
 </template>
 
 <style scoped>
