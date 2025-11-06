@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import PanTiltControl from './PanTiltControl.vue';
-import { Command } from '@/types/types';
+import { showToast } from '@/composables/useToast'
+
 
 // Take in the control stream ID as a prop
 const props = defineProps<{ commandBaseUrl: string, controlStreamId: string }>();
 
-function sendCommand(command: Command) {
+function sendCommand(command: any) {
   console.log(`Sending command to ${props.commandBaseUrl}/controlstreams/${props.controlStreamId}/commands: `, command);
 
   // Command sending logic
@@ -24,13 +25,14 @@ function sendCommand(command: Command) {
     console.log('Camera pan/tilt successful: ', data);
   }).catch(error => {
     console.error('Error sending command: ', error);
+    showToast('Error sending command.', 'ERROR')
   })
 }
 
 </script>
 
 <template>
-  <PanTiltControl :onSend="sendCommand" />
+  <PanTiltControl :onSend="sendCommand" :id="props.controlStreamId" />
 </template>
 
 <style scoped></style>
