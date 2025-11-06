@@ -15,7 +15,7 @@ export const useControlStreamStore = defineStore('controlstreams', () => {
   }
 
   const removeControlStream = (controlStream: OSHControlStream): void => {
-    controlStreams.value = controlStreams.value.filter((ds) => ds !== controlStream)
+    controlStreams.value = controlStreams.value.filter((cs) => cs !== controlStream)
   }
 
   const getControlStreamByName = (name: string): OSHControlStream | undefined => {
