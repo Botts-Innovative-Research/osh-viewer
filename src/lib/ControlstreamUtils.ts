@@ -34,7 +34,8 @@ export async function fetchControlStreamSchema(controlstream: any, networkProper
       if (schema) {
         console.log('[ControlstreamUtils] Schema fetched:', schema)
         // Add to store and fetch beautified command schema
-        const prettySchema = getCommandType(schema.paramsSchema.items, controlstream.id)
+        const schemaItems = schema.paramsSchema.items ? schema.paramsSchema.items : schema.paramsSchema
+        const prettySchema = getCommandType(schemaItems, controlstream.id)
         return prettySchema
       }
     })
@@ -51,7 +52,7 @@ export async function fetchControlStreamSchema(controlstream: any, networkProper
  * @param id
  * @returns
  */
-export function getCommandType(schema: any[], id: string) {
+export function getCommandType(schema: any, id: string) {
   const controlStreamStore = useControlStreamStore()
 
   // Start with empty command schema
@@ -59,7 +60,7 @@ export function getCommandType(schema: any[], id: string) {
   let commandSchema: any = {}
 
   // Check for PTZ camera command schema
-  if (schema.some((item: any) => item.name === 'pan' || item.name === 'rpan')) {
+  if (Array.isArray(schema) && schema.some((item: any) => item.name === 'pan' || item.name === 'rpan')) {
     const type = 'PTZCam'
     let isRelative = false
     let isPreset = false
@@ -124,6 +125,13 @@ export function getCommandType(schema: any[], id: string) {
         zoom: { type: 'number', constraint: commandSchema.zoom.constraint },
       }
     }
+  }
+  // Check for LLA command schema
+  else if (schema.label === 'LLA') {
+    commandType = { type: 'LLA', details: {} }
+    commandSchema.lat = { type: 'number' }
+    commandSchema.lon = { type: 'number' }
+    commandSchema.alt = { type: 'number' }
   }
 
   // Add to store

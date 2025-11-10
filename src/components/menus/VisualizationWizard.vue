@@ -10,7 +10,7 @@ import { storeToRefs } from 'pinia'
 import VideoOptions from '@/components/menus/VideoOptions.vue'
 import GeoPTZOptions from '@/components/menus/GeoPTZOptions.vue'
 import PointMarkerOptions from '@/components/menus/PointMarkerOptions.vue'
-import { CreateChartViewProps, CreateMapViewProps, CreateVideoViewProps } from '@/lib/DatasourceUtils'
+import { CreateChartViewProps, CreateMapViewProps, CreateVideoViewProps, CreateGeoPtzViewProps } from '@/lib/DatasourceUtils'
 import IconPicker from '@/components/menus/IconPicker.vue'
 
 const uiStore = useUIStore();
@@ -111,6 +111,12 @@ function createVisualization() {
       break;
     case 'geoPtz':
       // Add GeoPTZ-specific properties if needed
+      const geoPtzResult = CreateGeoPtzViewProps(selectedDatastream.value, vizStore.currentVisDataStreamOptions);
+      visualizationComponents = {
+        dataSource: geoPtzResult.dataSource,
+        dataLayer: null,
+        dataView: null
+      }
       break;
     case 'text':
       // Add text-specific properties if needed
