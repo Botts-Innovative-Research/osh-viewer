@@ -19,7 +19,7 @@ export const useUIStore = defineStore('ui', () => {
   const mainWindowId = ref<string | null>(null)
 
   // Currently selected datastream (null or object/ID)
-  const selectedDatastream = ref<any | null>(null)
+  const selectedDatastreams = ref<any[]>([])
 
   const selectedProperty = ref<SchemaFieldProperty | null>(null)
 
@@ -42,9 +42,18 @@ export const useUIStore = defineStore('ui', () => {
   function setMainWindowId(id: string | null) {
     mainWindowId.value = id
   }
-  function setSelectedDatastream(ds: any | null) {
-    selectedDatastream.value = ds
+
+
+  function removeSelectedDatastream(dsId: string) {
+    selectedDatastreams.value = selectedDatastreams.value.filter((d) => d.id !== dsId)
   }
+
+  function addSelectedDatastreams(ds: any) {
+    if(!selectedDatastreams.value.find((dss) => dss.id == ds.id)) {
+      selectedDatastreams.value.push(ds)
+    }
+  }
+
   function setSelectedProperty(prop: SchemaFieldProperty | null) {
     selectedProperty.value = prop
   }
@@ -73,13 +82,14 @@ export const useUIStore = defineStore('ui', () => {
     focusedMap,
     activeWindows,
     mainWindowId,
-    selectedDatastream,
+    selectedDatastreams,
     toggleLeftSidebar,
     toggleRightSidebar,
     setFocusedMap,
     setActiveWindows,
     setMainWindowId,
-    setSelectedDatastream,
+    addSelectedDatastreams,
+    removeSelectedDatastream,
     selectedProperty,
     setSelectedProperty,
     theme,

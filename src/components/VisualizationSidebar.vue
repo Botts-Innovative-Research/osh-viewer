@@ -12,6 +12,7 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs'
 import VisualizationWizard from './menus/VisualizationWizard.vue'
 import { storeToRefs } from 'pinia'
 import VisualizationWrapper from './visualizations/VisualizationWrapper.vue'
+import { on } from 'events'
 
 // Each visualization can be represented by an object with a unique id
 // const visualizations = ref<VisualizationMetadata[]>([])

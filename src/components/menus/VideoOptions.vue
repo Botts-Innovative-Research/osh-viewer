@@ -7,6 +7,9 @@ import DataSourcePicker from '@/components/menus/DataSourcePicker.vue'
 import TimePicker from '@/components/menus/TimePicker.vue'
 import { useStartEndTimeSync, usePlaybackModeSync } from '@/composables/DataSourceOptions'
 import { Mode } from 'osh-js/source/core/datasource/Mode.js'
+import { OSHControlStream } from '@/lib/OSHConnectDataStructs'
+import { computed, PropType } from 'vue'
+import DataSourceDropdown from "@/components/menus/DataSourceDropdown.vue";
 
 
 const visualizationStore = useVisualizationStore()
@@ -14,6 +17,18 @@ const videoDS = ref<any>(null)
 const selectedProperty = defineModel('selectedProperty', {
   type: SchemaFieldProperty,
   default: null
+})
+
+// Control Stream Options
+const selectedControlStream = defineModel('selectedControlStream', {
+  type: Object as PropType<OSHControlStream>,
+  default: null
+})
+const controlStreams = computed(() => {
+  const uiStore = useUIStore()
+  const firstDS = uiStore.selectedDatastreams[0]
+
+  return firstDS?.getParentSystem().getCSChildren() || []
 })
 
 const videoType = defineModel('videoType', {
@@ -62,9 +77,21 @@ usePlaybackModeSync(playbackMode, visualizationStore)
 
 <template>
   <v-card>
-    <DataSourcePicker title="Video Options" v-model:selectedProperty="selectedProperty" />
-    <TimePicker title="Start Time" v-model:formattedDate="startTime" />
-    <TimePicker title="End Time" v-model:formattedDate="endTime" />
+    <DataSourceDropdown
+        title="Video Options"
+        v-model:selectedProperty="selectedProperty"
+    />
+
+    <TimePicker
+        title="Start Time"
+        v-model:formattedDate="startTime"
+    />
+
+    <TimePicker
+        title="End Time"
+        v-model:formattedDate="endTime"
+    />
+
     <v-combobox
       v-model="playbackMode"
       :items="playbackModes"
@@ -80,6 +107,13 @@ usePlaybackModeSync(playbackMode, visualizationStore)
       <v-radio-group v-model="videoType">
         <v-radio :value="'H264'" label="H264" />
         <v-radio :value="'MJPEG'" label="MJPEG" />
+      </v-radio-group>
+    </v-card>
+
+    <v-card class="pa-4" elevation="2">
+      <h3>Control Streams</h3>
+      <v-radio-group v-model="selectedControlStream">
+        <v-radio v-for="cs in controlStreams" :key="cs.id" :value="cs" :label="cs.name" />
       </v-radio-group>
     </v-card>
 

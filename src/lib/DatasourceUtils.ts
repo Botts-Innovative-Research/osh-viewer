@@ -9,27 +9,34 @@ import { OSHDatastream } from '@/lib/OSHConnectDataStructs'
 import {
   IChartViewProperties,
   ICurveLayerProperties,
-  ISweApiDataSourceProperties, IVideoLayerProperties,
+  ISweApiDataSourceProperties,
+  IVideoLayerProperties,
   IVideoViewProperties,
   IMapLayerProperties,
-  IMapViewProperties
+  IMapViewProperties,
+  ILineOfBearingLayerProperties,
+  ILineOfBearingViewProperties,
 } from '@/lib/VisualizationHelpers'
 
 
 export function mineDatasourceObsProps(): {ds: any, observedProps: any} {
 
   const uiStore = useUIStore()
-  const ds = uiStore.selectedDatastream
+  const ds = uiStore.selectedDatastreams
 
+  console.log('selected Datastreams', ds)
   if (!ds) {
     console.warn('No datastream selected');
   }
 
-  const observedProps = ds.datastream.properties?.observedProperties || []
-  console.log('[DS-Utils] Observed Properties:', observedProps)
+  const observedProps: any[] = [];
 
-  // fetchSchema(ds.datastream);
+  ds.forEach((dss) => {
+    const obs = dss.datastream.properties?.observedProperties || []
+    observedProps.push(...obs);
+    console.log('[DS-Utils] Observed Properties:', observedProps)
 
+  })
   return { ds, observedProps };
 }
 
@@ -132,9 +139,8 @@ export class SchemaFieldProperty {
 
 // deprecated
 export function CreateChartView(ds: OSHDatastream, selectedProperty: any, visOptions: any): any {
-  console.log('[DatasourceUtils] Creating Chart View for Datastream:', OSHDatastream)
-  // const ds = OSHDatastream.datastream;
   console.log('[DatasourceUtils] Creating Chart View for Datastream:', ds)
+  // const ds = OSHDatastream.datastream;
   // create a datastruct for DataSource props
   const dataSource = new SweApi(ds.name, {
     endpointUrl: ds.datastream.networkProperties.endpointUrl,
@@ -312,11 +318,12 @@ export function CreateVideoViewProps(ds: OSHDatastream, selectedProperty: any, v
  * @param visOptions
  * @constructor
  */
-export function CreateMapViewProps(ds: OSHDatastream, selectedProperty: any, visOptions: any): {
+export function CreateMapViewProps(ds: OSHDatastream, selectedProperty: any, selectedIconProperties: any, visOptions: any): {
   dataSource: ISweApiDataSourceProperties,
   mapLayer: IMapLayerProperties,
   mapView: IMapViewProperties
 } {
+
   console.log('[DatasourceUtils] Creating Map View for Datastream:', ds)
   const parentSystem = ds.getParentSystem()
   // Build SweApiDataSourceProperties
@@ -345,7 +352,7 @@ export function CreateMapViewProps(ds: OSHDatastream, selectedProperty: any, vis
       }
     },
     markerColor: visOptions.markerColor || 'red',
-    markerIcon: visOptions.markerIcon || undefined,
+    markerIcon: selectedIconProperties || undefined,
     name: parentSystem.name
   }
 
@@ -363,3 +370,63 @@ export function CreateMapViewProps(ds: OSHDatastream, selectedProperty: any, vis
     mapView
   }
 }
+
+export function CreateLOBViewProperties(ds: any, selectedProperty: any, selectedIconProperties: any, visOptions: any) {
+
+    // for (const dss of ds.value) {
+        const parentSystem = ds.getParentSystem();
+
+        const dataSource: ISweApiDataSourceProperties = {
+            endpointUrl: ds.datastream.networkProperties.endpointUrl,
+            resource: `/datastreams/${ds.datastream.properties.id}/observations`,
+            tls: false,
+            protocol: 'ws',
+            startTime: visOptions.startTime || 'now',
+            endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
+            mode: Mode.REAL_TIME,
+            responseFormat: 'application/swe+json'
+        };
+
+        const mapLayer: ILineOfBearingLayerProperties = {
+            dataSourceId: ds.datastream.properties.id,
+            getLocation: (rec: any) => ({
+                x: rec[selectedProperty.location].lon,
+                y: rec[selectedProperty.location].lat,
+                z: rec[selectedProperty.location].alt || 0
+            }),
+            getStartLocationAndBearing: (rec: any) => ({
+                startLocation: {
+                    x: rec[selectedProperty.location].lon,
+                    y: rec[selectedProperty.location].lat,
+                    z: rec[selectedProperty.location].alt || 0
+                },
+                bearing: rec[selectedProperty.bearing] * Math.PI / 180
+            }),
+            getPolylineId: (rec: any) => ({ frequency: 1 }),
+            color: selectedProperty.color || 'red',
+            weight: selectedProperty.weight || 3,
+            opacity: selectedProperty.opacity || 0.75,
+            distanceKm: selectedProperty.distanceKm || 10,
+            markerIcon: selectedIconProperties || undefined,
+            name: parentSystem.name
+        };
+
+        const mapView: ILineOfBearingViewProperties = {
+            container: `lob-container-${randomUUID()}`,
+            layers: [mapLayer],
+            css: 'map-view',
+            refreshRate: 1000
+        };
+        return {
+            dataSource,
+            mapLayer,
+            mapView
+        };
+    //     dataSources.push(dataSource);
+    //     mapLayers.push(mapLayer);
+    //     mapViews.push(mapView);
+    // }
+
+
+}
+

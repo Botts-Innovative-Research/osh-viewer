@@ -1,5 +1,6 @@
 <script setup xmlns="http://www.w3.org/1999/html" lang="ts">
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer'
+import LineLayer from 'osh-js/source/core/ui/layer/LineLayer'
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView'
 import { CesiumTerrainProvider, EllipsoidTerrainProvider, Ion, IonResource } from 'cesium'
 import * as Cesium from 'cesium'
@@ -23,6 +24,10 @@ const mapVisualizations = computed(() => {
 
 const featureVisualizations = computed(() => {
   return visualizationStore.getVisualizationsByType('pointmarker-feature')
+})
+
+const lobVisualizations = computed(() => {
+  return visualizationStore.getVisualizationsByType('lob')
 })
 
 
@@ -120,6 +125,7 @@ watch(mapVisualizations, (updated) => {
     })
     console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstance)
     const layerOpts = viz.visualizationComponents.dataLayer
+    console.log('[HERES MY ICON]: ' + layerOpts.markerIcon)
     const pmLayer = new PointMarkerLayer({
       name: viz.name,
       dataSourceIds: [dsInstance.id],
@@ -132,13 +138,89 @@ watch(mapVisualizations, (updated) => {
       //   }
       // },
       label: viz.visualizationComponents.dataLayer.name,
-      icon: '/icons/map/map-marker.svg',
+      // icon: '/icons/map/map-marker.svg',
+      icon: `data:image/svg+xml;base64,${btoa(layerOpts.markerIcon)}`,
       iconSize: [32, 32],
-      labelOffset: [-16, -32],
+      iconAnchor: [16, 16],
+      labelOffset: [-12, -24],
     })
     pmLayers.value.push(pmLayer)
     mapView.value.addLayer(pmLayer)
     console.log('[MapView] Creating PointMarkerLayer:', pmLayer)
+    dsInstance.connect()
+  }
+}, { deep: true })
+
+watch(lobVisualizations, (updated) => {
+  // Remove visualizations that are no longer present
+  const removed = currentVisualizations.value.filter(val => !updated.includes(val))
+  for (const viz of removed) {
+    // Remove corresponding layer from pmLayers and map
+    const idx = currentVisualizations.value.indexOf(viz)
+    if (idx !== -1) {
+      currentVisualizations.value.splice(idx, 1)
+      // Remove layer from pmLayers and mapView
+      const pmLayer = pmLayers.value[idx]
+      if (pmLayer && mapView.value) {
+        mapView.value.removeLayer?.(pmLayer)
+      }
+      pmLayers.value.splice(idx, 1)
+    }
+  }
+
+  // Add new visualizations
+  const newFiltered = updated.filter(val => !currentVisualizations.value.includes(val))
+  console.log('New visualizations:', newFiltered)
+  for (const viz of newFiltered) {
+    currentVisualizations.value.push(viz)
+    let dsInstance = new SweApi('lob-datasource-' + randomUUID(), {
+      endpointUrl: viz.visualizationComponents.dataSource.endpointUrl,
+      resource: viz.visualizationComponents.dataSource.resource,
+      tls: viz.visualizationComponents.dataSource.tls,
+      protocol: viz.visualizationComponents.dataSource.protocol,
+      startTime: viz.visualizationComponents.dataSource.startTime,
+      endTime: viz.visualizationComponents.dataSource.endTime,
+      mode: viz.visualizationComponents.dataSource.mode,
+    });
+
+    console.log('[MapView] Creating datasource for LobLayer:', dsInstance)
+    const layerOpts  = viz.visualizationComponents.dataLayer
+
+    const pmLayer = new PointMarkerLayer({
+      name: viz.name,
+      dataSourceIds: [dsInstance.id],
+      getLocation: layerOpts.getLocation,
+      // getLocation: (rec, timestamp) => {
+      //   return {
+      //     x: rec.location.lat,
+      //     y: rec.location.lon,
+      //     z: rec.location.alt || 0
+      //   }
+      // },
+      label: viz.visualizationComponents.dataLayer.name,
+      // icon: '/icons/map/map-marker.svg',
+      icon: `data:image/svg+xml;base64,${btoa(layerOpts.markerIcon)}`,
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      labelOffset: [-32, -12],
+    })
+    pmLayers.value.push(pmLayer)
+    mapView.value.addLayer(pmLayer)
+    console.log('[MapView] Creating PointMarkerLayer:', pmLayer)
+
+    const lineLayer = new LineLayer({
+      name: viz.name,
+      dataSourceIds: [dsInstance.id],
+      getStartLocationAndBearing: layerOpts.getStartLocationAndBearing, 
+          color :  layerOpts.color,
+          weight : layerOpts.weight,
+          opacity : layerOpts.opacity,
+          distanceKm : layerOpts.distanceKm
+    })
+    pmLayers.value.push(lineLayer)
+    mapView.value.addLayer(lineLayer)
+    console.log('[MapView] Creating LineLayer:', lineLayer)
+
     dsInstance.connect()
   }
 }, { deep: true })
@@ -176,7 +258,7 @@ watch(featureVisualizations, (updated) => {
         labelOffset: [0, 0],
         icon: '/icons/map/map-marker.svg',
         iconSize: [32, 32],
-        iconAnchor: [16, 32],
+        iconAnchor: [16, 16],
         id: viz.id,
         markerId: viz.id + '-feature' + randomUUID()
       })
@@ -211,14 +293,14 @@ function addCesiumMarker(viz: any) {
     labelOffset: [0, 0],
     icon: '/icons/map/map-marker.svg',
     iconSize: [32, 32],
-    iconAnchor: [16, 32],
+    iconAnchor: [16, 16],
     id: viz.id,
     markerId: viz.id + '-feature' + randomUUID()
   }
 
   let markerEnt = mapView.value.addMarker(markerProps, undefined)
 
-  mapView.value.addMarkerToLayer(markerEnt,  markerProps);
+  mapView.value.addMarkerToLayer(markerEnt, markerProps);
 }
 
 
@@ -228,6 +310,7 @@ function addCesiumMarker(viz: any) {
   <div class="maphero">
     <!--    <v-btn @click="addCesiumMarker" position="absolute">Add Cesium Marker</v-btn>-->
     <div class="cesium-container maphero" id="cesiumContainer"></div>
+
   </div>
 
 </template>

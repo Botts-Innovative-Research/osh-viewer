@@ -7,6 +7,7 @@ import DataSourcePicker from '@/components/menus/DataSourcePicker.vue'
 import TimePicker from '@/components/menus/TimePicker.vue'
 import { useStartEndTimeSync, usePlaybackModeSync } from '@/composables/DataSourceOptions'
 import { Mode } from 'osh-js/source/core/datasource/Mode.js'
+import DataSourceDropdown from "@/components/menus/DataSourceDropdown.vue";
 
 const props = defineProps<{
   // onAddChart: () => void;
@@ -54,7 +55,7 @@ watch(selectedProperty, (val) => {
 </script>
 
 <template>
-  <DataSourcePicker title="Chart Options" v-model:selectedProperty="selectedProperty"/>
+  <DataSourceDropdown title="Chart Options" v-model:selectedProperty="selectedProperty" />
   <TimePicker title="Start Time" v-model:formattedDate="startTime" />
   <TimePicker title="End Time" v-model:formattedDate="endTime" />
   <v-combobox

@@ -9,6 +9,8 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs'
 import MJPEGView from 'osh-js/source/core/ui/view/video/MjpegView.js'
 import { SweApiDataSourceProperties, VideoLayerProperties, VideoViewProperties } from '@/lib/VisualizationHelpers'
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js'
+import PTZTaskingComponent from '@/components/PTZTaskingComponent.vue'
+import { computed } from 'vue'
 
 const props = defineProps({
   visualization: {
@@ -52,6 +54,11 @@ const videoDivId = ref('video-' + randomUUID());
 const videoCanvas = ref<HTMLCanvasElement | null>(null);
 const videoHeight = ref(360);
 const videoWidth = ref(480);
+
+const baseUrl = computed(() => {
+  const protocol = props.datasource?.tls ? 'https' : 'http';
+  return `${protocol}://${props.datasource?.endpointUrl}`;
+});
 
 function oldSetup() {
   console.log('Video component mounted with OSHVisualization:', props.visualization)
@@ -156,21 +163,27 @@ onMounted(() => {
 
 <template>
 
-  <v-card :id="videoDivId" class="video-container pa-4" :style="{ width: videoWidth + 'px', height: videoHeight + 'px' }">
+  <v-card :id="videoDivId" class="video-container pa-4"
+    :style="{ width: videoWidth + 'px', height: videoHeight + 'px' }">
     <v-card-title class="text-h5 text-center">{{ props.visualization.name || props.videoTitle }}</v-card-title>
     <!-- Video content will be rendered here -->
   </v-card>
-
+  <PTZTaskingComponent :command-base-url=baseUrl :control-stream-id=props.visualization.controlstream?.id />
 </template>
 
 <style scoped>
 .video-h264 {
   width: 100%;
-  height: 100%;
 }
+
 .video-container {
   width: 480px;
   height: 360px;
-  position: relative;
+}
+
+.ptz-controls {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
 }
 </style>
