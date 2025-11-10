@@ -54,7 +54,7 @@ const fetchResources = () => {
   oshConnect.fetchSlowResources();
 }
 
-const addVisualization = (item) => {
+const addVisualization = (item: any) => {
   console.log('Item properties:', Object.keys(item));
   console.log('Add Visualization button clicked for item:', item);
   addSelectedDatastreams(item)
@@ -66,7 +66,7 @@ const openNodeConfig = () => {
   openNodeConfigForm()
 }
 
-const addFeatureMarker = (item) => {
+const addFeatureMarker = (item: any) => {
   console.log('Add Feature Marker button clicked for item:', item)
   const oshSystem: OSHSystem = item as OSHSystem
 
