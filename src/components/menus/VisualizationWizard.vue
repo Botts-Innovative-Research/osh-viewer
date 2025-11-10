@@ -10,6 +10,12 @@ import { storeToRefs } from 'pinia'
 import VideoOptions from '@/components/menus/VideoOptions.vue'
 import PointMarkerOptions from '@/components/menus/PointMarkerOptions.vue'
 import { CreateChartViewProps, CreateLOBViewProperties, CreateMapViewProps, CreateVideoViewProps } from '@/lib/DatasourceUtils'
+import {
+  CreateChartViewProps,
+  CreateLobViewProps,
+  CreateMapViewProps,
+  CreateVideoViewProps,
+} from '@/lib/DatasourceUtils'
 import IconPicker from '@/components/menus/IconPicker.vue'
 import LOBOptions from './LOBOptions.vue'
 import DataSourceSelector from '@/components/menus/DataSourceSelector.vue'
@@ -17,7 +23,7 @@ import DataSourceSelector from '@/components/menus/DataSourceSelector.vue'
 const uiStore = useUIStore();
 const { selectedDatastreams } = storeToRefs(uiStore);
 
-const vizStore = useVisualizationStore();
+const vizStore = useVisualizationStore()
 const step = ref(0)
 const selectedType = ref('')
 const selectedDSProperty = ref(null)

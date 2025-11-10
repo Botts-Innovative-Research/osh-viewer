@@ -1,6 +1,5 @@
 <script setup xmlns="http://www.w3.org/1999/html" lang="ts">
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer'
-import LineLayer from 'osh-js/source/core/ui/layer/LineLayer'
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView'
 import { CesiumTerrainProvider, EllipsoidTerrainProvider, Ion, IonResource } from 'cesium'
 import * as Cesium from 'cesium'
@@ -11,12 +10,16 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs'
 import { createLocationDataSource } from '@/components/visualizations/DataComposables'
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js'
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js'
+import LineLayer from 'osh-js/source/core/ui/layer/LineLayer'
+import { colorHash, findInObject } from '@/utils'
+import { CreateLobViewProps } from '@/lib/DatasourceUtils'
 
 const visualizationStore = useVisualizationStore()
 const mapLayerType = ref('leaflet')
 const mapView = ref<any>(null)
 const currentVisualizations = ref<OSHVisualization[]>([])
 const pmLayers = ref([])
+const lobLayers = ref([])
 
 const mapVisualizations = computed(() => {
   return visualizationStore.getVisualizationsByType('pointmarker')
@@ -34,19 +37,16 @@ const lobVisualizations = computed(() => {
 
 // Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3ZWYzYjhiMy0wMzcwLTQxMTktOGY1OS0wYzM1NzNlOTI3NDMiLCJpZCI6Mzk4MzMsImlhdCI6MTc0ODIwNDA4OX0.HBox4N50pESMU1yJs33-0cNd22sTvIv0KetnMAJMdXU'
 
-
-
 onMounted(() => {
 
   if (mapLayerType.value === 'leaflet') {
     const leafletMapView = new LeafletView({
       container: 'cesiumContainer',
       layers: [],
-      autoZoomOnFirstMarker: true
+      autoZoomOnFirstMarker: true,
     })
 
-    mapView.value = leafletMapView;
-
+    mapView.value = leafletMapView
   } else {
 
     /*const customViewer = new Cesium.Viewer('cesiumContainer', {
@@ -211,7 +211,7 @@ watch(lobVisualizations, (updated) => {
     const lineLayer = new LineLayer({
       name: viz.name,
       dataSourceIds: [dsInstance.id],
-      getStartLocationAndBearing: layerOpts.getStartLocationAndBearing, 
+      getStartLocationAndBearing: layerOpts.getStartLocationAndBearing,
           color :  layerOpts.color,
           weight : layerOpts.weight,
           opacity : layerOpts.opacity,
@@ -310,7 +310,6 @@ function addCesiumMarker(viz: any) {
   <div class="maphero">
     <!--    <v-btn @click="addCesiumMarker" position="absolute">Add Cesium Marker</v-btn>-->
     <div class="cesium-container maphero" id="cesiumContainer"></div>
-
   </div>
 
 </template>
