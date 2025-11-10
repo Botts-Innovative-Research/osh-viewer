@@ -23,6 +23,9 @@ export const useUIStore = defineStore('ui', () => {
 
   const selectedProperty = ref<SchemaFieldProperty | null>(null)
 
+  // Currently selected GeoPTZ instance (null or controlstream ID)
+  const selectedGeoPTZ = ref<string | null>(null)
+
   // Theme state
   const theme = ref<'dark' | 'light'>('dark')
 
@@ -67,6 +70,14 @@ export const useUIStore = defineStore('ui', () => {
     nodeConfigFormOpen.value = true
   }
 
+  // Handle selection of GeoPTZ instance
+  function setSelectedGeoPTZ(ptzId: string | null) {
+    selectedGeoPTZ.value = ptzId
+  }
+  function clearSelectedGeoPTZ() {
+    selectedGeoPTZ.value = null
+  }
+
   return {
     leftSidebarOpen,
     rightSidebarOpen,
@@ -82,6 +93,7 @@ export const useUIStore = defineStore('ui', () => {
     setSelectedDatastream,
     selectedProperty,
     setSelectedProperty,
+    clearSelectedProperty,
     theme,
     toggleTheme,
     visualizationWizardOpen,
@@ -89,6 +101,9 @@ export const useUIStore = defineStore('ui', () => {
     openVisualizationWizard,
     nodeConfigFormOpen,
     toggleNodeConfigForm,
-    openNodeConfigForm
+    openNodeConfigForm,
+    selectedGeoPTZ,
+    setSelectedGeoPTZ,
+    clearSelectedGeoPTZ,
   }
 })

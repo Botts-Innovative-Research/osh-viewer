@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { SweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js'
 // @ts-ignore
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js'
-
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
+import { useUIStore } from '@/stores/uistore';
 
 // Generate a random ID when the component is created
 const geoPtzId = ref('geoPtz-' + randomUUID())
@@ -28,13 +28,12 @@ const props = defineProps({
 
 // Define PTZ data interface
 interface PTZData {
-  status: boolean;
   pan: number;
   tilt: number;
   zoom: number;
 }
 
-const receivedPTZ = ref();
+const receivedPTZ = ref<PTZData>({ pan: 0, tilt: 0, zoom: 0 });
 
 onMounted(async () => {
   // Create SweApi instance from props.datasource if provided
@@ -60,18 +59,66 @@ onMounted(async () => {
 
   dataBroadcastChannel.onmessage = (message) => {
     if (message.data.type === 'data') {
-      dataDivElement.innerText += JSON.stringify(message.data) + '\n';
+      const data = message.data.values[0].data;
+      receivedPTZ.value = {
+        pan: data.pan,
+        tilt: data.tilt,
+        zoom: data.zoom
+      }
     }
   }
 })
+
+const uiStore = useUIStore();
+const isSelected = ref(false);
+
+// Watch for changes in selectedGeoPTZ to highlight or focus on this instance
+watch(() => uiStore.selectedGeoPTZ, (newPtZId) => {
+  // Check if ID matches this visualization's controlstream ID
+  if (newPtZId === props.visualization.controlstream.id) {
+    console.log('[GeoPtzView] This GeoPTZ instance is selected:', newPtZId);
+    // Add logic to highlight or focus on this GeoPTZ instance in the UI
+    isSelected.value = true;
+  } else {
+    console.log('[GeoPtzView] This GeoPTZ instance is NOT selected:', newPtZId);
+    // Remove highlight or focus if needed
+    isSelected.value = false;
+  }
+});
+
+// Toggle selection of this GeoPTZ instance in UI store
+function toggle() {
+  if (isSelected.value) {
+    uiStore.clearSelectedGeoPTZ();
+  } else {
+    uiStore.setSelectedGeoPTZ(props.visualization.controlstream.id);
+  }
+}
 
 
 </script>
 
 <template>
   <v-card :id="geoPtzId" class="pa-4">
-    <v-card-title>{{visualization.name}}</v-card-title>
-    <p id="datasource-gps"></p>
+    <v-card-title>{{ visualization.name }}</v-card-title>
+    <v-container>
+      <v-row>
+        <v-col>
+          <v-btn icon :color="isSelected ? 'primary' : 'grey'" @click="toggle">
+            <v-icon>{{ isSelected ? 'mdi-check-circle' : 'mdi-circle-outline' }}</v-icon>
+          </v-btn>
+        </v-col>
+        <v-col>
+          <div>
+            <p>Current PTZ Values:</p>
+            <p>Pan: {{ receivedPTZ.pan.toFixed(2) }}</p>
+            <p>Tilt: {{ receivedPTZ.tilt.toFixed(2) }}</p>
+            <p>Zoom: {{ receivedPTZ.zoom.toFixed(2) }}</p>
+          </div>
+        </v-col>
+      </v-row>
+    </v-container>
+
   </v-card>
 </template>
 
