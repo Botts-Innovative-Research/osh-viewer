@@ -77,3 +77,6 @@ When loading environment variables, the order is:
 | `.env.development.local` | Personal dev overrides     | Dev mode only      | ❌ No       |
 
 Later files override earlier ones. So .env.development.local overrides .env.development.
+
+## Setting Custom Endpoint and App Title
+Edit ``.env.local``, ``.env.development``, or ``.env.production`` and set the variables for endpoint and name

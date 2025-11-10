@@ -12,6 +12,7 @@ const cesiumBaseUrl = "public/cesium";
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: JSON.stringify(process.env.VITE_VIEWER_ENDPOINT),
   plugins: [
     vue(),
     vueJsx(),
