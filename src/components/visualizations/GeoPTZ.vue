@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { SweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js'
 // @ts-ignore
@@ -33,7 +33,19 @@ interface PTZData {
   zoom: number;
 }
 
+// Received PTZ data to output
 const receivedPTZ = ref<PTZData>({ pan: 0, tilt: 0, zoom: 0 });
+
+// UI store for managing selected GeoPTZ
+const uiStore = useUIStore();
+const isSelected = ref(false);
+
+// Generate commandBaseUrl from selected visualization's datastream
+const commandBaseUrl = computed(() => {
+  const protocol = props.datasource?.tls ? 'https' : 'http';
+  return `${protocol}://${props.datasource?.endpointUrl}`;
+});
+
 
 onMounted(async () => {
   // Create SweApi instance from props.datasource if provided
@@ -69,11 +81,8 @@ onMounted(async () => {
   }
 })
 
-const uiStore = useUIStore();
-const isSelected = ref(false);
-
 // Watch for changes in selectedGeoPTZ to highlight or focus on this instance
-watch(() => uiStore.selectedGeoPTZ, (newPtZId) => {
+watch(() => uiStore.selectedGeoPTZ?.controlStreamId, (newPtZId) => {
   // Check if ID matches this visualization's controlstream ID
   if (newPtZId === props.visualization.controlstream.id) {
     console.log('[GeoPtzView] This GeoPTZ instance is selected:', newPtZId);
@@ -91,7 +100,7 @@ function toggle() {
   if (isSelected.value) {
     uiStore.clearSelectedGeoPTZ();
   } else {
-    uiStore.setSelectedGeoPTZ(props.visualization.controlstream.id);
+    uiStore.setSelectedGeoPTZ(props.visualization.controlstream.id, commandBaseUrl.value);
   }
 }
 
@@ -102,8 +111,8 @@ function toggle() {
   <v-card :id="geoPtzId" class="pa-4">
     <v-card-title>{{ visualization.name }}</v-card-title>
     <v-container>
-      <v-row>
-        <v-col>
+      <v-row align="center">
+        <v-col align="center">
           <v-btn icon :color="isSelected ? 'primary' : 'grey'" @click="toggle">
             <v-icon>{{ isSelected ? 'mdi-check-circle' : 'mdi-circle-outline' }}</v-icon>
           </v-btn>
