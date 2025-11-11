@@ -8,7 +8,9 @@ import FeatureOfInterestFilter from 'osh-js/source/core/sweapi/featureofinterest
 import { useNodeStore } from '@/stores/nodestore'
 import { useSystemStore } from '@/stores/systemstore'
 import { useDataStreamStore } from '@/stores/datastreamstore'
+import { useControlStreamStore } from '@/stores/controlstreamstore'
 import { VisualizationComponents } from '@/lib/VisualizationHelpers'
+import {showToast} from "@/composables/useToast";
 
 let sharedStores: any = null;
 
@@ -17,7 +19,8 @@ function getSharedStores() {
     sharedStores = {
       nodeStore: useNodeStore(),
       systemStore: useSystemStore(),
-      datastreamStore: useDataStreamStore()
+      datastreamStore: useDataStreamStore(),
+      controlstreamStore: useControlStreamStore(),
     }
   }
   return sharedStores;
@@ -31,28 +34,38 @@ export class OSHConnect {
     this.nodeStore = stores.nodeStore
   }
 
-  createNode(
+  async createNode(
     name: string,
     host: string,
     port: string | number,
-    endpoint: string,
+    oshPath: string,
+    apiPath: string,
     username: string,
     password: string,
     tls: boolean = false
-  ): OSHNode {
+  ): Promise<OSHNode | null> {
     const newNode = new OSHNode(
       name,
       host,
       port,
-      endpoint,
+      oshPath,
+      apiPath,
       username,
       password,
       tls,
       this
     );
+
+    const reachable = await newNode.checkIsReachable();
+    if (!reachable) {
+        showToast(`Node ${newNode.name} is not reachable`, 'ERROR')
+        return null;
+    }
+
     this.nodeStore.addNode(newNode);
     return newNode;
   }
+
 
   // Fetch all resources that are relatively static
   fetchSlowResources(): void {
@@ -65,7 +78,7 @@ export class OSHConnect {
           console.log(`Collected ${systems.length} systems for node ${node.name}`);
         })
         .catch((error: any) => {
-          console.error(`Error collecting systems for node ${node.name}:`, error);
+            console.error(`Error collecting systems for node ${node.name}:`, error);
         });
     }
   }
@@ -80,6 +93,17 @@ export class OSHConnect {
         console.error(`Error collecting data streams for system ${system.name}:`, error);
       });
   }
+
+  fetchControlStreamsOfSystem(system: OSHSystem): void {
+    const controlStreamStore = getSharedStores().controlstreamStore;
+    system.getControlStreams()
+      .then((controlStreams: any[]) => {
+        console.log(`Collected ${controlStreams.length} control streams for system ${system.name}`);
+      })
+      .catch((error: any) => {
+        console.error(`Error collecting control streams for system ${system.name}:`, error);
+      });
+  }
 }
 
 export class OSHNode {
@@ -92,6 +116,7 @@ export class OSHNode {
   username: string = '';
   password: string = '';
   apiRoot: string = '';
+  oshPathRoot: string = '';
   systems: OSHSystem[] = [];
   oshConnect: OSHConnect;
   tls: boolean;
@@ -100,6 +125,7 @@ export class OSHNode {
     name: string,
     host: string,
     port: number | string,
+    oshPathRoot: string,
     apiRoot: string,
     username: string,
     password: string,
@@ -110,7 +136,9 @@ export class OSHNode {
     this.name = name;
     this.host = host;
     this.port = port;
-    this.apiRoot = apiRoot;
+      this.oshPathRoot = oshPathRoot;
+
+      this.apiRoot = apiRoot
     this.username = username;
     this.password = password;
     this.tls = tls;
@@ -137,6 +165,7 @@ export class OSHNode {
       if (!systemStore?.checkIfSystemExists?.(sys.properties.id)) {
         const newSys = new OSHSystem(sys, this);
         newSys.getDataStreams();
+        newSys.getControlStreams();
         newSys.getSamplingFeatures();
         systemStore?.addSystem?.(newSys);
         return newSys;
@@ -149,8 +178,37 @@ export class OSHNode {
   }
 
   getEndpointUrl(): string {
-    return `${this.host}:${this.port}/${this.apiRoot}`;
+    return `${this.host}:${this.port}${this.oshPathRoot}${this.apiRoot}`;
   }
+  getConnectedSystemsEndpoint(): string {
+      let protocol = this.tls ? 'https' : 'http';
+      return `${protocol}://${this.host}:${this.port}${this.oshPathRoot}${this.apiRoot}`
+  }
+
+    getBasicAuthHeader() {
+        const encoded = btoa(`${this.username}:${this.password}`);
+        return {"Authorization": `Basic ${encoded}`};
+    }
+
+    async checkIsReachable(): Promise<boolean> {
+      let endpoint = this.getConnectedSystemsEndpoint();
+
+      console.log("endpoint", endpoint)
+      try {
+          const response = await fetch(endpoint, {
+              method: 'GET',
+              mode: 'cors',
+              headers: {
+                  ...this.getBasicAuthHeader(),
+                  'Content-Type': 'application/sml+json'
+              }
+          })
+          return response.ok;
+      } catch (e) {
+          console.error("Node is not reachable: ", e)
+          return false;
+      }
+    }
 }
 
 export class OSHSystem {
@@ -174,6 +232,8 @@ export class OSHSystem {
     this.system = system;
     this.parentNode = parentNode;
     this.children = [];
+
+    console.log(`[OSHConnect-System] Created system: ${this.name} (ID: ${this.id})`);
   }
 
   async getDataStreams(): Promise<any[]> {
@@ -197,6 +257,27 @@ export class OSHSystem {
     return dataStreams;
   }
 
+  async getControlStreams(): Promise<any[]> {
+    const result: any = await this.system.searchControls(undefined, 100);
+    let controlStreams: any[] = [];
+
+    const controlstreamStore = getSharedStores().controlstreamStore;
+
+    while (result.hasNext()) {
+      const items: any[] = await result.nextPage();
+      // controlStreams.push(...items);
+
+      // create new OSHControlStream objects for each item
+      items.forEach((item: any) => {
+        console.log(`result data:`, item)
+        const newStream = new OSHControlStream(item.properties.name, item.properties.inputName, item.properties?.['system@id'], item);
+        controlstreamStore?.addControlStream?.(newStream);
+        this.children.push(newStream.id)
+      });
+    }
+    return controlStreams;
+  }
+
   async getSamplingFeatures(): Promise<any[]> {
     const result: any = await this.system.searchFeaturesOfInterest(new FeatureOfInterestFilter(), 100);
     let samplingFeatures: any[] = [];
@@ -210,9 +291,16 @@ export class OSHSystem {
     return samplingFeatures;
   }
 
+  // Get datastreams from this system
   getDSChildren(): OSHDatastream[] {
     const datastreamStore = getSharedStores().datastreamStore;
     return datastreamStore.getDataStreamsById(this.children)
+  }
+
+  // Get controlstreams from this system
+  getCSChildren(): OSHControlStream[] {
+    const controlstreamStore = getSharedStores().controlstreamStore;
+    return controlstreamStore.getControlStreamsById(this.children)
   }
 }
 
@@ -247,9 +335,10 @@ export class OSHControlStream {
   name: string
   type: string
   parentId: string | null
+  children: string[] = [];
 
   constructor(name: string, type: string, parentId: string | null, data: any) {
-    this.id = randomUUID();
+    this.id = data.properties.id
     this.name = name
     this.type = type
     this.parentId = parentId
@@ -263,13 +352,15 @@ export class OSHVisualization {
   parentId: string | null
   parentDatastream: OSHDatastream
   visualizationComponents!: VisualizationComponents
+  controlstream: any | null;
 
-  constructor(id: string, name: string, type: string, parentId: string | null, parentDatastream: OSHDatastream) {
+  constructor(id: string, name: string, type: string, parentId: string | null, parentDatastream: OSHDatastream, controlstream: OSHControlStream | any = null) {
     this.id = id;
     this.name = name;
     this.type = type;
     this.parentId = parentId;
     this.parentDatastream = parentDatastream;
+    this.controlstream = controlstream; // Optional control stream associated with the visualization, default null
   }
 
   setVisualizationComponents(components: VisualizationComponents): void {

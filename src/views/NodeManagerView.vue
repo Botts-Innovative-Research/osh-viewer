@@ -10,7 +10,7 @@ import HeaderToolbar from '@/components/HeaderToolbar.vue'
     <v-container fluid class="fill-height pa-0">
       <v-row no-gutters align="stretch" class="fill-height">
         <v-col cols="12" md="6" class="d-flex flex-column fill-height">
-          <v-card class="manager-card flex-grow-1" elevation="6">
+          <v-card title="Node Manager" class="manager-card flex-grow-1" elevation="6">
             <NodeManager class="flex-grow-1" />
           </v-card>
         </v-col>
