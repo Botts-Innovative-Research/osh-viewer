@@ -20,7 +20,7 @@ const systems = useSystemStore().systems
 const datastreamStore = useDataStreamStore()
 const visualizationStore = useVisualizationStore()
 const uiStore = storeToRefs(useUIStore())
-const setSelectedDatastream = useUIStore().setSelectedDatastream
+const addSelectedDatastreams = useUIStore().addSelectedDatastreams
 const activeTab = ref('systems') // Default active tab
 const tabLabels = ref(['Systems', 'DataStreams', 'Nodes'])
 const visualizationWizardOpen = uiStore.visualizationWizardOpen
@@ -54,10 +54,10 @@ const fetchResources = () => {
   oshConnect.fetchSlowResources();
 }
 
-const addVisualization = (item) => {
+const addVisualization = (item: any) => {
   console.log('Item properties:', Object.keys(item));
   console.log('Add Visualization button clicked for item:', item);
-  setSelectedDatastream(item)
+  addSelectedDatastreams(item)
   openVisualizationWizard()
 }
 
@@ -66,7 +66,7 @@ const openNodeConfig = () => {
   openNodeConfigForm()
 }
 
-const addFeatureMarker = (item) => {
+const addFeatureMarker = (item: any) => {
   console.log('Add Feature Marker button clicked for item:', item)
   const oshSystem: OSHSystem = item as OSHSystem
 

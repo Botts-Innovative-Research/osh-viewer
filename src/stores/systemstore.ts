@@ -5,7 +5,7 @@ import { OSHSystem } from '@/lib/OSHConnectDataStructs'
 export const useSystemStore = defineStore('systems', () => {
   const systems = ref<OSHSystem[]>([])
 
-  const addSystem = (system: OSHSystem) => {
+  async function addSystem(system: OSHSystem) {
     // Check if the system already exists
     if (checkIfSystemExists(system.id) || system.id === undefined) {
       console.log("system already exists or id is undefined", system)

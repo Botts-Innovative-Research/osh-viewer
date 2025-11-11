@@ -75,12 +75,39 @@ export interface IVideoViewProperties extends DataViewProperties {
   videoType: string
 }
 
+export interface ILineOfBearingLayerProperties extends DataLayerProperties {
+    dataSourceId: string;
+    getLocation: (rec: any) => { x: number, y: number, z: number };
+    getStartLocationAndBearing: (rec: any) => { startLocation: { x: number, y: number, z: number }, bearing: number };
+    getPolylineId: (rec: any) => { frequency: number };
+    color: any;
+    weight: number;
+    opacity: number;
+    distanceKm: number;
+    markerIcon?: string;
+    name: string;
+}
+
+export interface ILineOfBearingViewProperties extends DataViewProperties {
+  container: string;
+  layers: ILineOfBearingLayerProperties[];
+  css?: string;
+  refreshRate?: number;
+}
+
 export interface IMapLayerProperties extends DataLayerProperties {
   dataSourceId: string;
   getCoordinates: (rec: any) => { lat: number, lon: number };
   markerColor?: string;
   markerIcon?: string;
   name: string;
+}
+
+export interface ILineOfBearingViewProperties extends DataViewProperties {
+  container: string;
+  layers: ILineOfBearingLayerProperties[];
+  css?: string;
+  refreshRate?: number;
 }
 
 export interface IMapViewProperties extends DataViewProperties {
@@ -222,6 +249,41 @@ export class MapViewProperties implements IMapViewProperties {
   refreshRate?: number;
 
   constructor(props: IMapViewProperties) {
+    this.container = props.container;
+    this.layers = props.layers;
+    this.css = props.css;
+    this.refreshRate = props.refreshRate;
+  }
+}
+
+export class LobLayerProperties implements ILineOfBearingLayerProperties {
+  dataSourceId: string;
+  getStartLocationAndBearing: (rec: any) => { startLocation: { x: number, y: number, z: number }, bearing: number };
+  getPolylineId: (rec: any) => { frequency: number };
+  color: any;
+  weight: number;
+  opacity: number;
+  distanceKm: number;
+  name: string;
+
+  constructor(props: ILineOfBearingLayerProperties) {
+    this.dataSourceId = props.dataSourceId;
+    this.getStartLocationAndBearing = props.getStartLocationAndBearing;
+    this.getPolylineId = props.getPolylineId;
+    this.weight = props.weight;
+    this.opacity = props.opacity;
+    this.distanceKm = props.distanceKm;
+    this.name = props.name;
+  }
+}
+
+export class LobViewProperties implements ILineOfBearingViewProperties {
+  container: string;
+  layers: ILineOfBearingLayerProperties[];
+  css?: string;
+  refreshRate?: number;
+
+  constructor(props: ILineOfBearingViewProperties) {
     this.container = props.container;
     this.layers = props.layers;
     this.css = props.css;
