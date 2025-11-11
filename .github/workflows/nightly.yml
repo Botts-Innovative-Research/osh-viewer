@@ -1,0 +1,312 @@
+name: Nightly Build and Test
+
+on:
+  schedule:
+    # Runs every day at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: 'Source branch to merge from'
+        required: false
+        default: 'develop'
+
+jobs:
+  merge-and-test:
+    name: Merge to Nightly and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create or update nightly branch
+        run: |
+          SOURCE_BRANCH="${{ github.event.inputs.source_branch || 'develop' }}"
+          echo "Merging from $SOURCE_BRANCH to nightly"
+          
+          # Check if nightly branch exists remotely
+          if git ls-remote --heads origin nightly | grep nightly; then
+            echo "Nightly branch exists, checking out..."
+            git checkout nightly
+            git pull origin nightly
+          else
+            echo "Creating new nightly branch from $SOURCE_BRANCH..."
+            git checkout -b nightly origin/$SOURCE_BRANCH
+            git push -u origin nightly
+            exit 0
+          fi
+          
+          # Merge source branch into nightly
+          git merge origin/$SOURCE_BRANCH --no-ff -m "Nightly merge from $SOURCE_BRANCH on $(date -u +%Y-%m-%d)"
+
+      - name: Merge all outstanding branches without conflicts
+        id: merge_branches
+        run: |
+          echo "## Branch Merge Report" > merge_report.txt
+          echo "" >> merge_report.txt
+          
+          # Get all remote branches except main, develop, nightly, and HEAD
+          BRANCHES=$(git branch -r | grep -v '\->' | grep -v 'origin/main' | grep -v 'origin/develop' | grep -v 'origin/nightly' | sed 's/origin\///' | xargs)
+          
+          MERGED_BRANCHES=""
+          CONFLICTED_BRANCHES=""
+          SKIPPED_BRANCHES=""
+          
+          echo "Found branches to attempt merging: $BRANCHES"
+          
+          for BRANCH in $BRANCHES; do
+            echo "----------------------------------------"
+            echo "Attempting to merge: $BRANCH"
+            
+            # Skip if branch doesn't exist
+            if ! git rev-parse --verify "origin/$BRANCH" >/dev/null 2>&1; then
+              echo "Branch origin/$BRANCH does not exist, skipping..."
+              SKIPPED_BRANCHES="$SKIPPED_BRANCHES $BRANCH"
+              continue
+            fi
+            
+            # Try to merge with --no-commit and --no-ff to test for conflicts
+            if git merge origin/$BRANCH --no-commit --no-ff >/dev/null 2>&1; then
+              # Check if there are conflicts
+              if git diff --name-only --diff-filter=U | grep -q .; then
+                echo "❌ Merge conflicts detected in $BRANCH"
+                CONFLICTED_BRANCHES="$CONFLICTED_BRANCHES $BRANCH"
+                git merge --abort
+              else
+                # No conflicts, commit the merge
+                echo "✅ Successfully merged $BRANCH without conflicts"
+                git commit -m "Nightly merge: $BRANCH (no conflicts) on $(date -u +%Y-%m-%d)"
+                MERGED_BRANCHES="$MERGED_BRANCHES $BRANCH"
+              fi
+            else
+              # Merge failed, check if it was due to conflicts
+              if git status | grep -q "You have unmerged paths"; then
+                echo "❌ Merge conflicts detected in $BRANCH"
+                CONFLICTED_BRANCHES="$CONFLICTED_BRANCHES $BRANCH"
+                git merge --abort
+              else
+                echo "⚠️ Skipping $BRANCH (may be already merged or other issue)"
+                SKIPPED_BRANCHES="$SKIPPED_BRANCHES $BRANCH"
+              fi
+            fi
+          done
+          
+          # Generate report
+          echo "### ✅ Successfully Merged Branches" >> merge_report.txt
+          if [ -n "$MERGED_BRANCHES" ]; then
+            for BRANCH in $MERGED_BRANCHES; do
+              echo "- $BRANCH" >> merge_report.txt
+            done
+          else
+            echo "- None" >> merge_report.txt
+          fi
+          
+          echo "" >> merge_report.txt
+          echo "### ❌ Branches with Conflicts (Not Merged)" >> merge_report.txt
+          if [ -n "$CONFLICTED_BRANCHES" ]; then
+            for BRANCH in $CONFLICTED_BRANCHES; do
+              echo "- $BRANCH" >> merge_report.txt
+            done
+          else
+            echo "- None" >> merge_report.txt
+          fi
+          
+          echo "" >> merge_report.txt
+          echo "### ⚠️ Skipped Branches" >> merge_report.txt
+          if [ -n "$SKIPPED_BRANCHES" ]; then
+            for BRANCH in $SKIPPED_BRANCHES; do
+              echo "- $BRANCH" >> merge_report.txt
+            done
+          else
+            echo "- None" >> merge_report.txt
+          fi
+          
+          # Output summary
+          cat merge_report.txt
+          
+          # Save for later steps
+          echo "merged_branches=$MERGED_BRANCHES" >> $GITHUB_OUTPUT
+          echo "conflicted_branches=$CONFLICTED_BRANCHES" >> $GITHUB_OUTPUT
+
+      - name: Push nightly branch
+        run: |
+          git push origin nightly
+        continue-on-error: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check code formatting
+        run: npm run format -- --check
+        continue-on-error: true
+
+      - name: Type check
+        run: npx vue-tsc --noEmit
+        continue-on-error: true
+
+      - name: Build development version
+        run: npm run build-only
+        env:
+          NODE_ENV: development
+
+      - name: Build production version
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Create nightly build archive
+        run: |
+          NIGHTLY_DATE=$(date -u +%Y-%m-%d)
+          NIGHTLY_VERSION="nightly-${NIGHTLY_DATE}-${{ github.run_number }}"
+          
+          # Create archive
+          cd dist
+          tar -czf "../osh-viewer-${NIGHTLY_VERSION}.tar.gz" .
+          cd ..
+          
+          # Also create a zip for Windows users
+          cd dist
+          zip -r "../osh-viewer-${NIGHTLY_VERSION}.zip" .
+          cd ..
+          
+          echo "NIGHTLY_VERSION=${NIGHTLY_VERSION}" >> $GITHUB_ENV
+          echo "NIGHTLY_DATE=${NIGHTLY_DATE}" >> $GITHUB_ENV
+
+      - name: Upload nightly build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-build-${{ env.NIGHTLY_VERSION }}
+          path: |
+            osh-viewer-${{ env.NIGHTLY_VERSION }}.tar.gz
+            osh-viewer-${{ env.NIGHTLY_VERSION }}.zip
+          retention-days: 14
+
+      - name: Create build summary
+        run: |
+          echo "## Nightly Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** $(date -u +%Y-%m-%d\ %H:%M:%S\ UTC)" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ env.NIGHTLY_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Source Branch:** ${{ github.event.inputs.source_branch || 'develop' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Target Branch:** nightly" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Add merge report
+          if [ -f merge_report.txt ]; then
+            cat merge_report.txt >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "### Build Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- Distribution size: $(du -sh dist/ | cut -f1)" >> $GITHUB_STEP_SUMMARY
+          echo "- Files created: $(find dist/ -type f | wc -l)" >> $GITHUB_STEP_SUMMARY
+          echo "- Archive (tar.gz): $(du -sh osh-viewer-${{ env.NIGHTLY_VERSION }}.tar.gz | cut -f1)" >> $GITHUB_STEP_SUMMARY
+          echo "- Archive (zip): $(du -sh osh-viewer-${{ env.NIGHTLY_VERSION }}.zip | cut -f1)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "## ❌ Nightly Build Failed" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** $(date -u +%Y-%m-%d\ %H:%M:%S\ UTC)" >> $GITHUB_STEP_SUMMARY
+          echo "**Source Branch:** ${{ github.event.inputs.source_branch || 'develop' }}" >> $GITHUB_STEP_SUMMARY
+          echo "Please check the workflow logs for details." >> $GITHUB_STEP_SUMMARY
+
+      - name: Save nightly info for release
+        if: success()
+        run: |
+          echo "${{ env.NIGHTLY_VERSION }}" > nightly_version.txt
+          echo "${{ env.NIGHTLY_DATE }}" > nightly_date.txt
+
+      - name: Upload nightly info
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-info
+          path: |
+            nightly_version.txt
+            nightly_date.txt
+            merge_report.txt
+          retention-days: 1
+
+  create-release:
+    name: Create Nightly Release
+    needs: merge-and-test
+    runs-on: ubuntu-latest
+    if: success()
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download nightly build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: nightly-*
+          merge-multiple: true
+
+      - name: Read nightly info
+        id: nightly_info
+        run: |
+          NIGHTLY_VERSION=$(cat nightly_version.txt)
+          NIGHTLY_DATE=$(cat nightly_date.txt)
+          echo "version=${NIGHTLY_VERSION}" >> $GITHUB_OUTPUT
+          echo "date=${NIGHTLY_DATE}" >> $GITHUB_OUTPUT
+
+      - name: Delete existing nightly release
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete nightly --repo ${{ github.repository }} --yes || true
+          git push --delete origin nightly-release || true
+
+      - name: Create nightly release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: nightly-release
+          name: "Nightly Build - ${{ steps.nightly_info.outputs.date }}"
+          body: |
+            # OSH Viewer Nightly Build
+            
+            **Build Date:** ${{ steps.nightly_info.outputs.date }}
+            **Version:** ${{ steps.nightly_info.outputs.version }}
+            **Run Number:** ${{ github.run_number }}
+            
+            This is an automated nightly build that includes all branches that can be merged without conflicts.
+            
+            ## Download
+            - **Linux/macOS:** Download the `.tar.gz` file
+            - **Windows:** Download the `.zip` file
+            
+            ## Installation
+            1. Download the appropriate archive for your platform
+            2. Extract the archive
+            3. Serve the files with a web server (e.g., `python -m http.server` or `npx serve`)
+            
+            ---
+            
+            ⚠️ **Note:** This is a nightly build and may contain unstable or experimental features.
+            
+            For stable releases, please check the [releases page](https://github.com/${{ github.repository }}/releases).
+          files: |
+            osh-viewer-${{ steps.nightly_info.outputs.version }}.tar.gz
+            osh-viewer-${{ steps.nightly_info.outputs.version }}.zip
+          prerelease: true
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

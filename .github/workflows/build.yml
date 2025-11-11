@@ -1,0 +1,74 @@
+name: Build Dev and Prod
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  build-dev:
+    name: Build Development
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build development version
+        run: npm run dev -- --mode development
+        env:
+          NODE_ENV: development
+
+      - name: Upload dev build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-build
+          path: dist/
+          retention-days: 7
+
+  build-prod:
+    name: Build Production
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production version
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Upload prod build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-build
+          path: dist/
+          retention-days: 30
+
+      - name: Create build summary
+        run: |
+          echo "## Production Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "Build completed successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "Artifact size: $(du -sh dist/ | cut -f1)" >> $GITHUB_STEP_SUMMARY
+
