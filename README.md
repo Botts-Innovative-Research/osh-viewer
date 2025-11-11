@@ -49,14 +49,12 @@ pipeline to not commit any secrets.
 ## Usages
 
 - `.env.local` :
-
     - Purpose: Developer-specific overrides, regardless of mode.
     - Loaded in all modes: development, production, test, etc.
     - Use for: Secrets or personal tweaks (e.g., API keys, local ports).
     - Should be in .gitignore: Never committed to version control.
 
 - `.env.development` :
-
     - Purpose: Environment-specific configuration for development mode.
     - Loaded when: You run your app in development (e.g., npm run dev or vite --mode development).
     - Use for: Settings that apply to all developers during development.

@@ -1,7 +1,6 @@
 ## OSH JS Issues
 
 1. web worker imports
-
     - instead of importing DataSourceWorker.worker.js, the import should happen as the worker is created
 
     ```
