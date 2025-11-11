@@ -9,27 +9,34 @@ import { OSHDatastream } from '@/lib/OSHConnectDataStructs'
 import {
   IChartViewProperties,
   ICurveLayerProperties,
-  ISweApiDataSourceProperties, IVideoLayerProperties,
+  ISweApiDataSourceProperties,
+  IVideoLayerProperties,
   IVideoViewProperties,
   IMapLayerProperties,
-  IMapViewProperties
+  IMapViewProperties,
+  ILineOfBearingLayerProperties,
+  ILineOfBearingViewProperties,
 } from '@/lib/VisualizationHelpers'
+import { colorHash } from '@/utils'
 
 
 export function mineDatasourceObsProps(): {ds: any, observedProps: any} {
 
   const uiStore = useUIStore()
-  const ds = uiStore.selectedDatastream
+  const ds = uiStore.selectedDatastreams
 
   if (!ds) {
     console.warn('No datastream selected');
   }
 
-  const observedProps = ds.datastream.properties?.observedProperties || []
-  console.log('[DS-Utils] Observed Properties:', observedProps)
+  const observedProps: any[] = [];
 
-  // fetchSchema(ds.datastream);
+  ds.forEach((dss) => {
+    const obs = dss.datastream.properties?.observedProperties || []
+    observedProps.push(...obs);
+    console.log('[DS-Utils] Observed Properties:', observedProps)
 
+  })
   return { ds, observedProps };
 }
 
@@ -132,9 +139,8 @@ export class SchemaFieldProperty {
 
 // deprecated
 export function CreateChartView(ds: OSHDatastream, selectedProperty: any, visOptions: any): any {
-  console.log('[DatasourceUtils] Creating Chart View for Datastream:', OSHDatastream)
-  // const ds = OSHDatastream.datastream;
   console.log('[DatasourceUtils] Creating Chart View for Datastream:', ds)
+  // const ds = OSHDatastream.datastream;
   // create a datastruct for DataSource props
   const dataSource = new SweApi(ds.name, {
     endpointUrl: ds.datastream.networkProperties.endpointUrl,
@@ -276,7 +282,8 @@ export function CreateVideoViewProps(ds: OSHDatastream, selectedProperty: any, v
   const videoLayer: IVideoLayerProperties = {
     dataSourceId: ds.datastream.properties.id,
     getFrameData(rec, timestamp) {
-        return rec[selectedProperty.name]
+
+      return rec[selectedProperty.name] ? rec[selectedProperty.name] : rec.img
     },
     getTimestamp(rec, timestamp) {
         return rec.timestamp
@@ -312,11 +319,12 @@ export function CreateVideoViewProps(ds: OSHDatastream, selectedProperty: any, v
  * @param visOptions
  * @constructor
  */
-export function CreateMapViewProps(ds: OSHDatastream, selectedProperty: any, visOptions: any): {
+export function CreateMapViewProps(ds: OSHDatastream, selectedProperty: any, selectedIconProperties: any, visOptions: any): {
   dataSource: ISweApiDataSourceProperties,
   mapLayer: IMapLayerProperties,
   mapView: IMapViewProperties
 } {
+
   console.log('[DatasourceUtils] Creating Map View for Datastream:', ds)
   const parentSystem = ds.getParentSystem()
   // Build SweApiDataSourceProperties
@@ -345,7 +353,7 @@ export function CreateMapViewProps(ds: OSHDatastream, selectedProperty: any, vis
       }
     },
     markerColor: visOptions.markerColor || 'red',
-    markerIcon: visOptions.markerIcon || undefined,
+    markerIcon: selectedIconProperties || undefined,
     name: parentSystem.name
   }
 
@@ -361,5 +369,131 @@ export function CreateMapViewProps(ds: OSHDatastream, selectedProperty: any, vis
     dataSource,
     mapLayer,
     mapView
+  }
+}
+
+export function CreateLOBViewProperties(ds: any, selectedProperty: any, selectedIconProperties: any, visOptions: any) {
+
+    // for (const dss of ds.value) {
+        const parentSystem = ds.getParentSystem();
+
+        const dataSource: ISweApiDataSourceProperties = {
+            endpointUrl: ds.datastream.networkProperties.endpointUrl,
+            resource: `/datastreams/${ds.datastream.properties.id}/observations`,
+            tls: false,
+            protocol: 'ws',
+            startTime: visOptions.startTime || 'now',
+            endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
+            mode: Mode.REAL_TIME,
+            responseFormat: 'application/swe+json'
+        };
+
+        const mapLayer: ILineOfBearingLayerProperties = {
+            dataSourceId: ds.datastream.properties.id,
+            getLocation: (rec: any) => ({
+                x: rec[selectedProperty.location].lon,
+                y: rec[selectedProperty.location].lat,
+                z: rec[selectedProperty.location].alt || 0
+            }),
+            getStartLocationAndBearing: (rec: any) => ({
+                startLocation: {
+                    x: rec[selectedProperty.location].lon,
+                    y: rec[selectedProperty.location].lat,
+                    z: rec[selectedProperty.location].alt || 0
+                },
+                bearing: rec[selectedProperty.bearing] * Math.PI / 180
+            }),
+            getPolylineId: (rec: any) => ({ frequency: 1 }),
+            color: selectedProperty.color || 'red',
+            weight: selectedProperty.weight || 3,
+            opacity: selectedProperty.opacity || 0.75,
+            distanceKm: selectedProperty.distanceKm || 10,
+            markerIcon: selectedIconProperties || undefined,
+            name: parentSystem.name
+        };
+
+        const mapView: ILineOfBearingViewProperties = {
+            container: `lob-container-${randomUUID()}`,
+            layers: [mapLayer],
+            css: 'map-view',
+            refreshRate: 1000
+        };
+        return {
+            dataSource,
+            mapLayer,
+            mapView
+        };
+    //     dataSources.push(dataSource);
+    //     mapLayers.push(mapLayer);
+    //     mapViews.push(mapView);
+    // }
+
+
+}
+
+
+
+/**
+ * Creates properties for a Map View based on the provided datastream, selected property, and visualization options.
+ * @param ds
+ * @param selectedProperty
+ * @param visOptions
+ * @constructor
+ */
+export function CreateLobViewProps(ds: OSHDatastream, selectedProperty: any, visOptions: any): {
+  dataSource: ISweApiDataSourceProperties,
+  lobLayer: ILineOfBearingLayerProperties,
+  lobView: ILineOfBearingViewProperties
+} {
+  console.log('[DatasourceUtils] Creating Lob View for Datastream:', ds)
+  const parentSystem = ds.getParentSystem()
+  // Build SweApiDataSourceProperties
+  const dataSource: ISweApiDataSourceProperties = {
+    endpointUrl: ds.datastream.networkProperties.endpointUrl,
+    resource: `/datastreams/${ds.datastream.properties.id}/observations`,
+    tls: false,
+    protocol: 'ws',
+    startTime: visOptions.startTime || 'now',
+    endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
+    mode: visOptions.replayMode.value || Mode.REAL_TIME,
+    responseFormat: 'application/swe+json'
+  }
+
+  console.log('[DatasourceUtils] Creating LOB Layer for property:', selectedProperty)
+  // Build MapLayerProperties
+  const lobLayer: ILineOfBearingLayerProperties = {
+    dataSourceId: ds.datastream.properties.id,
+    getStartLocationAndBearing: (rec: any) => {
+      return {
+        startLocation: {
+          x: rec[selectedProperty.name].lon,
+          y: rec[selectedProperty.name].lat,
+          z: rec[selectedProperty.name].alt || 0, // Default to 0 if altitude is not provided
+        },
+        bearing: (rec[selectedProperty.name].raw_lob * Math.PI) / 180,
+      }
+    },
+    getPolylineId: (rec: any) => {
+      return { frequency: rec[selectedProperty.name].frequency }
+    },
+    color: visOptions.color,
+    weight: visOptions.weight,
+    opacity: visOptions.opacity,
+    distanceKm: visOptions.distanceKm,
+    name: parentSystem.name
+  }
+
+  // Build MapViewProperties
+  const lobView: ILineOfBearingViewProperties = {
+    container: `map-container-${randomUUID()}`,
+    layers: [lobLayer],
+    css: 'map-view',
+    refreshRate: 1000
+  }
+
+  return {
+    dataSource,
+    lobLayer,
+    lobView
   }
 }

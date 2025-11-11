@@ -1,6 +1,6 @@
 <script setup>
-import { ref } from 'vue'
-import AppSettings from './menus/AppSettings.vue'
+	import { ref } from 'vue';
+	import AppSettings from './menus/AppSettings.vue';
 
 const settingsDialog = ref(false)
 const viewerName = import.meta.env.VITE_VIEWER_NAME;
@@ -25,7 +25,7 @@ const viewerName = import.meta.env.VITE_VIEWER_NAME;
 </template>
 
 <style scoped>
-/*header {
+	/*header {
   width: 100vw;
   display: flex;
   justify-content: space-evenly;
