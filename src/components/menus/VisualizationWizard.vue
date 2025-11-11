@@ -15,12 +15,6 @@
 		CreateMapViewProps,
 		CreateVideoViewProps,
 	} from '@/lib/DatasourceUtils';
-	import {
-		CreateChartViewProps,
-		CreateLobViewProps,
-		CreateMapViewProps,
-		CreateVideoViewProps,
-	} from '@/lib/DatasourceUtils';
 	import IconPicker from '@/components/menus/IconPicker.vue';
 	import LOBOptions from './LOBOptions.vue';
 	import DataSourceSelector from '@/components/menus/DataSourceSelector.vue';
