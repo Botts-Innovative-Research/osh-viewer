@@ -8,8 +8,8 @@
 		"build": "run-p \"build-only {@}\" --",
 		"preview": "vite preview",
 		"build-only": "vite build",
-		"format": "prettier --write \"**/*.{js,ts,vue,css,scss,md,json}\"",
-		"format:check": "prettier --check \"**/*.{js,ts,vue,css,scss,md,json}\"",
+		"format": "prettier --write \"**/*.{js,ts,vue,css,scss,md,json}\" --ignore-path .prettierignore",
+		"format:check": "prettier --check \"**/*.{js,ts,vue,css,scss,md,json}\" --ignore-path .prettierignore",
 		"host": "vite --host",
 		"prepare": "husky"
 	},
@@ -58,7 +58,7 @@
 	},
 	"lint-staged": {
 		"**/*.{js,ts,vue,css,scss,md,json}": [
-			"prettier --write",
+			"prettier --write --ignore-path .prettierignore",
 			"git add"
 		]
 	}

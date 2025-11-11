@@ -7,6 +7,10 @@
   "trailingComma": "es5",
   "bracketSpacing": true,
   "arrowParens": "always",
-  "endOfLine": "lf"
+  "endOfLine": "lf",
+  "vueIndentScriptAndStyle": true,
+  "singleAttributePerLine": false,
+  "quoteProps": "as-needed",
+  "bracketSameLine": true
 }
 
