@@ -218,7 +218,7 @@ function addCesiumMarker(viz: any) {
 
   let markerEnt = mapView.value.addMarker(markerProps, undefined)
 
-  mapView.value.addMarkerToLayer(markerEnt,  markerProps);
+  mapView.value.addMarkerToLayer(markerEnt, markerProps);
 }
 
 
@@ -228,6 +228,7 @@ function addCesiumMarker(viz: any) {
   <div class="maphero">
     <!--    <v-btn @click="addCesiumMarker" position="absolute">Add Cesium Marker</v-btn>-->
     <div class="cesium-container maphero" id="cesiumContainer"></div>
+
   </div>
 
 </template>

@@ -8,6 +8,7 @@ import FeatureOfInterestFilter from 'osh-js/source/core/sweapi/featureofinterest
 import { useNodeStore } from '@/stores/nodestore'
 import { useSystemStore } from '@/stores/systemstore'
 import { useDataStreamStore } from '@/stores/datastreamstore'
+import { useControlStreamStore } from '@/stores/controlstreamstore'
 import { VisualizationComponents } from '@/lib/VisualizationHelpers'
 
 let sharedStores: any = null;
@@ -17,7 +18,8 @@ function getSharedStores() {
     sharedStores = {
       nodeStore: useNodeStore(),
       systemStore: useSystemStore(),
-      datastreamStore: useDataStreamStore()
+      datastreamStore: useDataStreamStore(),
+      controlstreamStore: useControlStreamStore(),
     }
   }
   return sharedStores;
@@ -80,6 +82,17 @@ export class OSHConnect {
         console.error(`Error collecting data streams for system ${system.name}:`, error);
       });
   }
+
+  fetchControlStreamsOfSystem(system: OSHSystem): void {
+    const controlStreamStore = getSharedStores().controlstreamStore;
+    system.getControlStreams()
+      .then((controlStreams: any[]) => {
+        console.log(`Collected ${controlStreams.length} control streams for system ${system.name}`);
+      })
+      .catch((error: any) => {
+        console.error(`Error collecting control streams for system ${system.name}:`, error);
+      });
+  }
 }
 
 export class OSHNode {
@@ -137,6 +150,7 @@ export class OSHNode {
       if (!systemStore?.checkIfSystemExists?.(sys.properties.id)) {
         const newSys = new OSHSystem(sys, this);
         newSys.getDataStreams();
+        newSys.getControlStreams();
         newSys.getSamplingFeatures();
         systemStore?.addSystem?.(newSys);
         return newSys;
@@ -174,6 +188,8 @@ export class OSHSystem {
     this.system = system;
     this.parentNode = parentNode;
     this.children = [];
+
+    console.log(`[OSHConnect-System] Created system: ${this.name} (ID: ${this.id})`);
   }
 
   async getDataStreams(): Promise<any[]> {
@@ -197,6 +213,27 @@ export class OSHSystem {
     return dataStreams;
   }
 
+  async getControlStreams(): Promise<any[]> {
+    const result: any = await this.system.searchControls(undefined, 100);
+    let controlStreams: any[] = [];
+
+    const controlstreamStore = getSharedStores().controlstreamStore;
+
+    while (result.hasNext()) {
+      const items: any[] = await result.nextPage();
+      // controlStreams.push(...items);
+
+      // create new OSHControlStream objects for each item
+      items.forEach((item: any) => {
+        console.log(`result data:`, item)
+        const newStream = new OSHControlStream(item.properties.name, item.properties.inputName, item.properties?.['system@id'], item);
+        controlstreamStore?.addControlStream?.(newStream);
+        this.children.push(newStream.id)
+      });
+    }
+    return controlStreams;
+  }
+
   async getSamplingFeatures(): Promise<any[]> {
     const result: any = await this.system.searchFeaturesOfInterest(new FeatureOfInterestFilter(), 100);
     let samplingFeatures: any[] = [];
@@ -210,9 +247,16 @@ export class OSHSystem {
     return samplingFeatures;
   }
 
+  // Get datastreams from this system
   getDSChildren(): OSHDatastream[] {
     const datastreamStore = getSharedStores().datastreamStore;
     return datastreamStore.getDataStreamsById(this.children)
+  }
+
+  // Get controlstreams from this system
+  getCSChildren(): OSHControlStream[] {
+    const controlstreamStore = getSharedStores().controlstreamStore;
+    return controlstreamStore.getControlStreamsById(this.children)
   }
 }
 
@@ -247,9 +291,10 @@ export class OSHControlStream {
   name: string
   type: string
   parentId: string | null
+  children: string[] = [];
 
   constructor(name: string, type: string, parentId: string | null, data: any) {
-    this.id = randomUUID();
+    this.id = data.properties.id
     this.name = name
     this.type = type
     this.parentId = parentId
@@ -263,13 +308,15 @@ export class OSHVisualization {
   parentId: string | null
   parentDatastream: OSHDatastream
   visualizationComponents!: VisualizationComponents
+  controlstream: any | null;
 
-  constructor(id: string, name: string, type: string, parentId: string | null, parentDatastream: OSHDatastream) {
+  constructor(id: string, name: string, type: string, parentId: string | null, parentDatastream: OSHDatastream, controlstream: OSHControlStream | any = null) {
     this.id = id;
     this.name = name;
     this.type = type;
     this.parentId = parentId;
     this.parentDatastream = parentDatastream;
+    this.controlstream = controlstream; // Optional control stream associated with the visualization, default null
   }
 
   setVisualizationComponents(components: VisualizationComponents): void {

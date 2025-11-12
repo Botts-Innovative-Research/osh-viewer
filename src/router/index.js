@@ -18,11 +18,6 @@ const router = createRouter({
       component: () => import('../views/AboutView.vue'),
     },
     {
-      path: '/nodemanager',
-      name: 'nodemanager',
-      component: () => import('../views/NodeManagerView.vue'),
-    },
-    {
       path: '/mapview',
       name: 'mapview',
       component: () => import('../components/MapView.vue'),
