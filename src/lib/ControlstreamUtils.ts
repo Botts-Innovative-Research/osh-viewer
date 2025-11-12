@@ -2,10 +2,44 @@ import { h, ref } from 'vue'
 import ControlFilter from 'osh-js/source/core/sweapi/control/ControlFilter'
 import Control from 'osh-js/source/core/sweapi/control/Control'
 import { useControlStreamStore } from '@/stores/controlstreamstore'
+import { showToast } from "@/composables/useToast";
+
 
 type CommandType = {
   type: string
   details: { [key: string]: any }
+}
+
+/**
+ * Generic function to send a command through a controlstream
+ * 
+ * @param commandBaseUrl 
+ * @param controlStreamId 
+ * @param command 
+ */
+export function sendCommand(commandBaseUrl: string, controlStreamId: string, command: any) {
+  
+  console.log(`Sending command to ${commandBaseUrl}/controlstreams/${controlStreamId}/commands: `, command);
+
+  // Command sending logic
+  fetch(`${commandBaseUrl}/controlstreams/${controlStreamId}/commands`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(command)
+  }).then(response => {
+    if (!response.ok) {
+      throw new Error('API call failed: ' + response.statusText);
+    }
+    return response.json();
+  }).then(data => {
+    console.log('Command successful: ', data);
+  }).catch(error => {
+    console.error('Error sending command: ', error);
+    showToast('Error sending command.', 'ERROR')
+  })
+
 }
 
 /**
@@ -34,7 +68,8 @@ export async function fetchControlStreamSchema(controlstream: any, networkProper
       if (schema) {
         console.log('[ControlstreamUtils] Schema fetched:', schema)
         // Add to store and fetch beautified command schema
-        const prettySchema = getCommandType(schema.paramsSchema.items, controlstream.id)
+        const schemaItems = schema.paramsSchema.items ? schema.paramsSchema.items : schema.paramsSchema
+        const prettySchema = getCommandType(schemaItems, controlstream.id)
         return prettySchema
       }
     })
@@ -51,7 +86,7 @@ export async function fetchControlStreamSchema(controlstream: any, networkProper
  * @param id
  * @returns
  */
-export function getCommandType(schema: any[], id: string) {
+export function getCommandType(schema: any, id: string) {
   const controlStreamStore = useControlStreamStore()
 
   // Start with empty command schema
@@ -59,7 +94,7 @@ export function getCommandType(schema: any[], id: string) {
   let commandSchema: any = {}
 
   // Check for PTZ camera command schema
-  if (schema.some((item: any) => item.name === 'pan' || item.name === 'rpan')) {
+  if (Array.isArray(schema) && schema.some((item: any) => item.name === 'pan' || item.name === 'rpan')) {
     const type = 'PTZCam'
     let isRelative = false
     let isPreset = false
@@ -124,6 +159,13 @@ export function getCommandType(schema: any[], id: string) {
         zoom: { type: 'number', constraint: commandSchema.zoom.constraint },
       }
     }
+  }
+  // Check for LLA command schema
+  else if (schema.label === 'LLA') {
+    commandType = { type: 'LLA', details: {} }
+    commandSchema.lat = { type: 'number' }
+    commandSchema.lon = { type: 'number' }
+    commandSchema.alt = { type: 'number' }
   }
 
   // Add to store

@@ -91,8 +91,8 @@ export interface IMapViewProperties extends DataViewProperties {
 }
 
 export class VisualizationComponents {
-  dataLayer: DataLayerProperties
-  dataView: DataViewProperties
+  dataLayer: DataLayerProperties | null
+  dataView: DataViewProperties | null
   dataSource: DataSourceProperties
 
   constructor(datasource: SweApi, dataLayer: any, dataView: any) {

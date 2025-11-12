@@ -6,10 +6,12 @@ import * as Cesium from 'cesium'
 import LeafletView from 'osh-js/source/core/ui/view/map/LeafletView'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useVisualizationStore } from '../stores/visualizationstore'
+import { useUIStore } from '@/stores/uistore'
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs'
 import { createLocationDataSource } from '@/components/visualizations/DataComposables'
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js'
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js'
+import { sendCommand } from '@/lib/ControlstreamUtils'
 
 const visualizationStore = useVisualizationStore()
 const mapLayerType = ref('leaflet')
@@ -24,6 +26,9 @@ const mapVisualizations = computed(() => {
 const featureVisualizations = computed(() => {
   return visualizationStore.getVisualizationsByType('pointmarker-feature')
 })
+
+// Fetch UI store for GeoPTZ tool
+const uiStore = useUIStore();
 
 
 
@@ -41,6 +46,30 @@ onMounted(() => {
     })
 
     mapView.value = leafletMapView;
+
+    // GEOPTZ - Add listener for point clicks
+    leafletMapView.map.on('click', (event: any) => {
+      console.log('[MapView] Point clicked:', event)
+
+      // Fetch selected GeoPTZ in UI store
+      const selectedGeoPTZ = uiStore.selectedGeoPTZ;
+      if (selectedGeoPTZ) {
+        // Send GeoPTZ command to selected GeoPTZ visualization
+        const commandBaseUrl = selectedGeoPTZ.commandBaseUrl;
+        const controlStreamId = selectedGeoPTZ.controlStreamId;
+
+        const command = {
+          params: {
+            lat: event.latlng.lat,
+            lon: event.latlng.lng,
+            alt: 0.0
+          }
+        };
+
+        console.log('[MapView] Sending GeoPTZ command to selected GeoPTZ:', selectedGeoPTZ)
+        sendCommand(commandBaseUrl, controlStreamId, command);
+      }
+    })
 
   } else {
 

@@ -8,8 +8,9 @@ import { VisualizationComponents } from '@/lib/VisualizationHelpers'
 import { useVisualizationStore } from '@/stores/visualizationstore'
 import { storeToRefs } from 'pinia'
 import VideoOptions from '@/components/menus/VideoOptions.vue'
+import GeoPTZOptions from '@/components/menus/GeoPTZOptions.vue'
 import PointMarkerOptions from '@/components/menus/PointMarkerOptions.vue'
-import { CreateChartViewProps, CreateMapViewProps, CreateVideoViewProps } from '@/lib/DatasourceUtils'
+import { CreateChartViewProps, CreateMapViewProps, CreateVideoViewProps, CreateGeoPtzViewProps } from '@/lib/DatasourceUtils'
 import IconPicker from '@/components/menus/IconPicker.vue'
 
 const uiStore = useUIStore();
@@ -36,8 +37,9 @@ const steps = [
 const visualizationTypes = [
   { label: 'Chart', value: 'chart', icon: 'mdi-chart-line' },
   { label: 'Video', value: 'video', icon: 'mdi-video' },
-  { label: 'Point Marker', value: 'pointmarker', icon: 'mdi-map' },
-  { label: 'Text', value: 'text', icon: 'mdi-format-text' }
+  { label: 'Point Marker', value: 'pointmarker', icon: 'mdi-map-marker' },
+  { label: 'Text', value: 'text', icon: 'mdi-format-text' },
+  { label: 'GeoPTZ', value: 'geoPtz', icon: 'mdi-map' }
 ]
 
 function selectType(type: string) {
@@ -107,6 +109,15 @@ function createVisualization() {
         dataView: pmResult.mapView
       }
       break;
+    case 'geoPtz':
+      // Add GeoPTZ-specific properties if needed
+      const geoPtzResult = CreateGeoPtzViewProps(selectedDatastream.value, vizStore.currentVisDataStreamOptions);
+      visualizationComponents = {
+        dataSource: geoPtzResult.dataSource,
+        dataLayer: null,
+        dataView: null
+      }
+      break;
     case 'text':
       // Add text-specific properties if needed
       break;
@@ -137,10 +148,10 @@ watch(selectedVisualizationOptions, (val) => {
       </v-alert>
     </div>
     <v-breadcrumbs :items="steps.map((s, i) => ({
-        title: s.title,
-        disabled: i > step,
-        class: i < step ? 'text-primary font-weight-bold' : ''
-      }))" class="mb-6">
+      title: s.title,
+      disabled: i > step,
+      class: i < step ? 'text-primary font-weight-bold' : ''
+    }))" class="mb-6">
       <template v-slot:divider>
         <v-icon icon="mdi-chevron-right"></v-icon>
       </template>
@@ -149,19 +160,12 @@ watch(selectedVisualizationOptions, (val) => {
     <div v-if="step === 0">
       <h2 class="mb-4 text-center">Choose Visualization Type</h2>
       <v-row justify="center" align="center" class="mb-2">
-        <v-col
-          v-for="type in visualizationTypes"
-          :key="type.value"
-          cols="12" sm="6" md="3"
-          class="d-flex justify-center"
-        >
-          <v-card
-            :elevation="selectedType === type.value ? 10 : 2"
+        <v-col v-for="type in visualizationTypes" :key="type.value" cols="12" sm="6" md="3"
+          class="d-flex justify-center">
+          <v-card :elevation="selectedType === type.value ? 10 : 2"
             :color="selectedType === type.value ? 'primary' : ''"
-            class="d-flex flex-column align-center justify-center pa-4 type-card"
-            @click="selectType(type.value)"
-            style="cursor:pointer; min-height:120px; max-width:220px; width:100%;"
-          >
+            class="d-flex flex-column align-center justify-center pa-4 type-card" @click="selectType(type.value)"
+            style="cursor:pointer; min-height:120px; max-width:220px; width:100%;">
             <v-icon size="36" class="mb-2">{{ type.icon }}</v-icon>
             <span>{{ type.label }}</span>
           </v-card>
@@ -172,15 +176,17 @@ watch(selectedVisualizationOptions, (val) => {
     <div v-else-if="step === 1">
       <h2 class="mb-4 text-center">Datasource Options</h2>
       <div v-if="selectedType === 'chart'">
-        <ChartOptions v-model:selectedProperty="selectedDSProperty"/>
+        <ChartOptions v-model:selectedProperty="selectedDSProperty" />
       </div>
       <div v-else-if="selectedType === 'video'">
-        <VideoOptions v-model:selectedProperty="selectedDSProperty"
-                      v-model:videoType="selectedVisualizationOptions"
-                      v-model:selectedControlStream="selectedCS" />
+        <VideoOptions v-model:selectedProperty="selectedDSProperty" v-model:videoType="selectedVisualizationOptions"
+          v-model:selectedControlStream="selectedCS" />
       </div>
       <div v-else-if="selectedType === 'pointmarker'">
         <PointMarkerOptions v-model:selectedProperty="selectedMarkerProperty" />
+      </div>
+      <div v-else-if="selectedType === 'geoPtz'">
+        <GeoPTZOptions v-model:selectedProperty="selectedDSProperty" v-model:selectedControlStream="selectedCS" />
       </div>
       <div v-else-if="selectedType === 'text'">
         <v-alert type="info">Text options coming soon...</v-alert>
@@ -195,25 +201,12 @@ watch(selectedVisualizationOptions, (val) => {
     </div>
 
     <v-row class="mt-6" justify="end">
-      <v-btn
-        v-if="step > 0"
-        variant="text"
-        @click="prevStep"
-        class="me-2"
-      >Back
+      <v-btn v-if="step > 0" variant="text" @click="prevStep" class="me-2">Back
       </v-btn>
-      <v-btn
-        v-if="step < steps.length - 1"
-        :disabled="step === 0 && !selectedType"
-        color="primary"
-        @click="nextStep"
-      >Next
+      <v-btn v-if="step < steps.length - 1" :disabled="step === 0 && !selectedType" color="primary"
+        @click="nextStep">Next
       </v-btn>
-      <v-btn
-        v-else-if="step === steps.length - 1"
-        color="primary"
-        @click="submitWizard"
-      >Submit
+      <v-btn v-else-if="step === steps.length - 1" color="primary" @click="submitWizard">Submit
       </v-btn>
     </v-row>
   </v-card>

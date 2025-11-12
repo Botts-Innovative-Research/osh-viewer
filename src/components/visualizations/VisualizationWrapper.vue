@@ -3,6 +3,7 @@ import { computed, defineAsyncComponent, defineProps } from 'vue';
 import Chart from '@/components/visualizations/Chart.vue'
 import Video from '@/components/visualizations/Video.vue'
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import GeoPTZ from './GeoPTZ.vue';
 
 const props = defineProps({
   viz: { type: OSHVisualization, required: true },
@@ -27,6 +28,8 @@ const VisualizationComponent = computed(() => visualizationMap[props.vizType]);
     <Video :visualization="viz" :datasource="viz.visualizationComponents.dataSource"
       :video-layer="viz.visualizationComponents.dataLayer" :video-view="viz.visualizationComponents.dataView"
       v-if="viz.type === 'video'"></Video>
+    <GeoPTZ :visualization="viz" :datasource="viz.visualizationComponents.dataSource"
+      v-if="viz.type === 'geoPtz'"></GeoPTZ>
     <slot name="after" />
     <slot name="overlay" />
   </div>
