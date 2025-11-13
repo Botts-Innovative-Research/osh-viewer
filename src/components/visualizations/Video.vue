@@ -10,7 +10,7 @@ import MJPEGView from 'osh-js/source/core/ui/view/video/MjpegView.js'
 import { SweApiDataSourceProperties, VideoLayerProperties, VideoViewProperties } from '@/lib/VisualizationHelpers'
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js'
 import { computed } from 'vue'
-import PTZControl from '../PTZControl.vue'
+import PTZControl from './PTZControl.vue'
 
 const props = defineProps({
   visualization: {

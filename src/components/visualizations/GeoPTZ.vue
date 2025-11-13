@@ -8,6 +8,7 @@ import { randomUUID } from 'osh-js/source/core/utils/Utils.js'
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js'
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useUIStore } from '@/stores/uistore';
+import { sendCommand } from '@/lib/ControlstreamUtils';
 
 // Generate a random ID when the component is created
 const geoPtzId = ref('geoPtz-' + randomUUID())
@@ -32,6 +33,11 @@ interface PTZData {
   tilt: number;
   zoom: number;
 }
+
+// Values for LLA inputs
+const latInput = ref<number>(0.0);
+const lonInput = ref<number>(0.0);
+const altInput = ref<number>(0.0);
 
 // Received PTZ data to output
 const receivedPTZ = ref<PTZData>({ pan: 0, tilt: 0, zoom: 0 });
@@ -103,6 +109,20 @@ function toggle() {
   }
 }
 
+// Send PTZ command based on LLA inputs
+function onSend() {
+  const command = {
+    params: {
+      lat: latInput.value,
+      lon: lonInput.value,
+      alt: altInput.value
+    }
+  };
+
+  console.log('[GeoPtzView] Sending GeoPTZ command:', command);
+  sendCommand(commandBaseUrl.value, props.visualization.controlstream.id, command);
+}
+
 
 </script>
 
@@ -116,13 +136,17 @@ function toggle() {
             <v-icon>{{ isSelected ? 'mdi-check-circle' : 'mdi-circle-outline' }}</v-icon>
           </v-btn>
         </v-col>
+        <v-col class="lla-inputs">
+          <v-text-field v-model.number="latInput" type="number" label="Latitude" placeholder="0.0" />
+          <v-text-field v-model.number="lonInput" type="number" label="Longitude" placeholder="0.0" />
+          <v-text-field v-model.number="altInput" type="number" label="Altitude" placeholder="0.0" />
+          <v-btn color="primary" @click="onSend">Send</v-btn>
+        </v-col>
         <v-col>
-          <div>
-            <p>Current PTZ Values:</p>
-            <p>Pan: {{ receivedPTZ.pan.toFixed(2) }}</p>
-            <p>Tilt: {{ receivedPTZ.tilt.toFixed(2) }}</p>
-            <p>Zoom: {{ receivedPTZ.zoom.toFixed(2) }}</p>
-          </div>
+          <h3>Converted PTZ:</h3>
+          <p>Pan: {{ receivedPTZ.pan.toFixed(2) }}</p>
+          <p>Tilt: {{ receivedPTZ.tilt.toFixed(2) }}</p>
+          <p>Zoom: {{ receivedPTZ.zoom.toFixed(2) }}</p>
         </v-col>
       </v-row>
     </v-container>
