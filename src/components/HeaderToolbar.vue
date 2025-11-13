@@ -3,10 +3,11 @@ import { ref } from 'vue'
 import AppSettings from './menus/AppSettings.vue'
 
 const settingsDialog = ref(false)
+const viewerName = import.meta.env.VITE_VIEWER_NAME;
 </script>
 
 <template>
-  <v-toolbar title="OSH Viewer" color="blue" density="comfortable">
+  <v-toolbar :title=viewerName color="blue" density="comfortable">
     <v-btn icon="mdi-home" to="/" />
     <v-btn icon="mdi-account" />
     <v-btn icon="mdi-menu" />
