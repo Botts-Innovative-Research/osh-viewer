@@ -168,7 +168,7 @@ onMounted(() => {
     <v-card-title class="text-h5 text-center">{{ props.visualization.name || props.videoTitle }}</v-card-title>
     <!-- Video content will be rendered here -->
   </v-card>
-  <PTZTaskingComponent :command-base-url=baseUrl :control-stream-id=props.visualization.controlstream.id />
+  <PTZTaskingComponent v-if="props.visualization.controlstream" :command-base-url=baseUrl :control-stream-id=props.visualization.controlstream?.id />
 </template>
 
 <style scoped>

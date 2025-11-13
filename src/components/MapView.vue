@@ -116,6 +116,19 @@ onMounted(() => {
   }
 })
 
+watch(() => uiStore.selectedGeoPTZ, (newVal) => {
+  const map = mapView.value.map
+  const container = mapView.value.map.getContainer()
+
+  // Clear cursor styles
+  container.style.cursor = ''
+
+  if (newVal) {
+    // Change cursor to crosshair when a GeoPTZ is selected
+    container.style.cursor = 'crosshair'
+  }
+})
+
 watch(mapVisualizations, (updated) => {
   // Remove visualizations that are no longer present
   const removed = currentVisualizations.value.filter(val => !updated.includes(val))
