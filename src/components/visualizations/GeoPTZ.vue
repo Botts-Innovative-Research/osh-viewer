@@ -67,7 +67,6 @@ onMounted(async () => {
   dsInstance.connect();
 
   const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
-  const dataDivElement = document.getElementById('datasource-gps');
 
   dataBroadcastChannel.onmessage = (message) => {
     if (message.data.type === 'data') {
