@@ -9,8 +9,8 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs'
 import MJPEGView from 'osh-js/source/core/ui/view/video/MjpegView.js'
 import { SweApiDataSourceProperties, VideoLayerProperties, VideoViewProperties } from '@/lib/VisualizationHelpers'
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js'
-import PTZTaskingComponent from '@/components/PTZTaskingComponent.vue'
 import { computed } from 'vue'
+import PTZControl from './PTZControl.vue'
 
 const props = defineProps({
   visualization: {
@@ -168,7 +168,7 @@ onMounted(() => {
     <v-card-title class="text-h5 text-center">{{ props.visualization.name || props.videoTitle }}</v-card-title>
     <!-- Video content will be rendered here -->
   </v-card>
-  <PTZTaskingComponent :command-base-url=baseUrl :control-stream-id=props.visualization.controlstream.id />
+  <PTZControl v-if="props.visualization.controlstream" :command-base-url=baseUrl :id=props.visualization.controlstream?.id />
 </template>
 
 <style scoped>

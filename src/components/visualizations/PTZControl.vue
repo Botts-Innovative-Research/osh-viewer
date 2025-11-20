@@ -4,17 +4,18 @@ import { computed, ref, watch } from 'vue';
 import { useControlStreamStore } from '@/stores/controlstreamstore'
 import { storeToRefs } from 'pinia';
 import { showToast } from '@/composables/useToast'
+import { sendCommand } from '@/lib/ControlstreamUtils'
 
 
-interface PanTiltControlProps {
-  onSend: (command: any) => void;
+interface PTZControlProps {
+  commandBaseUrl: string;
   id: string;
 }
 
-const props = defineProps<PanTiltControlProps>();
+const props = defineProps<PTZControlProps>();
 
 // Handle text input command sending
-function sendCommand() {
+function onSend() {
   let command = null;
 
   // Handle DataRecord type command
@@ -44,7 +45,7 @@ function sendCommand() {
   // If successfully constructed command, send it
   if (command) {
     console.log('PanTiltControl: Sending command', command);
-    props.onSend(command);
+    sendCommand(props.commandBaseUrl, props.id, command);
   } else {
     console.warn('PanTiltControl: No command to send');
   }
@@ -87,7 +88,7 @@ function handleMove(direction: Direction) {
 
   if (command) {
     console.log('PanTiltControl: Sending command', command);
-    props.onSend(command);
+    sendCommand(props.commandBaseUrl, props.id, command);
   }
 }
 
@@ -221,7 +222,7 @@ watch(controlStreamType, (newVal) => {
           <v-text-field v-model="singleValue" type="number" :label="selectedCommand" placeholder="Enter value" />
         </div>
 
-        <v-btn color="primary" @click="sendCommand">Send</v-btn>
+        <v-btn color="primary" @click="onSend">Send</v-btn>
       </div>
     </div>
   </div>
