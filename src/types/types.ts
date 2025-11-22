@@ -10,3 +10,12 @@ export interface Result {
  * Type for PTZ command directions
  */
 export type Direction = "up" | "down" | "left" | "right" | "up-left" | "up-right" | "down-left" | "down-right" | "home" | "zoomIn" | "zoomOut";
+
+/**
+ * Interface for Visualization Type definition
+ */
+export interface VisualizationType {
+  value: string;  // Value to identify the type
+  label: string;  // Label for type
+  icon: string;   // mdi icon name
+}

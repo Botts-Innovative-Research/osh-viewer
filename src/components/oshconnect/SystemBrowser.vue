@@ -13,6 +13,7 @@ import VisualizationWizard from '@/components/menus/VisualizationWizard.vue'
 import NodeConfigForm from '@/components/menus/NodeConfigForm.vue'
 import { storeToRefs } from 'pinia'
 import { Geometry } from '@/lib/OSHConnectDefinitions'
+import NewVisualizationWizard from '../menus/visualization-wizard/NewVisualizationWizard.vue'
 
 const oshConnect = useOSHConnectStore().getInstance();
 const nodeStore = useNodeStore()
@@ -27,6 +28,7 @@ const visualizationWizardOpen = uiStore.visualizationWizardOpen
 const openVisualizationWizard = useUIStore().openVisualizationWizard
 const nodeConfigFormOpen = uiStore.nodeConfigFormOpen
 const openNodeConfigForm = useUIStore().openNodeConfigForm
+const vizWizOpen = uiStore.vizWizOpen
 
 /*
 const getSystems = () => {
@@ -179,6 +181,10 @@ const getItemChildren = computed(() => {
   </v-dialog>
   <v-dialog v-model="nodeConfigFormOpen" max-width="540">
     <NodeConfigForm />
+  </v-dialog>
+
+  <v-dialog v-model="vizWizOpen" max-width="540">
+    <NewVisualizationWizard />
   </v-dialog>
 </template>
 

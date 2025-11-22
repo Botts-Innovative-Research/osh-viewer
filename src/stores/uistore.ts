@@ -9,6 +9,9 @@ export const useUIStore = defineStore('ui', () => {
   const visualizationWizardOpen = ref(false)
   const nodeConfigFormOpen = ref(false)
 
+  // VizWiz = new version
+  const vizWizOpen = ref(false)
+
   // Focused map (could be an ID or name)
   const focusedMap = ref<string | null>(null)
 
@@ -81,6 +84,13 @@ export const useUIStore = defineStore('ui', () => {
     selectedGeoPTZ.value = null
   }
 
+  function toggleVizWiz() {
+    vizWizOpen.value = !vizWizOpen.value
+  }
+  function openVizWiz() {
+    vizWizOpen.value = true
+  }
+
   return {
     leftSidebarOpen,
     rightSidebarOpen,
@@ -108,5 +118,9 @@ export const useUIStore = defineStore('ui', () => {
     selectedGeoPTZ,
     setSelectedGeoPTZ,
     clearSelectedGeoPTZ,
+
+    vizWizOpen,
+    toggleVizWiz,
+    openVizWiz,
   }
 })
