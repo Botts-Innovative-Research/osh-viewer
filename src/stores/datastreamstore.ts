@@ -13,20 +13,32 @@ export const useDataStreamStore = defineStore('datastreams', () => {
   }
 
   const removeDataStream = (dataStream: OSHDatastream): void => {
-    dataStreams.value = dataStreams.value.filter(ds => ds !== dataStream)
+    dataStreams.value = dataStreams.value.filter((ds) => ds !== dataStream)
   }
 
   const getDataStreamByName = (name: string): OSHDatastream | undefined => {
-    return dataStreams.value.find(dataStream => dataStream.name === name)
+    return dataStreams.value.find((dataStream) => dataStream.name === name)
   }
 
   const checkIfDataStreamExists = (id: string): boolean => {
-    return dataStreams.value.some(dataStream => dataStream.uuid === id)
+    return dataStreams.value.some((dataStream) => dataStream.uuid === id)
   }
 
   const getDataStreamsById = (ids: string[]): OSHDatastream[] => {
-    return dataStreams.value.filter(dataStream => ids.includes(dataStream.uuid))
+    return dataStreams.value.filter((dataStream) => ids.includes(dataStream.uuid))
   }
 
-  return { dataStreams, addDataStream, removeDataStream, getDataStreamByName, checkIfDataStreamExists, getDataStreamsById }
+  const getDataStreamsBySystemId = (ids: string[]): OSHDatastream[] => {
+    return dataStreams.value.filter((dataStream) => ids.includes(dataStream.parentId ? dataStream.parentId : ''))
+  }
+
+  return {
+    dataStreams,
+    addDataStream,
+    removeDataStream,
+    getDataStreamByName,
+    checkIfDataStreamExists,
+    getDataStreamsById,
+    getDataStreamsBySystemId
+  }
 })
