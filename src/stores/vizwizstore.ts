@@ -46,6 +46,7 @@ export const useVizWizStore = defineStore('vizwiz', () => {
   const updateGlobalConfig = (patch: Partial<GlobalConfigProperties>) => {
     globalConfig.value = { ...globalConfig.value, ...patch }
     console.log('[VizWizStore] Updated global config:', patch)
+    console.log('New global config:', globalConfig.value)
   }
 
   const updateGlobalCustomization = (patch: Partial<GlobalCustomizationProperties>) => {
@@ -63,7 +64,6 @@ export const useVizWizStore = defineStore('vizwiz', () => {
       ...patch,
     }
     console.log('[VizWizStore] Updated DS config:', patch)
-    console.log("New dsConfig: ", dsConfig.value)
   }
   const updateDsCustomization = (dsId: string, patch: Partial<Record<string, any>>) => {
     if (!dsCustomization.value[dsId]) {

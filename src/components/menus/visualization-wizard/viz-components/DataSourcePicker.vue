@@ -44,9 +44,9 @@ watch(selectedProperties, (val) => {
         v-model="selectedProperties">
         <template v-slot:label>
           <div class="property-row no-wrap">
-            <span class="pa-2 property-label font-weight-bold">{{ property.label }}</span>
-            <span class="pa-2 property-name text-grey-darken-1">{{ property.name }}</span>
-            <span class="pa-2 property-definition text-caption text-grey">{{ property.definition }}</span>
+            <span class="pa-2 property-label font-weight-bold" :key="property.label">{{ property.label }}</span>
+            <span class="pa-2 property-name text-grey-darken-1" :key="property.name">{{ property.name }}</span>
+            <span class="pa-2 property-definition text-caption text-grey" :key="property.definition">{{ property.definition }}</span>
           </div>
         </template>
       </v-checkbox>

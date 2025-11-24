@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { ref, defineProps, computed, reactive, watch } from 'vue';
-import PlaybackMode from '../../viz-components/PlaybackMode.vue';
+import TimePickers from '../../viz-components/TimePickers.vue';
 import DataSourcePicker from '../../viz-components/DataSourcePicker.vue';
 import { SchemaFieldProperty } from '@/lib/DatasourceUtils';
 
@@ -39,6 +39,6 @@ listDatastreams.value.forEach(ds => {
     <h3>{{ datastream.name }}</h3>
     <DataSourcePicker :currentDs="datastream" v-model="selectedPropertiesByDs[datastream.id]" />
   </div>
-  <!-- PLAYBACK MODE -->
-  <PlaybackMode v-model="config.playbackMode" />
+  <!-- TIME PICKERS & PLAYBACK MODE -->
+  <TimePickers />
 </template>
