@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
-import { VisualizationType } from '@/types/types';
-import { ref, defineProps, computed, reactive } from 'vue';
+import { ref, defineProps, computed, reactive, watch } from 'vue';
 import PlaybackMode from '../../viz-components/PlaybackMode.vue';
+import DataSourcePicker from '../../viz-components/DataSourcePicker.vue';
+import { SchemaFieldProperty } from '@/lib/DatasourceUtils';
 
 const props = defineProps<({
 })>()
+
+// Holds selected properties per datastream
+const selectedPropertiesByDs = reactive<{ [dsId: string]: SchemaFieldProperty[] }>({})
 
 // Retrieve datastreams
 const vizwizStore = useVizWizStore()
@@ -17,12 +21,24 @@ const config = reactive({
   playbackMode: { "label": "REAL TIME", "value": "realTime" } // Set default to real time
 })
 
+listDatastreams.value.forEach(ds => {
+  // Initialize array for each datastream
+  if (!selectedPropertiesByDs[ds.id]) selectedPropertiesByDs[ds.id] = []
+
+  // Watch each datastream individually
+  watch(() => selectedPropertiesByDs[ds.id], (newVal) => {
+    console.log(`Datastream ${ds.id} changed:`, newVal)
+    vizwizStore.updateDsConfig(ds.id, { selectedProperties: newVal })
+  }, { deep: true })
+})
+
 </script>
 <template>
   <!-- SELECT PROPERTIES -->
-   <div v-for="datastream in listDatastreams">
-
-   </div>
+  <div v-for="datastream in listDatastreams">
+    <h3>{{ datastream.name }}</h3>
+    <DataSourcePicker :currentDs="datastream" v-model="selectedPropertiesByDs[datastream.id]" />
+  </div>
   <!-- PLAYBACK MODE -->
   <PlaybackMode v-model="config.playbackMode" />
 </template>

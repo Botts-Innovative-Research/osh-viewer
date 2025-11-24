@@ -9,14 +9,14 @@ import { OSHDatastream } from '@/lib/OSHConnectDataStructs';
 const vizwizStore = useVizWizStore()
 const datastreamStore = useDataStreamStore()
 
-// Update selected systems and datastreams in vizwiz store
+// Update values in vizwiz store
 const selectedSystems = computed({
   get: () => vizwizStore.systems,
   set: (val: string[]) => vizwizStore.setSystems(val)
 })
 const selectedDatastreams = computed({
   get: () => vizwizStore.datastreams,
-  set: (val: string[]) => { vizwizStore.setDatastreams(val); console.log("Changed"); console.log(val) }
+  set: (val: OSHDatastream[]) => vizwizStore.setDatastreams(val)
 })
 
 // List of available systems
@@ -28,6 +28,7 @@ const listDatastreams = computed(() => {
 })
 
 // CLEAR DATASTREAMS when systems are changed
+// TODO: RESET config & customization
 watch(selectedSystems, () => {
   selectedDatastreams.value = []
 })

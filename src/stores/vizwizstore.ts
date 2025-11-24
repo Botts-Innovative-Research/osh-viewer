@@ -1,13 +1,31 @@
+import { OSHDatastream } from '@/lib/OSHConnectDataStructs'
 import { defineStore } from 'pinia'
+import { ref } from 'vue'
 
-import { ref, Ref } from 'vue'
+// Define global config properties
+export interface GlobalConfigProperties {
+  playback: string
+  startTime: string
+  endTime: string
+  [key: string]: any // Allow other global config properties
+}
+// Define global customization
+export interface GlobalCustomizationProperties {
+  [key: string]: any // Allow other global customization properties
+}
 
 export const useVizWizStore = defineStore('vizwiz', () => {
   const visualizationType = ref<string>('')
-  const systems = ref<string[]>([])
-  const datastreams = ref<string[]>([])
-  const config = ref<Record<string, any>>({})
-  const customization = ref<Record<string, any>>({})
+  const systems = ref<string[]>([]) // System IDs
+  const datastreams = ref<OSHDatastream[]>([]) // OSH Datastream objects
+
+  // Visualization-scoped configs and customization
+  const globalConfig = ref<GlobalConfigProperties>({ playback: '', startTime: '', endTime: '' })
+  const globalCustomization = ref<GlobalCustomizationProperties>({})
+
+  // Datastream-scoped configs and customization
+  const dsConfig = ref<Record<string, Record<string, any>>>({})
+  const dsCustomization = ref<Record<string, Record<string, any>>>({})
 
   const setType = (type: string): void => {
     visualizationType.value = type
@@ -19,19 +37,43 @@ export const useVizWizStore = defineStore('vizwiz', () => {
     console.log('[VizWizStore] Set systems:', val)
   }
 
-  const setDatastreams = (val: string[]): void => {
+  const setDatastreams = (val: OSHDatastream[]): void => {
     datastreams.value = val
     console.log('[VizWizStore] Set datastreams:', val)
   }
 
-  const setConfig = (val: Record<string, any>) => {
-    config.value = val
-    console.log('[VizWizStore] Set config:', val)
+  // Globals
+  const updateGlobalConfig = (patch: Partial<GlobalConfigProperties>) => {
+    globalConfig.value = { ...globalConfig.value, ...patch }
+    console.log('[VizWizStore] Updated global config:', patch)
   }
 
-  const setCustomization = (val: Record<string, any>) => {
-    customization.value = val
-    console.log('[VizWizStore] Set customization:', val)
+  const updateGlobalCustomization = (patch: Partial<GlobalCustomizationProperties>) => {
+    globalCustomization.value = { ...globalCustomization.value, ...patch }
+    console.log('[VizWizStore] Updated global customization:', patch)
+  }
+
+  // Datastream-specific
+  const updateDsConfig = (dsId: string, patch: Partial<Record<string, any>>) => {
+    if (!dsConfig.value[dsId]) {
+      dsConfig.value[dsId] = {}
+    }
+    dsConfig.value[dsId] = {
+      ...dsConfig.value[dsId],
+      ...patch,
+    }
+    console.log('[VizWizStore] Updated DS config:', patch)
+    console.log("New dsConfig: ", dsConfig.value)
+  }
+  const updateDsCustomization = (dsId: string, patch: Partial<Record<string, any>>) => {
+    if (!dsCustomization.value[dsId]) {
+      dsCustomization.value[dsId] = {}
+    }
+    dsCustomization.value[dsId] = {
+      ...dsCustomization.value[dsId],
+      ...patch,
+    }
+    console.log('[VizWizStore] Updated DS customization:', patch)
   }
 
   // RESET STORE STATE
@@ -39,8 +81,12 @@ export const useVizWizStore = defineStore('vizwiz', () => {
     visualizationType.value = ''
     systems.value = []
     datastreams.value = []
-    config.value = {}
-    customization.value = {}
+    // Globals
+    globalConfig.value = { playback: '', startTime: '', endTime: '' }
+    globalCustomization.value = {}
+    // DS-specific
+    dsConfig.value = {}
+    dsCustomization.value = {}
 
     console.log('[VizWizStore] Store reset')
   }
@@ -49,13 +95,17 @@ export const useVizWizStore = defineStore('vizwiz', () => {
     visualizationType,
     systems,
     datastreams,
-    config,
-    customization,
+    globalConfig,
+    globalCustomization,
+    dsConfig,
+    dsCustomization,
     setType,
     setSystems,
     setDatastreams,
-    setConfig,
-    setCustomization,
+    updateGlobalConfig,
+    updateGlobalCustomization,
+    updateDsConfig,
+    updateDsCustomization,
     reset,
   }
 })

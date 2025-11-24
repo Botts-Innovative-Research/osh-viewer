@@ -83,7 +83,7 @@ const getStepComponent = (index: number) => {
 
     <v-card-title class="text-h4 text-center">Visualization Wizard</v-card-title>
 
-    <v-stepper v-model="e1">
+    <v-stepper v-model="e1" class="wizard-content">
       <template v-slot:default="{ prev, next }">
         <v-stepper-header>
           <template v-for="(step, index) in steps" :key="`${index}-step`">
@@ -121,5 +121,11 @@ const getStepComponent = (index: number) => {
   align-items: stretch;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   scroll-behavior: smooth;
+}
+
+.wizard-content {
+  max-height: 900px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 </style>
