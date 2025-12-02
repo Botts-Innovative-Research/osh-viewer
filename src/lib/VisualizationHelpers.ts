@@ -76,8 +76,10 @@ export interface IVideoViewProperties extends DataViewProperties {
 }
 
 export interface IMapLayerProperties extends DataLayerProperties {
-  dataSourceId: string;
-  getCoordinates: (rec: any) => { lat: number, lon: number };
+  dataSourceId: string | string[];
+  getLocation?: (rec: any) => { x: number, y: number, z: number };
+  getOrientation?: (rec: any) => { heading: number };
+  getCoordinates?: (rec: any) => { lat: number, lon: number };
   markerColor?: string;
   markerIcon?: string;
   name: string;
@@ -93,9 +95,9 @@ export interface IMapViewProperties extends DataViewProperties {
 export class VisualizationComponents {
   dataLayer: DataLayerProperties | null
   dataView: DataViewProperties | null
-  dataSource: DataSourceProperties
+  dataSource: DataSourceProperties | DataSourceProperties[]
 
-  constructor(datasource: SweApi, dataLayer: any, dataView: any) {
+  constructor(datasource: SweApi | SweApi[], dataLayer: any, dataView: any) {
     this.dataSource = datasource
     this.dataLayer = dataLayer
     this.dataView = dataView

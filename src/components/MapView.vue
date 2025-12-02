@@ -20,7 +20,9 @@ const currentVisualizations = ref<OSHVisualization[]>([])
 const pmLayers = ref([])
 
 const mapVisualizations = computed(() => {
-  return visualizationStore.getVisualizationsByType('pointmarker')
+  return visualizationStore.visualizations.filter(viz =>
+    viz.type === 'pointmarker' || viz.type === 'pmorientation'
+  )
 })
 
 const featureVisualizations = computed(() => {
@@ -138,37 +140,85 @@ watch(mapVisualizations, (updated) => {
   console.log('New visualizations:', newFiltered)
   for (const viz of newFiltered) {
     currentVisualizations.value.push(viz)
-    let dsInstance = new SweApi('pm-datasource-' + randomUUID(), {
-      endpointUrl: viz.visualizationComponents.dataSource.endpointUrl,
-      resource: viz.visualizationComponents.dataSource.resource,
-      tls: viz.visualizationComponents.dataSource.tls,
-      protocol: viz.visualizationComponents.dataSource.protocol,
-      startTime: viz.visualizationComponents.dataSource.startTime,
-      endTime: viz.visualizationComponents.dataSource.endTime,
-      mode: viz.visualizationComponents.dataSource.mode,
-    })
-    console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstance)
-    const layerOpts = viz.visualizationComponents.dataLayer
-    const pmLayer = new PointMarkerLayer({
-      name: viz.name,
-      dataSourceIds: [dsInstance.id],
-      getLocation: layerOpts.getLocation,
-      // getLocation: (rec, timestamp) => {
-      //   return {
-      //     x: rec.location.lat,
-      //     y: rec.location.lon,
-      //     z: rec.location.alt || 0
-      //   }
-      // },
-      label: viz.visualizationComponents.dataLayer.name,
-      icon: '/icons/map/map-marker.svg',
-      iconSize: [32, 32],
-      labelOffset: [-16, -32],
-    })
-    pmLayers.value.push(pmLayer)
-    mapView.value.addLayer(pmLayer)
-    console.log('[MapView] Creating PointMarkerLayer:', pmLayer)
-    dsInstance.connect()
+
+    // Handle PM only
+    if (viz.type === 'pointmarker') {
+      let dsInstance = new SweApi('pm-datasource-' + randomUUID(), {
+        endpointUrl: viz.visualizationComponents.dataSource.endpointUrl,
+        resource: viz.visualizationComponents.dataSource.resource,
+        tls: viz.visualizationComponents.dataSource.tls,
+        protocol: viz.visualizationComponents.dataSource.protocol,
+        startTime: viz.visualizationComponents.dataSource.startTime,
+        endTime: viz.visualizationComponents.dataSource.endTime,
+        mode: viz.visualizationComponents.dataSource.mode,
+      })
+      console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstance)
+      const layerOpts = viz.visualizationComponents.dataLayer
+      const pmLayer = new PointMarkerLayer({
+        name: viz.name,
+        dataSourceIds: [dsInstance.id],
+        getLocation: layerOpts.getLocation,
+        // getLocation: (rec, timestamp) => {
+        //   return {
+        //     x: rec.location.lat,
+        //     y: rec.location.lon,
+        //     z: rec.location.alt || 0
+        //   }
+        // },
+        label: viz.visualizationComponents.dataLayer.name,
+        icon: '/icons/map/map-marker.svg',
+        iconSize: [32, 32],
+        labelOffset: [-16, -32],
+      })
+      pmLayers.value.push(pmLayer)
+      mapView.value.addLayer(pmLayer)
+      console.log('[MapView] Creating PointMarkerLayer:', pmLayer)
+      dsInstance.connect()
+
+    } else if (viz.type === 'pmorientation') {
+      const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
+        ? viz.visualizationComponents.dataSource
+        : [viz.visualizationComponents.dataSource];
+
+      const [locationDsProps, orientationDsProps] = dsArray;
+
+
+      let locationDsInstance = new SweApi('pm-loc-datasource-' + randomUUID(), {
+        endpointUrl: locationDsProps.endpointUrl,
+        resource: locationDsProps.resource,
+        tls: locationDsProps.tls,
+        protocol: locationDsProps.protocol,
+        startTime: locationDsProps.startTime,
+        endTime: locationDsProps.endTime,
+        mode: locationDsProps.mode,
+      })
+
+      console.log('[MapView] Creating datasource for PointMarkerLayer:', locationDsInstance)
+      const layerOpts = viz.visualizationComponents.dataLayer
+      const pmLayer = new PointMarkerLayer({
+        name: viz.name,
+        dataSourceIds: [locationDsInstance.id],
+        getLocation: layerOpts.getLocation,
+        // getLocation: (rec, timestamp) => {
+        //   return {
+        //     x: rec.location.lat,
+        //     y: rec.location.lon,
+        //     z: rec.location.alt || 0
+        //   }
+        // },
+        getOrientation: layerOpts.getOrientation,
+        label: viz.visualizationComponents.dataLayer.name,
+        icon: '/icons/map/map-marker.svg',
+        iconSize: [32, 32],
+        labelOffset: [-16, -32],
+      })
+      pmLayers.value.push(pmLayer)
+      mapView.value.addLayer(pmLayer)
+      console.log('[MapView] Creating PointMarkerLayer:', pmLayer)
+      locationDsInstance.connect()
+
+
+    }
   }
 }, { deep: true })
 

@@ -17,6 +17,7 @@ import SelectType from './SelectType.vue'
 import SelectData from './SelectData.vue'
 import { VisualizationType } from '@/types/types'
 
+const uiStore = useUIStore();
 const vizwizStore = useVizWizStore()
 const selectedType = computed(() => {
   return vizwizStore.visualizationType
@@ -40,6 +41,7 @@ const stepStatus = (index: number) => {
   if (index = e1.value) return "primary"
   return ""
 }
+const isLastStep = computed(() => e1.value === steps.length)
 
 // Return step to be disabled based on current step
 const disabled = computed(() => {
@@ -58,10 +60,11 @@ const visualizationTypes: VisualizationType[] = [
 ]
 type VizTypeKeys = (typeof visualizationTypes)[number]['value']
 
-const vizComponents: Record<VizTypeKeys, {Config: any, Customize: any}> = {
+const vizComponents: any = {
   pmorientation: {
     Config: defineAsyncComponent(() => import('@/components/menus/visualization-wizard/visualizations/pmorientation/Config.vue')),
     Customize: defineAsyncComponent(() => import('@/components/menus/visualization-wizard/visualizations/pmorientation/Customize.vue')),
+    Builder: () => import('@/components/menus/visualization-wizard/visualizations/pmorientation/Builder'),
   },
   // add other types here
 }
@@ -76,6 +79,26 @@ const getStepComponent = (index: number) => {
   return null
 }
 
+const handleSubmit = async () => {
+  const type = selectedType.value
+  const entry = vizComponents[type]
+
+  if (!entry?.Builder) return
+
+  const builderModule = await entry.Builder()
+
+  if (typeof builderModule.build !== 'function') {
+    console.error(`Builder for ${type} missing build() export`)
+    return
+  }
+
+  // Call "build" function from the builder module
+  builderModule.build()
+
+  // Close the wizard
+  uiStore.vizWizOpen = false
+}
+
 </script>
 
 <template>
@@ -87,8 +110,8 @@ const getStepComponent = (index: number) => {
       <template v-slot:default="{ prev, next }">
         <v-stepper-header>
           <template v-for="(step, index) in steps" :key="`${index}-step`">
-            <v-stepper-item :complete="e1 > index + 1" :step="index + 1" :value="index + 1"
-              :title="step.short" :color="stepStatus(index)"></v-stepper-item>
+            <v-stepper-item :complete="e1 > index + 1" :step="index + 1" :value="index + 1" :title="step.short"
+              :color="stepStatus(index)"></v-stepper-item>
             <v-divider v-if="index < steps.length - 1"></v-divider>
           </template>
         </v-stepper-header>
@@ -103,7 +126,10 @@ const getStepComponent = (index: number) => {
           </v-stepper-window-item>
         </v-stepper-window>
 
-        <v-stepper-actions :disabled="disabled" @click:next="next" @click:prev="prev"></v-stepper-actions>
+        <v-stepper-actions :disabled="disabled" @click:next="next" @click:prev="prev">
+        </v-stepper-actions>
+        <v-btn v-if="isLastStep" color="primary" @click="handleSubmit">Create Visualization</v-btn>
+
       </template>
     </v-stepper>
 
