@@ -98,36 +98,8 @@ export function CreateMapViewProps(
   }
 
   // Build MapLayerProperties
-  const mapLayer: IMapLayerProperties = {
-    dataSourceId: locationDs.datastream.properties.id,
-    getLocation: (rec: any) => {
-      return {
-        x: rec.location.lat,
-        y: rec.location.lon,
-        z: rec.location.alt || 200,
-      }
-    },
-    // getLocation: {
-    //   dataSourceIds: [locationDs.datastream.properties.id],
-    //   handler: function (rec: any) {
-    //     return {
-    //       x: rec.location.lon,
-    //       y: rec.location.lat,
-    //       z: rec.location.alt,
-    //     }
-    //   },
-    // },
-    getOrientation: (rec: any) => {
-      // dataSourceIds: [orientationDs.datastream.properties.id],
-      // handler: function (rec: any) {
-      //   return {
-      //     heading: 60,
-      //   }
-      // },
-      return {
-        heading: 60,
-      }
-    },
+  const mapLayer: any = {
+    dataSourceIds: [locationDs.id, orientationDs.id],
     markerColor: visOptions.markerColor || 'red',
     markerIcon: visOptions.markerIcon || undefined,
     name: `${randomUUID()} - PM Orientation Layer`,
