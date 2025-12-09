@@ -21,3 +21,12 @@ export type Direction =
 	| 'home'
 	| 'zoomIn'
 	| 'zoomOut';
+
+/**
+ * Interface for Visualization Type definition
+ */
+export interface VisualizationType {
+  value: string;  // Value to identify the type
+  label: string;  // Label for type
+  icon: string;   // mdi icon name
+}

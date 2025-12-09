@@ -260,11 +260,17 @@ export class OSHSystem {
 		return datastreamStore.getDataStreamsById(this.children);
 	}
 
-	// Get controlstreams from this system
-	getCSChildren(): OSHControlStream[] {
-		const controlstreamStore = getSharedStores().controlstreamStore;
-		return controlstreamStore.getControlStreamsById(this.children);
-	}
+  // Get controlstreams from this system
+  getCSChildren(): OSHControlStream[] {
+    const controlstreamStore = getSharedStores().controlstreamStore;
+    return controlstreamStore.getControlStreamsById(this.children)
+  }
+
+
+  // Get TLS value for parent node
+  getTls(): boolean {
+    return this.parentNode.tls;
+  }
 }
 
 export class OSHDatastream {
@@ -309,29 +315,22 @@ export class OSHControlStream {
 }
 
 export class OSHVisualization {
-	id: string;
-	name: string;
-	type: string;
-	parentId: string | null;
-	parentDatastream: OSHDatastream;
-	visualizationComponents!: VisualizationComponents;
-	controlstream: any | null;
+  id: string
+  name: string
+  type: string
+  parentId: string | null
+  parentDatastream: OSHDatastream | OSHDatastream[]
+  visualizationComponents!: VisualizationComponents
+  controlstream: any | null;
 
-	constructor(
-		id: string,
-		name: string,
-		type: string,
-		parentId: string | null,
-		parentDatastream: OSHDatastream,
-		controlstream: OSHControlStream | any = null
-	) {
-		this.id = id;
-		this.name = name;
-		this.type = type;
-		this.parentId = parentId;
-		this.parentDatastream = parentDatastream;
-		this.controlstream = controlstream; // Optional control stream associated with the visualization, default null
-	}
+  constructor(id: string, name: string, type: string, parentId: string | null, parentDatastream: OSHDatastream | OSHDatastream[], controlstream: OSHControlStream | any = null) {
+    this.id = id;
+    this.name = name;
+    this.type = type;
+    this.parentId = parentId;
+    this.parentDatastream = parentDatastream;
+    this.controlstream = controlstream; // Optional control stream associated with the visualization, default null
+  }
 
 	setVisualizationComponents(components: VisualizationComponents): void {
 		this.visualizationComponents = components;

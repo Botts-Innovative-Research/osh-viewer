@@ -34,6 +34,24 @@ export function mineDatasourceObsProps(): { ds: any; observedProps: any } {
 	return { ds, observedProps };
 }
 
+/**
+ * FOR NEW VISUALIZATION WIZARD
+ * Takes datasource as parameter
+ * @returns 
+ */
+export function mineDatasourceObsPropsFromDS(ds: any): { ds: any; observedProps: any } {
+  if (!ds) {
+    console.warn('No datastream given')
+  }
+
+  const observedProps = ds.datastream.properties?.observedProperties || []
+  console.log('[DS-Utils] Observed Properties:', ds.datastream.properties)
+
+  // fetchSchema(ds.datastream);
+
+  return { ds, observedProps }
+}
+
 export function checkDSForProp(propName: string, observedProps: any): any {
 	for (const prop of observedProps) {
 		if (prop.definition.includes(propName)) {

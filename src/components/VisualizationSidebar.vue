@@ -71,9 +71,10 @@ function addVideo() {
 </script>
 
 <template>
-	<v-card id="viz-sidebar">
-		<v-card-title class="viz-title ma-4">Visualizations</v-card-title>
-		<v-divider></v-divider>
+  <v-card id="viz-sidebar">
+    <v-card-title class="viz-title ma-4">Visualizations</v-card-title>
+    <v-btn icon="mdi-plus" aria-label="Add" @click="useUIStore().openVizWiz()"></v-btn>
+    <v-divider></v-divider>
 
 		<!--    <AddChartModal :onAddChart="addChart" :observedProps="dsProps.values" :dsName="'test'"></AddChartModal>-->
 		<!--    <v-btn @click="addVideo">Add Video</v-btn>-->
