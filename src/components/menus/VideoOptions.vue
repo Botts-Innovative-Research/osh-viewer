@@ -5,7 +5,7 @@ import { onMounted, ref, watch } from 'vue';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useUIStore } from '@/stores/uistore';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
-import DataSourcePicker from '@/components/menus/DataSourcePicker.vue';
+import DsPropertySelector from '@/components/menus/DSPropertySelector.vue';
 import TimePicker from '@/components/menus/TimePicker.vue';
 import { useStartEndTimeSync, usePlaybackModeSync } from '@/composables/DataSourceOptions';
 import { Mode } from 'osh-js/source/core/datasource/Mode.js';
@@ -81,7 +81,7 @@ usePlaybackModeSync(playbackMode, visualizationStore);
 
 <template>
 	<v-card>
-		<DataSourcePicker title="Video Options" v-model:selectedProperty="selectedProperty" />
+		<DsPropertySelector title="Video Options" v-model:selectedProperty="selectedProperty" />
 		<TimePicker title="Start Time" v-model:formattedDate="startTime" />
 		<TimePicker title="End Time" v-model:formattedDate="endTime" />
 		<v-combobox

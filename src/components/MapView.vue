@@ -12,6 +12,8 @@ import { createLocationDataSource } from '@/components/visualizations/DataCompos
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { sendCommand } from '@/lib/ControlstreamUtils';
+import { ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
+import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB';
 
 const visualizationStore = useVisualizationStore();
 const mapLayerType = ref('leaflet');
@@ -25,6 +27,10 @@ const mapVisualizations = computed(() => {
 
 const featureVisualizations = computed(() => {
 	return visualizationStore.getVisualizationsByType('pointmarker-feature');
+});
+
+const lobVisualizations = computed(() => {
+	return visualizationStore.getVisualizationsByType('lob');
 });
 
 // Fetch UI store for GeoPTZ tool
@@ -228,6 +234,69 @@ watch(
 	},
 	{ deep: true }
 );
+
+watch(
+	lobVisualizations,
+	(updated) => {
+		checkAndRemove(updated);
+
+		const newFiltered = updated.filter((val) => !currentVisualizations.value.includes(val));
+		for (const viz of newFiltered) {
+			console.log('[MapView] Adding new LoB visualization:', viz);
+			currentVisualizations.value.push(viz);
+			const datasourceProps: ISweApiDataSourceProperties = viz.visualizationComponents
+				.dataSource as ISweApiDataSourceProperties;
+
+			let dsinstance = new SweApi('lob-datasource-' + randomUUID(), {
+				endpointUrl: datasourceProps.endpointUrl,
+				resource: datasourceProps.resource,
+				tls: datasourceProps.tls,
+				protocol: datasourceProps.protocol,
+				startTime: datasourceProps.startTime,
+				endTime: datasourceProps.endTime,
+				mode: datasourceProps.mode,
+			});
+
+			const layerOpts = viz.visualizationComponents.dataLayer;
+
+			let lobLayer = new LoBLayer({
+				name: viz.name,
+				dataSourceIds: [dsinstance.id],
+				getOriginAndBearing: layerOpts.getStartLocationAndBearing,
+				color: layerOpts.color || '#FF0000',
+				id: viz.id,
+			});
+
+			mapView.value.addLayer(lobLayer);
+			console.log('[MapView] Created LoB layer:', lobLayer);
+			dsinstance.connect();
+		}
+	},
+	{ deep: true }
+);
+
+function checkAndRemove(updated: OSHVisualization[]) {
+	const removed = currentVisualizations.value.filter((val) => !updated.includes(val));
+	for (const viz of removed) {
+		const idx = currentVisualizations.value.indexOf(viz);
+		if (idx !== -1) {
+			currentVisualizations.value.splice(idx, 1);
+
+			if (viz.type === 'pointmarker') {
+				// Remove corresponding layer from pmLayers and map
+				const pmLayer = pmLayers.value[idx];
+				if (pmLayer && mapView.value) {
+					mapView.value.removeLayer?.(pmLayer);
+				}
+				pmLayers.value.splice(idx, 1);
+			} else if (viz.type === 'pointmarker-feature') {
+				mapView.value.removeLayer?.(viz.id);
+			} else if (viz.type === 'lob') {
+				mapView.value.removeLayer?.(viz.id);
+			}
+		}
+	}
+}
 
 function addCesiumMarker(viz: any) {
 	console.log('[MapView] TEST Adding Cesium marker');

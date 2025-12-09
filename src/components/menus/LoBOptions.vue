@@ -3,10 +3,10 @@ import { fetchSchema, mineDatasourceObsProps, SchemaFieldProperty } from '@/lib/
 import { onMounted, ref, watch } from 'vue';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useUIStore } from '@/stores/uistore';
-import DsPropertySelector from '@/components/menus/DSPropertySelector.vue';
-import TimePicker from '@/components/menus/TimePicker.vue';
-import { useStartEndTimeSync, usePlaybackModeSync } from '@/composables/DataSourceOptions';
 import { Mode } from 'osh-js/source/core/datasource/Mode.js';
+import { usePlaybackModeSync, useStartEndTimeSync } from '@/composables/DataSourceOptions';
+import TimePicker from '@/components/menus/TimePicker.vue';
+import DsPropertySelector from '@/components/menus/DSPropertySelector.vue';
 
 const visualizationStore = useVisualizationStore();
 const markerDS = ref<any>(null);
@@ -15,7 +15,12 @@ const obsProps = ref<{ definition: string; label: string }[]>([]);
 const dsSchema = ref<any>(null);
 const uiStore = useUIStore();
 
-const emit = defineEmits(['update:selectedProperty']);
+const selectedLocationProperty = ref<SchemaFieldProperty | null>(null);
+const selectedHeadingProperty = ref<SchemaFieldProperty | null>(null);
+const selectedLobProps = ref<SchemaFieldProperty | null>(null);
+
+const locationProp = defineModel('selectedLocationProperty');
+const headingProp = defineModel('selectedHeadingProperty');
 
 const startTime = ref<string | null>(null);
 const endTime = ref<string | null>(null);
@@ -27,6 +32,8 @@ const playbackModes = Object.entries(Mode).map(([key, value]) => ({
 
 useStartEndTimeSync(startTime, endTime, visualizationStore);
 usePlaybackModeSync(playbackMode, visualizationStore);
+
+const emit = defineEmits(['update:selectedOriginProperty', 'update:selectedHeadingProperty']);
 
 async function fetchProps() {
 	const { ds, observedProps } = mineDatasourceObsProps();
@@ -41,20 +48,31 @@ onMounted(async () => {
 	fetchProps();
 });
 
-watch(selectedProperty, (val) => {
-	emit('update:selectedProperty', val);
+// watch(selectedProperty, (val) => {
+// 	emit('update:selectedProperty', val);
+// });
+
+watch(locationProp, (val) => {
+	emit('update:selectedOriginProperty', val);
+});
+
+watch(headingProp, (val) => {
+	emit('update:selectedHeadingProperty', val);
 });
 </script>
 
 <template>
 	<v-card>
 		<DsPropertySelector
-			title="Point Marker Options"
-			v-model:selectedProperty="selectedProperty"
+			title="LOB Location Origin"
+			v-model:selectedProperty="locationProp"
+		/>
+		<DsPropertySelector
+			title="LOB Heading Property"
+			v-model:selectedProperty="headingProp"
 		/>
 		<TimePicker title="Start Time" v-model:formattedDate="startTime" />
 		<TimePicker title="End Time" v-model:formattedDate="endTime" />
-
 		<v-combobox
 			v-model="playbackMode"
 			:items="playbackModes"
@@ -63,8 +81,7 @@ watch(selectedProperty, (val) => {
 			label="Playback Mode"
 			variant="solo"
 			density="compact"
-		>
-		</v-combobox>
+		/>
 	</v-card>
 </template>
 

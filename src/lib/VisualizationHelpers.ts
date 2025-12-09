@@ -190,6 +190,7 @@ export class VideoViewProperties implements DataViewProperties {
 		this.width = props.width;
 		this.height = props.height;
 		this.layers = props.layers.map((layer) => new VideoLayerProperties(layer));
+		this.videoType = props.videoType;
 	}
 }
 
@@ -216,6 +217,40 @@ export class MapViewProperties implements IMapViewProperties {
 	refreshRate?: number;
 
 	constructor(props: IMapViewProperties) {
+		this.container = props.container;
+		this.layers = props.layers;
+		this.css = props.css;
+		this.refreshRate = props.refreshRate;
+	}
+}
+
+export interface ILineOfBearingLayerProperties extends DataLayerProperties {
+	dataSourceId: string;
+	getOriginAndBearing: (rec: any) => {
+		origin: { lat: number; lon: number; alt: number };
+		bearing: number;
+	};
+	color: any;
+	weight: number;
+	opacity: number;
+	distanceKm: number;
+	name: string;
+}
+
+export interface ILineOfBearingViewProperties extends DataViewProperties {
+	container: string;
+	layers: ILineOfBearingLayerProperties[];
+	css?: string;
+	refreshRate?: number;
+}
+
+export class LobViewProperties implements DataViewProperties {
+	container: string;
+	layers: ILineOfBearingLayerProperties[];
+	css?: string;
+	refreshRate?: number;
+
+	constructor(props: ILineOfBearingViewProperties) {
 		this.container = props.container;
 		this.layers = props.layers;
 		this.css = props.css;

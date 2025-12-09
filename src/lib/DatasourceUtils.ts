@@ -14,6 +14,8 @@ import {
 	IVideoViewProperties,
 	IMapLayerProperties,
 	IMapViewProperties,
+	ILineOfBearingLayerProperties,
+	ILineOfBearingViewProperties,
 } from '@/lib/VisualizationHelpers';
 
 export function mineDatasourceObsProps(): { ds: any; observedProps: any } {
@@ -381,9 +383,7 @@ export function CreateMapViewProps(
 
 /**
  * Creates properties for a GeoPTZ View based on the provided controlstream and visualization options.
- * @param cs
- * @param selectedProperty
- * @param videoFormat
+ * @param ds
  * @param visOptions
  * @constructor
  */
@@ -408,5 +408,77 @@ export function CreateGeoPtzViewProps(
 
 	return {
 		dataSource,
+	};
+}
+
+/**
+ * Creates properties for a Line of Bearing View based on the provided datastream, selected property, and visualization options.
+ * @param ds
+ * @param selectedLocationProperty
+ * @param dsOptions
+ * @constructor
+ */
+export function CreateLobViewProps(
+	ds: OSHDatastream,
+	selectedLocationProperty: any,
+	selectedBearingProperty: any,
+	dsOptions: any,
+	visOptions: any
+): {
+	dataSource: ISweApiDataSourceProperties;
+	lobLayer: ILineOfBearingLayerProperties;
+	lobView: ILineOfBearingViewProperties;
+} {
+	console.log('[DatasourceUtils] Creating Lob View for Datastream:', ds);
+	const parentSystem = ds.getParentSystem();
+	// Build SweApiDataSourceProperties
+	const dataSource: ISweApiDataSourceProperties = {
+		endpointUrl: ds.datastream.networkProperties.endpointUrl,
+		resource: `/datastreams/${ds.datastream.properties.id}/observations`,
+		tls: false,
+		protocol: 'ws',
+		startTime: dsOptions.startTime || 'now',
+		endTime: dsOptions.endTime || '2125-08-01T00:00:00Z',
+		mode: Mode.REAL_TIME,
+		responseFormat: 'application/swe+json',
+	};
+
+	console.log('[DatasourceUtils] Creating LOB Layer for property:', selectedLocationProperty);
+	console.log('[DatasourceUtils] Creating LOB Layer with visOptions:', visOptions);
+	// Build MapLayerProperties
+	const lobLayer: ILineOfBearingLayerProperties = {
+		dataSourceId: ds.datastream.properties.id,
+		getOriginAndBearing: (rec: any) => {
+			return {
+				startLocation: {
+					x: rec[selectedLocationProperty.name].lon,
+					y: rec[selectedLocationProperty.name].lat,
+					z: rec[selectedLocationProperty.name].alt || 0, // Default to 0 if altitude is not provided
+				},
+				bearing: (rec[selectedBearingProperty.name] * Math.PI) / 180,
+			};
+		},
+		getPolylineId: (rec: any) => {
+			return { frequency: rec[selectedLocationProperty.name].frequency };
+		},
+		color: visOptions.color,
+		weight: visOptions.weight,
+		opacity: visOptions.opacity,
+		distanceKm: visOptions.distanceKm,
+		name: parentSystem.name,
+	};
+
+	// Build MapViewProperties
+	const lobView: ILineOfBearingViewProperties = {
+		container: `map-container-${randomUUID()}`,
+		layers: [lobLayer],
+		css: 'map-view',
+		refreshRate: 1000,
+	};
+
+	return {
+		dataSource,
+		lobLayer,
+		lobView,
 	};
 }
