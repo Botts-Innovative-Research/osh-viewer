@@ -15,10 +15,11 @@ export function createDefaultDataSource(datastream: OSHDatastream) {
   const datasource = new SweApi(datastream.name, {
     endpointUrl: datastream.datastream.networkProperties.endpointUrl,
     resource: `/datastreams/${datastream.datastream.properties.id}/observations`,
-    tls: false,
+    tls: datastream.datastream.networkProperties.tls,
+    protocol: 'ws',
     startTime: 'now',
     endTime: '2025-08-01T00:00:00Z',
-    mode: Mode.REAL_TIME,
+    mode: Mode.REAL_TIME, // TODO: Make configurable
     responseFormat: 'application/swe+json'
   })
 

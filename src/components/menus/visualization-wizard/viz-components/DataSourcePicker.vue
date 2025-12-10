@@ -1,25 +1,41 @@
 <script setup lang="ts">
 import { fetchSchema, mineDatasourceObsPropsFromDS, SchemaFieldProperty } from '@/lib/DatasourceUtils'
 import { OSHDatastream } from '@/lib/OSHConnectDataStructs';
-import { onMounted, ref, watch } from 'vue'
+import { useVizWizStore } from '@/stores/vizwizstore';
+import { computed, onMounted, ref, watch } from 'vue'
+
+// TODO: Change datastream value to ID only, not the entire DS object
 
 const props = defineProps<{
-  currentDs: OSHDatastream,
-  modelValue?: SchemaFieldProperty[]
+  property: string, // Property role to be used as key in vizwiz store
 }>()
 
+// Get datastreams from vizwiz store
+const vizwizStore = useVizWizStore()
+const listDatastreams = computed(() => {
+  return vizwizStore.datastreams
+})
+
+// Update selected datastream for this role in vizwiz store
+const selectedDatastream = computed({
+  get: () => vizwizStore.dsConfig[props.property]?.dsId,
+  set: (val: OSHDatastream[]) => vizwizStore.updateDsConfig(props.property, { dsId: val })
+})
+
+const selectedProperty = computed({
+  get: () => vizwizStore.dsConfig[props.property]?.property,
+  set: (val: SchemaFieldProperty[]) => vizwizStore.updateDsConfig(props.property, { property: val })
+})
+
+
 const chartDS = ref<any>(null)
-const selectedProperties = ref<SchemaFieldProperty[]>(props.modelValue ?? [])
 const obsProps = ref<{ 'definition': string, 'label': string }[]>([])
 const dsSchema = ref<any>(null)
 
 
-const emit = defineEmits(['update:modelValue'])
-
-
 // Fetch datasource observed properties
 async function fetchProps() {
-  const { ds, observedProps } = mineDatasourceObsPropsFromDS(props.currentDs)
+  const { ds, observedProps } = mineDatasourceObsPropsFromDS(selectedDatastream.value)
   chartDS.value = ds
   obsProps.value = observedProps
 
@@ -27,31 +43,22 @@ async function fetchProps() {
   dsSchema.value = schema
 }
 
-onMounted(async () => {
-  fetchProps()
+// Watch for changes in selected datastream to update properties
+watch(selectedDatastream, async (newVal) => {
+  if (!newVal) return
+  await fetchProps()
 })
 
-watch(selectedProperties, (val) => {
-  emit('update:modelValue', val)
-}, { deep: true })
 </script>
 
 <template>
-  <v-card class="pa-4" elevation="2">
-    <h3 class="mb-4">Select Property</h3>
-    <div v-if="dsSchema">
-      <v-checkbox v-for="property in dsSchema.recordSchema.fields" :key="property.definition" :value="property"
-        v-model="selectedProperties">
-        <template v-slot:label>
-          <div class="property-row no-wrap">
-            <span class="pa-2 property-label font-weight-bold" :key="property.label">{{ property.label }}</span>
-            <span class="pa-2 property-name text-grey-darken-1" :key="property.name">{{ property.name }}</span>
-            <span class="pa-2 property-definition text-caption text-grey" :key="property.definition">{{ property.definition }}</span>
-          </div>
-        </template>
-      </v-checkbox>
-    </div>
-  </v-card>
+  <!-- Select for datastreams -->
+  <v-select v-model="selectedDatastream" :items="listDatastreams" label="Select datastream" persistent-hint
+    item-title="name" :item-value="(item: OSHDatastream) => item"></v-select>
+
+  <!-- Select for property -->
+  <v-select v-if="dsSchema && dsSchema.recordSchema" v-model="selectedProperty" :items="dsSchema.recordSchema.fields"
+    label="Select property" item-title="name" persistent-hint :item-value="(item: any) => item.name"></v-select>
 </template>
 
 <style scoped></style>

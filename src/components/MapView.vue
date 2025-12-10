@@ -177,6 +177,7 @@ watch(mapVisualizations, (updated) => {
       dsInstance.connect()
 
     } else if (viz.type === 'pmorientation') {
+
       const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
         ? viz.visualizationComponents.dataSource
         : [viz.visualizationComponents.dataSource];

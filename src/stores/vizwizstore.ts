@@ -55,15 +55,15 @@ export const useVizWizStore = defineStore('vizwiz', () => {
   }
 
   // Datastream-specific
-  const updateDsConfig = (dsId: string, patch: Partial<Record<string, any>>) => {
-    if (!dsConfig.value[dsId]) {
-      dsConfig.value[dsId] = {}
+  const updateDsConfig = (role: string, patch: Partial<Record<string, any>>) => {
+    if (!dsConfig.value[role]) {
+      dsConfig.value[role] = {}
     }
-    dsConfig.value[dsId] = {
-      ...dsConfig.value[dsId],
+    dsConfig.value[role] = {
+      ...dsConfig.value[role],
       ...patch,
     }
-    console.log('[VizWizStore] Updated DS config:', patch)
+    console.log('[VizWizStore] Updated DS config:', role, patch)
   }
   const updateDsCustomization = (dsId: string, patch: Partial<Record<string, any>>) => {
     if (!dsCustomization.value[dsId]) {

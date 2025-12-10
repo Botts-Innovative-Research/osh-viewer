@@ -78,7 +78,7 @@ export function CreateMapViewProps(
   const locationDataSource: ISweApiDataSourceProperties = {
     endpointUrl: locationDs.datastream.networkProperties.endpointUrl,
     resource: `/datastreams/${locationDs.datastream.properties.id}/observations`,
-    tls: false,
+    tls: locationDs.datastream.networkProperties.tls,
     protocol: 'ws',
     startTime: visOptions.startTime || 'now',
     endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
@@ -89,7 +89,7 @@ export function CreateMapViewProps(
   const orientationDataSource: ISweApiDataSourceProperties = {
     endpointUrl: orientationDs.datastream.networkProperties.endpointUrl,
     resource: `/datastreams/${orientationDs.datastream.properties.id}/observations`,
-    tls: false,
+    tls: orientationDs.datastream.networkProperties.tls,
     protocol: 'ws',
     startTime: visOptions.startTime || 'now',
     endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
