@@ -6,37 +6,32 @@ import {
 } from '@/lib/DatasourceUtils';
 import { OSHDatastream } from '@/lib/OSHConnectDataStructs';
 import { onMounted, ref, watch } from 'vue';
+import { useVizWizStore } from '@/stores/vizwizstore';
 
-const props = defineProps<{
-	currentDs: OSHDatastream;
-	modelValue?: SchemaFieldProperty[];
-}>();
-
-const chartDS = ref<any>(null);
-const selectedProperties = ref<SchemaFieldProperty[]>(props.modelValue ?? []);
-const obsProps = ref<{ definition: string; label: string }[]>([]);
+const emit = defineEmits(['update:selectedProperty']);
+const selectedDatasources = useVizWizStore().datastreams;
 const dsSchema = ref<any>(null);
-
-const emit = defineEmits(['update:modelValue']);
+const obsProps = ref<{ definition: string; label: string }[]>([]);
+const selectedProperties = ref<SchemaFieldProperty[]>([]);
 
 // Fetch datasource observed properties
-async function fetchProps() {
-	const { ds, observedProps } = mineDatasourceObsPropsFromDS(props.currentDs);
-	chartDS.value = ds;
-	obsProps.value = observedProps;
+async function fetchProps(datasource: OSHDatastream) {
+	const { ds, observedProps } = mineDatasourceObsPropsFromDS(datasource);
 
-	const schema = await fetchSchema(ds.datastream);
-	dsSchema.value = schema;
+	obsProps.value = observedProps;
+	dsSchema.value = await fetchSchema(ds.datastream);
 }
 
-onMounted(async () => {
-	fetchProps();
+onMounted(() => {
+	for (const ds of selectedDatasources) {
+		fetchProps(ds);
+	}
 });
 
 watch(
 	selectedProperties,
 	(val) => {
-		emit('update:modelValue', val);
+		emit('update:selectedProperty', val);
 	},
 	{ deep: true }
 );

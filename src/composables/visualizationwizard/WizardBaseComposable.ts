@@ -1,17 +1,17 @@
 import { ref } from 'vue';
 
-export function visualizationOptionsCreate(){
+export function visualizationOptionsCreate() {
 	// const visualizationOptions: VisualizationOptions;
 	// return visualizationOptions;
 }
 
-export function useNumSteps(numSteps){
+export function useNumSteps(numSteps) {
 	const numStepsRef = ref(numSteps);
 
 	return numStepsRef.value;
 }
 
-export function useStep(stepVal){
+export function useStep(stepVal) {
 	const step = ref(stepVal);
 
 	return step.value;

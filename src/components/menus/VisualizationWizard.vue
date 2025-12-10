@@ -12,16 +12,14 @@ import GeoPTZOptions from '@/components/menus/GeoPTZOptions.vue';
 import PointMarkerOptions from '@/components/menus/PointMarkerOptions.vue';
 import {
 	CreateChartViewProps,
+	CreateGeoPtzViewProps,
 	CreateMapViewProps,
 	CreateVideoViewProps,
-	CreateGeoPtzViewProps,
-	CreateLobViewProps,
 } from '@/lib/DatasourceUtils';
-import IconPicker from '@/components/menus/IconPicker.vue';
-import LoBOptions from '@/components/menus/LoBOptions.vue';
 import VisualizationOptionsStep from '@/components/menus/wizard/VisualizationOptionsStep.vue';
 import WizardNavButtons from '@/components/menus/WizardNavButtons.vue';
-import LoBWizard from '@/components/menus/wizard/LoBWizard.vue';
+import LoBWizard from '@/components/menus/visualization-wizard/visualizations/lob/LoBWizard.vue';
+import { CreateLobViewProps } from '@/components/menus/visualization-wizard/visualizations/lob/Builder';
 
 const uiStore = useUIStore();
 const { selectedDatastream } = storeToRefs(uiStore);
@@ -158,13 +156,16 @@ function createVisualization() {
 			// Add text-specific properties if needed
 			break;
 		case 'lob': {
-			console.log('[VizWiz] Creating LoB visualization with visOptions:', selectedVisualizationOptions.value);
+			console.log(
+				'[VizWiz] Creating LoB visualization with visOptions:',
+				selectedVisualizationOptions.value
+			);
 			const lobResult = CreateLobViewProps(
 				selectedDatastream.value,
 				selectedDSProperty.value,
 				selectedLobProperty.value,
 				vizStore.currentVisDataStreamOptions,
-				selectedVisualizationOptions.value,
+				selectedVisualizationOptions.value
 			);
 			visualizationComponents = {
 				dataSource: lobResult.dataSource,

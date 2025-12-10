@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import NewVisualizationWizard from '../menus/visualization-wizard/NewVisualizationWizard.vue'
+import NewVisualizationWizard from '../menus/visualization-wizard/NewVisualizationWizard.vue';
 import { computed, ref } from 'vue';
 import { useSystemStore } from '@/stores/systemstore.ts';
 import { useNodeStore } from '@/stores/nodestore.js';
@@ -7,7 +7,6 @@ import { useOSHConnectStore } from '@/stores/oshconnectstore.js';
 import { useDataStreamStore } from '@/stores/datastreamstore.js';
 import { useUIStore } from '@/stores/uistore.ts';
 import { useVisualizationStore } from '@/stores/visualizationstore.js';
-import { checkDSForProp, mineDatasourceObsProps } from '@/lib/DatasourceUtils.js';
 import { OSHSystem, OSHVisualization } from '@/lib/OSHConnectDataStructs.js';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import VisualizationWizard from '@/components/menus/VisualizationWizard.vue';
@@ -16,30 +15,18 @@ import { storeToRefs } from 'pinia';
 import { Geometry } from '@/lib/OSHConnectDefinitions';
 
 const oshConnect = useOSHConnectStore().getInstance();
-const nodeStore = useNodeStore()
-const systems = useSystemStore().systems
-const datastreamStore = useDataStreamStore()
-const visualizationStore = useVisualizationStore()
-const uiStore = storeToRefs(useUIStore())
-const setSelectedDatastream = useUIStore().setSelectedDatastream
-const activeTab = ref('systems') // Default active tab
-const tabLabels = ref(['Systems', 'DataStreams', 'Nodes'])
-const visualizationWizardOpen = uiStore.visualizationWizardOpen
-const openVisualizationWizard = useUIStore().openVisualizationWizard
-const nodeConfigFormOpen = uiStore.nodeConfigFormOpen
-const openNodeConfigForm = useUIStore().openNodeConfigForm
-const vizWizOpen = uiStore.vizWizOpen
 const nodeStore = useNodeStore();
 const systems = useSystemStore().systems;
 const datastreamStore = useDataStreamStore();
 const visualizationStore = useVisualizationStore();
-const uiStore = storeToRefs(useUIStore());
-const setSelectedDatastream = useUIStore().setSelectedDatastream;
 const activeTab = ref('systems'); // Default active tab
 const tabLabels = ref(['Systems', 'DataStreams', 'Nodes']);
+const uiStore = storeToRefs(useUIStore());
 const visualizationWizardOpen = uiStore.visualizationWizardOpen;
-const openVisualizationWizard = useUIStore().openVisualizationWizard;
+const vizWizOpen = uiStore.vizWizOpen;
 const nodeConfigFormOpen = uiStore.nodeConfigFormOpen;
+const setSelectedDatastream = useUIStore().setSelectedDatastream;
+const openVisualizationWizard = useUIStore().openVisualizationWizard;
 const openNodeConfigForm = useUIStore().openNodeConfigForm;
 
 /*
@@ -228,16 +215,16 @@ const getItemChildren = computed(() => {
 		</v-tabs-window-item>
 	</v-tabs-window>
 
-  <v-dialog v-model="visualizationWizardOpen" max-width="540">
-    <VisualizationWizard />
-  </v-dialog>
-  <v-dialog v-model="nodeConfigFormOpen" max-width="540">
-    <NodeConfigForm />
-  </v-dialog>
+	<v-dialog v-model="visualizationWizardOpen" max-width="540">
+		<VisualizationWizard />
+	</v-dialog>
+	<v-dialog v-model="nodeConfigFormOpen" max-width="540">
+		<NodeConfigForm />
+	</v-dialog>
 
-  <v-dialog v-model="vizWizOpen" max-width="540">
-    <NewVisualizationWizard />
-  </v-dialog>
+	<v-dialog v-model="vizWizOpen" max-width="540">
+		<NewVisualizationWizard />
+	</v-dialog>
 </template>
 
 <style scoped>

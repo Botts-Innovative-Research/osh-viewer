@@ -26,7 +26,7 @@ export type Direction =
  * Interface for Visualization Type definition
  */
 export interface VisualizationType {
-  value: string;  // Value to identify the type
-  label: string;  // Label for type
-  icon: string;   // mdi icon name
+	value: string; // Value to identify the type
+	label: string; // Label for type
+	icon: string; // mdi icon name
 }

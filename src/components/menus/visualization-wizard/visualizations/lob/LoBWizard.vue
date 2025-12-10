@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import LoBCustomizationOptions from '@/components/menus/vizoptions/LoBCustomizationOptions.vue';
 import { ref } from 'vue';
-import LoBOptions from '@/components/menus/LoBOptions.vue';
+import LoBOptions from '@/components/menus/visualization-wizard/visualizations/lob/LoBOptions.vue';
 
 const props = defineProps<{
 	// step: number;
@@ -47,8 +46,6 @@ function createLobVizOptions() {
 	// Logic to create and save the Line of Bearing visualization options
 	console.log('Creating LoB Visualization Options:', vizOptions.value);
 }
-
-
 </script>
 
 <template>
@@ -56,16 +53,17 @@ function createLobVizOptions() {
 		<div>
 			<h2>Line of Bearing Options</h2>
 			<p>Configure the visualization options for the Line of Bearing.</p>
-			<LoBOptions v-on:update:selectedOriginProperty="setOriginProperty"
-			v-on:update:selectedHeadingProperty="setHeadingProperty"/>
-		</div>
-		<div>
-			<LoBCustomizationOptions v-on:update:color="setColor"
-			v-on:update:weight="setWeight"
-			v-on:update:distanceKm="setDistanceKm"
+			<LoBOptions
+				v-on:update:selectedOriginProperty="setOriginProperty"
+				v-on:update:selectedHeadingProperty="setHeadingProperty"
 			/>
 		</div>
-
+		<!--		<div>-->
+		<!--			<LoBCustomizationOptions v-on:update:color="setColor"-->
+		<!--			v-on:update:weight="setWeight"-->
+		<!--			v-on:update:distanceKm="setDistanceKm"-->
+		<!--			/>-->
+		<!--		</div>-->
 	</div>
 </template>
 

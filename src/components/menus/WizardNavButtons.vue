@@ -3,8 +3,8 @@ import { ref, watch } from 'vue';
 
 const props = defineProps<{
 	step: number;
-	steps: {title: string}[];
-  selectedType: string;
+	steps: { title: string }[];
+	selectedType: string;
 }>();
 const emit = defineEmits(['submitWizard', 'update:step']);
 
@@ -33,7 +33,7 @@ function submitWizard() {
 }
 
 watch(internalStep, (newVal) => {
-  emit('update:step', newVal);
+	emit('update:step', newVal);
 });
 </script>
 

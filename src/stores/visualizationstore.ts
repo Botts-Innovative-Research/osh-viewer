@@ -49,7 +49,7 @@ export const useVisualizationStore = defineStore('visualizations', () => {
 			...currentVisualizationCustomizationOptions.value,
 			...options,
 		};
-	}
+	};
 
 	const clearCurrentVisualizationCustomizationOptions = (): void => {
 		console.log('[VisualizationStore] Clearing current visualization customization options');
@@ -67,6 +67,6 @@ export const useVisualizationStore = defineStore('visualizations', () => {
 		clearCurrentVisDataStreamOptions,
 		currentVisualizationCustomizationOptions,
 		updateCurrentVisualizationCustomizationOptions,
-		clearCurrentVisualizationCustomizationOptions
+		clearCurrentVisualizationCustomizationOptions,
 	};
 });

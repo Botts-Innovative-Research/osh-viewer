@@ -70,13 +70,13 @@ export interface IVideoViewProperties extends DataViewProperties {
 }
 
 export interface IMapLayerProperties extends DataLayerProperties {
-  dataSourceId: string | string[];
-  getLocation?: (rec: any) => { x: number, y: number, z: number };
-  getOrientation?: (rec: any) => { heading: number };
-  getCoordinates?: (rec: any) => { lat: number, lon: number };
-  markerColor?: string;
-  markerIcon?: string;
-  name: string;
+	dataSourceId: string | string[];
+	getLocation?: (rec: any) => { x: number; y: number; z: number };
+	getOrientation?: (rec: any) => { heading: number };
+	getCoordinates?: (rec: any) => { lat: number; lon: number };
+	markerColor?: string;
+	markerIcon?: string;
+	name: string;
 }
 
 export interface IMapViewProperties extends DataViewProperties {
@@ -87,15 +87,15 @@ export interface IMapViewProperties extends DataViewProperties {
 }
 
 export class VisualizationComponents {
-  dataLayer: DataLayerProperties | null
-  dataView: DataViewProperties | null
-  dataSource: DataSourceProperties | DataSourceProperties[]
+	dataLayer: DataLayerProperties | null;
+	dataView: DataViewProperties | null;
+	dataSource: DataSourceProperties | DataSourceProperties[];
 
-  constructor(datasource: SweApi | SweApi[], dataLayer: any, dataView: any) {
-    this.dataSource = datasource
-    this.dataLayer = dataLayer
-    this.dataView = dataView
-  }
+	constructor(datasource: SweApi | SweApi[], dataLayer: any, dataView: any) {
+		this.dataSource = datasource;
+		this.dataLayer = dataLayer;
+		this.dataView = dataView;
+	}
 }
 
 export class SweApiDataSourceProperties implements ISweApiDataSourceProperties {
@@ -219,40 +219,6 @@ export class MapViewProperties implements IMapViewProperties {
 	refreshRate?: number;
 
 	constructor(props: IMapViewProperties) {
-		this.container = props.container;
-		this.layers = props.layers;
-		this.css = props.css;
-		this.refreshRate = props.refreshRate;
-	}
-}
-
-export interface ILineOfBearingLayerProperties extends DataLayerProperties {
-	dataSourceId: string;
-	getOriginAndBearing: (rec: any) => {
-		origin: { lat: number; lon: number; alt: number };
-		bearing: number;
-	};
-	color: any;
-	weight: number;
-	opacity: number;
-	distanceKm: number;
-	name: string;
-}
-
-export interface ILineOfBearingViewProperties extends DataViewProperties {
-	container: string;
-	layers: ILineOfBearingLayerProperties[];
-	css?: string;
-	refreshRate?: number;
-}
-
-export class LobViewProperties implements DataViewProperties {
-	container: string;
-	layers: ILineOfBearingLayerProperties[];
-	css?: string;
-	refreshRate?: number;
-
-	constructor(props: ILineOfBearingViewProperties) {
 		this.container = props.container;
 		this.layers = props.layers;
 		this.css = props.css;

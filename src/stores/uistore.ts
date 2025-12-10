@@ -9,11 +9,11 @@ export const useUIStore = defineStore('ui', () => {
 	const visualizationWizardOpen = ref(false);
 	const nodeConfigFormOpen = ref(false);
 
-  // VizWiz = new version
-  const vizWizOpen = ref(false)
+	// VizWiz = new version
+	const vizWizOpen = ref(false);
 
-  // Focused map (could be an ID or name)
-  const focusedMap = ref<string | null>(null)
+	// Focused map (could be an ID or name)
+	const focusedMap = ref<string | null>(null);
 
 	// Active window items (array of IDs or names)
 	const activeWindows = ref<string[]>([]);
@@ -84,43 +84,43 @@ export const useUIStore = defineStore('ui', () => {
 		selectedGeoPTZ.value = null;
 	}
 
-  function toggleVizWiz() {
-    vizWizOpen.value = !vizWizOpen.value
-  }
-  function openVizWiz() {
-    vizWizOpen.value = true
-  }
+	function toggleVizWiz() {
+		vizWizOpen.value = !vizWizOpen.value;
+	}
+	function openVizWiz() {
+		vizWizOpen.value = true;
+	}
 
-  return {
-    leftSidebarOpen,
-    rightSidebarOpen,
-    focusedMap,
-    activeWindows,
-    mainWindowId,
-    selectedDatastream,
-    toggleLeftSidebar,
-    toggleRightSidebar,
-    setFocusedMap,
-    setActiveWindows,
-    setMainWindowId,
-    setSelectedDatastream,
-    selectedProperty,
-    setSelectedProperty,
-    clearSelectedProperty,
-    theme,
-    toggleTheme,
-    visualizationWizardOpen,
-    toggleVisualizationWizard,
-    openVisualizationWizard,
-    nodeConfigFormOpen,
-    toggleNodeConfigForm,
-    openNodeConfigForm,
-    selectedGeoPTZ,
-    setSelectedGeoPTZ,
-    clearSelectedGeoPTZ,
+	return {
+		leftSidebarOpen,
+		rightSidebarOpen,
+		focusedMap,
+		activeWindows,
+		mainWindowId,
+		selectedDatastream,
+		toggleLeftSidebar,
+		toggleRightSidebar,
+		setFocusedMap,
+		setActiveWindows,
+		setMainWindowId,
+		setSelectedDatastream,
+		selectedProperty,
+		setSelectedProperty,
+		clearSelectedProperty,
+		theme,
+		toggleTheme,
+		visualizationWizardOpen,
+		toggleVisualizationWizard,
+		openVisualizationWizard,
+		nodeConfigFormOpen,
+		toggleNodeConfigForm,
+		openNodeConfigForm,
+		selectedGeoPTZ,
+		setSelectedGeoPTZ,
+		clearSelectedGeoPTZ,
 
-    vizWizOpen,
-    toggleVizWiz,
-    openVizWiz,
-  }
-})
+		vizWizOpen,
+		toggleVizWiz,
+		openVizWiz,
+	};
+});

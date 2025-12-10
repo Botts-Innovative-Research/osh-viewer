@@ -1,12 +1,19 @@
 <script setup lang="ts">
-import { fetchSchema, mineDatasourceObsProps, SchemaFieldProperty } from '@/lib/DatasourceUtils';
+import {
+	fetchSchema,
+	mineDatasourceObsProps,
+	mineDatasourceObsPropsFromDS,
+	SchemaFieldProperty,
+} from '@/lib/DatasourceUtils';
 import { onMounted, ref, watch } from 'vue';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useUIStore } from '@/stores/uistore';
 import { Mode } from 'osh-js/source/core/datasource/Mode.js';
 import { usePlaybackModeSync, useStartEndTimeSync } from '@/composables/DataSourceOptions';
 import TimePicker from '@/components/menus/TimePicker.vue';
-import DsPropertySelector from '@/components/menus/DSPropertySelector.vue';
+import DataSourcePicker from '@/components/menus/visualization-wizard/viz-components/DataSourcePicker.vue';
+import NewDataSourcePicker from '@/components/menus/visualization-wizard/viz-components/NewDataSourcePicker.vue';
+import { useVizWizStore } from '@/stores/vizwizstore';
 
 const visualizationStore = useVisualizationStore();
 const markerDS = ref<any>(null);
@@ -14,6 +21,7 @@ const selectedProperty = ref<SchemaFieldProperty | null>(null);
 const obsProps = ref<{ definition: string; label: string }[]>([]);
 const dsSchema = ref<any>(null);
 const uiStore = useUIStore();
+const datastream = useVizWizStore().datastreams[0];
 
 const selectedLocationProperty = ref<SchemaFieldProperty | null>(null);
 const selectedHeadingProperty = ref<SchemaFieldProperty | null>(null);
@@ -36,7 +44,7 @@ usePlaybackModeSync(playbackMode, visualizationStore);
 const emit = defineEmits(['update:selectedOriginProperty', 'update:selectedHeadingProperty']);
 
 async function fetchProps() {
-	const { ds, observedProps } = mineDatasourceObsProps();
+	const { ds, observedProps } = mineDatasourceObsPropsFromDS(datastream);
 	markerDS.value = ds;
 	obsProps.value = observedProps;
 
@@ -48,10 +56,6 @@ onMounted(async () => {
 	fetchProps();
 });
 
-// watch(selectedProperty, (val) => {
-// 	emit('update:selectedProperty', val);
-// });
-
 watch(locationProp, (val) => {
 	emit('update:selectedOriginProperty', val);
 });
@@ -59,18 +63,23 @@ watch(locationProp, (val) => {
 watch(headingProp, (val) => {
 	emit('update:selectedHeadingProperty', val);
 });
+
+function updateSelectedLocProperty(property: SchemaFieldProperty) {
+	console.log('[LoBOptions] Selected Location Property:', property);
+	selectedProperty.value = property;
+}
+
+function updateSelectedHeadingProperty(property: SchemaFieldProperty) {
+	console.log('[LoBOptions] Selected Heading Property:', property);
+	selectedHeadingProperty.value = property;
+}
 </script>
 
 <template>
 	<v-card>
-		<DsPropertySelector
-			title="LOB Location Origin"
-			v-model:selectedProperty="locationProp"
-		/>
-		<DsPropertySelector
-			title="LOB Heading Property"
-			v-model:selectedProperty="headingProp"
-		/>
+		<!--		<DataSourcePicker current-ds="datastream" v-model="selectedPropertiesByDs[datastream.id]" />-->
+		<NewDataSourcePicker @update:selectedProperty="updateSelectedLocProperty" />
+		<NewDataSourcePicker @update:selectedProperty="updateSelectedHeadingProperty" />
 		<TimePicker title="Start Time" v-model:formattedDate="startTime" />
 		<TimePicker title="End Time" v-model:formattedDate="endTime" />
 		<v-combobox

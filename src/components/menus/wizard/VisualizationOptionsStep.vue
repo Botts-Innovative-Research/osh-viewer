@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import LoBCustomizationOptions from '@/components/menus/vizoptions/LoBCustomizationOptions.vue';
 import IconPicker from '@/components/menus/IconPicker.vue';
+import LoBCustomizationOptions from '@/components/menus/visualization-wizard/visualizations/lob/LoBCustomizationOptions.vue';
 
 const props = defineProps<{
 	title: string;
@@ -20,10 +20,12 @@ function handleOptionsUpdate(options: any) {
 		<h2>{{ title }}</h2>
 		<p v-if="someText">{{ someText }}</p>
 		<div v-if="optionType === 'pointmarker'">
-			<IconPicker/>
+			<IconPicker />
 		</div>
 		<div v-else-if="optionType === 'lob'">
-			<LoBCustomizationOptions v-on:update:selectedVisualizationOptions = "(val:any) => handleOptionsUpdate(val)" />
+			<LoBCustomizationOptions
+				v-on:update:selectedVisualizationOptions="(val: any) => handleOptionsUpdate(val)"
+			/>
 		</div>
 	</div>
 </template>
