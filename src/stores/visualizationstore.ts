@@ -5,6 +5,7 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 export const useVisualizationStore = defineStore('visualizations', () => {
 	const visualizations: Ref<OSHVisualization[]> = ref([]);
 	const currentVisDataStreamOptions: Ref<any> = ref({});
+	const currentVisualizationCustomizationOptions: Ref<any> = ref({});
 
 	const addVisualization = (visualization: OSHVisualization): void => {
 		console.log('[VisualizationStore] Adding visualization:', visualization);
@@ -39,13 +40,33 @@ export const useVisualizationStore = defineStore('visualizations', () => {
 		currentVisDataStreamOptions.value = {};
 	};
 
+	const updateCurrentVisualizationCustomizationOptions = (options: any): void => {
+		console.log(
+			'[VisualizationStore] Updating current visualization customization options:',
+			options
+		);
+		currentVisualizationCustomizationOptions.value = {
+			...currentVisualizationCustomizationOptions.value,
+			...options,
+		};
+	};
+
+	const clearCurrentVisualizationCustomizationOptions = (): void => {
+		console.log('[VisualizationStore] Clearing current visualization customization options');
+		currentVisualizationCustomizationOptions.value = {};
+	};
+
 	return {
 		visualizations,
 		addVisualization,
 		removeVisualization,
 		getVisualizationById,
 		getVisualizationsByType,
-		updateCurrentVisDataStreamOptions,
 		currentVisDataStreamOptions,
+		updateCurrentVisDataStreamOptions,
+		clearCurrentVisDataStreamOptions,
+		currentVisualizationCustomizationOptions,
+		updateCurrentVisualizationCustomizationOptions,
+		clearCurrentVisualizationCustomizationOptions,
 	};
 });

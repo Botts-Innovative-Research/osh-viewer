@@ -265,6 +265,11 @@ export class OSHSystem {
 		const controlstreamStore = getSharedStores().controlstreamStore;
 		return controlstreamStore.getControlStreamsById(this.children);
 	}
+
+	// Get TLS value for parent node
+	getTls(): boolean {
+		return this.parentNode.tls;
+	}
 }
 
 export class OSHDatastream {
@@ -313,7 +318,7 @@ export class OSHVisualization {
 	name: string;
 	type: string;
 	parentId: string | null;
-	parentDatastream: OSHDatastream;
+	parentDatastream: OSHDatastream | OSHDatastream[];
 	visualizationComponents!: VisualizationComponents;
 	controlstream: any | null;
 
@@ -322,7 +327,7 @@ export class OSHVisualization {
 		name: string,
 		type: string,
 		parentId: string | null,
-		parentDatastream: OSHDatastream,
+		parentDatastream: OSHDatastream | OSHDatastream[],
 		controlstream: OSHControlStream | any = null
 	) {
 		this.id = id;

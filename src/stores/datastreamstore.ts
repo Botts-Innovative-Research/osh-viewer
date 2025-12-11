@@ -28,6 +28,12 @@ export const useDataStreamStore = defineStore('datastreams', () => {
 		return dataStreams.value.filter((dataStream) => ids.includes(dataStream.uuid));
 	};
 
+	const getDataStreamsBySystemId = (ids: string[]): OSHDatastream[] => {
+		return dataStreams.value.filter((dataStream) =>
+			ids.includes(dataStream.parentId ? dataStream.parentId : '')
+		);
+	};
+
 	return {
 		dataStreams,
 		addDataStream,
@@ -35,5 +41,6 @@ export const useDataStreamStore = defineStore('datastreams', () => {
 		getDataStreamByName,
 		checkIfDataStreamExists,
 		getDataStreamsById,
+		getDataStreamsBySystemId,
 	};
 });

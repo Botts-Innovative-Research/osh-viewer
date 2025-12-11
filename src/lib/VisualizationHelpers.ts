@@ -69,9 +69,11 @@ export interface IVideoViewProperties extends DataViewProperties {
 	videoType: string;
 }
 
-export interface IMapLayerProperties extends DataLayerProperties {
-	dataSourceId: string;
-	getCoordinates: (rec: any) => { lat: number; lon: number };
+export interface IPointMarkerLayerProperties extends DataLayerProperties {
+	dataSourceId: string | string[];
+	getLocation?: (rec: any) => { x: number; y: number; z: number };
+	getOrientation?: (rec: any) => { heading: number };
+	getCoordinates?: (rec: any) => { lat: number; lon: number };
 	markerColor?: string;
 	markerIcon?: string;
 	name: string;
@@ -79,7 +81,7 @@ export interface IMapLayerProperties extends DataLayerProperties {
 
 export interface IMapViewProperties extends DataViewProperties {
 	container: string;
-	layers: IMapLayerProperties[];
+	layers: IPointMarkerLayerProperties[];
 	css?: string;
 	refreshRate?: number;
 }
@@ -87,9 +89,9 @@ export interface IMapViewProperties extends DataViewProperties {
 export class VisualizationComponents {
 	dataLayer: DataLayerProperties | null;
 	dataView: DataViewProperties | null;
-	dataSource: DataSourceProperties;
+	dataSource: DataSourceProperties | DataSourceProperties[];
 
-	constructor(datasource: SweApi, dataLayer: any, dataView: any) {
+	constructor(datasource: SweApi | SweApi[], dataLayer: any, dataView: any) {
 		this.dataSource = datasource;
 		this.dataLayer = dataLayer;
 		this.dataView = dataView;
@@ -190,17 +192,18 @@ export class VideoViewProperties implements DataViewProperties {
 		this.width = props.width;
 		this.height = props.height;
 		this.layers = props.layers.map((layer) => new VideoLayerProperties(layer));
+		this.videoType = props.videoType;
 	}
 }
 
-export class MapLayerProperties implements IMapLayerProperties {
+export class PointMarkerLayerProperties implements IPointMarkerLayerProperties {
 	dataSourceId: string;
 	getCoordinates: (rec: any) => { lat: number; lon: number };
 	markerColor?: string;
 	markerIcon?: string;
 	name: string;
 
-	constructor(props: IMapLayerProperties) {
+	constructor(props: IPointMarkerLayerProperties) {
 		this.dataSourceId = props.dataSourceId;
 		this.getCoordinates = props.getCoordinates;
 		this.markerColor = props.markerColor;
@@ -211,7 +214,7 @@ export class MapLayerProperties implements IMapLayerProperties {
 
 export class MapViewProperties implements IMapViewProperties {
 	container: string;
-	layers: IMapLayerProperties[];
+	layers: IPointMarkerLayerProperties[];
 	css?: string;
 	refreshRate?: number;
 

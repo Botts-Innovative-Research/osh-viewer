@@ -12,7 +12,7 @@ import {
 	ISweApiDataSourceProperties,
 	IVideoLayerProperties,
 	IVideoViewProperties,
-	IMapLayerProperties,
+	IPointMarkerLayerProperties,
 	IMapViewProperties,
 } from '@/lib/VisualizationHelpers';
 
@@ -21,13 +21,29 @@ export function mineDatasourceObsProps(): { ds: any; observedProps: any } {
 	const ds = uiStore.selectedDatastream;
 
 	if (!ds) {
-		console.warn('No datastream selected');
+		console.warn('[DS-Utils] No datastream selected');
 	}
 
 	const observedProps = ds.datastream.properties?.observedProperties || [];
 	console.log('[DS-Utils] Observed Properties:', ds.datastream.properties);
 
 	// fetchSchema(ds.datastream);
+
+	return { ds, observedProps };
+}
+
+/**
+ * FOR NEW VISUALIZATION WIZARD
+ * Takes datasource as parameter
+ * @returns
+ */
+export function mineDatasourceObsPropsFromDS(ds: any): { ds: any; observedProps: any } {
+	if (!ds) {
+		console.warn('[DS-Utils] No datastream given');
+	}
+
+	const observedProps = ds.datastream.properties?.observedProperties || [];
+	console.log('[DS-Utils] Observed Properties:', ds.datastream.properties);
 
 	return { ds, observedProps };
 }
@@ -329,7 +345,7 @@ export function CreateMapViewProps(
 	visOptions: any
 ): {
 	dataSource: ISweApiDataSourceProperties;
-	mapLayer: IMapLayerProperties;
+	mapLayer: IPointMarkerLayerProperties;
 	mapView: IMapViewProperties;
 } {
 	console.log('[DatasourceUtils] Creating Map View for Datastream:', ds);
@@ -348,7 +364,7 @@ export function CreateMapViewProps(
 
 	console.log('[DatasourceUtils] Creating PM Layer for property:', selectedProperty);
 	// Build MapLayerProperties
-	const mapLayer: IMapLayerProperties = {
+	const mapLayer: IPointMarkerLayerProperties = {
 		dataSourceId: ds.datastream.properties.id,
 		getLocation: (rec: any) => {
 			// Assumes the selectedProperty is an object with lat/lon or similar
@@ -381,9 +397,7 @@ export function CreateMapViewProps(
 
 /**
  * Creates properties for a GeoPTZ View based on the provided controlstream and visualization options.
- * @param cs
- * @param selectedProperty
- * @param videoFormat
+ * @param ds
  * @param visOptions
  * @constructor
  */
