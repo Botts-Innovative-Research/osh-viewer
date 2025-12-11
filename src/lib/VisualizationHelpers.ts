@@ -69,7 +69,7 @@ export interface IVideoViewProperties extends DataViewProperties {
 	videoType: string;
 }
 
-export interface IMapLayerProperties extends DataLayerProperties {
+export interface IPointMarkerLayerProperties extends DataLayerProperties {
 	dataSourceId: string | string[];
 	getLocation?: (rec: any) => { x: number; y: number; z: number };
 	getOrientation?: (rec: any) => { heading: number };
@@ -81,7 +81,7 @@ export interface IMapLayerProperties extends DataLayerProperties {
 
 export interface IMapViewProperties extends DataViewProperties {
 	container: string;
-	layers: IMapLayerProperties[];
+	layers: IPointMarkerLayerProperties[];
 	css?: string;
 	refreshRate?: number;
 }
@@ -196,14 +196,14 @@ export class VideoViewProperties implements DataViewProperties {
 	}
 }
 
-export class MapLayerProperties implements IMapLayerProperties {
+export class PointMarkerLayerProperties implements IPointMarkerLayerProperties {
 	dataSourceId: string;
 	getCoordinates: (rec: any) => { lat: number; lon: number };
 	markerColor?: string;
 	markerIcon?: string;
 	name: string;
 
-	constructor(props: IMapLayerProperties) {
+	constructor(props: IPointMarkerLayerProperties) {
 		this.dataSourceId = props.dataSourceId;
 		this.getCoordinates = props.getCoordinates;
 		this.markerColor = props.markerColor;
@@ -214,7 +214,7 @@ export class MapLayerProperties implements IMapLayerProperties {
 
 export class MapViewProperties implements IMapViewProperties {
 	container: string;
-	layers: IMapLayerProperties[];
+	layers: IPointMarkerLayerProperties[];
 	css?: string;
 	refreshRate?: number;
 

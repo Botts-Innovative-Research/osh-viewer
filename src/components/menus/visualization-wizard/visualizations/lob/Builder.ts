@@ -24,7 +24,7 @@ export function CreateLobViewProps(
 	visOptions: any
 ): {
 	dataSource: ISweApiDataSourceProperties;
-	lobLayer: ILineOfBearingLayerProperties;
+	lobLayer: LineOfBearingLayerProperties;
 	lobView: ILineOfBearingViewProperties;
 } {
 	console.log('[DatasourceUtils] Creating Lob View for Datastream:', ds);
@@ -48,16 +48,13 @@ export function CreateLobViewProps(
 		dataSourceId: ds.datastream.properties.id,
 		getOriginAndBearing: (rec: any) => {
 			return {
-				startLocation: {
+				origin: {
 					x: rec[selectedLocationProperty.name].lon,
 					y: rec[selectedLocationProperty.name].lat,
 					z: rec[selectedLocationProperty.name].alt || 0, // Default to 0 if altitude is not provided
 				},
 				bearing: (rec[selectedBearingProperty.name] * Math.PI) / 180,
 			};
-		},
-		getPolylineId: (rec: any) => {
-			return { frequency: rec[selectedLocationProperty.name].frequency };
 		},
 		color: visOptions.color,
 		weight: visOptions.weight,
@@ -112,7 +109,13 @@ export class LineOfBearingLayerProperties implements ILineOfBearingLayerProperti
 	weight: number;
 
 	constructor(props: ILineOfBearingLayerProperties) {
-		Object.assign(this, props);
+		this.color = props.color;
+		this.dataSourceId = props.dataSourceId;
+		this.distanceKm = props.distanceKm;
+		this.getOriginAndBearing = props.getOriginAndBearing;
+		this.name = props.name;
+		this.opacity = props.opacity;
+		this.weight = props.weight;
 	}
 }
 

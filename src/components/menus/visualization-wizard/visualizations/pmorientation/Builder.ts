@@ -1,6 +1,6 @@
 import { OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
-	IMapLayerProperties,
+	IPointMarkerLayerProperties,
 	IMapViewProperties,
 	ISweApiDataSourceProperties,
 } from '@/lib/VisualizationHelpers';

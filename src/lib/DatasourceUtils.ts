@@ -12,10 +12,8 @@ import {
 	ISweApiDataSourceProperties,
 	IVideoLayerProperties,
 	IVideoViewProperties,
-	IMapLayerProperties,
+	IPointMarkerLayerProperties,
 	IMapViewProperties,
-	ILineOfBearingLayerProperties,
-	ILineOfBearingViewProperties,
 } from '@/lib/VisualizationHelpers';
 
 export function mineDatasourceObsProps(): { ds: any; observedProps: any } {
@@ -347,7 +345,7 @@ export function CreateMapViewProps(
 	visOptions: any
 ): {
 	dataSource: ISweApiDataSourceProperties;
-	mapLayer: IMapLayerProperties;
+	mapLayer: IPointMarkerLayerProperties;
 	mapView: IMapViewProperties;
 } {
 	console.log('[DatasourceUtils] Creating Map View for Datastream:', ds);
@@ -366,7 +364,7 @@ export function CreateMapViewProps(
 
 	console.log('[DatasourceUtils] Creating PM Layer for property:', selectedProperty);
 	// Build MapLayerProperties
-	const mapLayer: IMapLayerProperties = {
+	const mapLayer: IPointMarkerLayerProperties = {
 		dataSourceId: ds.datastream.properties.id,
 		getLocation: (rec: any) => {
 			// Assumes the selectedProperty is an object with lat/lon or similar

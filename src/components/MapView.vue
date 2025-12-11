@@ -10,8 +10,15 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { sendCommand } from '@/lib/ControlstreamUtils';
-import { ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
+import {
+	ISweApiDataSourceProperties,
+	PointMarkerLayerProperties,
+} from '@/lib/VisualizationHelpers';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
+import {
+	LineOfBearingLayerProperties,
+	LobViewProperties,
+} from '@/components/menus/visualization-wizard/visualizations/lob/Builder';
 
 const visualizationStore = useVisualizationStore();
 const mapLayerType = ref('leaflet');
@@ -331,7 +338,7 @@ watch(
 				mode: datasourceProps.mode,
 			});
 
-			const layerOpts = viz.visualizationComponents.dataLayer;
+			const layerOpts = viz.visualizationComponents.dataLayer as LineOfBearingLayerProperties;
 
 			let lobLayer = new LoBLayer({
 				name: viz.name,

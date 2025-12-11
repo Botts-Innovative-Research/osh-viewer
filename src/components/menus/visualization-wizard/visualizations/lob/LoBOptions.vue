@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {
 	fetchSchema,
-	mineDatasourceObsProps,
 	mineDatasourceObsPropsFromDS,
 	SchemaFieldProperty,
 } from '@/lib/DatasourceUtils';
@@ -11,7 +10,6 @@ import { useUIStore } from '@/stores/uistore';
 import { Mode } from 'osh-js/source/core/datasource/Mode.js';
 import { usePlaybackModeSync, useStartEndTimeSync } from '@/composables/DataSourceOptions';
 import TimePicker from '@/components/menus/TimePicker.vue';
-import DataSourcePicker from '@/components/menus/visualization-wizard/viz-components/DataSourcePicker.vue';
 import NewDataSourcePicker from '@/components/menus/visualization-wizard/viz-components/NewDataSourcePicker.vue';
 import { useVizWizStore } from '@/stores/vizwizstore';
 
@@ -20,12 +18,9 @@ const markerDS = ref<any>(null);
 const selectedProperty = ref<SchemaFieldProperty | null>(null);
 const obsProps = ref<{ definition: string; label: string }[]>([]);
 const dsSchema = ref<any>(null);
-const uiStore = useUIStore();
 const datastream = useVizWizStore().datastreams[0];
 
-const selectedLocationProperty = ref<SchemaFieldProperty | null>(null);
 const selectedHeadingProperty = ref<SchemaFieldProperty | null>(null);
-const selectedLobProps = ref<SchemaFieldProperty | null>(null);
 
 const locationProp = defineModel('selectedLocationProperty');
 const headingProp = defineModel('selectedHeadingProperty');
@@ -77,7 +72,6 @@ function updateSelectedHeadingProperty(property: SchemaFieldProperty) {
 
 <template>
 	<v-card>
-		<!--		<DataSourcePicker current-ds="datastream" v-model="selectedPropertiesByDs[datastream.id]" />-->
 		<NewDataSourcePicker @update:selectedProperty="updateSelectedLocProperty" />
 		<NewDataSourcePicker @update:selectedProperty="updateSelectedHeadingProperty" />
 		<TimePicker title="Start Time" v-model:formattedDate="startTime" />
