@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
-import { ref, defineProps, computed, reactive, watch, ReactiveEffect } from 'vue';
+import { ref, defineProps, computed, reactive, watch, ReactiveEffect, onMounted } from 'vue';
 import TimePickers from '../../viz-components/TimePickers.vue';
 import DataSourcePicker from '../../viz-components/DataSourcePicker.vue';
 
@@ -9,16 +9,24 @@ import DataSourcePicker from '../../viz-components/DataSourcePicker.vue';
 const vizwizStore = useVizWizStore()
 
 // Checked status for each role
-const checkedRoles = {
+const checkedRoles = reactive({
   location: computed({
     get: () => vizwizStore.dsConfig.location?.selected ?? true,
-    set: (val: boolean) => vizwizStore.updateDsConfig("location", { selected: val})
+    set: (val: boolean) => vizwizStore.updateDsConfig("location", { selected: val })
   }),
   orientation: computed({
     get: () => vizwizStore.dsConfig.orientation?.selected ?? false,
-    set: (val: boolean) => vizwizStore.updateDsConfig("orientation", { selected: val})
+    set: (val: boolean) => vizwizStore.updateDsConfig("orientation", { selected: val })
   }),
-}
+})
+
+// Initialize dsConfig with location selected by default when mounted
+onMounted(() => {
+  if (!vizwizStore.dsConfig.location) {
+    vizwizStore.updateDsConfig("location", { selected: true })
+  }
+})
+
 
 
 const config = reactive({
@@ -30,13 +38,13 @@ const config = reactive({
 <template>
   <!-- Location -->
   <v-container>
-    <v-checkbox label="Location" :model-value="checkedRoles.location" disabled></v-checkbox>
+    <v-checkbox label="Location" v-model="checkedRoles.location" disabled></v-checkbox>
     <DataSourcePicker v-if="checkedRoles.location" property="location" />
   </v-container>
 
   <!-- Orientation -->
   <v-container>
-    <v-checkbox label="Orientation" :model-value="checkedRoles.orientation"></v-checkbox>
+    <v-checkbox label="Orientation" v-model="checkedRoles.orientation"></v-checkbox>
     <DataSourcePicker v-if="checkedRoles.orientation" property="orientation" />
   </v-container>
 
@@ -46,3 +54,6 @@ const config = reactive({
   <!-- TIME PICKERS & PLAYBACK MODE -->
   <TimePickers />
 </template>
+
+<style scoped>
+</style>

@@ -18,8 +18,8 @@ const listDatastreams = computed(() => {
 
 // Update selected datastream for this role in vizwiz store
 const selectedDatastream = computed({
-  get: () => vizwizStore.dsConfig[props.property]?.dsId,
-  set: (val: OSHDatastream[]) => vizwizStore.updateDsConfig(props.property, { dsId: val })
+  get: () => vizwizStore.dsConfig[props.property]?.ds,
+  set: (val: OSHDatastream) => vizwizStore.updateDsConfig(props.property, { ds: val })
 })
 
 const selectedProperty = computed({
