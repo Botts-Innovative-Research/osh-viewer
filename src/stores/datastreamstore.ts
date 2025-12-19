@@ -24,8 +24,13 @@ export const useDataStreamStore = defineStore('datastreams', () => {
     return dataStreams.value.some((dataStream) => dataStream.uuid === id)
   }
 
+  // const getDataStreamsById = (ids: string[]): OSHDatastream[] => {
+  //   return dataStreams.value.filter((dataStream) => ids.includes(dataStream.uuid))
+  // }
+
+  // Using id and not uuid
   const getDataStreamsById = (ids: string[]): OSHDatastream[] => {
-    return dataStreams.value.filter((dataStream) => ids.includes(dataStream.uuid))
+    return dataStreams.value.filter((dataStream) => ids.includes(dataStream.id))
   }
 
   const getDataStreamsBySystemId = (ids: string[]): OSHDatastream[] => {

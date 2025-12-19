@@ -177,68 +177,79 @@ watch(mapVisualizations, (updated) => {
       dsInstance.connect()
 
     } else if (viz.type === 'pmorientation') {
-
+      // Array of datasources
       const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
         ? viz.visualizationComponents.dataSource
         : [viz.visualizationComponents.dataSource];
 
-      const [locationDsProps, orientationDsProps] = dsArray;
+      // Array of SweApi instances for datasources
+      const dsInstances: SweApi[] = [];
+
+      // Declare getLocation and getOrientation functions, undefined initially
+      let getLocation: any
+      let getOrientation: any
 
 
-      let locationDsInstance = new SweApi('pm-loc-datasource-' + randomUUID(), {
-        endpointUrl: locationDsProps.endpointUrl,
-        resource: locationDsProps.resource,
-        tls: locationDsProps.tls,
-        protocol: locationDsProps.protocol,
-        startTime: locationDsProps.startTime,
-        endTime: locationDsProps.endTime,
-        mode: locationDsProps.mode,
-      })
+      for (const dsProps of dsArray) {
+        const dsInstance = new SweApi(dsProps.id, {
+          endpointUrl: dsProps.endpointUrl,
+          resource: dsProps.resource,
+          tls: dsProps.tls,
+          protocol: dsProps.protocol,
+          startTime: dsProps.startTime,
+          endTime: dsProps.endTime,
+          mode: dsProps.mode,
+          responseFormat: dsProps.responseFormat,
+        });
 
-      let orientationDsInstance = new SweApi('pm-orient-datasource-' + randomUUID(), {
-        endpointUrl: orientationDsProps.endpointUrl,
-        resource: orientationDsProps.resource,
-        tls: orientationDsProps.tls,
-        protocol: orientationDsProps.protocol,
-        startTime: orientationDsProps.startTime,
-        endTime: orientationDsProps.endTime,
-        mode: orientationDsProps.mode,
-      })
+        // Check for location property
+        if (dsProps.properties.location) {
+          getLocation = {
+            dataSourceIds: [dsInstance.id],
+            handler: (rec: any) => {
+              return {
+                x: rec[dsProps.properties.location].lon,
+                y: rec[dsProps.properties.location].lat,
+                z: rec[dsProps.properties.location].alt || 0, // Default to 0 if altitude is not provided
+              }
+            },
+          }
+        }
+        // Check for orientation property
+        if (dsProps.properties.orientation) {
+          getOrientation = {
+            dataSourceIds: [dsInstance.id],
+            handler: (rec: any) => {
+              return {
+                heading: rec[dsProps.properties.orientation].heading,
+              }
+            },
+          }
+        }
 
-      console.log('[MapView] Creating datasource for PointMarkerLayer:', locationDsInstance)
+        dsInstance.connect();
+        dsInstances.push(dsInstance);
+      }
+
+      console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstances)
       const layerOpts = viz.visualizationComponents.dataLayer
       const pmLayer = new PointMarkerLayer({
         name: viz.name,
-        dataSourceIds: [locationDsInstance.id, orientationDsInstance.id],
-        getLocation: {
-          dataSourceIds: [locationDsInstance.id],
-          handler: (rec: any) => {
-            return {
-              x: rec.location.lon,
-              y: rec.location.lat,
-              z: rec.location.alt || 200,
-            }
-          },
-        },
-        getOrientation: {
-          dataSourceIds: [orientationDsInstance.id],
-          handler: (rec: any) => {
-            return {
-              heading: rec.orient.heading || 0
-            }
-          },
-        },
-        label: viz.visualizationComponents.dataLayer.name,
-        icon: '/icons/map/map-marker.svg',
-        iconSize: [32, 32],
-        labelOffset: [-16, -32],
+        dataSourceIds: dsInstances.map(ds => ds.id),
+        ...(getLocation ? { getLocation } : {}),
+        ...(getOrientation ? { getOrientation } : {}),
+        // dataSourceIds: layerOpts.dataSourceIds,
+        // getLocation: layerOpts.getLocation,
+        // getOrientation: layerOpts.getOrientation,
+        // TODO: Add getMarkerId
+        label: layerOpts.name,
+        icon: layerOpts.icon,
+        iconSize: layerOpts.iconSize,
+        labelOffset: layerOpts.labelOffset,
       })
       pmLayers.value.push(pmLayer)
       mapView.value.addLayer(pmLayer)
       console.log('[MapView] Creating PointMarkerLayer:', pmLayer)
-      locationDsInstance.connect()
-      orientationDsInstance.connect()
-
     }
   }
 }, { deep: true })

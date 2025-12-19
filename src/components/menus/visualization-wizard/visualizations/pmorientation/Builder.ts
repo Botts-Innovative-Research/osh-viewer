@@ -3,6 +3,7 @@ import {
   IMapLayerProperties,
   IMapViewProperties,
   ISweApiDataSourceProperties,
+  VisualizationComponents,
 } from '@/lib/VisualizationHelpers'
 import { useDataStreamStore } from '@/stores/datastreamstore'
 import { useVisualizationStore } from '@/stores/visualizationstore'
@@ -17,38 +18,26 @@ export function build() {
 
   // Aggregate datastreams from vizwizStore
   const datastreams = AggregateDatastreams()
-
   console.log('Aggregated datastreams for PM Orientation:', datastreams)
 
-  CreateMapViewProps(datastreams, vizwizStore.globalConfig)
+  const pmResult = CreateMapViewProps(datastreams, vizwizStore.globalConfig)
+  const visualizationComponents: VisualizationComponents = {
+    dataSource: pmResult.vizDatasources,
+    dataLayer: pmResult.mapLayer,
+    dataView: pmResult.mapView,
+  }
 
-  // // if (locationDs && orientationDs) {
-  // if (locationDs && orientationDs) {
-  //   console.log('Found locationDs and orientationDs, building visualization...')
-  //   const pmResult = CreateMapViewProps(
-  //     locationDs,
-  //     orientationDs,
-  //     { name: 'location' },
-  //     vizwizStore.globalConfig,
-  //   )
-  //   const visualizationComponents = {
-  //     // dataSource: [pmResult.pmDataSource, pmResult.orientationDataSource],
-  //     dataSource: [pmResult.locationDataSource, pmResult.orientationDataSource],
-  //     dataLayer: pmResult.mapLayer,
-  //     dataView: pmResult.mapView,
-  //   }
-  //   const newViz: OSHVisualization = new OSHVisualization(
-  //     `visualization-${randomUUID()}`,
-  //     'test',
-  //     'pmorientation',
-  //     null,
-  //     [locationDs, orientationDs],
-  //     null,
-  //   )
-  //   newViz.setVisualizationComponents(visualizationComponents)
-  //   visualizationStore.addVisualization(newViz)
-  //   console.log('Created PM Orientation Visualization:', newViz)
-  // }
+  const newViz: OSHVisualization = new OSHVisualization(
+    `visualization-${randomUUID()}`,
+    'test',
+    'pmorientation',
+    null,
+    datastreams,
+    null,
+  )
+  newViz.setVisualizationComponents(visualizationComponents)
+  visualizationStore.addVisualization(newViz)
+  console.log('Created PM Orientation Visualization:', newViz)
 }
 
 /**
@@ -58,114 +47,120 @@ export function build() {
  * @param visOptions
  * @constructor
  */
-export function CreateMapViewProps(
-  datastreams: { [key: string]: any },
-  visOptions: any,
-) {
+export function CreateMapViewProps(datastreams: { [key: string]: any }, visOptions: any) {
   const datastreamStore = useDataStreamStore()
+  console.log('Datastreams: ', datastreamStore.dataStreams)
 
   const vizDatasources: ISweApiDataSourceProperties[] = []
+  let mapLayer: any = {}
 
   // Iterate through each unique datastream ID
   for (const [dsId, entry] of Object.entries(datastreams)) {
     console.log('Processing datastream ID:', dsId, 'with entry:', entry)
 
+    // Get selected properties for each role of the datastream
+    const properties = BuildRoleProperty(entry)
+
     // Push new ISweApiDataSourceProperties
-    const currentDataSource = datastreamStore.getDataStreamsById([dsId])
-    vizDatasources.push({
-      endpointUrl: currentDataSource[0].datastream.networkProperties.endpointUrl,
+    const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId])
+    const currentDataSource: ISweApiDataSourceProperties = {
+      endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
       resource: `/datastreams/${dsId}/observations`,
-      tls: currentDataSource[0].datastream.networkProperties.tls,
+      tls: currentOSHDatastream[0].datastream.networkProperties.tls,
       protocol: 'ws',
       startTime: visOptions.startTime || 'now',
       endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
       mode: Mode.REAL_TIME, // TODO: Make configurable
       responseFormat: 'application/swe+json',
-    })
-    
-
-    // Iterate through each role within the datastream entry
-    for (const roleObj of entry) {
-      const role = Object.keys(roleObj)[0]    // Get role name
-      const dsEntry = roleObj[role]           // Get the properties for the role
-      console.log('Processing role:', role, 'with dsEntry:', dsEntry)
+      id: randomUUID(), // TODO: Remove if not needed
+      properties: properties,
     }
+    vizDatasources.push(currentDataSource)
 
+    // TODO: Remove if this approach is no longer needed
+    // // Add location if role is selected
+    // if (properties.location) {
+    //   mapLayer.getLocation = {
+    //     dataSourceIds: [currentDataSource.id],
+    //     handler: (rec: any) => {
+    //       return {
+    //         x: rec[properties.location].lon,
+    //         y: rec[properties.location].lat,
+    //         z: rec[properties.location].alt || 0, // Default to 0 if altitude is not provided
+    //       }
+    //     },
+    //   }
+    // }
+    // // Add orientation if role is selected
+    // if (properties.orientation) {
+    //   mapLayer.getOrientation = {
+    //     dataSourceIds: [currentDataSource.id],
+    //     handler: (rec: any) => {
+    //       return {
+    //         heading: rec[properties.orientation].heading,
+    //       }
+    //     },
+    //   }
+    // }
+    // // Add markerId if role is selected
+    // // TODO: Implement markerId handling
   }
 
+  // Build remaining mapLayer properties
+  mapLayer = {
+    ...mapLayer,
+    dataSourceIds: [...vizDatasources.map((ds: any) => ds.id)],
+    markerColor: visOptions.markerColor || 'red',
+    markerIcon: visOptions.markerIcon || undefined,
+    name: `${randomUUID()} - PM Orientation Layer`,
+    icon: '/icons/map/map-marker.svg',
+    iconSize: [32, 32],
+    labelOffset: [-16, -32],
+  }
 
-  // // Build SweApiDataSourceProperties for LOCATION datastream
-  // const locationDataSource: ISweApiDataSourceProperties = {
-  //   endpointUrl: locationDs.datastream.networkProperties.endpointUrl,
-  //   resource: `/datastreams/${locationDs.datastream.properties.id}/observations`,
-  //   tls: locationDs.datastream.networkProperties.tls,
-  //   protocol: 'ws',
-  //   startTime: visOptions.startTime || 'now',
-  //   endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
-  //   mode: Mode.REAL_TIME, // TODO: Make configurable
-  //   responseFormat: 'application/swe+json',
-  // }
-  // // Build SweApiDataSourceProperties for ORIENTATION datastream
-  // const orientationDataSource: ISweApiDataSourceProperties = {
-  //   endpointUrl: orientationDs.datastream.networkProperties.endpointUrl,
-  //   resource: `/datastreams/${orientationDs.datastream.properties.id}/observations`,
-  //   tls: orientationDs.datastream.networkProperties.tls,
-  //   protocol: 'ws',
-  //   startTime: visOptions.startTime || 'now',
-  //   endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
-  //   mode: Mode.REAL_TIME, // TODO: Make configurable
-  //   responseFormat: 'application/swe+json',
-  // }
+  // Build MapViewProperties
+  const mapView: IMapViewProperties = {
+    container: `map-container-${randomUUID()}`,
+    layers: [mapLayer],
+    css: 'map-view',
+    refreshRate: 1000,
+  }
 
-  // // Build MapLayerProperties
-  // const mapLayer: any = {
-  //   dataSourceIds: [locationDs.id, orientationDs.id],
-  //   markerColor: visOptions.markerColor || 'red',
-  //   markerIcon: visOptions.markerIcon || undefined,
-  //   name: `${randomUUID()} - PM Orientation Layer`,
-  // }
+  console.log('Created MapViewProps:', { vizDatasources, mapLayer, mapView })
 
-  // // Build MapViewProperties
-  // const mapView: IMapViewProperties = {
-  //   container: `map-container-${randomUUID()}`,
-  //   layers: [mapLayer],
-  //   css: 'map-view',
-  //   refreshRate: 1000,
-  // }
-
-  // return {
-  //   locationDataSource,
-  //   orientationDataSource,
-  //   mapLayer,
-  //   mapView,
-  // }
-
-  return
+  return {
+    vizDatasources,
+    mapLayer,
+    mapView,
+  }
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Aggregates datastreams from vizwizStore.dsConfig based on selected roles.
+ *
+ * @returns aggregated datastreams, keyed by ds ID
+ * {
+ *  "dsId1": [
+ *    { "role1": { "selected": true, "ds": { ... }, "property": "prop1" } },
+ *    { "role2": { "selected": true, "ds": { ... }, "property": "prop2" } },
+ *  ],
+ *  "dsId2": [
+ *    { "role1": { "selected": true, "ds": { ... }, "property": "prop1" } },
+ *  ],
+ * }
+ */
 export function AggregateDatastreams() {
-  
   const result: any = {}
-  
+
   const vizwizStore = useVizWizStore()
 
   for (const [role, entry] of Object.entries(vizwizStore.dsConfig)) {
-
     console.log('Processing role:', role, 'with entry:', entry)
 
     if (!entry.selected) {
       continue // Skip unselected roles
     }
-    
+
     // Initialize array for role if not present
     if (!result[entry.ds.id]) {
       result[entry.ds.id] = []
@@ -175,8 +170,24 @@ export function AggregateDatastreams() {
     result[entry.ds.id].push({
       [role]: entry,
     })
-
   }
 
   return result
+}
+
+/**
+ * Returns a mapping of roles to their selected property name
+ * @param entry 
+ * @returns 
+ */
+export function BuildRoleProperty(entry: any[]) {
+  return Object.fromEntries(
+    entry.map((roleObj: any) => {
+      const role = Object.keys(roleObj)[0]
+      const roleEntry = roleObj[role]
+
+      // Return [role, property string]
+      return [role, roleEntry.property]
+    }),
+  )
 }
