@@ -15,6 +15,7 @@ import {
   IMapLayerProperties,
   IMapViewProperties,
 } from '@/lib/VisualizationHelpers'
+import { useDataStreamStore } from '@/stores/datastreamstore'
 
 export function mineDatasourceObsProps(): { ds: any; observedProps: any } {
   const uiStore = useUIStore()
@@ -34,10 +35,13 @@ export function mineDatasourceObsProps(): { ds: any; observedProps: any } {
 
 /**
  * FOR NEW VISUALIZATION WIZARD
- * Takes datasource as parameter
+ * Takes datasource ID as parameter
  * @returns 
  */
-export function mineDatasourceObsPropsFromDS(ds: any): { ds: any; observedProps: any } {
+export function mineDatasourceObsPropsFromDS(dsId: string): { ds: any; observedProps: any } {
+  const dataStreamStore = useDataStreamStore()
+  const ds = dataStreamStore.getDataStreamsById([dsId])[0]
+
   if (!ds) {
     console.warn('No datastream given')
   }

@@ -39,13 +39,13 @@ const config = reactive({
   <!-- Location -->
   <v-container>
     <v-checkbox label="Location" v-model="checkedRoles.location" disabled></v-checkbox>
-    <DataSourcePicker v-if="checkedRoles.location" property="location" />
+    <DataSourcePicker v-if="checkedRoles.location" role="location" />
   </v-container>
 
   <!-- Orientation -->
   <v-container>
     <v-checkbox label="Orientation" v-model="checkedRoles.orientation"></v-checkbox>
-    <DataSourcePicker v-if="checkedRoles.orientation" property="orientation" />
+    <DataSourcePicker v-if="checkedRoles.orientation" role="orientation" />
   </v-container>
 
   <!-- Marker ID -->

@@ -72,47 +72,18 @@ export function CreateMapViewProps(datastreams: { [key: string]: any }, visOptio
       endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
       mode: Mode.REAL_TIME, // TODO: Make configurable
       responseFormat: 'application/swe+json',
-      id: randomUUID(), // TODO: Remove if not needed
+      id: randomUUID(),
       properties: properties,
     }
     vizDatasources.push(currentDataSource)
-
-    // TODO: Remove if this approach is no longer needed
-    // // Add location if role is selected
-    // if (properties.location) {
-    //   mapLayer.getLocation = {
-    //     dataSourceIds: [currentDataSource.id],
-    //     handler: (rec: any) => {
-    //       return {
-    //         x: rec[properties.location].lon,
-    //         y: rec[properties.location].lat,
-    //         z: rec[properties.location].alt || 0, // Default to 0 if altitude is not provided
-    //       }
-    //     },
-    //   }
-    // }
-    // // Add orientation if role is selected
-    // if (properties.orientation) {
-    //   mapLayer.getOrientation = {
-    //     dataSourceIds: [currentDataSource.id],
-    //     handler: (rec: any) => {
-    //       return {
-    //         heading: rec[properties.orientation].heading,
-    //       }
-    //     },
-    //   }
-    // }
-    // // Add markerId if role is selected
-    // // TODO: Implement markerId handling
   }
 
   // Build remaining mapLayer properties
   mapLayer = {
     ...mapLayer,
-    dataSourceIds: [...vizDatasources.map((ds: any) => ds.id)],
     markerColor: visOptions.markerColor || 'red',
     markerIcon: visOptions.markerIcon || undefined,
-    name: `${randomUUID()} - PM Orientation Layer`,
+    label: `${randomUUID()} - PM Orientation Layer`,
     icon: '/icons/map/map-marker.svg',
     iconSize: [32, 32],
     labelOffset: [-16, -32],
@@ -162,12 +133,12 @@ export function AggregateDatastreams() {
     }
 
     // Initialize array for role if not present
-    if (!result[entry.ds.id]) {
-      result[entry.ds.id] = []
+    if (!result[entry.dsId]) {
+      result[entry.dsId] = []
     }
 
     // Add selected property to role's array
-    result[entry.ds.id].push({
+    result[entry.dsId].push({
       [role]: entry,
     })
   }

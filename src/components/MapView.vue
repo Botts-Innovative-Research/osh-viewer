@@ -185,10 +185,10 @@ watch(mapVisualizations, (updated) => {
       // Array of SweApi instances for datasources
       const dsInstances: SweApi[] = [];
 
-      // Declare getLocation and getOrientation functions, undefined initially
+      // Undefined initially
       let getLocation: any
       let getOrientation: any
-
+      let getMarkerId: any
 
       for (const dsProps of dsArray) {
         const dsInstance = new SweApi(dsProps.id, {
@@ -226,6 +226,15 @@ watch(mapVisualizations, (updated) => {
             },
           }
         }
+        // Check for markerId property
+        if (dsProps.properties.markerId) {
+          getMarkerId = {
+            dataSourceIds: [dsInstance.id],
+            handler: (rec: any) => {
+              return rec[dsProps.properties.markerId];
+            },
+          }
+        }
 
         dsInstance.connect();
         dsInstances.push(dsInstance);
@@ -234,18 +243,12 @@ watch(mapVisualizations, (updated) => {
       console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstances)
       const layerOpts = viz.visualizationComponents.dataLayer
       const pmLayer = new PointMarkerLayer({
+        ...layerOpts,
         name: viz.name,
         dataSourceIds: dsInstances.map(ds => ds.id),
         ...(getLocation ? { getLocation } : {}),
         ...(getOrientation ? { getOrientation } : {}),
-        // dataSourceIds: layerOpts.dataSourceIds,
-        // getLocation: layerOpts.getLocation,
-        // getOrientation: layerOpts.getOrientation,
-        // TODO: Add getMarkerId
-        label: layerOpts.name,
-        icon: layerOpts.icon,
-        iconSize: layerOpts.iconSize,
-        labelOffset: layerOpts.labelOffset,
+        ...(getMarkerId ? { getMarkerId } : {}),
       })
       pmLayers.value.push(pmLayer)
       mapView.value.addLayer(pmLayer)
