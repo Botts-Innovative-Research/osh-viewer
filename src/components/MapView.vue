@@ -343,17 +343,19 @@ watch(
 			let lobLayer = new LoBLayer({
 				name: viz.name,
 				dataSourceIds: [dsinstance.id],
-				getOriginAndBearing: {
-					dataSourceIds: [dsinstance.id],
-					handler: (rec: any) => ({
-						origin: {
-							x: rec.location.lon,
-							y: rec.location.lat,
-							z: rec.location.alt || 0,
-						},
-						bearing: rec.raw_lob,
-					}),
-				},
+				getOriginAndBearing: layerOpts.getOriginAndBearing,
+				// getOriginAndBearing: {
+				// 	dataSourceIds: [dsinstance.id],
+				// 	handler: layerOpts.getOriginAndBearing.handler,
+				// 	// handler: (rec: any) => ({
+				// 	// 	origin: {
+				// 	// 		x: rec.location.lon,
+				// 	// 		y: rec.location.lat,
+				// 	// 		z: rec.location.alt || 0,
+				// 	// 	},
+				// 	// 	bearing: rec.raw_lob,
+				// 	// }),
+				// },
 				color: layerOpts.color || '#FF0000',
 				id: viz.id,
 				length: (layerOpts.distanceKm || 10) * 1000,

@@ -46,15 +46,28 @@ export function CreateLobViewProps(
 	// Build MapLayerProperties
 	const lobLayer: LineOfBearingLayerProperties = {
 		dataSourceId: ds.datastream.properties.id,
-		getOriginAndBearing: (rec: any) => {
-			return {
-				origin: {
-					x: rec[selectedLocationProperty.name].lon,
-					y: rec[selectedLocationProperty.name].lat,
-					z: rec[selectedLocationProperty.name].alt || 0, // Default to 0 if altitude is not provided
-				},
-				bearing: (rec[selectedBearingProperty.name] * Math.PI) / 180,
-			};
+		// getOriginAndBearing: (rec: any) => {
+		// 	return {
+		// 		origin: {
+		// 			x: rec[selectedLocationProperty.name].lon,
+		// 			y: rec[selectedLocationProperty.name].lat,
+		// 			z: rec[selectedLocationProperty.name].alt || 0, // Default to 0 if altitude is not provided
+		// 		},
+		// 		bearing: (rec[selectedBearingProperty.name] * Math.PI) / 180,
+		// 	};
+		// },
+		getOriginAndBearing: {
+			dataSourceIds: [ds.datastream.properties.id],
+			handler: (rec: any) => {
+				return {
+					origin: {
+						x: rec[selectedLocationProperty.name].lon,
+						y: rec[selectedLocationProperty.name].lat,
+						z: rec[selectedLocationProperty.name].alt || 0, // Default to 0 if altitude is not provided
+					},
+					bearing: (rec[selectedBearingProperty.name] * Math.PI) / 180,
+				};
+			}
 		},
 		color: visOptions.color,
 		weight: visOptions.weight,
@@ -80,10 +93,13 @@ export function CreateLobViewProps(
 
 export interface ILineOfBearingLayerProperties extends DataLayerProperties {
 	dataSourceId: string;
-	getOriginAndBearing: (rec: any) => {
+	getOriginAndBearing:{
+		dataSourceIds: string[],
+		handler: (rec: any) => {
 		origin: { x: number; y: number; z: number };
 		bearing: number;
-	};
+		}
+	}
 	getPolylineId?: (rec: any) => any;
 	color: any;
 	weight: number;
@@ -97,12 +113,20 @@ export class LineOfBearingLayerProperties implements ILineOfBearingLayerProperti
 	dataSourceId: string;
 	distanceKm: number;
 
-	getOriginAndBearing(rec: any): {
+	// getOriginAndBearing(rec: any): {
+	// 	origin: { x: number; y: number; z: number };
+	// 	bearing: number;
+	// } {
+	// 	return { bearing: 0, origin: { x: 0, y: 0, z: 0 } };
+	// }
+
+	getOriginAndBearing: {
+		dataSourceIds: string[],
+		handler: (rec: any) => {
 		origin: { x: number; y: number; z: number };
 		bearing: number;
-	} {
-		return { bearing: 0, origin: { x: 0, y: 0, z: 0 } };
-	}
+		}
+	};
 
 	name: string;
 	opacity: number;

@@ -76,7 +76,7 @@ export function checkDSForProps(propNames: string[], observedProps: any): any {
 	}
 }
 
-export async function fetchSchema(datastream: any) {
+export async function fetchSchema(datastream: any): Promise<any> {
 	console.log('[DatasourceUtils] Fetching schema for datastream:', datastream);
 
 	let checkedFormat = datastream.properties.formats.filter(
@@ -134,19 +134,28 @@ export class VisualizationMetadata {
 	}
 }
 
+/**
+ * Used to show a partial representation of a json Schema representation of the available fields in a datastream
+ */
 export class SchemaFieldProperty {
 	definition: string;
 	name: string;
 	type: string;
 	referenceFrame?: string;
 	uom?: any;
+	fields?: SchemaFieldProperty[];
+	datastream_id?: string;
+	label?: string;
 
 	constructor(definition: string, name: string, type: string, unitOfMeasure?: string) {
 		this.definition = definition;
 		this.name = name;
 		this.type = type;
 		this.uom = unitOfMeasure;
+		this.fields = [];
 	}
+
+
 }
 
 // deprecated
