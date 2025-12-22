@@ -91,6 +91,16 @@ export const useVizWizStore = defineStore('vizwiz', () => {
     console.log('[VizWizStore] Store reset')
   }
 
+  const resetDsConfig = () => {
+    dsConfig.value = {}
+    console.log('[VizWizStore] DS Config reset')
+  }
+
+  const resetDsCustomization = () => {
+    dsCustomization.value = {}
+    console.log('[VizWizStore] DS Customization reset')
+  }
+
   return {
     visualizationType,
     systems,
@@ -107,5 +117,7 @@ export const useVizWizStore = defineStore('vizwiz', () => {
     updateDsConfig,
     updateDsCustomization,
     reset,
+    resetDsConfig,
+    resetDsCustomization,
   }
 })
