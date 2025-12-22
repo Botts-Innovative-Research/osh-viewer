@@ -1,4 +1,4 @@
-import { OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs'
+import { OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
   IMapLayerProperties,
   IMapViewProperties,

@@ -75,21 +75,21 @@ export interface IVideoViewProperties extends DataViewProperties {
 	videoType: string;
 }
 
-export interface IMapLayerProperties extends DataLayerProperties {
-  dataSourceId: string | string[]
-  getLocation?: (rec: any) => { x: number; y: number; z: number }
-  getOrientation?: (rec: any) => { heading: number }
-  getCoordinates?: (rec: any) => { lat: number; lon: number }
-  markerColor?: string
-  markerIcon?: string
-  name: string
+export interface IPointMarkerLayerProperties extends DataLayerProperties {
+	dataSourceId: string | string[];
+	getLocation?: (rec: any) => { x: number; y: number; z: number };
+	getOrientation?: (rec: any) => { heading: number };
+	getCoordinates?: (rec: any) => { lat: number; lon: number };
+	markerColor?: string;
+	markerIcon?: string;
+	name: string;
 }
 
 export interface IMapViewProperties extends DataViewProperties {
-  container: string
-  layers: IMapLayerProperties[]
-  css?: string
-  refreshRate?: number
+	container: string;
+	layers: IPointMarkerLayerProperties[];
+	css?: string;
+	refreshRate?: number;
 }
 
 export class VisualizationComponents {
@@ -188,40 +188,41 @@ export class VideoViewProperties implements DataViewProperties {
   layers: VideoLayerProperties[]
   videoType: string
 
-  constructor(props: IVideoViewProperties) {
-    this.container = props.container
-    this.css = props.css
-    this.name = props.name
-    this.showTime = props.showTime
-    this.showStats = props.showStats
-    this.useWebCodecApi = props.useWebCodecApi
-    this.width = props.width
-    this.height = props.height
-    this.layers = props.layers.map((layer) => new VideoLayerProperties(layer))
-  }
+	constructor(props: IVideoViewProperties) {
+		this.container = props.container;
+		this.css = props.css;
+		this.name = props.name;
+		this.showTime = props.showTime;
+		this.showStats = props.showStats;
+		this.useWebCodecApi = props.useWebCodecApi;
+		this.width = props.width;
+		this.height = props.height;
+		this.layers = props.layers.map((layer) => new VideoLayerProperties(layer));
+		this.videoType = props.videoType;
+	}
 }
 
-export class MapLayerProperties implements IMapLayerProperties {
-  dataSourceId: string
-  getCoordinates: (rec: any) => { lat: number; lon: number }
-  markerColor?: string
-  markerIcon?: string
-  name: string
+export class PointMarkerLayerProperties implements IPointMarkerLayerProperties {
+	dataSourceId: string;
+	getCoordinates: (rec: any) => { lat: number; lon: number };
+	markerColor?: string;
+	markerIcon?: string;
+	name: string;
 
-  constructor(props: IMapLayerProperties) {
-    this.dataSourceId = props.dataSourceId
-    this.getCoordinates = props.getCoordinates
-    this.markerColor = props.markerColor
-    this.markerIcon = props.markerIcon
-    this.name = props.name
-  }
+	constructor(props: IPointMarkerLayerProperties) {
+		this.dataSourceId = props.dataSourceId;
+		this.getCoordinates = props.getCoordinates;
+		this.markerColor = props.markerColor;
+		this.markerIcon = props.markerIcon;
+		this.name = props.name;
+	}
 }
 
 export class MapViewProperties implements IMapViewProperties {
-  container: string
-  layers: IMapLayerProperties[]
-  css?: string
-  refreshRate?: number
+	container: string;
+	layers: IPointMarkerLayerProperties[];
+	css?: string;
+	refreshRate?: number;
 
   constructor(props: IMapViewProperties) {
     this.container = props.container

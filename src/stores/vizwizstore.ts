@@ -1,58 +1,62 @@
-import { OSHDatastream } from '@/lib/OSHConnectDataStructs'
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { OSHDatastream } from '@/lib/OSHConnectDataStructs';
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
+import { VisualizationCustomizationOptions } from '@/lib/visualization/wizard/VisualizationCustomizationOptions';
+import { DatasourceOptions } from '@/lib/visualization/wizard/Datasources/DatasourceOptions';
 
 // Define global config properties
-export interface GlobalConfigProperties {
-  playback: string
-  startTime: string
-  endTime: string
-  [key: string]: any // Allow other global config properties
+export interface CommonConfigProperties {
+	playback: string;
+	startTime: string;
+	endTime: string;
+	[key: string]: any; // Allow other global config properties
 }
 // Define global customization
-export interface GlobalCustomizationProperties {
-  [key: string]: any // Allow other global customization properties
+export interface CommonCustomizationProperties {
+	[key: string]: any; // Allow other global customization properties
 }
 
 export const useVizWizStore = defineStore('vizwiz', () => {
-  const visualizationType = ref<string>('')
-  const systems = ref<string[]>([]) // System IDs
-  const datastreams = ref<OSHDatastream[]>([]) // OSH Datastream objects
+	const visualizationType = ref<string>('');
+	const systems = ref<string[]>([]); // System IDs
+	const datastreams = ref<OSHDatastream[]>([]); // OSH Datastream objects
 
-  // Visualization-scoped configs and customization
-  const globalConfig = ref<GlobalConfigProperties>({ playback: '', startTime: '', endTime: '' })
-  const globalCustomization = ref<GlobalCustomizationProperties>({})
+	// Visualization-scoped configs and customization
+	const commonConfig = ref<CommonConfigProperties>({ playback: '', startTime: '', endTime: '' });
+	const commonCustomization = ref<CommonCustomizationProperties>({});
 
-  // Datastream-scoped configs and customization
-  const dsConfig = ref<Record<string, Record<string, any>>>({})
-  const dsCustomization = ref<Record<string, Record<string, any>>>({})
+	// Datastream-scoped configs and customization
+	const dsConfig = ref<Record<string, Record<string, any>>>({});
+	const dsCustomization = ref<Record<string, Record<string, any>>>({});
 
-  const setType = (type: string): void => {
-    visualizationType.value = type
-    console.log('[VizWizStore] Set type:', type)
-  }
+	const visualizationCustomizationOptions = ref<VisualizationCustomizationOptions>({});
 
-  const setSystems = (val: string[]): void => {
-    systems.value = val
-    console.log('[VizWizStore] Set systems:', val)
-  }
+	const setType = (type: string): void => {
+		visualizationType.value = type;
+		console.log('[VizWizStore] Set type:', type);
+	};
 
-  const setDatastreams = (val: OSHDatastream[]): void => {
-    datastreams.value = val
-    console.log('[VizWizStore] Set datastreams:', val)
-  }
+	const setSystems = (val: string[]): void => {
+		systems.value = val;
+		console.log('[VizWizStore] Set systems:', val);
+	};
 
-  // Globals
-  const updateGlobalConfig = (patch: Partial<GlobalConfigProperties>) => {
-    globalConfig.value = { ...globalConfig.value, ...patch }
-    console.log('[VizWizStore] Updated global config:', patch)
-    console.log('New global config:', globalConfig.value)
-  }
+	const setDatastreams = (val: OSHDatastream[]): void => {
+		datastreams.value = val;
+		console.log('[VizWizStore] Set datastreams:', val);
+	};
 
-  const updateGlobalCustomization = (patch: Partial<GlobalCustomizationProperties>) => {
-    globalCustomization.value = { ...globalCustomization.value, ...patch }
-    console.log('[VizWizStore] Updated global customization:', patch)
-  }
+	// Globals
+	const updateCommonConfig = (patch: Partial<CommonConfigProperties>) => {
+		commonConfig.value = { ...commonConfig.value, ...patch };
+		console.log('[VizWizStore] Updated global config:', patch);
+		console.log('New global config:', commonConfig.value);
+	};
+
+	const updateCommonCustomization = (patch: Partial<CommonCustomizationProperties>) => {
+		commonCustomization.value = { ...commonCustomization.value, ...patch };
+		console.log('[VizWizStore] Updated global customization:', patch);
+	};
 
   // Datastream-specific
   const updateDsConfig = (role: string, patch: Partial<Record<string, any>>) => {
@@ -76,17 +80,18 @@ export const useVizWizStore = defineStore('vizwiz', () => {
     console.log('[VizWizStore] Updated DS customization:', patch)
   }
 
-  // RESET STORE STATE
-  const reset = () => {
-    visualizationType.value = ''
-    systems.value = []
-    datastreams.value = []
-    // Globals
-    globalConfig.value = { playback: '', startTime: '', endTime: '' }
-    globalCustomization.value = {}
-    // DS-specific
-    dsConfig.value = {}
-    dsCustomization.value = {}
+	// RESET STORE STATE
+	const reset = () => {
+		visualizationType.value = '';
+		systems.value = [];
+		datastreams.value = [];
+		// Globals
+		commonConfig.value = { playback: '', startTime: '', endTime: '' };
+		commonCustomization.value = {};
+		// DS-specific
+		dsConfig.value = {};
+		dsCustomization.value = {};
+		visualizationCustomizationOptions.value = {};
 
     console.log('[VizWizStore] Store reset')
   }

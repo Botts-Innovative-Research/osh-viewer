@@ -12,11 +12,14 @@ import GeoPTZOptions from '@/components/menus/GeoPTZOptions.vue';
 import PointMarkerOptions from '@/components/menus/PointMarkerOptions.vue';
 import {
 	CreateChartViewProps,
+	CreateGeoPtzViewProps,
 	CreateMapViewProps,
 	CreateVideoViewProps,
-	CreateGeoPtzViewProps,
 } from '@/lib/DatasourceUtils';
-import IconPicker from '@/components/menus/IconPicker.vue';
+import VisualizationOptionsStep from '@/components/menus/wizard/VisualizationOptionsStep.vue';
+import WizardNavButtons from '@/components/menus/WizardNavButtons.vue';
+import LoBWizard from '@/components/menus/visualization-wizard/visualizations/lob/LoBWizard.vue';
+import { CreateLobViewProps } from '@/components/menus/visualization-wizard/visualizations/lob/Builder';
 
 const uiStore = useUIStore();
 const { selectedDatastream } = storeToRefs(uiStore);
@@ -28,6 +31,7 @@ const selectedDSProperty = ref(null);
 const selectedCS = ref(null);
 const selectedVisualizationOptions = ref(null);
 const selectedMarkerProperty = ref(null);
+const selectedLobProperty = ref(null);
 
 const visualizationName = ref('');
 const visualizationComponents = ref<VisualizationComponents | undefined>(undefined);
@@ -45,6 +49,7 @@ const visualizationTypes = [
 	{ label: 'Point Marker', value: 'pointmarker', icon: 'mdi-map-marker' },
 	{ label: 'Text', value: 'text', icon: 'mdi-format-text' },
 	{ label: 'GeoPTZ', value: 'geoPtz', icon: 'mdi-map' },
+	{ label: 'Line of Bearing', value: 'lob', icon: 'mdi-ray-start' },
 ];
 
 function selectType(type: string) {
@@ -93,7 +98,7 @@ function createVisualization() {
 
 	let visualizationComponents: VisualizationComponents | undefined = undefined;
 	switch (newViz.type) {
-		case 'chart':
+		case 'chart': {
 			const chartResult = CreateChartViewProps(
 				selectedDatastream.value,
 				selectedDSProperty.value,
@@ -105,7 +110,8 @@ function createVisualization() {
 				dataView: chartResult.chartView,
 			};
 			break;
-		case 'video':
+		}
+		case 'video': {
 			// Add video-specific properties if needed
 			const videoResult = CreateVideoViewProps(
 				selectedDatastream.value,
@@ -119,7 +125,8 @@ function createVisualization() {
 				dataView: videoResult.videoView,
 			};
 			break;
-		case 'pointmarker':
+		}
+		case 'pointmarker': {
 			const pmResult = CreateMapViewProps(
 				selectedDatastream.value,
 				selectedMarkerProperty.value,
@@ -131,7 +138,8 @@ function createVisualization() {
 				dataView: pmResult.mapView,
 			};
 			break;
-		case 'geoPtz':
+		}
+		case 'geoPtz': {
 			// Add GeoPTZ-specific properties if needed
 			const geoPtzResult = CreateGeoPtzViewProps(
 				selectedDatastream.value,
@@ -143,9 +151,29 @@ function createVisualization() {
 				dataView: null,
 			};
 			break;
+		}
 		case 'text':
 			// Add text-specific properties if needed
 			break;
+		case 'lob': {
+			console.log(
+				'[VizWiz] Creating LoB visualization with visOptions:',
+				selectedVisualizationOptions.value
+			);
+			const lobResult = CreateLobViewProps(
+				selectedDatastream.value,
+				selectedDSProperty.value,
+				selectedLobProperty.value,
+				vizStore.currentVisDataStreamOptions,
+				selectedVisualizationOptions.value
+			);
+			visualizationComponents = {
+				dataSource: lobResult.dataSource,
+				dataLayer: lobResult.lobLayer,
+				dataView: lobResult.lobView,
+			};
+			break;
+		}
 		default:
 			console.warn('Unknown visualization type:', newViz.type);
 	}
@@ -162,6 +190,11 @@ function createVisualization() {
 watch(selectedVisualizationOptions, (val) => {
 	console.log('[VizWiz] selectedVisualizationOptions changed:', val);
 });
+
+function updateVisualizationOptions(val: any) {
+	console.log('[VizWiz] updateVisualizationOptions called with:', val);
+	selectedVisualizationOptions.value = val;
+}
 </script>
 
 <template>
@@ -243,16 +276,35 @@ watch(selectedVisualizationOptions, (val) => {
 			<div v-else-if="selectedType === 'text'">
 				<v-alert type="info">Text options coming soon...</v-alert>
 			</div>
+			<div v-else-if="selectedType === 'lob'">
+				<LoBWizard
+					v-model:selectedDSProperty="selectedDSProperty"
+					v-model:selectedLobProperty="selectedLobProperty"
+				/>
+			</div>
 			<div v-else>
 				<v-alert type="warning">Please select a visualization type.</v-alert>
 			</div>
 		</div>
 		<div v-else-if="step === 2">
-			<h2 class="mb-4 text-center">Visualization Customization</h2>
-			<IconPicker></IconPicker>
+			<!--			<h2 class="mb-4 text-center">Visualization Customization</h2>-->
+			<!--			<IconPicker></IconPicker>-->
+			<VisualizationOptionsStep
+				title="Visualization Customization Options"
+				:optionType="selectedType"
+				@update:selectedVisualizationOptions="updateVisualizationOptions"
+			></VisualizationOptionsStep>
 		</div>
 
-		<v-row class="mt-6" justify="end">
+		<WizardNavButtons
+			:step="step"
+			:steps="steps"
+			:selected-type="selectedType"
+			v-on:update:step="(newStep) => (step = newStep)"
+			v-on:submit-wizard="submitWizard"
+		/>
+
+		<!--		<v-row class="mt-6" justify="end">
 			<v-btn v-if="step > 0" variant="text" @click="prevStep" class="me-2">Back </v-btn>
 			<v-btn
 				v-if="step < steps.length - 1"
@@ -264,7 +316,7 @@ watch(selectedVisualizationOptions, (val) => {
 			<v-btn v-else-if="step === steps.length - 1" color="primary" @click="submitWizard"
 				>Submit
 			</v-btn>
-		</v-row>
+		</v-row>-->
 	</v-card>
 </template>
 

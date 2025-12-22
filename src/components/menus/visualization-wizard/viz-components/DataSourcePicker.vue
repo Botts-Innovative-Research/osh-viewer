@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { fetchSchema, mineDatasourceObsPropsFromDS, SchemaFieldProperty } from '@/lib/DatasourceUtils'
+import {
+	fetchSchema,
+	mineDatasourceObsPropsFromDS,
+	SchemaFieldProperty,
+} from '@/lib/DatasourceUtils';
 import { OSHDatastream } from '@/lib/OSHConnectDataStructs';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useVizWizStore } from '@/stores/vizwizstore';

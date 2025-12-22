@@ -3,14 +3,14 @@ import { ref, Ref } from 'vue';
 import { SchemaFieldProperty } from '@/lib/DatasourceUtils';
 
 export const useUIStore = defineStore('ui', () => {
-  // Sidebar state (example: left and right sidebars)
-  const leftSidebarOpen = ref(true)
-  const rightSidebarOpen = ref(false)
-  const visualizationWizardOpen = ref(false)
-  const nodeConfigFormOpen = ref(false)
+	// Sidebar state (example: left and right sidebars)
+	const leftSidebarOpen = ref(true);
+	const rightSidebarOpen = ref(false);
+	const visualizationWizardOpen = ref(false);
+	const nodeConfigFormOpen = ref(false);
 
-  // VizWiz = new version
-  const vizWizOpen = ref(false)
+	// VizWiz = new version
+	const vizWizOpen = ref(false);
 
 	// Focused map (could be an ID or name)
 	const focusedMap = ref<string | null>(null);
@@ -76,51 +76,51 @@ export const useUIStore = defineStore('ui', () => {
 		nodeConfigFormOpen.value = true;
 	}
 
-  // Handle selection of GeoPTZ instance
-  function setSelectedGeoPTZ(controlStreamId: string, commandBaseUrl: string) {
-    selectedGeoPTZ.value = { controlStreamId, commandBaseUrl}
-  }
-  function clearSelectedGeoPTZ() {
-    selectedGeoPTZ.value = null
-  }
+	// Handle selection of GeoPTZ instance
+	function setSelectedGeoPTZ(controlStreamId: string, commandBaseUrl: string) {
+		selectedGeoPTZ.value = { controlStreamId, commandBaseUrl };
+	}
+	function clearSelectedGeoPTZ() {
+		selectedGeoPTZ.value = null;
+	}
 
-  function toggleVizWiz() {
-    vizWizOpen.value = !vizWizOpen.value
-  }
-  function openVizWiz() {
-    vizWizOpen.value = true
-  }
+	function toggleVizWiz() {
+		vizWizOpen.value = !vizWizOpen.value;
+	}
+	function openVizWiz() {
+		vizWizOpen.value = true;
+	}
 
-  return {
-    leftSidebarOpen,
-    rightSidebarOpen,
-    focusedMap,
-    activeWindows,
-    mainWindowId,
-    selectedDatastream,
-    toggleLeftSidebar,
-    toggleRightSidebar,
-    setFocusedMap,
-    setActiveWindows,
-    setMainWindowId,
-    setSelectedDatastream,
-    selectedProperty,
-    setSelectedProperty,
-    clearSelectedProperty,
-    theme,
-    toggleTheme,
-    visualizationWizardOpen,
-    toggleVisualizationWizard,
-    openVisualizationWizard,
-    nodeConfigFormOpen,
-    toggleNodeConfigForm,
-    openNodeConfigForm,
-    selectedGeoPTZ,
-    setSelectedGeoPTZ,
-    clearSelectedGeoPTZ,
+	return {
+		leftSidebarOpen,
+		rightSidebarOpen,
+		focusedMap,
+		activeWindows,
+		mainWindowId,
+		selectedDatastream,
+		toggleLeftSidebar,
+		toggleRightSidebar,
+		setFocusedMap,
+		setActiveWindows,
+		setMainWindowId,
+		setSelectedDatastream,
+		selectedProperty,
+		setSelectedProperty,
+		clearSelectedProperty,
+		theme,
+		toggleTheme,
+		visualizationWizardOpen,
+		toggleVisualizationWizard,
+		openVisualizationWizard,
+		nodeConfigFormOpen,
+		toggleNodeConfigForm,
+		openNodeConfigForm,
+		selectedGeoPTZ,
+		setSelectedGeoPTZ,
+		clearSelectedGeoPTZ,
 
-    vizWizOpen,
-    toggleVizWiz,
-    openVizWiz,
-  }
-})
+		vizWizOpen,
+		toggleVizWiz,
+		openVizWiz,
+	};
+});
