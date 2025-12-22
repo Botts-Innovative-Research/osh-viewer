@@ -1,17 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch, defineAsyncComponent, onMounted } from 'vue'
+import { computed, ref, defineAsyncComponent, onMounted } from 'vue'
 import { useUIStore } from '@/stores/uistore'
-import ChartOptions from '@/components/menus/ChartOptions.vue'
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs'
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js'
-import { VisualizationComponents } from '@/lib/VisualizationHelpers'
-import { useVisualizationStore } from '@/stores/visualizationstore'
-import { storeToRefs } from 'pinia'
-import VideoOptions from '@/components/menus/VideoOptions.vue'
-import GeoPTZOptions from '@/components/menus/GeoPTZOptions.vue'
-import PointMarkerOptions from '@/components/menus/PointMarkerOptions.vue'
-import { CreateChartViewProps, CreateMapViewProps, CreateVideoViewProps, CreateGeoPtzViewProps } from '@/lib/DatasourceUtils'
-import IconPicker from '@/components/menus/IconPicker.vue'
 import { useVizWizStore } from '@/stores/vizwizstore'
 import SelectType from './SelectType.vue'
 import SelectData from './SelectData.vue'
@@ -29,7 +18,7 @@ onMounted(() => {
 })
 
 // Stepper Variables
-const e1 = ref(1)
+const currentStep = ref(1)
 const steps = [
   { short: 'Type', title: 'Select Visualization Type' },
   { short: 'Data', title: 'Select System & Datasource' },
@@ -37,17 +26,11 @@ const steps = [
   { short: 'Customize', title: 'Customize Visualization' }
 ]
 const stepStatus = (index: number) => {
-  if (index < e1.value) return "primary"
-  if (index = e1.value) return "primary"
+  if (index < currentStep.value) return "primary"
+  if (index = currentStep.value) return "primary"
   return ""
 }
-const isLastStep = computed(() => e1.value === steps.length)
-
-// Return step to be disabled based on current step
-const disabled = computed(() => {
-  if (e1.value === 1) return 'prev'
-  if (e1.value === steps.length) return 'next'
-})
+const isLastStep = computed(() => currentStep.value === steps.length)
 
 // Visualization Types
 const visualizationTypes: VisualizationType[] = [
@@ -99,6 +82,17 @@ const handleSubmit = async () => {
   uiStore.vizWizOpen = false
 }
 
+// Change step function
+const changeStep = (direction: number) => {
+  const newStep = currentStep.value + direction
+  if (newStep < 1) return
+  if (newStep > steps.length) {
+    handleSubmit()
+    return
+  }
+  currentStep.value = newStep
+}
+
 </script>
 
 <template>
@@ -106,11 +100,11 @@ const handleSubmit = async () => {
 
     <v-card-title class="text-h4 text-center">Visualization Wizard</v-card-title>
 
-    <v-stepper v-model="e1" class="wizard-content">
-      <template v-slot:default="{ prev, next }">
+    <v-stepper v-model="currentStep" class="wizard-content">
+      <template v-slot:default="{ }">
         <v-stepper-header>
           <template v-for="(step, index) in steps" :key="`${index}-step`">
-            <v-stepper-item :complete="e1 > index + 1" :step="index + 1" :value="index + 1" :title="step.short"
+            <v-stepper-item :complete="currentStep > index + 1" :step="index + 1" :value="index + 1" :title="step.short"
               :color="stepStatus(index)"></v-stepper-item>
             <v-divider v-if="index < steps.length - 1"></v-divider>
           </template>
@@ -126,9 +120,20 @@ const handleSubmit = async () => {
           </v-stepper-window-item>
         </v-stepper-window>
 
-        <v-stepper-actions :disabled="disabled" @click:next="next" @click:prev="prev">
+        <v-stepper-actions>
+          <template #prev>
+            <v-btn v-if="currentStep > 1" text @click="changeStep(-1)">
+              Previous
+            </v-btn>
+            <v-spacer v-else></v-spacer>
+          </template>
+
+          <template #next>
+            <v-btn :color="isLastStep ? 'success' : 'primary'" :disabled="false" @click="isLastStep ? handleSubmit() : changeStep(1)">
+              {{ isLastStep ? 'Submit' : 'Next' }}
+            </v-btn>
+          </template>
         </v-stepper-actions>
-        <v-btn v-if="isLastStep" color="primary" @click="handleSubmit">Create Visualization</v-btn>
 
       </template>
     </v-stepper>

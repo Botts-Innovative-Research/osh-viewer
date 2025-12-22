@@ -18,6 +18,10 @@ const checkedRoles = reactive({
     get: () => vizwizStore.dsConfig.orientation?.selected ?? false,
     set: (val: boolean) => vizwizStore.updateDsConfig("orientation", { selected: val })
   }),
+  markerId: computed({
+    get: () => vizwizStore.dsConfig.markerId?.selected ?? false,
+    set: (val: boolean) => vizwizStore.updateDsConfig("markerId", { selected: val })
+  }),
 })
 
 // Initialize dsConfig with location selected by default when mounted
@@ -26,13 +30,6 @@ onMounted(() => {
     vizwizStore.updateDsConfig("location", { selected: true })
   }
 })
-
-
-
-const config = reactive({
-  playbackMode: { "label": "REAL TIME", "value": "realTime" } // Set default to real time
-})
-
 
 </script>
 <template>
@@ -49,11 +46,10 @@ const config = reactive({
   </v-container>
 
   <!-- Marker ID -->
-  <!-- TODO: Add code for MarkerID -->
-
-  <!-- TIME PICKERS & PLAYBACK MODE -->
-  <TimePickers />
+  <v-container>
+    <v-checkbox label="Marker ID" v-model="checkedRoles.markerId"></v-checkbox>
+    <DataSourcePicker v-if="checkedRoles.markerId" role="markerId" />
+  </v-container>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

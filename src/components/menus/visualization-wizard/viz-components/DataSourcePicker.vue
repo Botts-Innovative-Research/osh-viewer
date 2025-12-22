@@ -5,8 +5,6 @@ import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { computed, onMounted, ref, watch } from 'vue'
 
-// TODO: Change datastream value to ID only, not the entire DS object
-
 const props = defineProps<{
   role: string, // Property role to be used as key in vizwiz store
 }>()
