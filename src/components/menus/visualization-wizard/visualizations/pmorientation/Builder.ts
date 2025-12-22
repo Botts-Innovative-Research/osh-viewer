@@ -10,6 +10,7 @@ import { useVisualizationStore } from '@/stores/visualizationstore'
 import { useVizWizStore } from '@/stores/vizwizstore'
 import { Mode } from 'osh-js/source/core/datasource/Mode'
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js'
+import { AggregateDatastreams, BuildRoleProperty } from '../../shared/helpers'
 
 export function build() {
   console.log('Building PM Orientation Visualization...')
@@ -104,61 +105,4 @@ export function CreateMapViewProps(datastreams: { [key: string]: any }, visOptio
     mapLayer,
     mapView,
   }
-}
-
-/**
- * Aggregates datastreams from vizwizStore.dsConfig based on selected roles.
- *
- * @returns aggregated datastreams, keyed by ds ID
- * {
- *  "dsId1": [
- *    { "role1": { "selected": true, "ds": { ... }, "property": "prop1" } },
- *    { "role2": { "selected": true, "ds": { ... }, "property": "prop2" } },
- *  ],
- *  "dsId2": [
- *    { "role1": { "selected": true, "ds": { ... }, "property": "prop1" } },
- *  ],
- * }
- */
-export function AggregateDatastreams() {
-  const result: any = {}
-
-  const vizwizStore = useVizWizStore()
-
-  for (const [role, entry] of Object.entries(vizwizStore.dsConfig)) {
-    console.log('Processing role:', role, 'with entry:', entry)
-
-    if (!entry.selected) {
-      continue // Skip unselected roles
-    }
-
-    // Initialize array for role if not present
-    if (!result[entry.dsId]) {
-      result[entry.dsId] = []
-    }
-
-    // Add selected property to role's array
-    result[entry.dsId].push({
-      [role]: entry,
-    })
-  }
-
-  return result
-}
-
-/**
- * Returns a mapping of roles to their selected property name
- * @param entry 
- * @returns 
- */
-export function BuildRoleProperty(entry: any[]) {
-  return Object.fromEntries(
-    entry.map((roleObj: any) => {
-      const role = Object.keys(roleObj)[0]
-      const roleEntry = roleObj[role]
-
-      // Return [role, property string]
-      return [role, roleEntry.property]
-    }),
-  )
 }

@@ -36,10 +36,9 @@ const isLastStep = computed(() => currentStep.value === steps.length)
 const visualizationTypes: VisualizationType[] = [
   { label: 'Chart', value: 'chart', icon: 'mdi-chart-line' },
   { label: 'Video', value: 'video', icon: 'mdi-video' },
-  { label: 'Point Marker', value: 'pointmarker', icon: 'mdi-map-marker' },
+  { label: 'Point Marker', value: 'pmorientation', icon: 'mdi-map-marker' },
   { label: 'Text', value: 'text', icon: 'mdi-format-text' },
   { label: 'GeoPTZ', value: 'geoPtz', icon: 'mdi-map' },
-  { label: 'PM Orientation', value: 'pmorientation', icon: 'mdi-map-marker-left-outline' },
 ]
 type VizTypeKeys = (typeof visualizationTypes)[number]['value']
 
@@ -129,7 +128,8 @@ const changeStep = (direction: number) => {
           </template>
 
           <template #next>
-            <v-btn :color="isLastStep ? 'success' : 'primary'" :disabled="false" @click="isLastStep ? handleSubmit() : changeStep(1)">
+            <v-btn :color="isLastStep ? 'success' : 'primary'" :disabled="false"
+              @click="isLastStep ? handleSubmit() : changeStep(1)">
               {{ isLastStep ? 'Submit' : 'Next' }}
             </v-btn>
           </template>
