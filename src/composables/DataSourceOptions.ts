@@ -1,4 +1,4 @@
-import { watch, Ref } from 'vue'
+import { watch, Ref } from 'vue';
 
 /**
  * Reusable composable to sync time values with a store or callback.
@@ -6,9 +6,9 @@ import { watch, Ref } from 'vue'
  * @param onChange - Callback to run when the ref changes
  */
 export function useTimeSync(timeRef: Ref<string | null>, onChange: (val: string | null) => void) {
-  watch(timeRef, (val) => {
-    onChange(val)
-  })
+	watch(timeRef, (val) => {
+		onChange(val);
+	});
 }
 
 /**
@@ -18,16 +18,16 @@ export function useTimeSync(timeRef: Ref<string | null>, onChange: (val: string 
  * @param visualizationStore - Store with currentVisDataStreamOptions
  */
 export function useStartEndTimeSync(
-  startTime: Ref<string | null>,
-  endTime: Ref<string | null>,
-  visualizationStore: any
+	startTime: Ref<string | null>,
+	endTime: Ref<string | null>,
+	visualizationStore: any
 ) {
-  useTimeSync(startTime, (val) => {
-    visualizationStore.currentVisDataStreamOptions.startTime = val
-  })
-  useTimeSync(endTime, (val) => {
-    visualizationStore.currentVisDataStreamOptions.endTime = val
-  })
+	useTimeSync(startTime, (val) => {
+		visualizationStore.currentVisDataStreamOptions.startTime = val;
+	});
+	useTimeSync(endTime, (val) => {
+		visualizationStore.currentVisDataStreamOptions.endTime = val;
+	});
 }
 
 /**
@@ -35,11 +35,8 @@ export function useStartEndTimeSync(
  * @param playbackModeRef - The ref to watch (e.g., playbackMode)
  * @param visualizationStore - Store with currentVisDataStreamOptions
  */
-export function usePlaybackModeSync(
-  playbackModeRef: Ref<string>,
-  visualizationStore: any
-) {
-  watch(playbackModeRef, (val) => {
-    visualizationStore.currentVisDataStreamOptions.replayMode = val
-  })
+export function usePlaybackModeSync(playbackModeRef: Ref<string>, visualizationStore: any) {
+	watch(playbackModeRef, (val) => {
+		visualizationStore.currentVisDataStreamOptions.replayMode = val;
+	});
 }

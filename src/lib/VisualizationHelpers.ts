@@ -1,9 +1,8 @@
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js'
+import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 
 export interface IVisualizationHelper {}
 
-export interface DataSourceProperties {
-}
+export interface DataSourceProperties {}
 
 export interface ISweApiDataSourceProperties extends DataSourceProperties {
   endpointUrl: string
@@ -38,15 +37,15 @@ export interface ICurveLayerProperties extends DataLayerProperties {
 }
 
 export class ChartHelper implements IVisualizationHelper {
-  xAxisProperty: string
-  yAxisProperty: string
-  xAxisLabel: string
+	xAxisProperty: string;
+	yAxisProperty: string;
+	xAxisLabel: string;
 
-  constructor(xAxisProperty: string, yAxisProperty: string, xAxisLabel: string) {
-    this.xAxisProperty = xAxisProperty
-    this.yAxisProperty = yAxisProperty
-    this.xAxisLabel = xAxisLabel
-  }
+	constructor(xAxisProperty: string, yAxisProperty: string, xAxisLabel: string) {
+		this.xAxisProperty = xAxisProperty;
+		this.yAxisProperty = yAxisProperty;
+		this.xAxisLabel = xAxisLabel;
+	}
 }
 
 export interface IChartViewProperties extends DataViewProperties {
@@ -58,22 +57,22 @@ export interface IChartViewProperties extends DataViewProperties {
 }
 
 export interface IVideoLayerProperties extends DataLayerProperties {
-  dataSourceId: ISweApiDataSourceProperties
-  getFrameData: (rec: any, timestamp: any) => any
-  getTimestamp: (rec: any, timestamp: any) => any
+	dataSourceId: ISweApiDataSourceProperties;
+	getFrameData: (rec: any, timestamp: any) => any;
+	getTimestamp: (rec: any, timestamp: any) => any;
 }
 
 export interface IVideoViewProperties extends DataViewProperties {
-  container: string
-  css: string
-  name: string
-  showTime: boolean
-  showStats: boolean
-  useWebCodecApi: boolean
-  width: number
-  height: number
-  layers: IVideoLayerProperties[]
-  videoType: string
+	container: string;
+	css: string;
+	name: string;
+	showTime: boolean;
+	showStats: boolean;
+	useWebCodecApi: boolean;
+	width: number;
+	height: number;
+	layers: IVideoLayerProperties[];
+	videoType: string;
 }
 
 export interface IMapLayerProperties extends DataLayerProperties {
