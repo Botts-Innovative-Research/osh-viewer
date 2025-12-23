@@ -15,6 +15,7 @@ import {
 	IMapLayerProperties,
 	IMapViewProperties,
 } from '@/lib/VisualizationHelpers';
+import {toRaw} from "vue";
 
 export function mineDatasourceObsProps(): { ds: any; observedProps: any } {
 	const uiStore = useUIStore();
@@ -287,7 +288,9 @@ export function CreateVideoViewProps(
 	const videoLayer: IVideoLayerProperties = {
 		dataSourceId: ds.datastream.properties.id,
 		getFrameData(rec, timestamp) {
-			return rec[selectedProperty.name];
+            const rawDs = toRaw(ds);
+            let outputName = rawDs.datastream.properties.outputName;
+			return rec[outputName][selectedProperty.name];
 		},
 		getTimestamp(rec, timestamp) {
 			return rec.timestamp;
