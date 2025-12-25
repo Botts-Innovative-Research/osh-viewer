@@ -8,6 +8,41 @@ import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { Mode } from 'osh-js/source/core/datasource/Mode';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
+import { AggregateDatastreams, BuildRoleProperty } from '../../shared/helpers';
+import { useDataStreamStore } from '@/stores/datastreamstore';
+
+export function build() {
+	console.log('Building LOB Visualization...');
+	const vizwizStore = useVizWizStore();
+	const visualizationStore = useVisualizationStore();
+
+	const datastreams = AggregateDatastreams();
+	console.log(
+		'Aggregated datastreams for LOB:',
+		datastreams,
+		vizwizStore.visualizationCustomizationOptions
+	);
+
+	const lobResult = CreateLobViewProps(datastreams, vizwizStore.visualizationCustomizationOptions);
+	const visualizationComponents = {
+		dataSource: lobResult.vizDatasources,
+		dataLayer: lobResult.lobLayer,
+		dataView: lobResult.lobView,
+	};
+
+	// TODO: allow construction of visualization with visualization components and improve defaults
+	const newViz: OSHVisualization = new OSHVisualization(
+		`visualization-${randomUUID()}`,
+		'test',
+		'lob',
+		null,
+		datastreams,
+		null
+	);
+	newViz.setVisualizationComponents(visualizationComponents);
+	visualizationStore.addVisualization(newViz);
+	console.log('Created Line of Bearing Visualization:', newViz);
+}
 
 /**
  * Creates properties for a Line of Bearing View based on the provided datastream, selected property, and visualization options.
@@ -16,64 +51,45 @@ import { useVisualizationStore } from '@/stores/visualizationstore';
  * @param dsOptions
  * @constructor
  */
-export function CreateLobViewProps(
-	ds: OSHDatastream,
-	selectedLocationProperty: any,
-	selectedBearingProperty: any,
-	dsOptions: any,
-	visOptions: any
-): {
-	dataSource: ISweApiDataSourceProperties;
-	lobLayer: LineOfBearingLayerProperties;
-	lobView: ILineOfBearingViewProperties;
-} {
-	console.log('[DatasourceUtils] Creating Lob View for Datastream:', ds);
-	const parentSystem = ds.getParentSystem();
-	// Build SweApiDataSourceProperties
-	const dataSource: ISweApiDataSourceProperties = {
-		endpointUrl: ds.datastream.networkProperties.endpointUrl,
-		resource: `/datastreams/${ds.datastream.properties.id}/observations`,
-		tls: false,
-		protocol: 'ws',
-		startTime: dsOptions.startTime || 'now',
-		endTime: dsOptions.endTime || '2125-08-01T00:00:00Z',
-		mode: Mode.REAL_TIME,
-		responseFormat: 'application/swe+json',
-	};
+export function CreateLobViewProps(datastreams: { [key: string]: any }, visOptions: any) {
+	const datastreamStore = useDataStreamStore();
+	console.log('Datastreams: ', datastreamStore.dataStreams);
 
-	console.log('[DatasourceUtils] Creating LOB Layer for property:', selectedLocationProperty);
-	console.log('[DatasourceUtils] Creating LOB Layer with visOptions:', visOptions);
-	// Build MapLayerProperties
-	const lobLayer: LineOfBearingLayerProperties = {
-		dataSourceId: ds.datastream.properties.id,
-		// getOriginAndBearing: (rec: any) => {
-		// 	return {
-		// 		origin: {
-		// 			x: rec[selectedLocationProperty.name].lon,
-		// 			y: rec[selectedLocationProperty.name].lat,
-		// 			z: rec[selectedLocationProperty.name].alt || 0, // Default to 0 if altitude is not provided
-		// 		},
-		// 		bearing: (rec[selectedBearingProperty.name] * Math.PI) / 180,
-		// 	};
-		// },
-		getOriginAndBearing: {
-			dataSourceIds: [ds.datastream.properties.id],
-			handler: (rec: any) => {
-				return {
-					origin: {
-						x: rec[selectedLocationProperty.name].lon,
-						y: rec[selectedLocationProperty.name].lat,
-						z: rec[selectedLocationProperty.name].alt || 0, // Default to 0 if altitude is not provided
-					},
-					bearing: (rec[selectedBearingProperty.name] * Math.PI) / 180,
-				};
-			}
-		},
+	const vizDatasources: ISweApiDataSourceProperties[] = [];
+	let lobLayer: any = {};
+
+	// Iterate through each unique datastream ID
+	for (const [dsId, entry] of Object.entries(datastreams)) {
+		console.log('Processing datastream ID:', dsId, 'with entry:', entry);
+
+		// Get selected properties for each role of the datastream
+		const properties = BuildRoleProperty(entry);
+
+		// Push new ISweApiDataSourceProperties
+		const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
+		const currentDataSource: ISweApiDataSourceProperties = {
+			endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
+			resource: `/datastreams/${dsId}/observations`,
+			tls: currentOSHDatastream[0].datastream.networkProperties.tls,
+			protocol: 'ws',
+			startTime: 'now',
+			endTime: '2125-08-01T00:00:00Z',
+			mode: Mode.REAL_TIME,
+			responseFormat: 'application/swe+json',
+			id: randomUUID(),
+			properties: properties,
+		};
+		vizDatasources.push(currentDataSource);
+	}
+
+	// Build remaining lobLayer properties
+	lobLayer = {
+		...lobLayer,
 		color: visOptions.color,
 		weight: visOptions.weight,
 		opacity: visOptions.opacity,
 		distanceKm: visOptions.distanceKm,
-		name: parentSystem.name,
+		name: `${randomUUID()} - PM Orientation Layer`,
 	};
 
 	// Build MapViewProperties
@@ -84,8 +100,10 @@ export function CreateLobViewProps(
 		refreshRate: 1000,
 	};
 
+	console.log('Created LOBViewProperties:', { vizDatasources, lobLayer, lobView });
+
 	return {
-		dataSource,
+		vizDatasources,
 		lobLayer,
 		lobView,
 	};
@@ -93,13 +111,13 @@ export function CreateLobViewProps(
 
 export interface ILineOfBearingLayerProperties extends DataLayerProperties {
 	dataSourceId: string;
-	getOriginAndBearing:{
-		dataSourceIds: string[],
+	getOriginAndBearing: {
+		dataSourceIds: string[];
 		handler: (rec: any) => {
-		origin: { x: number; y: number; z: number };
-		bearing: number;
-		}
-	}
+			origin: { x: number; y: number; z: number };
+			bearing: number;
+		};
+	};
 	getPolylineId?: (rec: any) => any;
 	color: any;
 	weight: number;
@@ -121,11 +139,11 @@ export class LineOfBearingLayerProperties implements ILineOfBearingLayerProperti
 	// }
 
 	getOriginAndBearing: {
-		dataSourceIds: string[],
+		dataSourceIds: string[];
 		handler: (rec: any) => {
-		origin: { x: number; y: number; z: number };
-		bearing: number;
-		}
+			origin: { x: number; y: number; z: number };
+			bearing: number;
+		};
 	};
 
 	name: string;
@@ -162,37 +180,4 @@ export class LobViewProperties implements DataViewProperties {
 		this.css = props.css;
 		this.refreshRate = props.refreshRate;
 	}
-}
-
-export function build() {
-	const vwStore = useVizWizStore();
-	const datastreams = vwStore.datastreams;
-	const vizStore = useVisualizationStore();
-
-	const lobProps = CreateLobViewProps(
-		datastreams[0],
-		vwStore.dsConfig.locationProperty,
-		vwStore.dsConfig.bearingProperty,
-		vwStore.dsConfig,
-		vwStore.visualizationCustomizationOptions
-	);
-
-	const visualizationComponents = {
-		dataSource: lobProps.dataSource,
-		dataLayer: lobProps.lobLayer,
-		dataView: lobProps.lobView,
-	};
-
-	// TODO: allow construction of visualization with visualization components and improve defaults
-	const newViz: OSHVisualization = new OSHVisualization(
-		`visualization-${randomUUID()}`,
-		'test',
-		'lob',
-		null,
-		[datastreams[0]],
-		null
-	);
-	newViz.setVisualizationComponents(visualizationComponents);
-	console.log('[LoB Viz Builder] Created Line of Bearing Visualization:', newViz);
-	vizStore.addVisualization(newViz);
 }

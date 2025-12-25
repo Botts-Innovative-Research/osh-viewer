@@ -21,7 +21,7 @@ export function build() {
   const datastreams = AggregateDatastreams()
   console.log('Aggregated datastreams for PM Orientation:', datastreams)
 
-  const pmResult = CreateMapViewProps(datastreams, vizwizStore.globalConfig)
+  const pmResult = CreateMapViewProps(datastreams)
   const visualizationComponents: VisualizationComponents = {
     dataSource: pmResult.vizDatasources,
     dataLayer: pmResult.mapLayer,
@@ -48,7 +48,7 @@ export function build() {
  * @param visOptions
  * @constructor
  */
-export function CreateMapViewProps(datastreams: { [key: string]: any }, visOptions: any) {
+export function CreateMapViewProps(datastreams: { [key: string]: any }) {
   const datastreamStore = useDataStreamStore()
   console.log('Datastreams: ', datastreamStore.dataStreams)
 
@@ -69,8 +69,8 @@ export function CreateMapViewProps(datastreams: { [key: string]: any }, visOptio
       resource: `/datastreams/${dsId}/observations`,
       tls: currentOSHDatastream[0].datastream.networkProperties.tls,
       protocol: 'ws',
-      startTime: visOptions.startTime || 'now',
-      endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
+      startTime: 'now',
+      endTime: '2125-08-01T00:00:00Z',
       mode: Mode.REAL_TIME, // TODO: Make configurable
       responseFormat: 'application/swe+json',
       id: randomUUID(),
@@ -82,8 +82,8 @@ export function CreateMapViewProps(datastreams: { [key: string]: any }, visOptio
   // Build remaining mapLayer properties
   mapLayer = {
     ...mapLayer,
-    markerColor: visOptions.markerColor || 'red',
-    markerIcon: visOptions.markerIcon || undefined,
+    markerColor: 'red',
+    markerIcon: undefined,
     label: `${randomUUID()} - PM Orientation Layer`,
     icon: '/icons/map/map-marker.svg',
     iconSize: [32, 32],

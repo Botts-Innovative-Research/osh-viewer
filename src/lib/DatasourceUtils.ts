@@ -14,6 +14,7 @@ import {
   IVideoViewProperties,
   IMapLayerProperties,
   IMapViewProperties,
+	IPointMarkerLayerProperties,
 } from '@/lib/VisualizationHelpers'
 import { useDataStreamStore } from '@/stores/datastreamstore'
 
@@ -46,8 +47,6 @@ export function mineDatasourceObsPropsFromDS(dsId: string): { ds: any; observedP
     console.warn('No datastream given')
   }
 
-	const observedProps = ds.datastream.properties?.observedProperties || [];
-	console.log('[DS-Utils] Observed Properties:', ds.datastream.properties);
 	const observedProps = ds.datastream.properties?.observedProperties || [];
 	console.log('[DS-Utils] Observed Properties:', ds.datastream.properties);
 

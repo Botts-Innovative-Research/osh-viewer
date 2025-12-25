@@ -63,12 +63,12 @@ const vizComponents: any = {
 	// add other types here
 	lob: {
 		Config: defineAsyncComponent(
-			() => import('@/components/menus/visualization-wizard/visualizations/lob/LoBWizard.vue')
+			() => import('@/components/menus/visualization-wizard/visualizations/lob/Config.vue')
 		),
 		Customize: defineAsyncComponent(
 			() =>
 				import(
-					'@/components/menus/visualization-wizard/visualizations/lob/LoBCustomizationOptions.vue'
+					'@/components/menus/visualization-wizard/visualizations/lob/Customize.vue'
 				)
 		),
 		Builder: () => import('@/components/menus/visualization-wizard/visualizations/lob/Builder'),

@@ -58,27 +58,40 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 		console.log('[VizWizStore] Updated global customization:', patch);
 	};
 
-  // Datastream-specific
-  const updateDsConfig = (role: string, patch: Partial<Record<string, any>>) => {
-    if (!dsConfig.value[role]) {
-      dsConfig.value[role] = {}
-    }
-    dsConfig.value[role] = {
-      ...dsConfig.value[role],
-      ...patch,
-    }
-    console.log('[VizWizStore] Updated DS config:', role, patch)
-  }
-  const updateDsCustomization = (dsId: string, patch: Partial<Record<string, any>>) => {
-    if (!dsCustomization.value[dsId]) {
-      dsCustomization.value[dsId] = {}
-    }
-    dsCustomization.value[dsId] = {
-      ...dsCustomization.value[dsId],
-      ...patch,
-    }
-    console.log('[VizWizStore] Updated DS customization:', patch)
-  }
+	// Datastream-specific
+	const updateDsConfig = (role: string, patch: Partial<Record<string, any>>) => {
+		if (!dsConfig.value[role]) {
+			dsConfig.value[role] = {};
+		}
+		dsConfig.value[role] = {
+			...dsConfig.value[role],
+			...patch,
+		};
+		console.log('[VizWizStore] Updated DS config:', role, patch);
+	};
+	const updateDsCustomization = (dsId: string, patch: Partial<Record<string, any>>) => {
+		if (!dsCustomization.value[dsId]) {
+			dsCustomization.value[dsId] = {};
+		}
+		dsCustomization.value[dsId] = {
+			...dsCustomization.value[dsId],
+			...patch,
+		};
+		console.log('[VizWizStore] Updated DS customization:', patch);
+	};
+
+	const setVisualizationCustomizationOptions = (options: VisualizationCustomizationOptions) => {
+		visualizationCustomizationOptions.value = options;
+	};
+
+	const updateVisualizationCustomizationOptions = (
+		patch: Partial<VisualizationCustomizationOptions>
+	) => {
+		visualizationCustomizationOptions.value = {
+			...visualizationCustomizationOptions.value,
+			...patch,
+		};
+	};
 
 	// RESET STORE STATE
 	const reset = () => {
@@ -93,36 +106,39 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 		dsCustomization.value = {};
 		visualizationCustomizationOptions.value = {};
 
-    console.log('[VizWizStore] Store reset')
-  }
+		console.log('[VizWizStore] Store reset');
+	};
 
-  const resetDsConfig = () => {
-    dsConfig.value = {}
-    console.log('[VizWizStore] DS Config reset')
-  }
+	const resetDsConfig = () => {
+		dsConfig.value = {};
+		console.log('[VizWizStore] DS Config reset');
+	};
 
-  const resetDsCustomization = () => {
-    dsCustomization.value = {}
-    console.log('[VizWizStore] DS Customization reset')
-  }
+	const resetDsCustomization = () => {
+		dsCustomization.value = {};
+		console.log('[VizWizStore] DS Customization reset');
+	};
 
-  return {
-    visualizationType,
-    systems,
-    datastreams,
-    globalConfig,
-    globalCustomization,
-    dsConfig,
-    dsCustomization,
-    setType,
-    setSystems,
-    setDatastreams,
-    updateGlobalConfig,
-    updateGlobalCustomization,
-    updateDsConfig,
-    updateDsCustomization,
-    reset,
-    resetDsConfig,
-    resetDsCustomization,
-  }
-})
+	return {
+		visualizationType,
+		systems,
+		datastreams,
+		globalConfig: commonConfig,
+		globalCustomization: commonCustomization,
+		dsConfig,
+		dsCustomization,
+    visualizationCustomizationOptions,
+		setType,
+		setSystems,
+		setDatastreams,
+		updateGlobalConfig: updateCommonConfig,
+		updateGlobalCustomization: updateCommonCustomization,
+		updateDsConfig,
+		updateDsCustomization,
+    setVisualizationCustomizationOptions,
+		updateVisualizationCustomizationOptions,
+		reset,
+		resetDsConfig,
+		resetDsCustomization,
+	};
+});
