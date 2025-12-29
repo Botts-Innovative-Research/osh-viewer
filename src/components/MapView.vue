@@ -389,11 +389,17 @@ watch(
 								x: rec[getOrigin.property].lon,
 								y: rec[getOrigin.property].lat,
 								z: rec[getOrigin.property].alt || 0, // Default to 0 if altitude is not provided
+								// x: 10,
+								// y: 10,
+								// z: 10,
 							},
-							bearing: (rec[getBearing.property].heading * Math.PI) / 180,
+							// bearing: (rec[getBearing.property].heading * Math.PI) / 180,
+							bearing: rec[getBearing.property].heading,
+							// bearing: 10,
 						}
 					},
 				}
+
 				console.log('[MapView] LoB getOriginAndBearing configured:', getOriginAndBearing);
 			} else {
 				console.log('[MapView] LoB datasource missing origin or bearing property');
@@ -406,6 +412,22 @@ watch(
 				name: viz.name,
 				dataSourceIds: dsInstances.map(ds => ds.id),
 				...(getOriginAndBearing ? { getOriginAndBearing } : {}),
+				// getOrigin: {
+				// 	dataSourceIds: [getOrigin.id],
+				// 	handler: (rec: any) => {
+				// 		return {
+				// 			x: rec[getOrigin.property].lon,
+				// 			y: rec[getOrigin.property].lat,
+				// 			z: rec[getOrigin.property].alt || 0, // Default to 0 if altitude is not provided
+				// 		}
+				// 	}
+				// },
+				// getBearing: {
+				// 	dataSourceIds: [getBearing.id],
+				// 	handler: (rec: any) => {
+				// 		return rec[getBearing.property].heading;
+				// 	}
+				// },
 				color: layerOpts.color || '#FF0000',
 				weight: layerOpts.weight || 2,
 				opacity: layerOpts.opacity || 1.0,
