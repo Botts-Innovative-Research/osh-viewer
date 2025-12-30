@@ -10,15 +10,8 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { sendCommand } from '@/lib/ControlstreamUtils';
-import {
-	ISweApiDataSourceProperties,
-	PointMarkerLayerProperties,
-} from '@/lib/VisualizationHelpers';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
-import {
-	LineOfBearingLayerProperties,
-	LobViewProperties,
-} from '@/components/menus/visualization-wizard/visualizations/lob/Builder';
+import { RoleDatastream } from '@/types/types';
 
 const visualizationStore = useVisualizationStore();
 const mapLayerType = ref('leaflet');
@@ -214,9 +207,9 @@ watch(
 				const dsInstances: SweApi[] = [];
 
 				// Undefined initially
-				let getLocation: any
-				let getOrientation: any
-				let getMarkerId: any
+				let getLocation: any;
+				let getOrientation: any;
+				let getMarkerId: any;
 
 				for (const dsProps of dsArray) {
 					const dsInstance = new SweApi(dsProps.id, {
@@ -341,13 +334,11 @@ watch(
 				? viz.visualizationComponents.dataSource
 				: [viz.visualizationComponents.dataSource];
 
-			// Array of SweApi instances for datasources
+			//  Array of SweApi instances for datasources
 			const dsInstances: SweApi[] = [];
 
-			// Undefined initially
-			let getOriginAndBearing: any
-			let getOrigin: any
-			let getBearing: any
+			let getOrigin: RoleDatastream | null = null;
+			let getBearing: RoleDatastream | null = null;
 
 			for (const dsProps of dsArray) {
 				const dsInstance = new SweApi(dsProps.id, {
@@ -361,81 +352,62 @@ watch(
 					responseFormat: dsProps.responseFormat,
 				});
 
-				// Check for origin and bearing properties
 				if (dsProps.properties.origin) {
 					getOrigin = {
 						id: dsInstance.id,
-						property: dsProps.properties.origin,
-					}
+						property: dsProps.properties.origin
+					};
 				}
 				if (dsProps.properties.bearing) {
 					getBearing = {
 						id: dsInstance.id,
-						property: dsProps.properties.bearing,
-					}
+						property: dsProps.properties.bearing
+					};
 				}
 
 				dsInstance.connect();
 				dsInstances.push(dsInstance);
 			}
 
-			// Check for origin and bearing property
-			if (getOrigin && getBearing) {
-				getOriginAndBearing = {
-					dataSourceIds: [getOrigin.id, getBearing.id],
-					handler: (rec: any) => {
-						return {
-							origin: {
-								x: rec[getOrigin.property].lon,
-								y: rec[getOrigin.property].lat,
-								z: rec[getOrigin.property].alt || 0, // Default to 0 if altitude is not provided
-								// x: 10,
-								// y: 10,
-								// z: 10,
-							},
-							// bearing: (rec[getBearing.property].heading * Math.PI) / 180,
-							bearing: rec[getBearing.property].heading,
-							// bearing: 10,
-						}
-					},
-				}
-
-				console.log('[MapView] LoB getOriginAndBearing configured:', getOriginAndBearing);
-			} else {
+			if (!getOrigin || !getBearing) {
 				console.log('[MapView] LoB datasource missing origin or bearing property');
 			}
 
 			console.log('[MapView] Creating datasource for LoBLayer:', dsInstances)
-			const layerOpts = viz.visualizationComponents.dataLayer
-			const lobLayer = new LoBLayer({
+			const layerOpts = viz.visualizationComponents.dataLayer;
+			let lobLayerOpts: LoBLayer = {
 				...layerOpts,
 				name: viz.name,
 				dataSourceIds: dsInstances.map(ds => ds.id),
-				...(getOriginAndBearing ? { getOriginAndBearing } : {}),
-				// getOrigin: {
-				// 	dataSourceIds: [getOrigin.id],
-				// 	handler: (rec: any) => {
-				// 		return {
-				// 			x: rec[getOrigin.property].lon,
-				// 			y: rec[getOrigin.property].lat,
-				// 			z: rec[getOrigin.property].alt || 0, // Default to 0 if altitude is not provided
-				// 		}
-				// 	}
-				// },
-				// getBearing: {
-				// 	dataSourceIds: [getBearing.id],
-				// 	handler: (rec: any) => {
-				// 		return rec[getBearing.property].heading;
-				// 	}
-				// },
-				color: layerOpts.color || '#FF0000',
-				weight: layerOpts.weight || 2,
-				opacity: layerOpts.opacity || 1.0,
-				distanceKm: layerOpts.distanceKm || 1,
 				id: viz.id,
 				length: (layerOpts.distanceKm || 10) * 1000,
 				icon: '/icons/map/map-marker.svg',
-			})
+			};
+
+			if (getOrigin && getBearing) {
+				lobLayerOpts.getOrigin = {
+					dataSourceIds: [getOrigin.id],
+					handler: (rec: any) => {
+						const originData = rec[getOrigin?.property];
+						if (!originData) return null;
+						return {
+							x: originData.lon,
+							y: originData.lat,
+							z: originData.alt || 0,
+						};
+					},
+				};
+				lobLayerOpts.getBearing = {
+					dataSourceIds: [getBearing.id],
+					handler: (rec: any) => {
+						const bearingData = rec[getBearing?.property];
+						if (!bearingData) return null;
+						return bearingData.heading;
+					},
+				};
+			}
+
+			const lobLayer = new LoBLayer(lobLayerOpts)
 			mapView.value.addLayer(lobLayer);
 			console.log('[MapView] Created LoBLayer:', lobLayer)
 		}
