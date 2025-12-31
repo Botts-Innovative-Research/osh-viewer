@@ -23,7 +23,10 @@ export function build() {
 		vizwizStore.visualizationCustomizationOptions
 	);
 
-	const lobResult = CreateLobViewProps(datastreams, vizwizStore.visualizationCustomizationOptions);
+	const lobResult = CreateLobViewProps(
+		datastreams,
+		vizwizStore.visualizationCustomizationOptions
+	);
 	const visualizationComponents = {
 		dataSource: lobResult.vizDatasources,
 		dataLayer: lobResult.lobLayer,
@@ -85,10 +88,14 @@ export function CreateLobViewProps(datastreams: { [key: string]: any }, visOptio
 	// Build remaining lobLayer properties
 	lobLayer = {
 		...lobLayer,
-		color: visOptions.color,
+		color: visOptions.lineColor,
 		weight: visOptions.weight,
 		opacity: visOptions.opacity,
 		distanceKm: visOptions.distanceKm,
+		icon: visOptions.icon,
+		iconSize: [32, 32],
+		labelOffset: [-16, -32],
+		label: `${randomUUID()} - PM Orientation Layer`,
 		name: `${randomUUID()} - PM Orientation Layer`,
 	};
 

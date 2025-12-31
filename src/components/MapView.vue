@@ -375,13 +375,13 @@ watch(
 
 			console.log('[MapView] Creating datasource for LoBLayer:', dsInstances)
 			const layerOpts = viz.visualizationComponents.dataLayer;
+			console.log('Icon size:', layerOpts.iconSize);
 			let lobLayerOpts: LoBLayer = {
 				...layerOpts,
 				name: viz.name,
 				dataSourceIds: dsInstances.map(ds => ds.id),
 				id: viz.id,
 				length: (layerOpts.distanceKm || 10) * 1000,
-				icon: '/icons/map/map-marker.svg',
 			};
 
 			if (getOrigin && getBearing) {

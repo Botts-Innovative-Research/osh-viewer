@@ -11,6 +11,11 @@ const vizwizStore = useVizWizStore();
 const selectedType = computed(() => {
 	return vizwizStore.visualizationType;
 });
+const selectedTypeLabel = computed(() => {
+	const type = vizwizStore.visualizationType;
+	const vizType = visualizationTypes.find((vt) => vt.value === type);
+	return vizType ? vizType.label : '';
+});
 
 // Clear store every time the wizard opens
 onMounted(() => {
@@ -41,7 +46,6 @@ const visualizationTypes: VisualizationType[] = [
   { label: 'GeoPTZ', value: 'geoPtz', icon: 'mdi-map' },
 	{ label: 'Line of Bearing', value: 'lob', icon: 'mdi-ray-start' },
 ]
-type VizTypeKeys = (typeof visualizationTypes)[number]['value']
 
 const vizComponents: any = {
 	pmorientation: {
@@ -138,7 +142,7 @@ const changeStep = (direction: number) => {
 						:key="`${step.short}-content`"
 						:value="index + 1"
 					>
-						<h2>{{ step.title }}</h2>
+						<h2>{{ step.title + (currentStep != 1 ? ' - ' + selectedTypeLabel : '') }}</h2>
 						<component
 							v-if="index == 0"
 							:is="SelectType"
