@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { PmorientationBuilder } from './Builder';
+import IconControl from '../../viz-components/customizations/IconControl.vue';
 </script>
+
 <template>
-	<p>No current customizations.</p>
-	<button @click="PmorientationBuilder()">Test</button>
+  <icon-control></icon-control>
 </template>

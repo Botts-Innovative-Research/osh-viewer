@@ -30,3 +30,11 @@ export interface VisualizationType {
 	label: string; // Label for type
 	icon: string; // mdi icon name
 }
+
+/**
+ * Type for datastream ID and associated property
+ */
+export type RoleDatastream = {
+	id: string;	// ID of datastream
+	property: string;	// Property associated with the datastream
+};

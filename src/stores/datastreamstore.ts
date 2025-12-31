@@ -24,23 +24,26 @@ export const useDataStreamStore = defineStore('datastreams', () => {
 		return dataStreams.value.some((dataStream) => dataStream.uuid === id);
 	};
 
-	const getDataStreamsById = (ids: string[]): OSHDatastream[] => {
-		return dataStreams.value.filter((dataStream) => ids.includes(dataStream.uuid));
-	};
+  // const getDataStreamsById = (ids: string[]): OSHDatastream[] => {
+  //   return dataStreams.value.filter((dataStream) => ids.includes(dataStream.uuid))
+  // }
 
-	const getDataStreamsBySystemId = (ids: string[]): OSHDatastream[] => {
-		return dataStreams.value.filter((dataStream) =>
-			ids.includes(dataStream.parentId ? dataStream.parentId : '')
-		);
-	};
+  // Using id and not uuid
+  const getDataStreamsById = (ids: string[]): OSHDatastream[] => {
+    return dataStreams.value.filter((dataStream) => ids.includes(dataStream.id))
+  }
 
-	return {
-		dataStreams,
-		addDataStream,
-		removeDataStream,
-		getDataStreamByName,
-		checkIfDataStreamExists,
-		getDataStreamsById,
-		getDataStreamsBySystemId,
-	};
-});
+  const getDataStreamsBySystemId = (ids: string[]): OSHDatastream[] => {
+    return dataStreams.value.filter((dataStream) => ids.includes(dataStream.parentId ? dataStream.parentId : ''))
+  }
+
+  return {
+    dataStreams,
+    addDataStream,
+    removeDataStream,
+    getDataStreamByName,
+    checkIfDataStreamExists,
+    getDataStreamsById,
+    getDataStreamsBySystemId
+  }
+})

@@ -7,14 +7,16 @@ import CurveLayer from 'osh-js/source/core/ui/layer/CurveLayer.js';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { OSHControlStream, OSHDatastream } from '@/lib/OSHConnectDataStructs';
 import {
-	IChartViewProperties,
-	ICurveLayerProperties,
-	ISweApiDataSourceProperties,
-	IVideoLayerProperties,
-	IVideoViewProperties,
+  IChartViewProperties,
+  ICurveLayerProperties,
+  ISweApiDataSourceProperties,
+  IVideoLayerProperties,
+  IVideoViewProperties,
+  IMapLayerProperties,
+  IMapViewProperties,
 	IPointMarkerLayerProperties,
-	IMapViewProperties,
-} from '@/lib/VisualizationHelpers';
+} from '@/lib/VisualizationHelpers'
+import { useDataStreamStore } from '@/stores/datastreamstore'
 
 export function mineDatasourceObsProps(): { ds: any; observedProps: any } {
 	const uiStore = useUIStore();
@@ -34,16 +36,21 @@ export function mineDatasourceObsProps(): { ds: any; observedProps: any } {
 
 /**
  * FOR NEW VISUALIZATION WIZARD
- * Takes datasource as parameter
- * @returns
+ * Takes datasource ID as parameter
+ * @returns 
  */
-export function mineDatasourceObsPropsFromDS(ds: any): { ds: any; observedProps: any } {
-	if (!ds) {
-		console.warn('[DS-Utils] No datastream given');
-	}
+export function mineDatasourceObsPropsFromDS(dsId: string): { ds: any; observedProps: any } {
+  const dataStreamStore = useDataStreamStore()
+  const ds = dataStreamStore.getDataStreamsById([dsId])[0]
+
+  if (!ds) {
+    console.warn('No datastream given')
+  }
 
 	const observedProps = ds.datastream.properties?.observedProperties || [];
 	console.log('[DS-Utils] Observed Properties:', ds.datastream.properties);
+
+	// fetchSchema(ds.datastream);
 
 	return { ds, observedProps };
 }
@@ -76,7 +83,7 @@ export function checkDSForProps(propNames: string[], observedProps: any): any {
 	}
 }
 
-export async function fetchSchema(datastream: any) {
+export async function fetchSchema(datastream: any): Promise<any> {
 	console.log('[DatasourceUtils] Fetching schema for datastream:', datastream);
 
 	let checkedFormat = datastream.properties.formats.filter(
@@ -134,19 +141,28 @@ export class VisualizationMetadata {
 	}
 }
 
+/**
+ * Used to show a partial representation of a json Schema representation of the available fields in a datastream
+ */
 export class SchemaFieldProperty {
 	definition: string;
 	name: string;
 	type: string;
 	referenceFrame?: string;
 	uom?: any;
+	fields?: SchemaFieldProperty[];
+	datastream_id?: string;
+	label?: string;
 
 	constructor(definition: string, name: string, type: string, unitOfMeasure?: string) {
 		this.definition = definition;
 		this.name = name;
 		this.type = type;
 		this.uom = unitOfMeasure;
+		this.fields = [];
 	}
+
+
 }
 
 // deprecated

@@ -2,16 +2,17 @@ import { OSHDatastream } from '@/lib/OSHConnectDataStructs';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { VisualizationCustomizationOptions } from '@/lib/visualization/wizard/VisualizationCustomizationOptions';
+import { DatasourceOptions } from '@/lib/visualization/wizard/Datasources/DatasourceOptions';
 
 // Define global config properties
-export interface GlobalConfigProperties {
+export interface CommonConfigProperties {
 	playback: string;
 	startTime: string;
 	endTime: string;
 	[key: string]: any; // Allow other global config properties
 }
 // Define global customization
-export interface GlobalCustomizationProperties {
+export interface CommonCustomizationProperties {
 	[key: string]: any; // Allow other global customization properties
 }
 
@@ -21,8 +22,8 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 	const datastreams = ref<OSHDatastream[]>([]); // OSH Datastream objects
 
 	// Visualization-scoped configs and customization
-	const globalConfig = ref<GlobalConfigProperties>({ playback: '', startTime: '', endTime: '' });
-	const globalCustomization = ref<GlobalCustomizationProperties>({});
+	const commonConfig = ref<CommonConfigProperties>({ playback: '', startTime: '', endTime: '' });
+	const commonCustomization = ref<CommonCustomizationProperties>({});
 
 	// Datastream-scoped configs and customization
 	const dsConfig = ref<Record<string, Record<string, any>>>({});
@@ -46,27 +47,27 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 	};
 
 	// Globals
-	const updateGlobalConfig = (patch: Partial<GlobalConfigProperties>) => {
-		globalConfig.value = { ...globalConfig.value, ...patch };
+	const updateCommonConfig = (patch: Partial<CommonConfigProperties>) => {
+		commonConfig.value = { ...commonConfig.value, ...patch };
 		console.log('[VizWizStore] Updated global config:', patch);
-		console.log('New global config:', globalConfig.value);
+		console.log('New global config:', commonConfig.value);
 	};
 
-	const updateGlobalCustomization = (patch: Partial<GlobalCustomizationProperties>) => {
-		globalCustomization.value = { ...globalCustomization.value, ...patch };
+	const updateCommonCustomization = (patch: Partial<CommonCustomizationProperties>) => {
+		commonCustomization.value = { ...commonCustomization.value, ...patch };
 		console.log('[VizWizStore] Updated global customization:', patch);
 	};
 
 	// Datastream-specific
-	const updateDsConfig = (dsId: string, patch: Partial<Record<string, any>>) => {
-		if (!dsConfig.value[dsId]) {
-			dsConfig.value[dsId] = {};
+	const updateDsConfig = (role: string, patch: Partial<Record<string, any>>) => {
+		if (!dsConfig.value[role]) {
+			dsConfig.value[role] = {};
 		}
-		dsConfig.value[dsId] = {
-			...dsConfig.value[dsId],
+		dsConfig.value[role] = {
+			...dsConfig.value[role],
 			...patch,
 		};
-		console.log('[VizWizStore] Updated DS config:', patch);
+		console.log('[VizWizStore] Updated DS config:', role, patch);
 	};
 	const updateDsCustomization = (dsId: string, patch: Partial<Record<string, any>>) => {
 		if (!dsCustomization.value[dsId]) {
@@ -98,8 +99,8 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 		systems.value = [];
 		datastreams.value = [];
 		// Globals
-		globalConfig.value = { playback: '', startTime: '', endTime: '' };
-		globalCustomization.value = {};
+		commonConfig.value = { playback: '', startTime: '', endTime: '' };
+		commonCustomization.value = {};
 		// DS-specific
 		dsConfig.value = {};
 		dsCustomization.value = {};
@@ -108,24 +109,36 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 		console.log('[VizWizStore] Store reset');
 	};
 
+	const resetDsConfig = () => {
+		dsConfig.value = {};
+		console.log('[VizWizStore] DS Config reset');
+	};
+
+	const resetDsCustomization = () => {
+		dsCustomization.value = {};
+		console.log('[VizWizStore] DS Customization reset');
+	};
+
 	return {
 		visualizationType,
 		systems,
 		datastreams,
-		globalConfig,
-		globalCustomization,
+		globalConfig: commonConfig,
+		globalCustomization: commonCustomization,
 		dsConfig,
 		dsCustomization,
-		visualizationCustomizationOptions,
+    visualizationCustomizationOptions,
 		setType,
 		setSystems,
 		setDatastreams,
-		updateGlobalConfig,
-		updateGlobalCustomization,
+		updateGlobalConfig: updateCommonConfig,
+		updateGlobalCustomization: updateCommonCustomization,
 		updateDsConfig,
 		updateDsCustomization,
-		setVisualizationCustomizationOptions,
+    setVisualizationCustomizationOptions,
 		updateVisualizationCustomizationOptions,
 		reset,
+		resetDsConfig,
+		resetDsCustomization,
 	};
 });

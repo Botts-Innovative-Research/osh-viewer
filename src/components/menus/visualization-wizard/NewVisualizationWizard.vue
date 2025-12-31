@@ -11,6 +11,11 @@ const vizwizStore = useVizWizStore();
 const selectedType = computed(() => {
 	return vizwizStore.visualizationType;
 });
+const selectedTypeLabel = computed(() => {
+	const type = vizwizStore.visualizationType;
+	const vizType = visualizationTypes.find((vt) => vt.value === type);
+	return vizType ? vizType.label : '';
+});
 
 // Clear store every time the wizard opens
 onMounted(() => {
@@ -18,7 +23,7 @@ onMounted(() => {
 });
 
 // Stepper Variables
-const e1 = ref(1);
+const currentStep = ref(1)
 const steps = [
 	{ short: 'Type', title: 'Select Visualization Type' },
 	{ short: 'Data', title: 'Select System & Datasource' },
@@ -26,29 +31,21 @@ const steps = [
 	{ short: 'Customize', title: 'Customize Visualization' },
 ];
 const stepStatus = (index: number) => {
-	if (index < e1.value) return 'primary';
-	if ((index = e1.value)) return 'primary';
-	return '';
-};
-const isLastStep = computed(() => e1.value === steps.length);
-
-// Return step to be disabled based on current step
-const disabled = computed(() => {
-	if (e1.value === 1) return 'prev';
-	if (e1.value === steps.length) return 'next';
-});
+  if (index < currentStep.value) return "primary"
+  if (index = currentStep.value) return "primary"
+  return ""
+}
+const isLastStep = computed(() => currentStep.value === steps.length)
 
 // Visualization Types
 const visualizationTypes: VisualizationType[] = [
-	{ label: 'Chart', value: 'chart', icon: 'mdi-chart-line' },
-	{ label: 'Video', value: 'video', icon: 'mdi-video' },
-	{ label: 'Point Marker', value: 'pointmarker', icon: 'mdi-map-marker' },
-	{ label: 'Text', value: 'text', icon: 'mdi-format-text' },
-	{ label: 'GeoPTZ', value: 'geoPtz', icon: 'mdi-map' },
-	{ label: 'PM Orientation', value: 'pmorientation', icon: 'mdi-map-marker-left-outline' },
+  { label: 'Chart', value: 'chart', icon: 'mdi-chart-line' },
+  { label: 'Video', value: 'video', icon: 'mdi-video' },
+  { label: 'Point Marker', value: 'pmorientation', icon: 'mdi-map-marker' },
+  { label: 'Text', value: 'text', icon: 'mdi-format-text' },
+  { label: 'GeoPTZ', value: 'geoPtz', icon: 'mdi-map' },
 	{ label: 'Line of Bearing', value: 'lob', icon: 'mdi-ray-start' },
-];
-type VizTypeKeys = (typeof visualizationTypes)[number]['value'];
+]
 
 const vizComponents: any = {
 	pmorientation: {
@@ -70,12 +67,12 @@ const vizComponents: any = {
 	// add other types here
 	lob: {
 		Config: defineAsyncComponent(
-			() => import('@/components/menus/visualization-wizard/visualizations/lob/LoBWizard.vue')
+			() => import('@/components/menus/visualization-wizard/visualizations/lob/Config.vue')
 		),
 		Customize: defineAsyncComponent(
 			() =>
 				import(
-					'@/components/menus/visualization-wizard/visualizations/lob/LoBCustomizationOptions.vue'
+					'@/components/menus/visualization-wizard/visualizations/lob/Customize.vue'
 				)
 		),
 		Builder: () => import('@/components/menus/visualization-wizard/visualizations/lob/Builder'),
@@ -108,29 +105,36 @@ const handleSubmit = async () => {
 	// Call "build" function from the builder module
 	builderModule.build();
 
-	// Close the wizard
-	uiStore.vizWizOpen = false;
-};
+  // Close the wizard
+  uiStore.vizWizOpen = false
+}
+
+// Change step function
+const changeStep = (direction: number) => {
+  const newStep = currentStep.value + direction
+  if (newStep < 1) return
+  if (newStep > steps.length) {
+    handleSubmit()
+    return
+  }
+  currentStep.value = newStep
+}
+
 </script>
 
 <template>
 	<v-card class="pa-4 vwizard-card" elevation="4">
 		<v-card-title class="text-h4 text-center">Visualization Wizard</v-card-title>
 
-		<v-stepper v-model="e1" class="wizard-content">
-			<template v-slot:default="{ prev, next }">
-				<v-stepper-header>
-					<template v-for="(step, index) in steps" :key="`${index}-step`">
-						<v-stepper-item
-							:complete="e1 > index + 1"
-							:step="index + 1"
-							:value="index + 1"
-							:title="step.short"
-							:color="stepStatus(index)"
-						></v-stepper-item>
-						<v-divider v-if="index < steps.length - 1"></v-divider>
-					</template>
-				</v-stepper-header>
+    <v-stepper v-model="currentStep" class="wizard-content">
+      <template v-slot:default="{ }">
+        <v-stepper-header>
+          <template v-for="(step, index) in steps" :key="`${index}-step`">
+            <v-stepper-item :complete="currentStep > index + 1" :step="index + 1" :value="index + 1" :title="step.short"
+              :color="stepStatus(index)"></v-stepper-item>
+            <v-divider v-if="index < steps.length - 1"></v-divider>
+          </template>
+        </v-stepper-header>
 
 				<v-stepper-window>
 					<v-stepper-window-item
@@ -138,7 +142,7 @@ const handleSubmit = async () => {
 						:key="`${step.short}-content`"
 						:value="index + 1"
 					>
-						<h2>{{ step.title }}</h2>
+						<h2>{{ step.title + (currentStep != 1 ? ' - ' + selectedTypeLabel : '') }}</h2>
 						<component
 							v-if="index == 0"
 							:is="SelectType"
@@ -153,14 +157,26 @@ const handleSubmit = async () => {
 					</v-stepper-window-item>
 				</v-stepper-window>
 
-				<v-stepper-actions :disabled="disabled" @click:next="next" @click:prev="prev">
-				</v-stepper-actions>
-				<v-btn v-if="isLastStep" color="primary" @click="handleSubmit"
-					>Create Visualization</v-btn
-				>
-			</template>
-		</v-stepper>
-	</v-card>
+        <v-stepper-actions>
+          <template #prev>
+            <v-btn v-if="currentStep > 1" text @click="changeStep(-1)">
+              Previous
+            </v-btn>
+            <v-spacer v-else></v-spacer>
+          </template>
+
+          <template #next>
+            <v-btn :color="isLastStep ? 'success' : 'primary'" :disabled="false"
+              @click="isLastStep ? handleSubmit() : changeStep(1)">
+              {{ isLastStep ? 'Submit' : 'Next' }}
+            </v-btn>
+          </template>
+        </v-stepper-actions>
+
+      </template>
+    </v-stepper>
+
+  </v-card>
 </template>
 
 <style scoped>

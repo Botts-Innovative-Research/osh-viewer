@@ -17,6 +17,27 @@ function setHeadingProperty(property: string) {
 		headingProperty: property,
 	};
 }
+
+function setStartTime(time: string) {
+	vizOptions.value = {
+		...vizOptions.value,
+		startTime: time,
+	};
+}
+
+function setEndTime(time: string) {
+	vizOptions.value = {
+		...vizOptions.value,
+		endTime: time,
+	};
+}
+
+function setPlaybackMode(mode: string) {
+	vizOptions.value = {
+		...vizOptions.value,
+		playbackMode: mode,
+	};
+}
 </script>
 
 <template>

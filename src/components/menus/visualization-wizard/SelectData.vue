@@ -27,11 +27,19 @@ const listDatastreams = computed(() => {
 	else return datastreamStore.getDataStreamsBySystemId(selectedSystems.value);
 });
 
-// CLEAR DATASTREAMS when systems are changed
-// TODO: RESET config & customization
+// Clear DATASTREAMS when systems are changed
 watch(selectedSystems, () => {
-	selectedDatastreams.value = [];
-});
+  selectedDatastreams.value = []
+})
+
+// Clear DS CONFIG/CUSTOMIZE when datastreams are deselected
+watch(selectedDatastreams, (newVal, oldVal) => {
+  if (newVal.length < oldVal.length) {  // Datastreams were removed
+    vizwizStore.resetDsConfig()
+    vizwizStore.resetDsCustomization()
+  }
+})
+
 </script>
 <template>
 	<!-- Select for systems -->

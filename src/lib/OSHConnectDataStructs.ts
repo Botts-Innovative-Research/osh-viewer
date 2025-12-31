@@ -260,16 +260,17 @@ export class OSHSystem {
 		return datastreamStore.getDataStreamsById(this.children);
 	}
 
-	// Get controlstreams from this system
-	getCSChildren(): OSHControlStream[] {
-		const controlstreamStore = getSharedStores().controlstreamStore;
-		return controlstreamStore.getControlStreamsById(this.children);
-	}
+  // Get controlstreams from this system
+  getCSChildren(): OSHControlStream[] {
+    const controlstreamStore = getSharedStores().controlstreamStore;
+    return controlstreamStore.getControlStreamsById(this.children)
+  }
 
-	// Get TLS value for parent node
-	getTls(): boolean {
-		return this.parentNode.tls;
-	}
+
+  // Get TLS value for parent node
+  getTls(): boolean {
+    return this.parentNode.tls;
+  }
 }
 
 export class OSHDatastream {
