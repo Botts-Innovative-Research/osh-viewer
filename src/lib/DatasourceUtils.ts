@@ -7,15 +7,18 @@ import CurveLayer from 'osh-js/source/core/ui/layer/CurveLayer.js';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { OSHControlStream, OSHDatastream } from '@/lib/OSHConnectDataStructs';
 import {
-  IChartViewProperties,
-  ICurveLayerProperties,
-  ISweApiDataSourceProperties,
-  IVideoLayerProperties,
-  IVideoViewProperties,
-  IMapLayerProperties,
-  IMapViewProperties,
-	IPointMarkerLayerProperties,
-} from '@/lib/VisualizationHelpers'
+	IChartViewProperties,
+	ICurveLayerProperties,
+	ISweApiDataSourceProperties,
+	IVideoLayerProperties,
+	IVideoViewProperties,
+	IMapLayerProperties,
+	IMapViewProperties,
+  IPointMarkerLayerProperties
+} from '@/lib/VisualizationHelpers';
+
+import {toRaw} from "vue";
+
 import { useDataStreamStore } from '@/stores/datastreamstore'
 
 export function mineDatasourceObsProps(): { ds: any; observedProps: any } {
@@ -319,7 +322,9 @@ export function CreateVideoViewProps(
 	const videoLayer: IVideoLayerProperties = {
 		dataSourceId: ds.datastream.properties.id,
 		getFrameData(rec, timestamp) {
-			return rec[selectedProperty.name];
+            const rawDs = toRaw(ds);
+            let outputName = rawDs.datastream.properties.outputName;
+			return rec[outputName][selectedProperty.name];
 		},
 		getTimestamp(rec, timestamp) {
 			return rec.timestamp;
