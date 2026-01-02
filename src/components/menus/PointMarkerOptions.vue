@@ -3,7 +3,7 @@ import { fetchSchema, mineDatasourceObsProps, SchemaFieldProperty } from '@/lib/
 import { onMounted, ref, watch } from 'vue';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useUIStore } from '@/stores/uistore';
-import DataSourcePicker from '@/components/menus/DataSourcePicker.vue';
+import DsPropertySelector from '@/components/menus/DSPropertySelector.vue';
 import TimePicker from '@/components/menus/TimePicker.vue';
 import { useStartEndTimeSync, usePlaybackModeSync } from '@/composables/DataSourceOptions';
 import { Mode } from 'osh-js/source/core/datasource/Mode.js';
@@ -48,7 +48,7 @@ watch(selectedProperty, (val) => {
 
 <template>
 	<v-card>
-		<DataSourcePicker
+		<DsPropertySelector
 			title="Point Marker Options"
 			v-model:selectedProperty="selectedProperty"
 		/>

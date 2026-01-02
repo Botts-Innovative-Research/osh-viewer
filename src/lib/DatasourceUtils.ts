@@ -14,16 +14,41 @@ import {
 	IVideoViewProperties,
 	IMapLayerProperties,
 	IMapViewProperties,
+  IPointMarkerLayerProperties
 } from '@/lib/VisualizationHelpers';
+
 import {toRaw} from "vue";
+
+import { useDataStreamStore } from '@/stores/datastreamstore'
 
 export function mineDatasourceObsProps(): { ds: any; observedProps: any } {
 	const uiStore = useUIStore();
 	const ds = uiStore.selectedDatastream;
 
 	if (!ds) {
-		console.warn('No datastream selected');
+		console.warn('[DS-Utils] No datastream selected');
 	}
+
+	const observedProps = ds.datastream.properties?.observedProperties || [];
+	console.log('[DS-Utils] Observed Properties:', ds.datastream.properties);
+
+	// fetchSchema(ds.datastream);
+
+	return { ds, observedProps };
+}
+
+/**
+ * FOR NEW VISUALIZATION WIZARD
+ * Takes datasource ID as parameter
+ * @returns 
+ */
+export function mineDatasourceObsPropsFromDS(dsId: string): { ds: any; observedProps: any } {
+  const dataStreamStore = useDataStreamStore()
+  const ds = dataStreamStore.getDataStreamsById([dsId])[0]
+
+  if (!ds) {
+    console.warn('No datastream given')
+  }
 
 	const observedProps = ds.datastream.properties?.observedProperties || [];
 	console.log('[DS-Utils] Observed Properties:', ds.datastream.properties);
@@ -61,7 +86,7 @@ export function checkDSForProps(propNames: string[], observedProps: any): any {
 	}
 }
 
-export async function fetchSchema(datastream: any) {
+export async function fetchSchema(datastream: any): Promise<any> {
 	console.log('[DatasourceUtils] Fetching schema for datastream:', datastream);
 
 	let checkedFormat = datastream.properties.formats.filter(
@@ -119,19 +144,28 @@ export class VisualizationMetadata {
 	}
 }
 
+/**
+ * Used to show a partial representation of a json Schema representation of the available fields in a datastream
+ */
 export class SchemaFieldProperty {
 	definition: string;
 	name: string;
 	type: string;
 	referenceFrame?: string;
 	uom?: any;
+	fields?: SchemaFieldProperty[];
+	datastream_id?: string;
+	label?: string;
 
 	constructor(definition: string, name: string, type: string, unitOfMeasure?: string) {
 		this.definition = definition;
 		this.name = name;
 		this.type = type;
 		this.uom = unitOfMeasure;
+		this.fields = [];
 	}
+
+
 }
 
 // deprecated
@@ -332,7 +366,7 @@ export function CreateMapViewProps(
 	visOptions: any
 ): {
 	dataSource: ISweApiDataSourceProperties;
-	mapLayer: IMapLayerProperties;
+	mapLayer: IPointMarkerLayerProperties;
 	mapView: IMapViewProperties;
 } {
 	console.log('[DatasourceUtils] Creating Map View for Datastream:', ds);
@@ -351,7 +385,7 @@ export function CreateMapViewProps(
 
 	console.log('[DatasourceUtils] Creating PM Layer for property:', selectedProperty);
 	// Build MapLayerProperties
-	const mapLayer: IMapLayerProperties = {
+	const mapLayer: IPointMarkerLayerProperties = {
 		dataSourceId: ds.datastream.properties.id,
 		getLocation: (rec: any) => {
 			// Assumes the selectedProperty is an object with lat/lon or similar
@@ -384,9 +418,7 @@ export function CreateMapViewProps(
 
 /**
  * Creates properties for a GeoPTZ View based on the provided controlstream and visualization options.
- * @param cs
- * @param selectedProperty
- * @param videoFormat
+ * @param ds
  * @param visOptions
  * @constructor
  */

@@ -3,7 +3,7 @@ import { fetchSchema, mineDatasourceObsProps, SchemaFieldProperty } from '@/lib/
 import { onMounted, ref, watch } from 'vue';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useUIStore } from '@/stores/uistore';
-import DataSourcePicker from '@/components/menus/DataSourcePicker.vue';
+import DsPropertySelector from '@/components/menus/DSPropertySelector.vue';
 import TimePicker from '@/components/menus/TimePicker.vue';
 import { useStartEndTimeSync, usePlaybackModeSync } from '@/composables/DataSourceOptions';
 import { Mode } from 'osh-js/source/core/datasource/Mode.js';
@@ -54,7 +54,7 @@ watch(selectedProperty, (val) => {
 </script>
 
 <template>
-	<DataSourcePicker title="Chart Options" v-model:selectedProperty="selectedProperty" />
+	<DsPropertySelector title="Chart Options" v-model:selectedProperty="selectedProperty" />
 	<TimePicker title="Start Time" v-model:formattedDate="startTime" />
 	<TimePicker title="End Time" v-model:formattedDate="endTime" />
 	<v-combobox

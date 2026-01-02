@@ -11,16 +11,17 @@ export function createDefaultDataSource(datastream: OSHDatastream) {
 	// Datasource for the ConSys API
 	// const datasource = ref(null);
 
-	// TODO: determine how initializing the datasource in the onMounted hook behaves
-	const datasource = new SweApi(datastream.name, {
-		endpointUrl: datastream.datastream.networkProperties.endpointUrl,
-		resource: `/datastreams/${datastream.datastream.properties.id}/observations`,
-		tls: false,
-		startTime: 'now',
-		endTime: '2025-08-01T00:00:00Z',
-		mode: Mode.REAL_TIME,
-		responseFormat: 'application/swe+json',
-	});
+  // TODO: determine how initializing the datasource in the onMounted hook behaves
+  const datasource = new SweApi(datastream.name, {
+    endpointUrl: datastream.datastream.networkProperties.endpointUrl,
+    resource: `/datastreams/${datastream.datastream.properties.id}/observations`,
+    tls: datastream.datastream.networkProperties.tls,
+    protocol: 'ws',
+    startTime: 'now',
+    endTime: '2025-08-01T00:00:00Z',
+    mode: Mode.REAL_TIME, // TODO: Make configurable
+    responseFormat: 'application/swe+json'
+  })
 
 	// onMounted(() => {
 	//   datasource.value = new ConSysApi(datastream.name, {
