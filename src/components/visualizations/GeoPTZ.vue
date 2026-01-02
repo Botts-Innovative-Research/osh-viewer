@@ -114,7 +114,7 @@ function toggle() {
 // Send PTZ command based on LLA inputs
 function onSend() {
 	const command = {
-		params: {
+		parameters: {
 			lat: latInput.value,
 			lon: lonInput.value,
 			alt: altInput.value,

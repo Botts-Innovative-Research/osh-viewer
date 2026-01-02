@@ -20,7 +20,7 @@ function onSend() {
 	// Handle DataRecord type command
 	if (isDataRecord.value) {
 		command = {
-			params: {
+			parameters: {
 				// Use selected command as key
 				// Use computed default values or fallback to 0.0
 				[selectedCommand.value]: {
@@ -38,7 +38,7 @@ function onSend() {
 				? String(singleValue.value)
 				: Number(singleValue.value);
 
-		command = { params: { [selectedCommand.value]: value } };
+		command = { parameters: { [selectedCommand.value]: value } };
 		console.log('COMMAND COMMAND:', command);
 	}
 	// If successfully constructed command, send it
@@ -56,25 +56,25 @@ function handleMove(direction: Direction) {
 
 	switch (direction) {
 		case 'right':
-			command = { params: { rpan: increment.value } };
+			command = { parameters: { rpan: increment.value } };
 			break;
 		case 'left':
-			command = { params: { rpan: -increment.value } };
+			command = { parameters: { rpan: -increment.value } };
 			break;
 		case 'up':
-			command = { params: { rtilt: increment.value } };
+			command = { parameters: { rtilt: increment.value } };
 			break;
 		case 'down':
-			command = { params: { rtilt: -increment.value } };
+			command = { parameters: { rtilt: -increment.value } };
 			break;
 		case 'zoomIn':
-			command = { params: { rzoom: increment.value } };
+			command = { parameters: { rzoom: increment.value } };
 			break;
 		case 'zoomOut':
-			command = { params: { rzoom: -increment.value } };
+			command = { parameters: { rzoom: -increment.value } };
 			break;
 		case 'home':
-			if (presetOptions.value.includes('Home')) command = { params: { preset: 'Home' } };
+			if (presetOptions.value.includes('Home')) command = { parameters: { preset: 'Home' } };
 			else {
 				console.error('Home preset not available.');
 				showToast('Home preset is not available.', 'ERROR');

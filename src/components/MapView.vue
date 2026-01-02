@@ -60,7 +60,7 @@ onMounted(() => {
 				const controlStreamId = selectedGeoPTZ.controlStreamId;
 
 				const command = {
-					params: {
+					parameters: {
 						lat: event.latlng.lat,
 						lon: event.latlng.lng,
 						alt: 0.0,
