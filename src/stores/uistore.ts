@@ -30,6 +30,7 @@ export const useUIStore = defineStore('ui', () => {
 	const selectedGeoPTZ = ref<{
 		controlStreamId: string;
 		commandBaseUrl: string;
+        auth: string;
 	} | null>(null);
 
 	// Theme state
@@ -77,8 +78,8 @@ export const useUIStore = defineStore('ui', () => {
 	}
 
 	// Handle selection of GeoPTZ instance
-	function setSelectedGeoPTZ(controlStreamId: string, commandBaseUrl: string) {
-		selectedGeoPTZ.value = { controlStreamId, commandBaseUrl };
+	function setSelectedGeoPTZ(controlStreamId: string, commandBaseUrl: string, auth: string) {
+		selectedGeoPTZ.value = { controlStreamId, commandBaseUrl, auth };
 	}
 	function clearSelectedGeoPTZ() {
 		selectedGeoPTZ.value = null;

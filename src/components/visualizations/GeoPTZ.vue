@@ -46,17 +46,23 @@ const receivedPTZ = ref<PTZData>({ pan: 0, tilt: 0, zoom: 0 });
 const uiStore = useUIStore();
 const isSelected = ref(false);
 
+
 // Generate commandBaseUrl from selected visualization's datastream
 const commandBaseUrl = computed(() => {
 	const protocol = props.datasource?.tls ? 'https' : 'http';
 	return `${protocol}://${props.datasource?.endpointUrl}`;
 });
 
+const auth = computed(() => {
+  const username = props.datasource?.connectorOpts.username;
+  const password = props.datasource?.connectorOpts.password;
+  if (!username || !password) return '';
+  return `${username}:${password}`
+})
+
 onMounted(async () => {
 	// Create SweApi instance from props.datasource if provided
-	let dsInstance: any = null;
-
-	dsInstance = new SweApi('geoPtz-datasource', {
+	let dsInstance: any = new SweApi('geoPtz-datasource', {
 		endpointUrl: props.datasource.endpointUrl,
 		resource: props.datasource.resource,
 		tls: props.datasource.tls,
@@ -65,6 +71,10 @@ onMounted(async () => {
 		endTime: props.datasource.endTime,
 		mode: props.datasource.mode,
 		responseFormat: props.datasource.responseFormat,
+    connectorOpts: {
+      username: props.datasource?.connectorOpts.username,
+      password: props.datasource?.connectorOpts.password
+    }
 	});
 	geoPtzDatasource.value = dsInstance;
 	console.log('[GeoPtzView] GeoPTZ datasource created:', geoPtzDatasource.value);
@@ -104,10 +114,14 @@ watch(
 
 // Toggle selection of this GeoPTZ instance in UI store
 function toggle() {
+  debugger
 	if (isSelected.value) {
 		uiStore.clearSelectedGeoPTZ();
 	} else {
-		uiStore.setSelectedGeoPTZ(props.visualization.controlstream.id, commandBaseUrl.value);
+
+
+    console.log("props.vis control stream", props.visualization)
+		uiStore.setSelectedGeoPTZ(props.visualization.controlstream.id, commandBaseUrl.value, auth.value);
 	}
 }
 
@@ -122,7 +136,7 @@ function onSend() {
 	};
 
 	console.log('[GeoPtzView] Sending GeoPTZ command:', command);
-	sendCommand(commandBaseUrl.value, props.visualization.controlstream.id, command);
+	sendCommand(commandBaseUrl.value, props.visualization.controlstream.id, command, auth.value);
 }
 </script>
 

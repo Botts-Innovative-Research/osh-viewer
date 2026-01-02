@@ -58,6 +58,7 @@ onMounted(() => {
 				// Send GeoPTZ command to selected GeoPTZ visualization
 				const commandBaseUrl = selectedGeoPTZ.commandBaseUrl;
 				const controlStreamId = selectedGeoPTZ.controlStreamId;
+        const auth = selectedGeoPTZ.auth
 
 				const command = {
 					parameters: {
@@ -68,7 +69,7 @@ onMounted(() => {
 				};
 
 				console.log('[MapView] Sending GeoPTZ command to selected GeoPTZ:', selectedGeoPTZ);
-				sendCommand(commandBaseUrl, controlStreamId, command);
+				sendCommand(commandBaseUrl, controlStreamId, command, auth);
 			}
 		});
 	} else {

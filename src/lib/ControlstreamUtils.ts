@@ -15,19 +15,24 @@ type CommandType = {
  * @param commandBaseUrl
  * @param controlStreamId
  * @param command
+ * @param auth
  */
-export function sendCommand(commandBaseUrl: string, controlStreamId: string, command: any) {
+export function sendCommand(commandBaseUrl: string, controlStreamId: string, command: any, auth: string) {
 	console.log(
 		`Sending command to ${commandBaseUrl}/controlstreams/${controlStreamId}/commands: `,
 		command
 	);
+
+    let encoded = btoa(auth)
 
 	// Command sending logic
 	fetch(`${commandBaseUrl}/controlstreams/${controlStreamId}/commands`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
+            ...(auth && {'Authorization': `Basic ${encoded}`})
 		},
+        mode: 'cors',
 		body: JSON.stringify(command),
 	})
 		.then((response) => {

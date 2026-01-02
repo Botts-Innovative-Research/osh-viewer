@@ -9,6 +9,7 @@ import { sendCommand } from '@/lib/ControlstreamUtils';
 interface PTZControlProps {
 	commandBaseUrl: string;
 	id: string;
+  auth: string
 }
 
 const props = defineProps<PTZControlProps>();
@@ -44,7 +45,7 @@ function onSend() {
 	// If successfully constructed command, send it
 	if (command) {
 		console.log('PanTiltControl: Sending command', command);
-		sendCommand(props.commandBaseUrl, props.id, command);
+		sendCommand(props.commandBaseUrl, props.id, command, props.auth);
 	} else {
 		console.warn('PanTiltControl: No command to send');
 	}
@@ -85,8 +86,8 @@ function handleMove(direction: Direction) {
 	}
 
 	if (command) {
-		console.log('PanTiltControl: Sending command', command);
-		sendCommand(props.commandBaseUrl, props.id, command);
+		console.log('PanTiltControl: Sending command', command, props.auth);
+		sendCommand(props.commandBaseUrl, props.id, command, props.auth);
 	}
 }
 

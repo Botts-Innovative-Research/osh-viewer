@@ -81,6 +81,10 @@ export function CreateLobViewProps(datastreams: { [key: string]: any }, visOptio
 			responseFormat: 'application/swe+json',
 			id: randomUUID(),
 			properties: properties,
+            connectorOpts: {
+                username: currentOSHDatastream[0].datastream.networkProperties.username,
+                password: currentOSHDatastream[0].datastream.networkProperties.password
+            }
 		};
 		vizDatasources.push(currentDataSource);
 	}
