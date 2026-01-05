@@ -121,6 +121,10 @@ onMounted(() => {
 		endTime: props.datasource.endTime,
 		mode: props.datasource.mode,
 		responseFormat: props.datasource.responseFormat,
+    connectorOpts: {
+      username: props.datasource?.connectorOpts.username,
+      password: props.datasource?.connectorOpts.password
+    }
 	});
 
 	let videolayer = new VideoDataLayer({
@@ -178,6 +182,7 @@ onMounted(() => {
 		v-if="props.visualization.controlstream"
 		:command-base-url="baseUrl"
 		:id="props.visualization.controlstream?.id"
+    :auth="`${props.datasource?.connectorOpts.username}:${props.datasource?.connectorOpts.password}`"
 	/>
 </template>
 

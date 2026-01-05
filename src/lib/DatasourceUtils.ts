@@ -251,6 +251,10 @@ export function CreateChartViewProps(
 		endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
 		mode: visOptions.replayMode.value || Mode.REAL_TIME,
 		responseFormat: 'application/swe+json',
+        connectorOpts: {
+            username: ds.datastream.networkProperties.connectorOpts.username,
+            password: ds.datastream.networkProperties.connectorOpts.password
+        }
 	};
 
 	// Build CurveLayerProperties
@@ -317,6 +321,10 @@ export function CreateVideoViewProps(
 		endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
 		mode: visOptions.replayMode.value || Mode.REAL_TIME,
 		responseFormat: 'application/swe+binary',
+        connectorOpts: {
+            username: ds.datastream.networkProperties.connectorOpts.username,
+            password: ds.datastream.networkProperties.connectorOpts.password
+        }
 	};
 
 	const videoLayer: IVideoLayerProperties = {
@@ -372,6 +380,7 @@ export function CreateMapViewProps(
 	console.log('[DatasourceUtils] Creating Map View for Datastream:', ds);
 	const parentSystem = ds.getParentSystem();
 	// Build SweApiDataSourceProperties
+
 	const dataSource: ISweApiDataSourceProperties = {
 		endpointUrl: ds.datastream.networkProperties.endpointUrl,
 		resource: `/datastreams/${ds.datastream.properties.id}/observations`,
@@ -381,6 +390,10 @@ export function CreateMapViewProps(
 		endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
 		mode: visOptions.replayMode.value || Mode.REAL_TIME,
 		responseFormat: 'application/swe+json',
+        connectorOpts: {
+            username: ds.datastream.networkProperties.connectorOpts.username,
+            password: ds.datastream.networkProperties.connectorOpts.password
+        }
 	};
 
 	console.log('[DatasourceUtils] Creating PM Layer for property:', selectedProperty);
@@ -439,6 +452,10 @@ export function CreateGeoPtzViewProps(
 		endTime: '2125-08-01T00:00:00Z',
 		mode: Mode.REAL_TIME,
 		responseFormat: 'application/swe+binary',
+        connectorOpts: {
+            username: ds.datastream.networkProperties.connectorOpts.username,
+            password: ds.datastream.networkProperties.connectorOpts.password
+        }
 	};
 
 	return {

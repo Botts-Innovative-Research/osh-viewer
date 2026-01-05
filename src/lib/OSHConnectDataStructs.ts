@@ -130,7 +130,7 @@ export class OSHNode {
 
 	async collectAndStoreSystems(): Promise<OSHSystem[]> {
 		// make request
-		const systems: any = new Systems({ endpointUrl: this.getEndpointUrl(), tls: this.tls });
+		const systems: any = new Systems({ endpointUrl: this.getEndpointUrl(), tls: this.tls, connectorOpts: { username: this.username, password: this.password} });
 		let retrievedSystems: any[] = [];
 		const results: System = await systems.searchSystems(new SystemFilter(), 100);
 
@@ -199,6 +199,8 @@ export class OSHSystem {
 
 		while (result.hasNext()) {
 			const items: any[] = await result.nextPage();
+
+            console.log("items", items);
 			// dataStreams.push(...items);
 
 			// create new OSHDatastream objects for each item
