@@ -40,7 +40,7 @@ const VisualizationComponent = computed(() => visualizationMap[props.vizType]);
 		<GeoPTZ
 			:visualization="viz"
 			:datasource="viz.visualizationComponents.dataSource"
-			v-if="viz.type === 'geoptz'"
+			v-if="viz.type === 'geoPtz'"
 		></GeoPTZ>
 		<slot name="after" />
 		<slot name="overlay" />

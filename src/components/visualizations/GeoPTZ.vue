@@ -30,7 +30,7 @@ const altInput = ref<number>(0.0);
 const receivedPTZ = ref<PTZData>({ pan: 0, tilt: 0, zoom: 0 });
 
 const geoPtzVisualizations = computed(() => {
-  return visualizationStore.visualizations.filter((viz) => viz.type === 'geoptz')
+  return visualizationStore.visualizations.filter((viz) => viz.type === 'geoPtz')
 })
 
 const geoPtzControl = computed(() => {

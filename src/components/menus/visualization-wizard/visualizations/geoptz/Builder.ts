@@ -21,7 +21,7 @@ export function build() {
 	const newViz: OSHVisualization = new OSHVisualization(
 		`visualization-${randomUUID()}`,
 		`GeoPTZ`,
-		'geoptz',
+		'geoPtz',
 		null,
 		null,
 		controlstreams

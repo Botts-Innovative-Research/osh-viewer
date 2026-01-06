@@ -43,7 +43,7 @@ const visualizationTypes: VisualizationType[] = [
   { label: 'Video', value: 'video', icon: 'mdi-video' },
   { label: 'Point Marker', value: 'pmorientation', icon: 'mdi-map-marker' },
   { label: 'Text', value: 'text', icon: 'mdi-format-text' },
-  { label: 'GeoPTZ', value: 'geoptz', icon: 'mdi-map' },
+  { label: 'GeoPTZ', value: 'geoPtz', icon: 'mdi-map' },
 	{ label: 'Line of Bearing', value: 'lob', icon: 'mdi-ray-start' },
 ]
 
