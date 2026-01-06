@@ -30,20 +30,19 @@ const selectedControlstreams = computed({
 const listSystems = useSystemStore().systems;
 // Filter list of datastreams to include ONLY those from selected systems
 const listDatastreams = computed(() => {
-  console.log("kalyn", datastreamStore.getDataStreamsBySystemId(selectedSystems.value))
 	if (!selectedSystems.value.length) return [];
 	else return datastreamStore.getDataStreamsBySystemId(selectedSystems.value);
 });
 
 const listControlstreams = computed(() => {
-  console.log("selected systems", selectedSystems)
   if (!selectedSystems.value.length) return [];
-  // else return controlstreamStore.getControlStreamsById(selectedSystems.value);
   else return controlstreamStore.getControlStreamsBySystemId(selectedSystems.value);
 });
-// Clear DATASTREAMS when systems are changed
+
+// Clear DATASTREAMS/CONTROLSTREAMS when systems are changed
 watch(selectedSystems, () => {
   selectedDatastreams.value = []
+  selectedControlstreams.value = []
 })
 
 // Clear DS CONFIG/CUSTOMIZE when datastreams are deselected
@@ -51,6 +50,12 @@ watch(selectedDatastreams, (newVal, oldVal) => {
   if (newVal.length < oldVal.length) {  // Datastreams were removed
     vizwizStore.resetDsConfig()
     vizwizStore.resetDsCustomization()
+  }
+})
+watch(selectedControlstreams, (newVal, oldVal) => {
+  if (newVal.length < oldVal.length) {  // Controlstreams were removed
+    vizwizStore.resetCsConfig()
+    vizwizStore.resetCsCustomization()
   }
 })
 
@@ -66,6 +71,7 @@ watch(selectedDatastreams, (newVal, oldVal) => {
 		persistent-hint
 		item-title="name"
 		item-value="id"
+    class="mb-4"
 	></v-select>
 	<!-- Select for datastreams -->
 	<v-select
@@ -77,8 +83,8 @@ watch(selectedDatastreams, (newVal, oldVal) => {
 		persistent-hint
 		item-title="name"
 		:item-value="(item: OSHDatastream) => item"
+    class="mb-4"
 	></v-select>
-
   <!-- Select for controlstreams -->
   <v-select
       v-model="selectedControlstreams"

@@ -29,12 +29,12 @@ const getDataStreams = () => {
 	<v-card rounded-0 flat class="d-flex flex-column fill-height">
 		<v-container fluid class="pa-0 fill-height">
 			<v-row no-gutters align="stretch" class="fill-height">
-				<v-col cols="3" class="d-flex flex-column fill-height">
-					<v-sheet rounded-0 class="fill-height overflow-y-auto">
+				<v-col cols="4" class="d-flex flex-column fill-height">
+					<v-sheet rounded-0 class="fill-height">
 						<SystemBrowser />
 					</v-sheet>
 				</v-col>
-				<v-col cols="5" class="d-flex flex-column fill-height">
+				<v-col cols="4" class="d-flex flex-column fill-height">
 					<MapView class="fill-height" />
 				</v-col>
 				<v-col cols="4">

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {defineProps, onMounted, ref, toRaw, watch} from 'vue';
+import {onMounted, ref, toRaw, watch} from 'vue';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import VideoDataLayer from 'osh-js/source/core/ui/layer/VideoDataLayer.js';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
@@ -43,9 +43,7 @@ const ptzControl = computed(() => {
       const protocol = networkProps.tls ? 'https' : 'http';
       const baseUrl = `${protocol}://${networkProps.endpointUrl}`
 
-      const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
-          ? viz.visualizationComponents.dataSource
-          : [viz.visualizationComponents.dataSource];
+
       const auth = `${networkProps.connectorOpts.username}:${networkProps.connectorOpts.password}`
 
       return {
@@ -124,7 +122,8 @@ function processVisualizations(updated: OSHVisualization[]) {
             dataSourceIds: [dsInstance.id],
             handler: (rec: any) => {
               let rawDs = toRaw(dsProps);
-              return rec.timestamp != null ? rec.timestamp : rec[rawDs.properties.video.outputName].time;
+              let newDate = new Date(rec[rawDs.properties.video.outputName].time).getTime();
+              return Number.isNaN(rec.timestamp) ? newDate : rec.timestamp;
             }
           };
         }

@@ -12,7 +12,6 @@ import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { sendCommand } from '@/lib/ControlstreamUtils';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import { RoleDatastream } from '@/types/types';
-import {createDefaultRTDataSource, createRTDataSource} from "@/components/visualizations/DataComposables";
 
 const visualizationStore = useVisualizationStore();
 const mapLayerType = ref('leaflet');
@@ -65,7 +64,7 @@ onMounted(() => {
 					parameters: {
 						lat: event.latlng.lat,
 						lon: event.latlng.lng,
-						alt: 0.0,
+						alt: 120.0,
 					},
 				};
 
