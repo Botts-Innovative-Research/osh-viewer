@@ -43,19 +43,26 @@ const visualizationTypes: VisualizationType[] = [
   { label: 'Video', value: 'video', icon: 'mdi-video' },
   { label: 'Point Marker', value: 'pmorientation', icon: 'mdi-map-marker' },
   { label: 'Text', value: 'text', icon: 'mdi-format-text' },
-  { label: 'GeoPTZ', value: 'geoPtz', icon: 'mdi-map' },
+  { label: 'GeoPTZ', value: 'geoptz', icon: 'mdi-map' },
 	{ label: 'Line of Bearing', value: 'lob', icon: 'mdi-ray-start' },
 ]
 
 const vizComponents: any = {
 	pmorientation: {
 		Config: defineAsyncComponent(
-			() => import('@/components/menus/visualization-wizard/visualizations/pmorientation/Config.vue')
+			() =>
+				import(
+					'@/components/menus/visualization-wizard/visualizations/pmorientation/Config.vue'
+				)
 		),
 		Customize: defineAsyncComponent(
-			() => import('@/components/menus/visualization-wizard/visualizations/pmorientation/Customize.vue')
+			() =>
+				import(
+					'@/components/menus/visualization-wizard/visualizations/pmorientation/Customize.vue'
+				)
 		),
-		Builder: () => import('@/components/menus/visualization-wizard/visualizations/pmorientation/Builder'),
+		Builder: () =>
+			import('@/components/menus/visualization-wizard/visualizations/pmorientation/Builder'),
 	},
 	// add other types here
 	lob: {
@@ -64,7 +71,9 @@ const vizComponents: any = {
 		),
 		Customize: defineAsyncComponent(
 			() =>
-				import('@/components/menus/visualization-wizard/visualizations/lob/Customize.vue')
+				import(
+					'@/components/menus/visualization-wizard/visualizations/lob/Customize.vue'
+				)
 		),
 		Builder: () => import('@/components/menus/visualization-wizard/visualizations/lob/Builder'),
 	},
@@ -85,7 +94,20 @@ const vizComponents: any = {
         () => import('@/components/menus/visualization-wizard/visualizations/geoptz/Customize.vue')
     ),
     Builder: () => import('@/components/menus/visualization-wizard/visualizations/geoptz/Builder'),
-  }
+  },
+	chart: {
+		Config: defineAsyncComponent(
+			() => import('@/components/menus/visualization-wizard/visualizations/chart/Config.vue')
+		),
+		Customize: defineAsyncComponent(
+			() =>
+				import(
+					'@/components/menus/visualization-wizard/visualizations/chart/Customize.vue'
+				)
+		),
+		Builder: () => import('@/components/menus/visualization-wizard/visualizations/chart/Builder'),
+	}
+	// add other types here
 };
 
 const getStepComponent = (index: number) => {
