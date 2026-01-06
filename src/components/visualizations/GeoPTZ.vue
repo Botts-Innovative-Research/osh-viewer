@@ -114,7 +114,6 @@ watch(
 
 // Toggle selection of this GeoPTZ instance in UI store
 function toggle() {
-  debugger
 	if (isSelected.value) {
 		uiStore.clearSelectedGeoPTZ();
 	} else {

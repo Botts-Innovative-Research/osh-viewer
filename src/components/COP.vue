@@ -34,10 +34,10 @@ const getDataStreams = () => {
 						<SystemBrowser />
 					</v-sheet>
 				</v-col>
-				<v-col cols="6" class="d-flex flex-column fill-height">
+				<v-col cols="5" class="d-flex flex-column fill-height">
 					<MapView class="fill-height" />
 				</v-col>
-				<v-col cols="3">
+				<v-col cols="4">
 					<VisualizationSidebar> </VisualizationSidebar>
 				</v-col>
 			</v-row>

@@ -77,6 +77,21 @@ const vizComponents: any = {
 		),
 		Builder: () => import('@/components/menus/visualization-wizard/visualizations/lob/Builder'),
 	},
+  video: {
+    Config: defineAsyncComponent(
+        () => import(
+            '@/components/menus/visualization-wizard/visualizations/video/Config.vue'
+            )
+    ),
+    Customize: defineAsyncComponent(
+        () =>
+            import(
+                '@/components/menus/visualization-wizard/visualizations/video/Customize.vue'
+                )
+    ),
+    Builder: () =>
+        import('@/components/menus/visualization-wizard/visualizations/video/Builder'),
+  }
 };
 
 const getStepComponent = (index: number) => {

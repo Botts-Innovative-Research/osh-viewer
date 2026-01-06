@@ -1,170 +1,177 @@
 <script setup lang="ts">
-import { defineProps, onMounted, ref } from 'vue';
+import {defineProps, onMounted, ref, toRaw, watch} from 'vue';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import VideoDataLayer from 'osh-js/source/core/ui/layer/VideoDataLayer.js';
-import VideoView from 'osh-js/source/core/ui/view/video/VideoView.js';
-import { createVideoDataSource } from '@/components/visualizations/DataComposables';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import MJPEGView from 'osh-js/source/core/ui/view/video/MjpegView.js';
-import {
-	SweApiDataSourceProperties,
-	VideoLayerProperties,
-	VideoViewProperties,
-} from '@/lib/VisualizationHelpers';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { computed } from 'vue';
 import PTZControl from './PTZControl.vue';
+import {useVisualizationStore} from "@/stores/visualizationstore";
+import {useControlStreamStore} from "@/stores/controlstreamstore";
 
-const props = defineProps({
-	visualization: {
-		type: OSHVisualization,
-		required: true,
-		default: null,
-	},
-	videoTitle: {
-		type: String,
-		required: false,
-		default: 'Video Stream',
-	},
-	showTime: {
-		type: Boolean,
-		required: false,
-		default: true,
-	},
-	showStats: {
-		type: Boolean,
-		required: false,
-		default: true,
-	},
-	datasource: {
-		type: SweApiDataSourceProperties,
-		required: false,
-		default: null,
-	},
-	videoLayer: {
-		type: VideoLayerProperties,
-		required: false,
-		default: null,
-	},
-	videoView: {
-		type: VideoViewProperties,
-		required: false,
-		default: null,
-	},
-});
 
 const videoDivId = ref('video-' + randomUUID());
 const videoCanvas = ref<HTMLCanvasElement | null>(null);
 const videoHeight = ref(360);
 const videoWidth = ref(480);
 
-const baseUrl = computed(() => {
-	const protocol = props.datasource?.tls ? 'https' : 'http';
-	return `${protocol}://${props.datasource?.endpointUrl}`;
+const visualizationStore = useVisualizationStore();
+const controlstreamStore = useControlStreamStore();
+const videoView = ref<any>(null);
+const currentVisualizations = ref<OSHVisualization[]>([]);
+const videoLayers = ref<VideoDataLayer[]>([]);
+
+const videoVisualizations = computed(() => {
+  return visualizationStore.visualizations.filter(
+      (viz) => viz.type === 'video'
+  );
 });
 
-function oldSetup() {
-	console.log('Video component mounted with OSHVisualization:', props.visualization);
+const ptzControl = computed(() => {
+  for (const viz of videoVisualizations.value) {
+    if (viz.controlstream && Object.keys(viz.controlstream).length > 0) {
+      const csId = Object.keys(viz.controlstream)[0];
+      if (!csId) continue;
 
-	const datasource = createVideoDataSource(props.visualization.parentDatastream);
+      const controlStreams = controlstreamStore.getControlStreamsById([csId]);
+      if (!controlStreams || controlStreams.length === 0) continue;
 
-	const videolayer = new VideoDataLayer({
-		dataSourceId: datasource.id,
-		getFrameData: (rec: any) => rec.img,
-		getTimestamp: (rec: any) => rec.timestamp,
-	});
+      const cs = controlStreams[0];
+      const networkProps = cs.controlstream.networkProperties;
 
-	/*const videoView = new VideoView({
-    container: videoDivId.value,
-    // css: "video-h264",
-    // name: props.videoTitle,
-    showTime: true,
-    showStats: true,
-    // useWebCodecApi: true,
-    width: 480,
-    height: 360,
-    layers: [videolayer]
-  });*/
+      const protocol = networkProps.tls ? 'https' : 'http';
+      const baseUrl = `${protocol}://${networkProps.endpointUrl}`
 
-	const videoView = new MJPEGView({
-		container: videoDivId.value,
-		css: 'video-h264',
-		name: props.videoTitle,
-		showTime: props.showTime,
-		showStats: props.showStats,
-		useWebCodecApi: true,
-		width: 480,
-		height: 360,
-		layers: [videolayer],
-	});
-	// NOTE: The width and height parameters are disregarded in the standard OSH-JS.
-	// If yours is not working, you may have to modify the source code of the VideoView class.
-	// And you may need to modify WebCodecView, FFMPEGView, etc.
+      const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
+          ? viz.visualizationComponents.dataSource
+          : [viz.visualizationComponents.dataSource];
+      const auth = `${networkProps.connectorOpts.username}:${networkProps.connectorOpts.password}`
 
-	datasource.connect();
+      return {
+        hasControl: true,
+        commandBaseUrl: baseUrl,
+        id: csId,
+        auth: auth
+      }
 
-	// to find video canvas
-	/*  let canvases = document.getElementById(videoDivId.value)?.getElementsByTagName("canvas")
-    videoCanvas.value = canvases[0] as HTMLCanvasElement;
-    console.log('[VideoVue] Video canvas element:', videoCanvas.value);
-    videoCanvas.value.classList.add("test-canvas-class");
-    videoCanvas.value.style.width = "480px";*/
+    }
+  }
+  return { hasControl: false, commandBaseUrl: '', id: '', auth: '' };
+})
+
+function processVisualizations(updated: OSHVisualization[]) {
+  if (!videoView.value) return;
+
+  const removed = currentVisualizations.value.filter((val) => !updated.includes(val));
+  for (const viz of removed) {
+    const idx = currentVisualizations.value.indexOf(viz);
+    if (idx !== -1) {
+      currentVisualizations.value.splice(idx, 1);
+      const videoLayer = videoLayers.value[idx];
+      if (videoLayer && videoView.value) {
+        videoView.value.removeLayer?.(videoLayer);
+      }
+      videoLayers.value.splice(idx, 1);
+    }
+  }
+
+  const newFiltered = updated.filter(val => !currentVisualizations.value.includes(val));
+  console.log('New visualizations:', newFiltered);
+
+  for (const viz of newFiltered) {
+    currentVisualizations.value.push(viz);
+    if (viz.type === 'video') {
+      console.log("viz ds", viz.visualizationComponents.dataSource);
+      const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
+          ? viz.visualizationComponents.dataSource
+          : [viz.visualizationComponents.dataSource];
+
+      const dsInstances: SweApi[] = [];
+
+      let getFrameData: any;
+      let getTimestamp: any;
+
+      for (const dsProps of dsArray) {
+        console.log('[Video.vue] dsProps:', dsProps);
+        console.log('[Video.vue] dsProps.properties:', dsProps.properties);
+        const dsInstance = new SweApi(dsProps.id, {
+          endpointUrl: dsProps.endpointUrl,
+          resource: dsProps.resource,
+          tls: dsProps.tls,
+          protocol: dsProps.protocol,
+          startTime: dsProps.startTime,
+          endTime: dsProps.endTime,
+          mode: dsProps.mode,
+          responseFormat: dsProps.responseFormat,
+          connectorOpts: {
+            username: dsProps?.connectorOpts.username,
+            password: dsProps?.connectorOpts.password
+          }
+        });
+
+        // Check for video property
+        if (dsProps.properties.video) {
+          getFrameData = {
+            dataSourceIds: [dsInstance.id],
+            handler: (rec: any) => {
+              let rawDs = toRaw(dsProps);
+              return rec[rawDs.properties.video.outputName][rawDs.properties.video.property] != null ? rec[rawDs.properties.video.outputName][rawDs.properties.video.property] : rec[rawDs.properties.video.property];
+            },
+          };
+
+          getTimestamp = {
+            dataSourceIds: [dsInstance.id],
+            handler: (rec: any) => {
+              let rawDs = toRaw(dsProps);
+              return rec.timestamp != null ? rec.timestamp : rec[rawDs.properties.video.outputName].time;
+            }
+          };
+        }
+
+        dsInstance.connect();
+        dsInstances.push(dsInstance);
+      }
+
+      console.log('[VideoView] Creating datasource for VideoDataLayer:', dsInstances);
+      const layerOpts = viz.visualizationComponents.dataLayer;
+      const videoLayer = new VideoDataLayer({
+        ...layerOpts,
+        name: viz.name,
+        dataSourceIds: dsInstances.map(ds => ds.id),
+        ...(getFrameData ? { getFrameData } : {}),
+        ...(getTimestamp ? { getTimestamp } : {}),
+      });
+      videoLayers.value.push(videoLayer);
+      videoView.value.addLayer(videoLayer);
+      console.log('[VideoView] Creating VideoDataLayer:', videoLayer);
+    }
+
+  }
 }
 
 onMounted(() => {
-	let dsInstance: any = new SweApi('video-datasource', {
-		endpointUrl: props.datasource.endpointUrl,
-		resource: props.datasource.resource,
-		tls: props.datasource.tls,
-		protocol: props.datasource.protocol,
-		startTime: props.datasource.startTime,
-		endTime: props.datasource.endTime,
-		mode: props.datasource.mode,
-		responseFormat: props.datasource.responseFormat,
-    connectorOpts: {
-      username: props.datasource?.connectorOpts.username,
-      password: props.datasource?.connectorOpts.password
+    let videoMjpegView = new MJPEGView({
+      container: videoDivId.value,
+      css: 'video-h264',
+      showTime: true,
+      showStats: true,
+      useWebCodecApi: true,
+      width: videoWidth.value,
+      height: videoHeight.value,
+      layers: [],
+    });
+
+    videoView.value = videoMjpegView;
+
+    console.log("[VideoView] MJPEG View created:", videoView.value);
+
+    // Process any existing visualizations
+    if (videoVisualizations.value.length > 0) {
+      processVisualizations(videoVisualizations.value);
     }
-	});
-
-	let videolayer = new VideoDataLayer({
-		dataSourceId: dsInstance.id,
-		getFrameData: props.videoLayer.getFrameData,
-		getTimestamp: props.videoLayer.getTimestamp,
-	});
-
-	let videoView: any = null;
-	if (props.videoView.videoType !== 'MJPEG') {
-		videoView = new VideoView({
-			container: videoDivId.value,
-			css: 'video-h264',
-			name: props.visualization.name,
-			showTime: props.videoView.showTime,
-			showStats: props.videoView.showStats,
-			useWebCodecApi: true,
-			width: videoWidth.value,
-			height: videoHeight.value,
-			layers: [videolayer],
-		});
-	} else {
-		videoView = new MJPEGView({
-			container: videoDivId.value,
-			css: 'video-h264',
-			name: props.visualization.name,
-			showTime: props.videoView.showTime,
-			showStats: props.videoView.showStats,
-			useWebCodecApi: true,
-			width: videoWidth.value,
-			height: videoHeight.value,
-			layers: [videolayer],
-		});
-	}
-
-	console.log('[VideoVue] Video visualizations info', dsInstance, videolayer, videoView);
-
-	// TODO: check videoView type and create appropriate view
-	dsInstance.connect();
 });
+
 </script>
 
 <template>
@@ -173,16 +180,17 @@ onMounted(() => {
 		class="video-container pa-4"
 		:style="{ width: videoWidth + 'px', height: videoHeight + 'px' }"
 	>
-		<v-card-title class="text-h5 text-center">{{
-			props.visualization.name || props.videoTitle
-		}}</v-card-title>
+		<v-card-title class="text-h5 text-center">
+<!--      {{ props.visualization.name || props.videoTitle }}-->
+      Video
+    </v-card-title>
 		<!-- Video content will be rendered here -->
 	</v-card>
 	<PTZControl
-		v-if="props.visualization.controlstream"
-		:command-base-url="baseUrl"
-		:id="props.visualization.controlstream?.id"
-    :auth="`${props.datasource?.connectorOpts.username}:${props.datasource?.connectorOpts.password}`"
+		v-if="ptzControl.hasControl"
+		:command-base-url="ptzControl.commandBaseUrl"
+		:id="ptzControl.id"
+		:auth="ptzControl.auth"
 	/>
 </template>
 

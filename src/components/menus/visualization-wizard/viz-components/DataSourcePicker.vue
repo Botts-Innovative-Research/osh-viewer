@@ -2,10 +2,7 @@
 import {
 	fetchSchema,
 	mineDatasourceObsPropsFromDS,
-	SchemaFieldProperty,
 } from '@/lib/DatasourceUtils';
-import { OSHDatastream } from '@/lib/OSHConnectDataStructs';
-import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { computed, onMounted, ref, watch } from 'vue'
 
@@ -19,10 +16,11 @@ const listDatastreams = computed(() => {
   return vizwizStore.datastreams
 })
 
+console.log("vizwizStore.dsConfig[props.role]", vizwizStore.dsConfig)
 // Update selected datastream for this role in vizwiz store
 const selectedDatastream = computed({
   get: () => vizwizStore.dsConfig[props.role]?.dsId,
-  set: (val: string) => vizwizStore.updateDsConfig(props.role, { dsId: val, property: null })
+  set: (val: string) => vizwizStore.updateDsConfig(props.role, { dsId: val, property: null})
 })
 
 const selectedProperty = computed({
@@ -37,6 +35,11 @@ const dsSchema = ref<any>(null)
 async function fetchProps() {
   const { ds, observedProps } = mineDatasourceObsPropsFromDS(selectedDatastream.value)
   dsSchema.value = await fetchSchema(ds.datastream)
+
+  console.log('[DataSourcePicker] ds.datastream.properties:', ds.datastream.properties)
+  console.log('[DataSourcePicker] outputName:', ds.datastream.properties.outputName)
+  vizwizStore.updateDsConfig(props.role, { outputName: ds.datastream.properties.outputName })
+  console.log('[DataSourcePicker] dsConfig after update:', JSON.stringify(vizwizStore.dsConfig, null, 2))
 }
 
 // Watch for changes in selected datastream to update properties
@@ -44,6 +47,8 @@ watch(selectedDatastream, async (newVal) => {
   if (!newVal) return
   await fetchProps()
 })
+
+
 
 </script>
 

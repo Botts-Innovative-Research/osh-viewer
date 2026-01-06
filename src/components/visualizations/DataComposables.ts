@@ -7,84 +7,51 @@ import { OSHDatastream } from '@/lib/OSHConnectDataStructs';
  * Utility to create a default ConSysApi datasource for charts.
  * @returns {any} ConSysApi datasource instance
  */
-export function createDefaultDataSource(datastream: OSHDatastream) {
-	// Datasource for the ConSys API
-	// const datasource = ref(null);
-
-  // TODO: determine how initializing the datasource in the onMounted hook behaves
-  const datasource = new SweApi(datastream.name, {
-    endpointUrl: datastream.datastream.networkProperties.endpointUrl,
-    resource: `/datastreams/${datastream.datastream.properties.id}/observations`,
-    tls: datastream.datastream.networkProperties.tls,
+export function createRTDataSource(ds: any, isVideo: boolean) {
+  return new SweApi(ds.id, {
+    endpointUrl: ds.endpointUrl,
+    resource: `/datastreams/${ds.id}/observations`,
+    tls: ds.tls,
     protocol: 'ws',
-    startTime: 'now',
-    endTime: '2025-08-01T00:00:00Z',
-    mode: Mode.REAL_TIME, // TODO: Make configurable
-    responseFormat: 'application/swe+json'
-  })
-
-	// onMounted(() => {
-	//   datasource.value = new ConSysApi(datastream.name, {
-	//     endpointUrl: datastream.datastream.networkProperties.endpointUrl,
-	//     resource: `/datastreams/${datastream.datastream.properties.id}/observations`,
-	//     tls: true,
-	//     startTime: 'now',
-	//     endTime: '2025-08-01T00:00:00Z',
-	//     mode: Mode.REAL_TIME,
-	//     responseFormat: 'application/swe+json'
-	//   });
-	// });
-	//
-
-	// exposes managed state to including component
-	return datasource;
+    mode: Mode.REAL_TIME,
+    responseFormat: isVideo ? 'application/swe+binary' : 'application/swe+json',
+      connectorOpts: {
+          username: ds.connectorOpts.username,
+          password: ds.connectorOpts.password
+      }
+  });
 }
 
-export function createVideoDataSource(datastream: OSHDatastream) {
-	// Datasource for the ConSys API
-	// const datasource = ref(null);
-
-	// TODO: determine how initializing the datasource in the onMounted hook behaves
-	const datasource = new SweApi(datastream.name, {
-		protocol: 'ws',
-		endpointUrl: datastream.datastream.networkProperties.endpointUrl,
-		resource: `/datastreams/${datastream.datastream.properties.id}/observations`,
-		tls: false,
-		startTime: 'now',
-		endTime: '2025-08-01T00:00:00Z',
-		mode: Mode.REAL_TIME,
-		responseFormat: 'application/swe+binary',
-	});
-
-	// onMounted(() => {
-	//   datasource.value = new ConSysApi(datastream.name, {
-	//     endpointUrl: datastream.datastream.networkProperties.endpointUrl,
-	//     resource: `/datastreams/${datastream.datastream.properties.id}/observations`,
-	//     tls: true,
-	//     startTime: 'now',
-	//     endTime: '2025-08-01T00:00:00Z',
-	//     mode: Mode.REAL_TIME,
-	//     responseFormat: 'application/swe+json'
-	//   });
-	// });
-	//
-
-	// exposes managed state to including component
-	return datasource;
+export function createBatchDataSource(datastream: OSHDatastream, isVideo: boolean) {
+    return new SweApi(datastream.name, {
+        endpointUrl: datastream.datastream.networkProperties.endpointUrl,
+        resource: `/datastreams/${datastream.datastream.properties.id}/observations`,
+        tls: datastream.datastream.networkProperties.tls,
+        protocol: 'ws',
+        mode: Mode.BATCH,
+        startTime: 'now',
+        endTime: '2125-08-01T00:00:00Z',
+        responseFormat: isVideo ? 'application/swe+binary' : 'application/swe+json',
+        connectorOpts: {
+            username: datastream.datastream.networkProperties?.connectorOpts.username,
+            password: datastream.datastream.networkProperties?.connectorOpts.password
+        }
+    });
 }
 
-export function createLocationDataSource(datastream: OSHDatastream) {
-	const datasource = new SweApi(datastream.name, {
-		protocol: 'ws',
-		endpointUrl: datastream.datastream.networkProperties.endpointUrl,
-		resource: `/datastreams/${datastream.datastream.properties.id}/observations`,
-		tls: false,
-		startTime: 'now',
-		endTime: '2025-08-01T00:00:00Z',
-		mode: Mode.REAL_TIME,
-		// mode: Mode.BATCH,
-		responseFormat: 'application/swe+json',
-	});
-
-	return datasource;
+export function createReplayDataSource(datastream: OSHDatastream, isVideo: boolean) {
+    return new SweApi(datastream.name, {
+        endpointUrl: datastream.datastream.networkProperties.endpointUrl,
+        resource: `/datastreams/${datastream.datastream.properties.id}/observations`,
+        tls: datastream.datastream.networkProperties.tls,
+        protocol: 'ws',
+        mode: Mode.REPLAY,
+        startTime: 'now',
+        endTime: '2125-08-01T00:00:00Z',
+        responseFormat: isVideo ? 'application/swe+binary' : 'application/swe+json',
+        connectorOpts: {
+            username: datastream.datastream.networkProperties?.connectorOpts.username,
+            password: datastream.datastream.networkProperties?.connectorOpts.password
+        }
+    });
 }

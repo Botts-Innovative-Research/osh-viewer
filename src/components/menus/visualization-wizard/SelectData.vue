@@ -3,11 +3,13 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 import { useSystemStore } from '@/stores/systemstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { computed, watch } from 'vue';
-import { OSHDatastream } from '@/lib/OSHConnectDataStructs';
+import {OSHControlStream, OSHDatastream} from '@/lib/OSHConnectDataStructs';
+import {useControlStreamStore} from "@/stores/controlstreamstore";
 
 // Stores
 const vizwizStore = useVizWizStore();
 const datastreamStore = useDataStreamStore();
+const controlstreamStore = useControlStreamStore();
 
 // Update values in vizwiz store
 const selectedSystems = computed({
@@ -19,14 +21,26 @@ const selectedDatastreams = computed({
 	set: (val: OSHDatastream[]) => vizwizStore.setDatastreams(val),
 });
 
+const selectedControlstreams = computed({
+  get: () => vizwizStore.controlstreams,
+  set: (val: OSHControlStream[]) => vizwizStore.setControlstreams(val),
+});
+
 // List of available systems
 const listSystems = useSystemStore().systems;
 // Filter list of datastreams to include ONLY those from selected systems
 const listDatastreams = computed(() => {
+  console.log("kalyn", datastreamStore.getDataStreamsBySystemId(selectedSystems.value))
 	if (!selectedSystems.value.length) return [];
 	else return datastreamStore.getDataStreamsBySystemId(selectedSystems.value);
 });
 
+const listControlstreams = computed(() => {
+  console.log("selected systems", selectedSystems)
+  if (!selectedSystems.value.length) return [];
+  // else return controlstreamStore.getControlStreamsById(selectedSystems.value);
+  else return controlstreamStore.getControlStreamsBySystemId(selectedSystems.value);
+});
 // Clear DATASTREAMS when systems are changed
 watch(selectedSystems, () => {
   selectedDatastreams.value = []
@@ -64,4 +78,16 @@ watch(selectedDatastreams, (newVal, oldVal) => {
 		item-title="name"
 		:item-value="(item: OSHDatastream) => item"
 	></v-select>
+
+  <!-- Select for controlstreams -->
+  <v-select
+      v-model="selectedControlstreams"
+      :items="listControlstreams"
+      hint="Select one or more controlstreams"
+      label="Select controlstream(s)"
+      multiple
+      persistent-hint
+      item-title="name"
+      :item-value="(item: OSHControlStream) => item"
+  ></v-select>
 </template>

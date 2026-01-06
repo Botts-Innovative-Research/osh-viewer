@@ -1,4 +1,4 @@
-import { OSHDatastream } from '@/lib/OSHConnectDataStructs';
+import {OSHControlStream, OSHDatastream} from '@/lib/OSHConnectDataStructs';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { VisualizationCustomizationOptions } from '@/lib/visualization/wizard/VisualizationCustomizationOptions';
@@ -20,6 +20,7 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 	const visualizationType = ref<string>('');
 	const systems = ref<string[]>([]); // System IDs
 	const datastreams = ref<OSHDatastream[]>([]); // OSH Datastream objects
+	const controlstreams = ref<OSHControlStream[]>([]); // OSH Controlstream objects
 
 	// Visualization-scoped configs and customization
 	const commonConfig = ref<CommonConfigProperties>({ playback: '', startTime: '', endTime: '' });
@@ -28,8 +29,10 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 	// Datastream-scoped configs and customization
 	const dsConfig = ref<Record<string, Record<string, any>>>({});
 	const dsCustomization = ref<Record<string, Record<string, any>>>({});
+	const csCustomization = ref<Record<string, Record<string, any>>>({});
+    const csConfig = ref<Record<string, Record<string, any>>>({});
 
-	const visualizationCustomizationOptions = ref<VisualizationCustomizationOptions>({});
+    const visualizationCustomizationOptions = ref<VisualizationCustomizationOptions>({});
 
 	const setType = (type: string): void => {
 		visualizationType.value = type;
@@ -45,6 +48,11 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 		datastreams.value = val;
 		console.log('[VizWizStore] Set datastreams:', val);
 	};
+
+    const setControlstreams = (val: OSHControlStream[]): void => {
+        controlstreams.value = val;
+        console.log('[VizWizStore] Set controlstreams:', val);
+    };
 
 	// Globals
 	const updateCommonConfig = (patch: Partial<CommonConfigProperties>) => {
@@ -69,6 +77,18 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 		};
 		console.log('[VizWizStore] Updated DS config:', role, patch);
 	};
+
+    const updateCsConfig = (role: string, patch: Partial<Record<string, any>>) => {
+        if (!csConfig.value[role]) {
+            csConfig.value[role] = {};
+        }
+        csConfig.value[role] = {
+            ...csConfig.value[role],
+            ...patch,
+        };
+        console.log('[VizWizStore] Updated CS config:', role, patch);
+    };
+
 	const updateDsCustomization = (dsId: string, patch: Partial<Record<string, any>>) => {
 		if (!dsCustomization.value[dsId]) {
 			dsCustomization.value[dsId] = {};
@@ -79,6 +99,17 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 		};
 		console.log('[VizWizStore] Updated DS customization:', patch);
 	};
+
+    const updateCsCustomization = (csId: string, patch: Partial<Record<string, any>>) => {
+        if (!csCustomization.value[csId]) {
+            csCustomization.value[csId] = {};
+        }
+        csCustomization.value[csId] = {
+            ...csCustomization.value[csId],
+            ...patch,
+        };
+        console.log('[VizWizStore] Updated CS customization:', patch);
+    };
 
 	const setVisualizationCustomizationOptions = (options: VisualizationCustomizationOptions) => {
 		visualizationCustomizationOptions.value = options;
@@ -98,12 +129,15 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 		visualizationType.value = '';
 		systems.value = [];
 		datastreams.value = [];
+		controlstreams.value = [];
 		// Globals
 		commonConfig.value = { playback: '', startTime: '', endTime: '' };
 		commonCustomization.value = {};
 		// DS-specific
 		dsConfig.value = {};
+		csConfig.value = {};
 		dsCustomization.value = {};
+		csCustomization.value = {};
 		visualizationCustomizationOptions.value = {};
 
 		console.log('[VizWizStore] Store reset');
@@ -119,26 +153,44 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 		console.log('[VizWizStore] DS Customization reset');
 	};
 
+    const resetCsConfig = () => {
+        csConfig.value = {};
+        console.log('[VizWizStore] CS Config reset');
+    };
+
+    const resetCsCustomization = () => {
+        csCustomization.value = {};
+        console.log('[VizWizStore] CS Customization reset');
+    };
+
 	return {
 		visualizationType,
 		systems,
 		datastreams,
+        controlstreams,
 		globalConfig: commonConfig,
 		globalCustomization: commonCustomization,
 		dsConfig,
+        csConfig,
 		dsCustomization,
+		csCustomization,
     visualizationCustomizationOptions,
 		setType,
 		setSystems,
 		setDatastreams,
+        setControlstreams,
 		updateGlobalConfig: updateCommonConfig,
 		updateGlobalCustomization: updateCommonCustomization,
 		updateDsConfig,
+		updateCsConfig,
 		updateDsCustomization,
+		updateCsCustomization,
     setVisualizationCustomizationOptions,
 		updateVisualizationCustomizationOptions,
 		reset,
 		resetDsConfig,
+		resetCsConfig,
 		resetDsCustomization,
+		resetCsCustomization,
 	};
 });
