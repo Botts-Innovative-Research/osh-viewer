@@ -64,7 +64,6 @@ const vizComponents: any = {
 		Builder: () =>
 			import('@/components/menus/visualization-wizard/visualizations/pmorientation/Builder'),
 	},
-	// add other types here
 	lob: {
 		Config: defineAsyncComponent(
 			() => import('@/components/menus/visualization-wizard/visualizations/lob/Config.vue')
@@ -77,6 +76,19 @@ const vizComponents: any = {
 		),
 		Builder: () => import('@/components/menus/visualization-wizard/visualizations/lob/Builder'),
 	},
+	chart: {
+		Config: defineAsyncComponent(
+			() => import('@/components/menus/visualization-wizard/visualizations/chart/Config.vue')
+		),
+		Customize: defineAsyncComponent(
+			() =>
+				import(
+					'@/components/menus/visualization-wizard/visualizations/chart/Customize.vue'
+				)
+		),
+		Builder: () => import('@/components/menus/visualization-wizard/visualizations/chart/Builder'),
+	}
+	// add other types here
 };
 
 const getStepComponent = (index: number) => {
