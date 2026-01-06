@@ -14,7 +14,7 @@ const checkedRoles = reactive({
     set: (val: boolean) => vizwizStore.updateDsConfig("x", { selected: val })
   }),
   y: computed({
-    get: () => vizwizStore.dsConfig.y?.selected ?? false,
+    get: () => vizwizStore.dsConfig.y?.selected ?? true,
     set: (val: boolean) => vizwizStore.updateDsConfig("y", { selected: val })
   }),
 })
