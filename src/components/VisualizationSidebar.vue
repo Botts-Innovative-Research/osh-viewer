@@ -47,7 +47,7 @@ const visualizationWizardOpen = uiStore.visualizationWizardOpen;
     </v-card-title>
 		<v-divider></v-divider>
 
-		<v-sheet class="visualization-list">
+		<v-sheet class="visualization-list overflow-y-auto">
 			<div v-for="viz in visualizations" :key="viz.id" class="visualization-item">
 				<VisualizationWrapper :viz="viz">
 					<template #overlay>
