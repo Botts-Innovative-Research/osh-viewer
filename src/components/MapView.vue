@@ -237,9 +237,9 @@ watch(mapVisualizations, (updated) => {
 							dataSourceIds: [dsInstance.id],
 							handler: (rec: any) => {
 								return {
-									x: rec[dsProps.properties.location].lon,
-									y: rec[dsProps.properties.location].lat,
-									z: rec[dsProps.properties.location].alt || 0, // Default to 0 if altitude is not provided
+									x: rec[dsProps.properties.location.property].lon,
+									y: rec[dsProps.properties.location.property].lat,
+									z: rec[dsProps.properties.location.property].alt || 0, // Default to 0 if altitude is not provided
 								}
 							},
 						}
@@ -250,7 +250,7 @@ watch(mapVisualizations, (updated) => {
 							dataSourceIds: [dsInstance.id],
 							handler: (rec: any) => {
 								return {
-									heading: rec[dsProps.properties.orientation].heading,
+									heading: rec[dsProps.properties.orientation.property].heading,
 								}
 							},
 						}
@@ -365,13 +365,13 @@ watch(lobVisualizations, (updated) => {
 				if (dsProps.properties.origin) {
 					getOrigin = {
 						id: dsInstance.id,
-						property: dsProps.properties.origin
+						property: dsProps.properties.origin.property
 					};
 				}
 				if (dsProps.properties.bearing) {
 					getBearing = {
 						id: dsInstance.id,
-						property: dsProps.properties.bearing
+						property: dsProps.properties.bearing.property
 					};
 				}
 
