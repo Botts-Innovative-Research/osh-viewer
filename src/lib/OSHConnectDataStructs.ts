@@ -200,7 +200,7 @@ export class OSHSystem {
 		while (result.hasNext()) {
 			const items: any[] = await result.nextPage();
 
-            console.log("items", items);
+            console.log("items - datastreams", items);
 			// dataStreams.push(...items);
 
 			// create new OSHDatastream objects for each item
@@ -222,17 +222,13 @@ export class OSHSystem {
 
 		while (result.hasNext()) {
 			const items: any[] = await result.nextPage();
+            console.log("items - control streams", items);
 			// controlStreams.push(...items);
 
 			// create new OSHControlStream objects for each item
 			items.forEach((item: any) => {
 				console.log(`result data:`, item);
-				const newStream = new OSHControlStream(
-					item.properties.name,
-					item.properties.inputName,
-					item.properties?.['system@id'],
-					item
-				);
+				const newStream = new OSHControlStream(item.properties.name, this.id, item,);
 				controlstreamStore?.addControlStream?.(newStream);
 				this.children.push(newStream.id);
 			});
@@ -304,15 +300,15 @@ export class OSHDatastream {
 export class OSHControlStream {
 	id: string;
 	name: string;
-	type: string;
 	parentId: string | null;
 	children: string[] = [];
+    controlstream: any;
 
-	constructor(name: string, type: string, parentId: string | null, data: any) {
-		this.id = data.properties.id;
+	constructor(name: string, parentId: string | null, controlstream: any) {
+		this.id = controlstream.properties.id;
 		this.name = name;
-		this.type = type;
 		this.parentId = parentId;
+        this.controlstream = controlstream
 	}
 }
 

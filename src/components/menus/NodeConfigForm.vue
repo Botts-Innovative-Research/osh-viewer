@@ -18,13 +18,6 @@ const tls = ref(false);
 const createNode = () => {
 	// This function will be called when the button is clicked
 	console.log('Create Node button clicked');
-	console.log('Node Name:', nodeName.value);
-	console.log('Node Host:', nodeHost.value);
-	console.log('Node Port:', nodePort.value);
-	console.log('Node Path:', nodePath.value);
-	console.log('Node User:', nodeUser.value);
-	console.log('TLS:', tls.value);
-
 	oshconnect.createNode(
 		nodeName.value,
 		nodeHost.value,

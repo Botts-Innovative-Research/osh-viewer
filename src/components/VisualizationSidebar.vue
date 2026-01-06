@@ -27,58 +27,27 @@ const dsProps = ref<any[]>([]);
 const wizardDialog = ref(false);
 const uiStore = storeToRefs(useUIStore());
 const visualizationWizardOpen = uiStore.visualizationWizardOpen;
-
-/**
- *
- */
-function addChart() {
-	const { ds, observedProps } = mineDatasourceObsProps();
-	dsProps.value = observedProps;
-	const prop = checkDSForProp('air_temperature', observedProps);
-
-	if (prop) {
-		console.log('Air temperature property found:', prop);
-		dataSource.value = ds;
-		return;
-	}
-}
-
-/**
- * Adds a video visualization to the list of visualizations.
- * It checks if the datasource has a 'RasterImage' property and adds it if found.
- */
-function addVideo() {
-	const { ds, observedProps } = mineDatasourceObsProps();
-	dsProps.value = observedProps;
-	const prop = checkDSForProp('RasterImage', observedProps);
-
-	if (prop) {
-		dataSource.value = ds;
-
-		const newViz = new OSHVisualization(
-			'video-' + randomUUID(),
-			'video',
-			'video',
-			prop.definition,
-			ds
-		);
-
-		console.log('[Viz-Sidebar] Adding new video visualization:', newViz);
-
-		visualizationStore.addVisualization(newViz);
-	}
-}
 </script>
 
 <template>
 	<v-card id="viz-sidebar">
-		<v-card-title class="viz-title ma-4">Visualizations</v-card-title>
-		<v-btn icon="mdi-plus" aria-label="Add" @click="useUIStore().openVizWiz()"></v-btn>
+		<v-card-title class="viz-title ma-4">
+      <span class="viz-title mr-4">Visualizations</span>
+      <v-tooltip text="Add Visualization" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn
+              v-bind="props"
+              icon="mdi-plus"
+              aria-label="Add Visualization"
+              @click="useUIStore().openVizWiz()"
+              size="small"
+          ></v-btn>
+        </template>
+      </v-tooltip>
+    </v-card-title>
 		<v-divider></v-divider>
 
-		<!--    <AddChartModal :onAddChart="addChart" :observedProps="dsProps.values" :dsName="'test'"></AddChartModal>-->
-		<!--    <v-btn @click="addVideo">Add Video</v-btn>-->
-		<v-sheet class="visualization-list overflow-y-auto">
+		<v-sheet class="visualization-list">
 			<div v-for="viz in visualizations" :key="viz.id" class="visualization-item">
 				<VisualizationWrapper :viz="viz">
 					<template #overlay>
