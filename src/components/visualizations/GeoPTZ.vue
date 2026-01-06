@@ -1,31 +1,18 @@
 <script setup lang="ts">
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { SweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
-import { computed, onMounted, ref, watch } from 'vue';
+
+import { computed, ref, watch } from 'vue';
 // @ts-ignore
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-// @ts-ignore
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
-import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useUIStore } from '@/stores/uistore';
 import { sendCommand } from '@/lib/ControlstreamUtils';
+import {useVisualizationStore} from "@/stores/visualizationstore";
+import {useControlStreamStore} from "@/stores/controlstreamstore";
 
-// Generate a random ID when the component is created
-const geoPtzId = ref('geoPtz-' + randomUUID());
-const geoPtzDatasource = ref<any>(null);
 
-const props = defineProps({
-	visualization: {
-		type: OSHVisualization,
-		required: false,
-		default: null,
-	},
-	datasource: {
-		type: SweApiDataSourceProperties,
-		required: false,
-		default: null,
-	},
-});
+const visualizationStore = useVisualizationStore();
+const controlstreamStore = useControlStreamStore();
+// UI store for managing selected GeoPTZ
+const uiStore = useUIStore();
+const isSelected = ref(false);
 
 // Define PTZ data interface
 interface PTZData {
@@ -42,57 +29,37 @@ const altInput = ref<number>(0.0);
 // Received PTZ data to output
 const receivedPTZ = ref<PTZData>({ pan: 0, tilt: 0, zoom: 0 });
 
-// UI store for managing selected GeoPTZ
-const uiStore = useUIStore();
-const isSelected = ref(false);
-
-
-// Generate commandBaseUrl from selected visualization's datastream
-const commandBaseUrl = computed(() => {
-	const protocol = props.datasource?.tls ? 'https' : 'http';
-	return `${protocol}://${props.datasource?.endpointUrl}`;
-});
-
-const auth = computed(() => {
-  const username = props.datasource?.connectorOpts.username;
-  const password = props.datasource?.connectorOpts.password;
-  if (!username || !password) return '';
-  return `${username}:${password}`
+const geoPtzVisualizations = computed(() => {
+  return visualizationStore.visualizations.filter((viz) => viz.type === 'geoptz')
 })
 
-onMounted(async () => {
-	// Create SweApi instance from props.datasource if provided
-	let dsInstance: any = new SweApi('geoPtz-datasource', {
-		endpointUrl: props.datasource.endpointUrl,
-		resource: props.datasource.resource,
-		tls: props.datasource.tls,
-		protocol: props.datasource.protocol,
-		startTime: props.datasource.startTime,
-		endTime: props.datasource.endTime,
-		mode: props.datasource.mode,
-		responseFormat: props.datasource.responseFormat,
-    connectorOpts: {
-      username: props.datasource?.connectorOpts.username,
-      password: props.datasource?.connectorOpts.password
+const geoPtzControl = computed(() => {
+  for (const viz of geoPtzVisualizations.value) {
+    if (viz.controlstream && Object.keys(viz.controlstream).length > 0) {
+      const csId = Object.keys(viz.controlstream)[0];
+      if (!csId) continue;
+      const controlStreams = controlstreamStore.getControlStreamsById([csId]);
+      if (!controlStreams || controlStreams.length === 0) continue;
+
+      const cs = controlStreams[0];
+      const networkProps = cs.controlstream.networkProperties;
+
+      const protocol = networkProps.tls ? 'https' : 'http';
+      const baseUrl = `${protocol}://${networkProps.endpointUrl}`
+      const auth = `${networkProps.connectorOpts.username}:${networkProps.connectorOpts.password}`
+
+      console.log("baseUrl", baseUrl)
+      console.log("auth", auth)
+      console.log("csId", csId)
+      return {
+        hasControl: true,
+        commandBaseUrl: baseUrl,
+        id: csId,
+        auth: auth
+      }
     }
-	});
-	geoPtzDatasource.value = dsInstance;
-	console.log('[GeoPtzView] GeoPTZ datasource created:', geoPtzDatasource.value);
-
-	dsInstance.connect();
-
-	const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
-
-	dataBroadcastChannel.onmessage = (message) => {
-		if (message.data.type === 'data') {
-			const data = message.data.values[0].data;
-			receivedPTZ.value = {
-				pan: data.pan,
-				tilt: data.tilt,
-				zoom: data.zoom,
-			};
-		}
-	};
+  }
+  return { hasControl: false, commandBaseUrl: '', id: '', auth: '' };
 });
 
 // Watch for changes in selectedGeoPTZ to highlight or focus on this instance
@@ -100,7 +67,7 @@ watch(
 	() => uiStore.selectedGeoPTZ?.controlStreamId,
 	(newPtZId) => {
 		// Check if ID matches this visualization's controlstream ID
-		if (newPtZId === props.visualization.controlstream.id) {
+		if (newPtZId === geoPtzControl.value.id) {
 			console.log('[GeoPtzView] This GeoPTZ instance is selected:', newPtZId);
 			// Add logic to highlight or focus on this GeoPTZ instance in the UI
 			isSelected.value = true;
@@ -117,10 +84,11 @@ function toggle() {
 	if (isSelected.value) {
 		uiStore.clearSelectedGeoPTZ();
 	} else {
-
-
-    console.log("props.vis control stream", props.visualization)
-		uiStore.setSelectedGeoPTZ(props.visualization.controlstream.id, commandBaseUrl.value, auth.value);
+    if (!geoPtzControl.value.hasControl) {
+      console.log("[GeoPTZ] No control given")
+      return;
+    }
+    uiStore.setSelectedGeoPTZ(geoPtzControl.value.id, geoPtzControl.value.commandBaseUrl, geoPtzControl.value.auth);
 	}
 }
 
@@ -134,14 +102,17 @@ function onSend() {
 		},
 	};
 
+  if (!geoPtzControl.value.hasControl){
+
+  }
 	console.log('[GeoPtzView] Sending GeoPTZ command:', command);
-	sendCommand(commandBaseUrl.value, props.visualization.controlstream.id, command, auth.value);
+	sendCommand(geoPtzControl.value.commandBaseUrl, geoPtzControl.value.id, command, geoPtzControl.value.auth);
 }
 </script>
 
 <template>
-	<v-card :id="geoPtzId" class="pa-4">
-		<v-card-title>{{ visualization.name }}</v-card-title>
+	<v-card :id="geoPtzControl.id" class="pa-4">
+		<v-card-title>GeoPTZ</v-card-title>
 		<v-container>
 			<v-row align="center">
 				<v-col align="center">

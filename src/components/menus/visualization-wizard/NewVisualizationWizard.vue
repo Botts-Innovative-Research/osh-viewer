@@ -50,19 +50,12 @@ const visualizationTypes: VisualizationType[] = [
 const vizComponents: any = {
 	pmorientation: {
 		Config: defineAsyncComponent(
-			() =>
-				import(
-					'@/components/menus/visualization-wizard/visualizations/pmorientation/Config.vue'
-				)
+			() => import('@/components/menus/visualization-wizard/visualizations/pmorientation/Config.vue')
 		),
 		Customize: defineAsyncComponent(
-			() =>
-				import(
-					'@/components/menus/visualization-wizard/visualizations/pmorientation/Customize.vue'
-				)
+			() => import('@/components/menus/visualization-wizard/visualizations/pmorientation/Customize.vue')
 		),
-		Builder: () =>
-			import('@/components/menus/visualization-wizard/visualizations/pmorientation/Builder'),
+		Builder: () => import('@/components/menus/visualization-wizard/visualizations/pmorientation/Builder'),
 	},
 	// add other types here
 	lob: {
@@ -71,26 +64,27 @@ const vizComponents: any = {
 		),
 		Customize: defineAsyncComponent(
 			() =>
-				import(
-					'@/components/menus/visualization-wizard/visualizations/lob/Customize.vue'
-				)
+				import('@/components/menus/visualization-wizard/visualizations/lob/Customize.vue')
 		),
 		Builder: () => import('@/components/menus/visualization-wizard/visualizations/lob/Builder'),
 	},
   video: {
     Config: defineAsyncComponent(
-        () => import(
-            '@/components/menus/visualization-wizard/visualizations/video/Config.vue'
-            )
+        () => import('@/components/menus/visualization-wizard/visualizations/video/Config.vue')
     ),
     Customize: defineAsyncComponent(
-        () =>
-            import(
-                '@/components/menus/visualization-wizard/visualizations/video/Customize.vue'
-                )
+        () => import('@/components/menus/visualization-wizard/visualizations/video/Customize.vue')
     ),
-    Builder: () =>
-        import('@/components/menus/visualization-wizard/visualizations/video/Builder'),
+    Builder: () => import('@/components/menus/visualization-wizard/visualizations/video/Builder'),
+  },
+  geoPtz: {
+    Config: defineAsyncComponent(
+        () => import('@/components/menus/visualization-wizard/visualizations/geoptz/Config.vue')
+    ),
+    Customize: defineAsyncComponent(
+        () => import('@/components/menus/visualization-wizard/visualizations/geoptz/Customize.vue')
+    ),
+    Builder: () => import('@/components/menus/visualization-wizard/visualizations/geoptz/Builder'),
   }
 };
 

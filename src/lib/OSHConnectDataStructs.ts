@@ -317,17 +317,17 @@ export class OSHVisualization {
 	name: string;
 	type: string;
 	parentId: string | null;
-	parentDatastream: OSHDatastream | OSHDatastream[];
+	parentDatastream: OSHDatastream | OSHDatastream[] | null;
 	visualizationComponents!: VisualizationComponents;
-	controlstream: any | null;
+	controlstream: OSHControlStream | OSHControlStream[] | null;
 
 	constructor(
 		id: string,
 		name: string,
 		type: string,
 		parentId: string | null,
-		parentDatastream: OSHDatastream | OSHDatastream[],
-		controlstream: OSHControlStream | any = null
+		parentDatastream: OSHDatastream | OSHDatastream[] | any,
+		controlstream: OSHControlStream | OSHControlStream[] | any = null
 	) {
 		this.id = id;
 		this.name = name;

@@ -17,18 +17,8 @@ export function build() {
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
 
-	// Debug: Log the current dsConfig to see what's being aggregated
-	console.log('[Video Builder] dsConfig before aggregation:', JSON.stringify(vizwizStore.dsConfig, null, 2));
-
-	// Aggregate datastreams from vizwizStore
 	const datastreams = AggregateDatastreams();
     const controlstreams = AggregateControlstreams();
-
-    console.log(
-        'Aggregated datastreams for Video:',
-        datastreams,
-        vizwizStore.visualizationCustomizationOptions
-    );
 
 	const videoResult = CreateVideoViewProps(
         datastreams,
