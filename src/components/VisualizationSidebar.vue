@@ -78,7 +78,7 @@ function addVideo() {
 
 		<!--    <AddChartModal :onAddChart="addChart" :observedProps="dsProps.values" :dsName="'test'"></AddChartModal>-->
 		<!--    <v-btn @click="addVideo">Add Video</v-btn>-->
-		<v-sheet class="visualization-list">
+		<v-sheet class="visualization-list overflow-y-auto">
 			<div v-for="viz in visualizations" :key="viz.id" class="visualization-item">
 				<VisualizationWrapper :viz="viz">
 					<template #overlay>

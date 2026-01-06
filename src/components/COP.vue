@@ -30,7 +30,7 @@ const getDataStreams = () => {
 		<v-container fluid class="pa-0 fill-height">
 			<v-row no-gutters align="stretch" class="fill-height">
 				<v-col cols="3" class="d-flex flex-column fill-height">
-					<v-sheet rounded-0 class="fill-height">
+					<v-sheet rounded-0 class="fill-height overflow-y-auto">
 						<SystemBrowser />
 					</v-sheet>
 				</v-col>
