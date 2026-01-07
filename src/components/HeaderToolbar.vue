@@ -1,9 +1,12 @@
 <script setup>
 import { ref } from 'vue';
 import AppSettings from './menus/AppSettings.vue';
+import { useConfigPersistence } from '@/composables/useConfigPersistence';
 
 const settingsDialog = ref(false);
 const viewerName = import.meta.env.VITE_VIEWER_NAME;
+
+const { saveConfig, loadConfig } = useConfigPersistence();
 </script>
 
 <template>
@@ -12,6 +15,14 @@ const viewerName = import.meta.env.VITE_VIEWER_NAME;
 <!--		<v-btn icon="mdi-account" />-->
 <!--		<v-btn icon="mdi-menu" />-->
 <!--		<v-btn icon="mdi-magnify" />-->
+		<v-btn icon @click="saveConfig">
+      <v-icon>mdi-content-save</v-icon>
+      <v-tooltip activator="parent" location="bottom"> Save State </v-tooltip>
+    </v-btn>
+    <v-btn icon @click="loadConfig">
+      <v-icon>mdi-reload</v-icon>
+      <v-tooltip activator="parent" location="bottom"> Load State </v-tooltip>
+    </v-btn>
 		<v-btn icon @click="settingsDialog = true">
 			<v-icon>mdi-cog</v-icon>
 			<v-tooltip activator="parent" location="bottom"> Settings </v-tooltip>
