@@ -53,10 +53,7 @@ export function build() {
  */
 export function CreateVideoViewProps(datastreams: { [key: string]: any }, controlstreams: { [key: string]: any }, visOptions: any) {
 	const datastreamStore = useDataStreamStore();
-	console.log('Datastreams: ', datastreamStore.dataStreams);
-
     const controlstreamStore = useControlStreamStore();
-    console.log('Controlstreams: ', controlstreamStore.controlStreams);
 
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
 	let videoLayer: any = {};
@@ -71,13 +68,9 @@ export function CreateVideoViewProps(datastreams: { [key: string]: any }, contro
 
     const videoFormat = visOptions?.videoFormat || 'MJPEG'; // default to mjpeg? or maybe h264 idc
 
-    // Iterate through each unique datastream ID
 	for (const [dsId, entry] of Object.entries(datastreams)) {
-        console.log('Processing datastream ID:', dsId, 'with entry:', entry);
-        // Get selected properties for each role of the datastream
         const properties = BuildRoleProperty(entry);
 
-        // Push new ISweApiDataSourceProperties
         const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
         const currentDataSource: ISweApiDataSourceProperties = {
             endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
@@ -99,7 +92,6 @@ export function CreateVideoViewProps(datastreams: { [key: string]: any }, contro
 
         let ds = toRaw(currentOSHDatastream[0]);
 
-        // Build remaining videoLayer properties
         videoLayer = {
             ...videoLayer,
             name: `${ds.datastream.properties.name}`,
@@ -109,7 +101,7 @@ export function CreateVideoViewProps(datastreams: { [key: string]: any }, contro
             ...videoView,
             name: `${ds.datastream.properties.name}`,
             layers: [videoLayer],
-            useWebCodecApi: videoFormat,
+            useWebCodecApi: videoFormat === 'MJPEG' ? false : true,
             videoType: videoFormat,
         };
         console.log('Created VideoViewProps:', { vizDatasources, videoLayer, videoView });
