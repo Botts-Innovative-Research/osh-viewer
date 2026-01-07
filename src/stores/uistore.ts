@@ -33,6 +33,13 @@ export const useUIStore = defineStore('ui', () => {
         auth: string;
 	} | null>(null);
 
+	// Currently selected LLA coordinates
+	const currentLLA = ref<{
+		latitude: number;
+		longitude: number;
+		altitude: number;
+	} | null>(null);
+
 	// Theme state
 	const theme = ref<'dark' | 'light'>('dark');
 
@@ -85,6 +92,14 @@ export const useUIStore = defineStore('ui', () => {
 		selectedGeoPTZ.value = null;
 	}
 
+	// Handle current LLA coordinates
+	function setCurrentLLA(latitude: number, longitude: number, altitude: number) {
+		currentLLA.value = { latitude, longitude, altitude };
+	}
+	function clearCurrentLLA() {
+		currentLLA.value = null;
+	}
+
 	function toggleVizWiz() {
 		vizWizOpen.value = !vizWizOpen.value;
 	}
@@ -119,6 +134,9 @@ export const useUIStore = defineStore('ui', () => {
 		selectedGeoPTZ,
 		setSelectedGeoPTZ,
 		clearSelectedGeoPTZ,
+		currentLLA,
+		setCurrentLLA,
+		clearCurrentLLA,
 
 		vizWizOpen,
 		toggleVizWiz,

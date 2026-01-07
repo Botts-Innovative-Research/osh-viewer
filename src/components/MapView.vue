@@ -81,6 +81,8 @@ onMounted(() => {
 
 				console.log('[MapView] Sending GeoPTZ command to selected GeoPTZ:', selectedGeoPTZ);
 				sendCommand(commandBaseUrl, controlStreamId, command, auth);
+
+				uiStore.setCurrentLLA(lat, lon, 120.0);
 			}
 		});
 	}

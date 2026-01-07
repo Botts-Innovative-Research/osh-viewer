@@ -116,6 +116,18 @@ watch(
 	}
 );
 
+// Watch for changes in currentLLA to update input fields, IF selected
+watch(
+	() => uiStore.currentLLA,
+	(newVal) => {
+		if (isSelected.value && newVal) {
+			latInput.value = newVal.latitude;
+			lonInput.value = newVal.longitude;
+			altInput.value = newVal.altitude;
+		}
+	}
+);
+
 // Toggle selection of this GeoPTZ instance in UI store
 function toggle() {
 	if (isSelected.value) {
