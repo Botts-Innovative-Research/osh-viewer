@@ -153,10 +153,11 @@ function processVisualizations(updated: OSHVisualization[]) {
             dataSourceIds: [dsInstance.id],
             handler: (rec: any) => {
               let rawDs = toRaw(dsProps);
-              let newDate = new Date(rec[rawDs.properties.video.outputName].time).getTime();
-              return Number.isNaN(rec.timestamp) ? newDate : rec.timestamp;
+              const data = rec[rawDs.properties.video.outputName];
+              let newDate = data.time == undefined ? new Date(data.sampleTime).getTime() : new Date(data.time).getTime()
+
+              return Number.isNaN(rec.timestamp) ? newDate : rec.timestamp
             }
-          };
         }
 
         dsInstance.connect();
