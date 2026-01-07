@@ -39,4 +39,4 @@ export const useSystemStore = defineStore('systems', () => {
 		checkIfSystemExists,
 		getSystemById,
 	};
-});
+}, { persist: { pick: ['systems'] } });

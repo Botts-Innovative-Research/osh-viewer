@@ -2,6 +2,7 @@ import './assets/main.css';
 
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import Toast from 'vue-toastification';
 import 'vue-toastification/dist/index.css';
 
@@ -29,8 +30,9 @@ const vuetify = createVuetify({
 });
 
 const pinia = createPinia();
-export { pinia };
+pinia.use(piniaPluginPersistedstate);
 
+export { pinia };
 const app = createApp(App);
 
 app.use(pinia);
