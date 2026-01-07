@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import {onMounted, ref, toRaw, watch} from 'vue';
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+import {computed, onMounted, ref, toRaw, watch} from 'vue';
+import {randomUUID} from 'osh-js/source/core/utils/Utils.js';
 import VideoDataLayer from 'osh-js/source/core/ui/layer/VideoDataLayer.js';
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import {OSHVisualization} from '@/lib/OSHConnectDataStructs';
 import MJPEGView from 'osh-js/source/core/ui/view/video/MjpegView.js';
+import VideoView from 'osh-js/source/core/ui/view/video/VideoView.js';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
-import { computed } from 'vue';
 import PTZControl from './PTZControl.vue';
 import {useVisualizationStore} from "@/stores/visualizationstore";
 import {useControlStreamStore} from "@/stores/controlstreamstore";
@@ -19,8 +19,43 @@ const videoWidth = ref(480);
 const visualizationStore = useVisualizationStore();
 const controlstreamStore = useControlStreamStore();
 const videoView = ref<any>(null);
+const currentVideoType = ref<string>('MJPEG');
 const currentVisualizations = ref<OSHVisualization[]>([]);
 const videoLayers = ref<VideoDataLayer[]>([]);
+
+function createVideoView(videoType: string) {
+  if (videoView.value) {
+    videoView.value.destroy?.();
+    videoView.value = null;
+  }
+
+  currentVideoType.value = videoType;
+
+  if (videoType === 'H264') {
+    videoView.value = new VideoView({
+      container: videoDivId.value,
+      css: 'video-h264',
+      showTime: true,
+      showStats: true,
+      useWebCodecApi: true,
+      width: videoWidth.value,
+      height: videoHeight.value,
+      layers: [],
+    });
+    console.log("[VideoView] H264 View created:", videoView.value);
+  } else {
+    videoView.value = new MJPEGView({
+      container: videoDivId.value,
+      css: 'video-mjpeg',
+      showTime: true,
+      showStats: true,
+      width: videoWidth.value,
+      height: videoHeight.value,
+      layers: [],
+    });
+    console.log("[VideoView] MJPEG View created:", videoView.value);
+  }
+}
 
 const videoVisualizations = computed(() => {
   return visualizationStore.visualizations.filter(
@@ -43,7 +78,6 @@ const ptzControl = computed(() => {
       const protocol = networkProps.tls ? 'https' : 'http';
       const baseUrl = `${protocol}://${networkProps.endpointUrl}`
 
-
       const auth = `${networkProps.connectorOpts.username}:${networkProps.connectorOpts.password}`
 
       return {
@@ -52,15 +86,12 @@ const ptzControl = computed(() => {
         id: csId,
         auth: auth
       }
-
     }
   }
-  return { hasControl: false, commandBaseUrl: '', id: '', auth: '' };
+  return {hasControl: false, commandBaseUrl: '', id: '', auth: ''};
 })
 
 function processVisualizations(updated: OSHVisualization[]) {
-  if (!videoView.value) return;
-
   const removed = currentVisualizations.value.filter((val) => !updated.includes(val));
   for (const viz of removed) {
     const idx = currentVisualizations.value.indexOf(viz);
@@ -75,12 +106,15 @@ function processVisualizations(updated: OSHVisualization[]) {
   }
 
   const newFiltered = updated.filter(val => !currentVisualizations.value.includes(val));
-  console.log('New visualizations:', newFiltered);
 
   for (const viz of newFiltered) {
+    const videoType = viz.visualizationComponents?.dataView?.videoType || 'MJPEG';
+    if (!videoView.value || currentVideoType.value !== videoType) {
+      createVideoView(videoType);
+    }
+
     currentVisualizations.value.push(viz);
     if (viz.type === 'video') {
-      console.log("viz ds", viz.visualizationComponents.dataSource);
       const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
           ? viz.visualizationComponents.dataSource
           : [viz.visualizationComponents.dataSource];
@@ -91,8 +125,6 @@ function processVisualizations(updated: OSHVisualization[]) {
       let getTimestamp: any;
 
       for (const dsProps of dsArray) {
-        console.log('[Video.vue] dsProps:', dsProps);
-        console.log('[Video.vue] dsProps.properties:', dsProps.properties);
         const dsInstance = new SweApi(dsProps.id, {
           endpointUrl: dsProps.endpointUrl,
           resource: dsProps.resource,
@@ -108,7 +140,6 @@ function processVisualizations(updated: OSHVisualization[]) {
           }
         });
 
-        // Check for video property
         if (dsProps.properties.video) {
           getFrameData = {
             dataSourceIds: [dsInstance.id],
@@ -138,8 +169,8 @@ function processVisualizations(updated: OSHVisualization[]) {
         ...layerOpts,
         name: viz.name,
         dataSourceIds: dsInstances.map(ds => ds.id),
-        ...(getFrameData ? { getFrameData } : {}),
-        ...(getTimestamp ? { getTimestamp } : {}),
+        ...(getFrameData ? {getFrameData} : {}),
+        ...(getTimestamp ? {getTimestamp} : {}),
       });
       videoLayers.value.push(videoLayer);
       videoView.value.addLayer(videoLayer);
@@ -150,62 +181,50 @@ function processVisualizations(updated: OSHVisualization[]) {
 }
 
 onMounted(() => {
-    let videoMjpegView = new MJPEGView({
-      container: videoDivId.value,
-      css: 'video-h264',
-      showTime: true,
-      showStats: true,
-      useWebCodecApi: true,
-      width: videoWidth.value,
-      height: videoHeight.value,
-      layers: [],
-    });
-
-    videoView.value = videoMjpegView;
-
-    console.log("[VideoView] MJPEG View created:", videoView.value);
-
-    // Process any existing visualizations
-    if (videoVisualizations.value.length > 0) {
-      processVisualizations(videoVisualizations.value);
-    }
+  if (videoVisualizations.value.length > 0) {
+    processVisualizations(videoVisualizations.value);
+  }
 });
+
+
+watch(videoVisualizations, (newVal) => {
+  processVisualizations(newVal);
+}, { deep: true });
 
 </script>
 
 <template>
-	<v-card
-		:id="videoDivId"
-		class="video-container pa-4"
-		:style="{ width: videoWidth + 'px', height: videoHeight + 'px' }"
-	>
-		<v-card-title class="text-h5 text-center">
-<!--      {{ props.visualization.name || props.videoTitle }}-->
+  <v-card
+      :id="videoDivId"
+      class="video-container pa-4"
+      :style="{ width: videoWidth + 'px', height: videoHeight + 'px' }"
+  >
+    <v-card-title class="text-h5 text-center">
+      <!--      {{ props.visualization.name || props.videoTitle }}-->
       Video
     </v-card-title>
-		<!-- Video content will be rendered here -->
-	</v-card>
-	<PTZControl
-		v-if="ptzControl.hasControl"
-		:command-base-url="ptzControl.commandBaseUrl"
-		:id="ptzControl.id"
-		:auth="ptzControl.auth"
-	/>
+  </v-card>
+  <PTZControl
+      v-if="ptzControl.hasControl"
+      :command-base-url="ptzControl.commandBaseUrl"
+      :id="ptzControl.id"
+      :auth="ptzControl.auth"
+  />
 </template>
 
 <style scoped>
-.video-h264 {
-	width: 100%;
+.video-h264, .video-mjpeg {
+  width: 100%;
 }
 
 .video-container {
-	width: 480px;
-	height: 360px;
+  width: 480px;
+  height: 360px;
 }
 
 .ptz-controls {
-	margin-top: 1rem;
-	display: flex;
-	justify-content: center;
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
 }
 </style>
