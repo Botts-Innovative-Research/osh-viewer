@@ -2,11 +2,9 @@
 import { defineProps, onMounted, ref } from 'vue';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
-import { Mode } from 'osh-js/source/core/datasource/Mode';
 import ChartJsView from 'osh-js/source/core/ui/view/chart/ChartJsView.js';
 import CurveLayer from 'osh-js/source/core/ui/layer/CurveLayer.js';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { useUIStore } from '@/stores/uistore';
 import {
   ChartViewProperties,
   CurveLayerProperties,
@@ -18,28 +16,12 @@ const chartId = ref('chart-' + randomUUID());
 let chartLayer: any = null;
 let chartView: any = null;
 
-const props = defineProps({
-  visualization: {
-    type: OSHVisualization,
-    required: false,
-    default: null,
-  },
-  datasource: {
-    type: SweApiDataSourceProperties,
-    required: false,
-    default: null,
-  },
-  curveLayer: {
-    type: Object,
-    required: false,
-    default: null,
-  },
-  chartView: {
-    type: Object,
-    required: false,
-    default: null,
-  },
-});
+const props = defineProps<{
+  visualization: OSHVisualization,
+  datasource?: SweApiDataSourceProperties,
+  curveLayer?: CurveLayerProperties,
+  chartView?: ChartViewProperties,
+}>()
 
 onMounted(async () => {
   // Array of datasources

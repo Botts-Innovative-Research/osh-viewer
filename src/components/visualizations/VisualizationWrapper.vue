@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, defineProps } from 'vue';
-//import Chart from '@/components/visualizations/Chart.vue';
 import Video from '@/components/visualizations/Video.vue';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import GeoPTZ from './GeoPTZ.vue';
@@ -13,7 +12,6 @@ const props = defineProps({
 
 // Map visualization types to components
 const visualizationMap: Record<string, any> = {
-	chart: defineAsyncComponent(() => import('./Chart.vue')),
 	video: defineAsyncComponent(() => import('./Video.vue')),
 	// Add more visualization types here as needed
 };
@@ -24,13 +22,6 @@ const VisualizationComponent = computed(() => visualizationMap[props.vizType]);
 <template>
 	<div :class="['visualization-wrapper', customClass]">
 		<slot name="before" />
-		<!-- <Chart
-			:visualization="viz"
-			v-if="viz.type === 'chart'"
-			:datasource="viz.visualizationComponents.dataSource"
-			:curve-layer="viz.visualizationComponents.dataLayer"
-			:chart-view="viz.visualizationComponents.dataView"
-		></Chart> -->
 		<Chart
 			:visualization="viz"
 			:datasource="viz.visualizationComponents.dataSource"

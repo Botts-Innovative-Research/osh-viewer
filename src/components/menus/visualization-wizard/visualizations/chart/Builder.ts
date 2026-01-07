@@ -79,7 +79,7 @@ export function CreateChartViewProps(datastreams: { [key: string]: any }, visOpt
     dataSourceIds: vizDatasources.map(ds => ds.id),
     getValues: (rec: any, timestamp: any) => {
       return {
-        x: rec.timestamp,
+        x: rec[vizwizStore.dsConfig['x'].property || rec.timestamp],
         y: rec[vizwizStore.dsConfig['y'].property || ''],
       }
     },
