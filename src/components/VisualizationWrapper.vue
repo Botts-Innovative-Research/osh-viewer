@@ -1,22 +1,15 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, defineProps } from 'vue';
-import Video from '@/components/visualizations/Video.vue';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import GeoPTZ from './GeoPTZ.vue';
-import Chart from '../menus/visualization-wizard/visualizations/chart/Chart.vue';
+import Chart from './menus/visualization-wizard/visualizations/chart/Chart.vue';
+import Video from './menus/visualization-wizard/visualizations/video/Video.vue';
+import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
 
 const props = defineProps({
 	viz: { type: OSHVisualization, required: true },
 	customClass: { type: String, default: '' },
 });
 
-// Map visualization types to components
-const visualizationMap: Record<string, any> = {
-	video: defineAsyncComponent(() => import('./Video.vue')),
-	// Add more visualization types here as needed
-};
-
-const VisualizationComponent = computed(() => visualizationMap[props.vizType]);
 </script>
 
 <template>

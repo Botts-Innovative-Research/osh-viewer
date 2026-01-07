@@ -6,21 +6,20 @@ const vwStore = useVizWizStore();
 const emit = defineEmits(['update:videoFormat']);
 
 const videoFormatOptions = [
-  { title: 'H.264', value: 'H264' },
   { title: 'MJPEG', value: 'MJPEG' },
+  { title: 'H.264', value: 'H264' },
 ]
 
-const videoFormat = ref<string>('H264');
+const videoFormat = ref<string>('MJPEG');
 
 
 watch(videoFormat, (val) => {
-	vwStore.updateVisualizationCustomizationOptions({});
+	vwStore.updateVisualizationCustomizationOptions({ videoFormat: val });
 });
 
 
 onMounted(() => {
-	vwStore.updateVisualizationCustomizationOptions({
-	});
+	vwStore.updateVisualizationCustomizationOptions({ videoFormat: videoFormat.value });
 });
 </script>
 
