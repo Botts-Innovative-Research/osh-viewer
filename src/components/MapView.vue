@@ -412,7 +412,7 @@ watch(lobVisualizations, (updated) => {
 					handler: (rec: any) => {
 						const bearingData = rec[getBearing?.property];
 						if (!bearingData) return null;
-						return bearingData.heading;
+						return bearingData.heading != null ? bearingData.heading : bearingData;
 					},
 				};
 			}
