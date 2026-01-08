@@ -16,7 +16,7 @@ const listControlstreams = computed(() => {
   return vizwizStore.controlstreams
 })
 
-// Update selected datastream for this role in vizwiz store
+// Update selected controlstream for this role in vizwiz store
 const selectedControlstream = computed({
   get: () => vizwizStore.csConfig[props.role]?.csId,
   set: (val: string) => vizwizStore.updateCsConfig(props.role, { csId: val, property: null})

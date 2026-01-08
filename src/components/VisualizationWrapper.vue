@@ -31,7 +31,8 @@ const props = defineProps({
 		></Video>
 		<GeoPTZ
 			:visualization="viz"
-			:datasource="viz.visualizationComponents.dataSource"
+			:datasource="Array.isArray(viz.visualizationComponents.dataSource) ? viz.visualizationComponents.dataSource[0] : viz.visualizationComponents.dataSource"
+			:controlstream="Array.isArray(viz.controlstream) ? viz.controlstream[0] : viz.controlstream"
 			v-if="viz.type === 'geoPtz'"
 		></GeoPTZ>
 		<slot name="after" />

@@ -3,6 +3,7 @@ import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
 import { Ion } from 'cesium';
 import LeafletView from 'osh-js/source/core/ui/view/map/LeafletView';
+import L from 'leaflet';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useVisualizationStore } from '../stores/visualizationstore';
 import { useUIStore } from '@/stores/uistore';
@@ -19,6 +20,7 @@ const mapView = ref<any>(null);
 const currentVisualizations = ref<OSHVisualization[]>([]);
 const pmLayers: PointMarkerLayer = ref([]);
 
+const geoPtzTargetPM = ref<any>(null);
 const mapVisualizations = computed(() => {
 	return visualizationStore.visualizations.filter(
 		(viz) => viz.type === 'pointmarker' || viz.type === 'pmorientation'
@@ -55,21 +57,32 @@ onMounted(() => {
 			// Fetch selected GeoPTZ in UI store
 			const selectedGeoPTZ = uiStore.selectedGeoPTZ;
 			if (selectedGeoPTZ) {
+        var lat = event.latlng.lat;
+        var lon = event.latlng.lng;
+
 				// Send GeoPTZ command to selected GeoPTZ visualization
 				const commandBaseUrl = selectedGeoPTZ.commandBaseUrl;
 				const controlStreamId = selectedGeoPTZ.controlStreamId;
         const auth = selectedGeoPTZ.auth
 
+        if (geoPtzTargetPM.value) {
+          leafletMapView.map.removeLayer(geoPtzTargetPM.value);
+        }
+        geoPtzTargetPM.value = L.marker([lat, lon]).addTo(leafletMapView.map)
+
+        // L.marker([lat, lon]).addTo(leafletMapView.map)
 				const command = {
 					parameters: {
-						lat: event.latlng.lat,
-						lon: event.latlng.lng,
+						lat: lat,
+						lon: lon,
 						alt: 120.0,
 					},
 				};
 
 				console.log('[MapView] Sending GeoPTZ command to selected GeoPTZ:', selectedGeoPTZ);
 				sendCommand(commandBaseUrl, controlStreamId, command, auth);
+
+				uiStore.setCurrentLLA(lat, lon, 120.0);
 			}
 		});
 	}
