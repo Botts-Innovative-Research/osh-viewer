@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {
-	fetchSchema,
-	mineDatasourceObsPropsFromDS,
+  fetchSchema,
+  mineDatasourceObsPropsFromDS,
 } from '@/lib/DatasourceUtils';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { computed, onMounted, ref, watch } from 'vue'
@@ -20,12 +20,12 @@ console.log("vizwizStore.dsConfig[props.role]", vizwizStore.dsConfig)
 // Update selected datastream for this role in vizwiz store
 const selectedDatastream = computed({
   get: () => vizwizStore.dsConfig[props.role]?.dsId,
-  set: (val: string) => vizwizStore.updateDsConfig(props.role, { dsId: val, property: null})
+  set: (val: string) => vizwizStore.updateDsConfig(props.role, { dsId: val, property: null })
 })
 
 const selectedProperty = computed({
-  get: () => vizwizStore.dsConfig[props.role]?.property,
-  set: (val: string) => vizwizStore.updateDsConfig(props.role, { property: val })
+  get: () => vizwizStore.dsConfig[props.role]?.label,
+  set: (val: any) => (vizwizStore.updateDsConfig(props.role, { property: val.name, label: val.label ?? val.name, uom: val.uom?.code ?? '' }))
 })
 
 // Properties schema for selected datastream
@@ -36,6 +36,7 @@ async function fetchProps() {
   const { ds, observedProps } = mineDatasourceObsPropsFromDS(selectedDatastream.value)
   dsSchema.value = await fetchSchema(ds.datastream)
 
+  console.log(dsSchema.value)
   console.log('[DataSourcePicker] ds.datastream.properties:', ds.datastream.properties)
   console.log('[DataSourcePicker] outputName:', ds.datastream.properties.outputName)
   vizwizStore.updateDsConfig(props.role, { outputName: ds.datastream.properties.outputName })
@@ -59,7 +60,8 @@ watch(selectedDatastream, async (newVal) => {
 
   <!-- Select for property -->
   <v-select v-if="dsSchema && dsSchema.recordSchema" v-model="selectedProperty" :items="dsSchema.recordSchema.fields"
-    label="Select property" item-title="name" persistent-hint item-value="name"></v-select>
+    label="Select property" :item-title="(item: any) => item.label || item.name" persistent-hint
+    :item-value="(item: any) => item"></v-select>
 </template>
 
 <style scoped></style>

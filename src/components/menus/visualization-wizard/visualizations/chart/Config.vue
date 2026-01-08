@@ -50,7 +50,7 @@ watch(() => vizwizStore.dsConfig, (newVal) => {
 
   <!-- Y -->
   <v-container>
-    <v-checkbox label="Y Axis" v-model="checkedRoles.y"></v-checkbox>
+    <v-checkbox label="Y Axis" v-model="checkedRoles.y" disabled></v-checkbox>
     <DataSourcePicker v-if="checkedRoles.y" role="y" />
   </v-container>
 </template>

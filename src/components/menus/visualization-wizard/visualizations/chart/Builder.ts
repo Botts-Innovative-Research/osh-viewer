@@ -25,7 +25,7 @@ export function build() {
   
     const newViz: OSHVisualization = new OSHVisualization(
       `visualization-${randomUUID()}`,
-      `${visualizationComponents.dataLayer.label}`,
+      `${visualizationComponents.dataLayer.name || 'Chart Visualization'}`,
       'chart',
       null,
       datastreams,
@@ -87,7 +87,9 @@ export function CreateChartViewProps(datastreams: { [key: string]: any }, visOpt
     backgroundColor: visOptions.backgroundColor || '#FFFFFF',
     fill: true,
     getCurveId: (rec: any, timestamp: any) => '2',
-    name: vizwizStore.dsConfig['y'].property || 'Y-Axis Data',
+    name: vizwizStore.dsConfig['y'].label + (vizwizStore.dsConfig['y'].uom ? ` (${vizwizStore.dsConfig['y'].uom})` : '') || 'Y-Axis Data',
+    xLabel: vizwizStore.dsConfig['x'].label || 'X-Axis Data',
+    yLabel: vizwizStore.dsConfig['y'].label + (vizwizStore.dsConfig['y'].uom ? ` (${vizwizStore.dsConfig['y'].uom})` : '') || 'Y-Axis Data',
   }
 
   chartView = {

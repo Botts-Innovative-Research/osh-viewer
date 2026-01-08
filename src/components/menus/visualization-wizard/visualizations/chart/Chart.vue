@@ -74,7 +74,7 @@ onMounted(async () => {
 
 <template>
   <v-card class="chart-card pa-4">
-    <v-card-title>{{ visualization.name }}</v-card-title>
+    <v-card-title>{{ props.visualization.name }}</v-card-title>
     <div :id="chartId"></div>
   </v-card>
 </template>
