@@ -6,11 +6,8 @@ export const useUIStore = defineStore('ui', () => {
 	// Sidebar state (example: left and right sidebars)
 	const leftSidebarOpen = ref(true);
 	const rightSidebarOpen = ref(false);
-	const visualizationWizardOpen = ref(false);
 	const nodeConfigFormOpen = ref(false);
-
-	// VizWiz = new version
-	const vizWizOpen = ref(false);
+	const vizWizOpen = ref(false); // VizWiz = new version
 
 	// Focused map (could be an ID or name)
 	const focusedMap = ref<string | null>(null);
@@ -31,6 +28,13 @@ export const useUIStore = defineStore('ui', () => {
 		controlStreamId: string;
 		commandBaseUrl: string;
         auth: string;
+	} | null>(null);
+
+	// Currently selected LLA coordinates
+	const currentLLA = ref<{
+		latitude: number;
+		longitude: number;
+		altitude: number;
 	} | null>(null);
 
 	// Theme state
@@ -64,12 +68,6 @@ export const useUIStore = defineStore('ui', () => {
 	function toggleTheme() {
 		theme.value = theme.value === 'dark' ? 'light' : 'dark';
 	}
-	function toggleVisualizationWizard() {
-		visualizationWizardOpen.value = !visualizationWizardOpen.value;
-	}
-	function openVisualizationWizard() {
-		visualizationWizardOpen.value = true;
-	}
 	function toggleNodeConfigForm() {
 		nodeConfigFormOpen.value = !nodeConfigFormOpen.value;
 	}
@@ -83,6 +81,14 @@ export const useUIStore = defineStore('ui', () => {
 	}
 	function clearSelectedGeoPTZ() {
 		selectedGeoPTZ.value = null;
+	}
+
+	// Handle current LLA coordinates
+	function setCurrentLLA(latitude: number, longitude: number, altitude: number) {
+		currentLLA.value = { latitude, longitude, altitude };
+	}
+	function clearCurrentLLA() {
+		currentLLA.value = null;
 	}
 
 	function toggleVizWiz() {
@@ -110,15 +116,15 @@ export const useUIStore = defineStore('ui', () => {
 		clearSelectedProperty,
 		theme,
 		toggleTheme,
-		visualizationWizardOpen,
-		toggleVisualizationWizard,
-		openVisualizationWizard,
 		nodeConfigFormOpen,
 		toggleNodeConfigForm,
 		openNodeConfigForm,
 		selectedGeoPTZ,
 		setSelectedGeoPTZ,
 		clearSelectedGeoPTZ,
+		currentLLA,
+		setCurrentLLA,
+		clearCurrentLLA,
 
 		vizWizOpen,
 		toggleVizWiz,

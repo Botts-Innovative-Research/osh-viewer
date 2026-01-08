@@ -6,7 +6,7 @@ import {OSHVisualization} from '@/lib/OSHConnectDataStructs';
 import MJPEGView from 'osh-js/source/core/ui/view/video/MjpegView.js';
 import VideoView from 'osh-js/source/core/ui/view/video/VideoView.js';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
-import PTZControl from '../menus/visualization-wizard/visualizations/video/PTZControl.vue';
+import PTZControl from './PTZControl.vue'
 import {useControlStreamStore} from "@/stores/controlstreamstore";
 
 const props = defineProps<{

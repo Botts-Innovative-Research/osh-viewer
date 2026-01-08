@@ -1,22 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 // @ts-ignore
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import Chart from '@/components/visualizations/Chart.vue';
 import { useUIStore } from '@/stores/uistore.ts';
-import {
-	checkDSForProp,
-	mineDatasourceObsProps,
-	VisualizationMetadata,
-} from '@/lib/DatasourceUtils';
-import Video from '@/components/visualizations/Video.vue';
-import AddChartModal from '@/components/AddChartModal.vue';
 import { useVisualizationStore } from '@/stores/visualizationstore';
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import VisualizationWizard from './menus/VisualizationWizard.vue';
 import { storeToRefs } from 'pinia';
-import VisualizationWrapper from './visualizations/VisualizationWrapper.vue';
-import { on } from 'events';
+import VisualizationWrapper from './VisualizationWrapper.vue';
 
 // Each visualization can be represented by an object with a unique id
 // const visualizations = ref<VisualizationMetadata[]>([])
