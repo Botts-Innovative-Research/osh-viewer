@@ -26,6 +26,11 @@ export function AggregateDatastreams() {
       continue // Skip unselected roles
     }
 
+    // Skip entries without dsId (these are controlstreams)
+    if (!entry.dsId) {
+      continue
+    }
+
     // Initialize array for role if not present
     if (!result[entry.dsId]) {
       result[entry.dsId] = []
@@ -33,6 +38,37 @@ export function AggregateDatastreams() {
 
     // Add selected property to role's array
     result[entry.dsId].push({
+      [role]: entry,
+    })
+  }
+
+  return result
+}
+
+export function AggregateControlstreams() {
+  const vizwizStore = useVizWizStore()
+
+  const result: any = {}
+
+  for (const [role, entry] of Object.entries(vizwizStore.csConfig)) {
+    console.log('Processing controlstream role:', role, 'with entry:', entry)
+
+    if (!entry['selected']) {
+      continue // Skip unselected roles
+    }
+
+    // Skip entries without csId (these are datastreams)
+    if (!entry.csId) {
+      continue
+    }
+
+    // Initialize array for role if not present
+    if (!result[entry.csId]) {
+      result[entry.csId] = []
+    }
+
+    // Add selected property to role's array
+    result[entry.csId].push({
       [role]: entry,
     })
   }
@@ -52,7 +88,7 @@ export function BuildRoleProperty(entry: any[]) {
       const roleEntry = roleObj[role]
 
       // Return [role, property string]
-      return [role, roleEntry.property]
+      return [role, { property: roleEntry.property, outputName: roleEntry.outputName }]
     }),
   )
 }

@@ -114,7 +114,7 @@ export class SweApiDataSourceProperties implements ISweApiDataSourceProperties {
   endTime?: string
   mode: string
   responseFormat: string
-    connectorOpts: {username: string, password: string}
+  connectorOpts: { username: string, password: string }
 
   constructor(props: ISweApiDataSourceProperties) {
     this.endpointUrl = props.endpointUrl
@@ -125,7 +125,7 @@ export class SweApiDataSourceProperties implements ISweApiDataSourceProperties {
     this.endTime = props.endTime
     this.mode = props.mode
     this.responseFormat = props.responseFormat
-      this.connectorOpts = props.connectorOpts
+    this.connectorOpts = props.connectorOpts
   }
 }
 

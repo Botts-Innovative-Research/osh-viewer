@@ -3,6 +3,7 @@ import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
 import { Ion } from 'cesium';
 import LeafletView from 'osh-js/source/core/ui/view/map/LeafletView';
+import L from 'leaflet';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useVisualizationStore } from '../stores/visualizationstore';
 import { useUIStore } from '@/stores/uistore';
@@ -17,8 +18,9 @@ const visualizationStore = useVisualizationStore();
 const mapLayerType = ref('leaflet');
 const mapView = ref<any>(null);
 const currentVisualizations = ref<OSHVisualization[]>([]);
-const pmLayers = ref([]);
+const pmLayers: PointMarkerLayer = ref([]);
 
+const geoPtzTargetPM = ref<any>(null);
 const mapVisualizations = computed(() => {
 	return visualizationStore.visualizations.filter(
 		(viz) => viz.type === 'pointmarker' || viz.type === 'pmorientation'
@@ -55,24 +57,36 @@ onMounted(() => {
 			// Fetch selected GeoPTZ in UI store
 			const selectedGeoPTZ = uiStore.selectedGeoPTZ;
 			if (selectedGeoPTZ) {
+        var lat = event.latlng.lat;
+        var lon = event.latlng.lng;
+
 				// Send GeoPTZ command to selected GeoPTZ visualization
 				const commandBaseUrl = selectedGeoPTZ.commandBaseUrl;
 				const controlStreamId = selectedGeoPTZ.controlStreamId;
         const auth = selectedGeoPTZ.auth
 
+        if (geoPtzTargetPM.value) {
+          leafletMapView.map.removeLayer(geoPtzTargetPM.value);
+        }
+        geoPtzTargetPM.value = L.marker([lat, lon]).addTo(leafletMapView.map)
+
+        // L.marker([lat, lon]).addTo(leafletMapView.map)
 				const command = {
 					parameters: {
-						lat: event.latlng.lat,
-						lon: event.latlng.lng,
-						alt: 0.0,
+						lat: lat,
+						lon: lon,
+						alt: 120.0,
 					},
 				};
 
 				console.log('[MapView] Sending GeoPTZ command to selected GeoPTZ:', selectedGeoPTZ);
 				sendCommand(commandBaseUrl, controlStreamId, command, auth);
+
+				uiStore.setCurrentLLA(lat, lon, 120.0);
 			}
 		});
-	} else {
+	}
+  else {
 		/*const customViewer = new Cesium.Viewer('cesiumContainer', {
 			terrain: Cesium.Terrain.fromWorldTerrain(),
 			baseLayer: Cesium.ImageryLayer.fromProviderAsync(
@@ -117,8 +131,7 @@ onMounted(() => {
 	}
 });
 
-watch(
-	() => uiStore.selectedGeoPTZ,
+watch(() => uiStore.selectedGeoPTZ,
 	(newVal) => {
 		const map = mapView.value.map;
 		const container = mapView.value.map.getContainer();
@@ -133,9 +146,7 @@ watch(
 	}
 );
 
-watch(
-	mapVisualizations,
-	(updated) => {
+watch(mapVisualizations, (updated) => {
 		// Remove visualizations that are no longer present
 		const removed = currentVisualizations.value.filter((val) => !updated.includes(val));
 		for (const viz of removed) {
@@ -175,6 +186,10 @@ watch(
 					startTime: datasource.startTime,
 					endTime: datasource.endTime,
 					mode: datasource.mode,
+          connectorOpts: {
+            username: datasource?.connectorOpts.username,
+            password: datasource?.connectorOpts.password
+          }
 				});
 				console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstance);
 				const layerOpts = viz.visualizationComponents.dataLayer;
@@ -198,7 +213,8 @@ watch(
 				mapView.value.addLayer(pmLayer);
 				console.log('[MapView] Creating PointMarkerLayer:', pmLayer);
 				dsInstance.connect();
-			} else if (viz.type === 'pmorientation') {
+			}
+      else if (viz.type === 'pmorientation') {
 				// Array of datasources
 				const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
 					? viz.visualizationComponents.dataSource
@@ -222,6 +238,10 @@ watch(
 						endTime: dsProps.endTime,
 						mode: dsProps.mode,
 						responseFormat: dsProps.responseFormat,
+            connectorOpts: {
+              username: dsProps?.connectorOpts.username,
+              password: dsProps?.connectorOpts.password
+            }
 					});
 
 					// Check for location property
@@ -230,9 +250,9 @@ watch(
 							dataSourceIds: [dsInstance.id],
 							handler: (rec: any) => {
 								return {
-									x: rec[dsProps.properties.location].lon,
-									y: rec[dsProps.properties.location].lat,
-									z: rec[dsProps.properties.location].alt || 0, // Default to 0 if altitude is not provided
+									x: rec[dsProps.properties.location.property].lon,
+									y: rec[dsProps.properties.location.property].lat,
+									z: rec[dsProps.properties.location.property].alt || 0, // Default to 0 if altitude is not provided
 								}
 							},
 						}
@@ -243,7 +263,7 @@ watch(
 							dataSourceIds: [dsInstance.id],
 							handler: (rec: any) => {
 								return {
-									heading: rec[dsProps.properties.orientation].heading,
+									heading: rec[dsProps.properties.orientation.property].heading,
 								}
 							},
 						}
@@ -320,9 +340,7 @@ watch(featureVisualizations, (updated) => {
 	{ deep: true }
 );
 
-watch(
-	lobVisualizations,
-	(updated) => {
+watch(lobVisualizations, (updated) => {
 		checkAndRemove(updated);
 
 		const newFiltered = updated.filter((val) => !currentVisualizations.value.includes(val));
@@ -351,18 +369,22 @@ watch(
 					endTime: dsProps.endTime,
 					mode: dsProps.mode,
 					responseFormat: dsProps.responseFormat,
+          connectorOpts: {
+            username: dsProps?.connectorOpts.username,
+            password: dsProps?.connectorOpts.password
+          }
 				});
 
 				if (dsProps.properties.origin) {
 					getOrigin = {
 						id: dsInstance.id,
-						property: dsProps.properties.origin
+						property: dsProps.properties.origin.property
 					};
 				}
 				if (dsProps.properties.bearing) {
 					getBearing = {
 						id: dsInstance.id,
-						property: dsProps.properties.bearing
+						property: dsProps.properties.bearing.property
 					};
 				}
 
@@ -403,7 +425,7 @@ watch(
 					handler: (rec: any) => {
 						const bearingData = rec[getBearing?.property];
 						if (!bearingData) return null;
-						return bearingData.heading;
+						return bearingData.heading != null ? bearingData.heading : bearingData;
 					},
 				};
 			}

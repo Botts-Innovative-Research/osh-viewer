@@ -1,68 +1,76 @@
 import { OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
-	IMapLayerProperties,
-	IMapViewProperties,
-	ISweApiDataSourceProperties,
-	VisualizationComponents,
+    ISweApiDataSourceProperties, IVideoViewProperties,
+    VisualizationComponents,
 } from '@/lib/VisualizationHelpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { Mode } from 'osh-js/source/core/datasource/Mode';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import { AggregateDatastreams, BuildRoleProperty } from '../../shared/helpers';
+import { AggregateDatastreams, AggregateControlstreams, BuildRoleProperty } from '../../shared/helpers';
+import {toRaw} from "vue";
+import {useControlStreamStore} from "@/stores/controlstreamstore";
 
 export function build() {
-	console.log('Building PM Orientation Visualization...');
+	console.log('Building Video Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
 
-	// Aggregate datastreams from vizwizStore
 	const datastreams = AggregateDatastreams();
-	console.log('Aggregated datastreams for PM Orientation:', datastreams);
+    const controlstreams = AggregateControlstreams();
 
-	const pmResult = CreateMapViewProps(datastreams, vizwizStore.visualizationCustomizationOptions);
+	const videoResult = CreateVideoViewProps(
+        datastreams,
+        controlstreams,
+        vizwizStore.visualizationCustomizationOptions
+    );
 	const visualizationComponents: VisualizationComponents = {
-		dataSource: pmResult.vizDatasources,
-		dataLayer: pmResult.mapLayer,
-		dataView: pmResult.mapView,
+		dataSource: videoResult.vizDatasources,
+		dataLayer: videoResult.videoLayer,
+		dataView: videoResult.videoView,
 	};
 
 	const newViz: OSHVisualization = new OSHVisualization(
 		`visualization-${randomUUID()}`,
-		`${visualizationComponents.dataLayer.label}`,
-		'pmorientation',
+		`${videoResult.videoLayer.name}`,
+		'video',
 		null,
 		datastreams,
-		null
+		controlstreams
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
 	visualizationStore.addVisualization(newViz);
-	console.log('Created PM Orientation Visualization:', newViz);
+	console.log('Created Video Visualization:', newViz);
 }
 
 /**
- * Creates properties for a Map View based on the provided datastream, selected property, and visualization options.
+ * Creates properties for a Video View based on the provided datastream, selected property, and visualization options.
  * @param ds
  * @param selectedProperty
  * @param visOptions
  * @constructor
  */
-export function CreateMapViewProps(datastreams: { [key: string]: any }, visOptions: any) {
+export function CreateVideoViewProps(datastreams: { [key: string]: any }, controlstreams: { [key: string]: any }, visOptions: any) {
 	const datastreamStore = useDataStreamStore();
-	console.log('Datastreams: ', datastreamStore.dataStreams);
+    const controlstreamStore = useControlStreamStore();
 
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
-	let mapLayer: any = {};
+	let videoLayer: any = {};
+    let videoView: any = {
+        container: `video-container-${randomUUID()}`,
+        css: 'video-view',
+        width: 640,
+        height: 480,
+        showTime: true,
+        showStats: true,
+    }
 
-	// Iterate through each unique datastream ID
+    const videoFormat = visOptions?.videoFormat || 'MJPEG'; // default to mjpeg? or maybe h264 idc
+
 	for (const [dsId, entry] of Object.entries(datastreams)) {
-        console.log('Processing datastream ID:', dsId, 'with entry:', entry);
-
-        // Get selected properties for each role of the datastream
         const properties = BuildRoleProperty(entry);
 
-        // Push new ISweApiDataSourceProperties
         const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
         const currentDataSource: ISweApiDataSourceProperties = {
             endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
@@ -72,7 +80,7 @@ export function CreateMapViewProps(datastreams: { [key: string]: any }, visOptio
             startTime: 'now',
             endTime: '2125-08-01T00:00:00Z',
             mode: Mode.REAL_TIME,
-            responseFormat: 'application/swe+json',
+            responseFormat: 'application/swe+binary',
             id: randomUUID(),
             properties: properties,
             connectorOpts: {
@@ -82,30 +90,26 @@ export function CreateMapViewProps(datastreams: { [key: string]: any }, visOptio
         };
         vizDatasources.push(currentDataSource);
 
+        let ds = toRaw(currentOSHDatastream[0]);
 
-        // Build remaining mapLayer properties
-        mapLayer = {
-            ...mapLayer,
-            label: `${currentOSHDatastream[0].datastream.properties.name}`,
-            // label: `${randomUUID()} - PM Orientation Layer`,
-            icon: visOptions.icon,
-            iconSize: [32, 32],
-            labelOffset: [-16, -32],
+        videoLayer = {
+            ...videoLayer,
+            name: `${ds.datastream.properties.name}`,
         };
 
+        videoView = {
+            ...videoView,
+            name: `${ds.datastream.properties.name}`,
+            layers: [videoLayer],
+            useWebCodecApi: videoFormat === 'MJPEG' ? false : true,
+            videoType: videoFormat,
+        };
+        console.log('Created VideoViewProps:', { vizDatasources, videoLayer, videoView });
     }
-    // Build MapViewProperties
-    const mapView: IMapViewProperties = {
-        container: `map-container-${randomUUID()}`,
-        layers: [mapLayer],
-        css: 'map-view',
-        refreshRate: 1000,
-    };
-	console.log('Created MapViewProps:', { vizDatasources, mapLayer, mapView });
 
 	return {
 		vizDatasources,
-		mapLayer,
-		mapView,
+		videoLayer,
+		videoView,
 	};
 }

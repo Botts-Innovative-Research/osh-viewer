@@ -77,6 +77,37 @@ const vizComponents: any = {
 		),
 		Builder: () => import('@/components/menus/visualization-wizard/visualizations/lob/Builder'),
 	},
+  video: {
+    Config: defineAsyncComponent(
+        () => import('@/components/menus/visualization-wizard/visualizations/video/Config.vue')
+    ),
+    Customize: defineAsyncComponent(
+        () => import('@/components/menus/visualization-wizard/visualizations/video/Customize.vue')
+    ),
+    Builder: () => import('@/components/menus/visualization-wizard/visualizations/video/Builder'),
+  },
+  geoPtz: {
+    Config: defineAsyncComponent(
+        () => import('@/components/menus/visualization-wizard/visualizations/geoptz/Config.vue')
+    ),
+    Customize: defineAsyncComponent(
+        () => import('@/components/menus/visualization-wizard/visualizations/geoptz/Customize.vue')
+    ),
+    Builder: () => import('@/components/menus/visualization-wizard/visualizations/geoptz/Builder'),
+  },
+	chart: {
+		Config: defineAsyncComponent(
+			() => import('@/components/menus/visualization-wizard/visualizations/chart/Config.vue')
+		),
+		Customize: defineAsyncComponent(
+			() =>
+				import(
+					'@/components/menus/visualization-wizard/visualizations/chart/Customize.vue'
+				)
+		),
+		Builder: () => import('@/components/menus/visualization-wizard/visualizations/chart/Builder'),
+	}
+	// add other types here
 };
 
 const getStepComponent = (index: number) => {

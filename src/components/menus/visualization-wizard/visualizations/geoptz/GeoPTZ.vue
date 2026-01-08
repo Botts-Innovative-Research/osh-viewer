@@ -22,9 +22,14 @@ const props = defineProps({
 	},
 	datasource: {
 		type: SweApiDataSourceProperties,
-		required: false,
+		required: true,
 		default: null,
 	},
+	controlstream: {
+		type: Object,
+		required: true,
+		default: null,
+	}
 });
 
 // Define PTZ data interface
@@ -46,23 +51,22 @@ const receivedPTZ = ref<PTZData>({ pan: 0, tilt: 0, zoom: 0 });
 const uiStore = useUIStore();
 const isSelected = ref(false);
 
-
-// Generate commandBaseUrl from selected visualization's datastream
+// Generate commandBaseUrl from selected visualization's controlstream
 const commandBaseUrl = computed(() => {
-	const protocol = props.datasource?.tls ? 'https' : 'http';
-	return `${protocol}://${props.datasource?.endpointUrl}`;
+	const protocol = props.controlstream.tls ? 'https' : 'http';
+	return `${protocol}://${props.controlstream.endpointUrl}`;
 });
 
-const auth = computed(() => {
-  const username = props.datasource?.connectorOpts.username;
-  const password = props.datasource?.connectorOpts.password;
-  if (!username || !password) return '';
-  return `${username}:${password}`
-})
+// Controlstream authentication
+const csAuth = computed(() => {
+	return {username: props.controlstream.connectorOpts.username, password: props.controlstream.connectorOpts.password}
+});
 
 onMounted(async () => {
 	// Create SweApi instance from props.datasource if provided
-	let dsInstance: any = new SweApi('geoPtz-datasource', {
+	let dsInstance: any = null;
+
+	dsInstance = new SweApi('geoPtz-datasource', {
 		endpointUrl: props.datasource.endpointUrl,
 		resource: props.datasource.resource,
 		tls: props.datasource.tls,
@@ -71,10 +75,10 @@ onMounted(async () => {
 		endTime: props.datasource.endTime,
 		mode: props.datasource.mode,
 		responseFormat: props.datasource.responseFormat,
-    connectorOpts: {
-      username: props.datasource?.connectorOpts.username,
-      password: props.datasource?.connectorOpts.password
-    }
+		connectorOpts: {
+			username: props.datasource.connectorOpts.username ?? '',
+			password: props.datasource.connectorOpts.password ?? '',
+		}
 	});
 	geoPtzDatasource.value = dsInstance;
 	console.log('[GeoPtzView] GeoPTZ datasource created:', geoPtzDatasource.value);
@@ -97,31 +101,39 @@ onMounted(async () => {
 
 // Watch for changes in selectedGeoPTZ to highlight or focus on this instance
 watch(
-	() => uiStore.selectedGeoPTZ?.controlStreamId,
-	(newPtZId) => {
+	() => uiStore.selectedGeoPTZ,
+	(newVal) => {
 		// Check if ID matches this visualization's controlstream ID
-		if (newPtZId === props.visualization.controlstream.id) {
-			console.log('[GeoPtzView] This GeoPTZ instance is selected:', newPtZId);
+		if (newVal?.controlStreamId === props.controlstream.id) {
+			console.log('[GeoPtzView] This GeoPTZ instance is selected:', newVal?.controlStreamId);
 			// Add logic to highlight or focus on this GeoPTZ instance in the UI
 			isSelected.value = true;
 		} else {
-			console.log('[GeoPtzView] This GeoPTZ instance is NOT selected:', newPtZId);
+			console.log('[GeoPtzView] This GeoPTZ instance is NOT selected:', newVal?.controlStreamId);
 			// Remove highlight or focus if needed
 			isSelected.value = false;
 		}
 	}
 );
 
+// Watch for changes in currentLLA to update input fields, IF selected
+watch(
+	() => uiStore.currentLLA,
+	(newVal) => {
+		if (isSelected.value && newVal) {
+			latInput.value = newVal.latitude;
+			lonInput.value = newVal.longitude;
+			altInput.value = newVal.altitude;
+		}
+	}
+);
+
 // Toggle selection of this GeoPTZ instance in UI store
 function toggle() {
-  debugger
 	if (isSelected.value) {
 		uiStore.clearSelectedGeoPTZ();
 	} else {
-
-
-    console.log("props.vis control stream", props.visualization)
-		uiStore.setSelectedGeoPTZ(props.visualization.controlstream.id, commandBaseUrl.value, auth.value);
+		uiStore.setSelectedGeoPTZ(props.controlstream.id, commandBaseUrl.value, `${csAuth.value.username}:${csAuth.value.password}`);
 	}
 }
 
@@ -136,7 +148,7 @@ function onSend() {
 	};
 
 	console.log('[GeoPtzView] Sending GeoPTZ command:', command);
-	sendCommand(commandBaseUrl.value, props.visualization.controlstream.id, command, auth.value);
+	sendCommand(commandBaseUrl.value, props.controlstream.id, command, `${csAuth.value.username}:${csAuth.value.password}`);
 }
 </script>
 
@@ -153,24 +165,9 @@ function onSend() {
 					</v-btn>
 				</v-col>
 				<v-col class="lla-inputs">
-					<v-text-field
-						v-model.number="latInput"
-						type="number"
-						label="Latitude"
-						placeholder="0.0"
-					/>
-					<v-text-field
-						v-model.number="lonInput"
-						type="number"
-						label="Longitude"
-						placeholder="0.0"
-					/>
-					<v-text-field
-						v-model.number="altInput"
-						type="number"
-						label="Altitude"
-						placeholder="0.0"
-					/>
+					<v-text-field v-model.number="latInput" type="number" label="Latitude" placeholder="0.0" />
+					<v-text-field v-model.number="lonInput" type="number" label="Longitude" placeholder="0.0" />
+					<v-text-field v-model.number="altInput" type="number" label="Altitude" placeholder="0.0" />
 					<v-btn color="primary" @click="onSend">Send</v-btn>
 				</v-col>
 				<v-col>

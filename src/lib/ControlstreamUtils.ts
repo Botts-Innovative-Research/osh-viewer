@@ -18,10 +18,7 @@ type CommandType = {
  * @param auth
  */
 export function sendCommand(commandBaseUrl: string, controlStreamId: string, command: any, auth: string) {
-	console.log(
-		`Sending command to ${commandBaseUrl}/controlstreams/${controlStreamId}/commands: `,
-		command
-	);
+	console.log(`Sending command to ${commandBaseUrl}/controlstreams/${controlStreamId}/commands `, command);
 
     let encoded = btoa(auth)
 

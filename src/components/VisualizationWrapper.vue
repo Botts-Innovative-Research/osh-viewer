@@ -1,23 +1,15 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, defineProps } from 'vue';
-import Chart from '@/components/visualizations/Chart.vue';
-import Video from '@/components/visualizations/Video.vue';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import GeoPTZ from './GeoPTZ.vue';
+import Chart from './menus/visualization-wizard/visualizations/chart/Chart.vue';
+import Video from './menus/visualization-wizard/visualizations/video/Video.vue';
+import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
 
 const props = defineProps({
 	viz: { type: OSHVisualization, required: true },
 	customClass: { type: String, default: '' },
 });
 
-// Map visualization types to components
-const visualizationMap: Record<string, any> = {
-	chart: defineAsyncComponent(() => import('./Chart.vue')),
-	video: defineAsyncComponent(() => import('./Video.vue')),
-	// Add more visualization types here as needed
-};
-
-const VisualizationComponent = computed(() => visualizationMap[props.vizType]);
 </script>
 
 <template>
@@ -25,10 +17,10 @@ const VisualizationComponent = computed(() => visualizationMap[props.vizType]);
 		<slot name="before" />
 		<Chart
 			:visualization="viz"
-			v-if="viz.type === 'chart'"
 			:datasource="viz.visualizationComponents.dataSource"
 			:curve-layer="viz.visualizationComponents.dataLayer"
 			:chart-view="viz.visualizationComponents.dataView"
+			v-if="viz.type === 'chart'"
 		></Chart>
 		<Video
 			:visualization="viz"
@@ -39,7 +31,8 @@ const VisualizationComponent = computed(() => visualizationMap[props.vizType]);
 		></Video>
 		<GeoPTZ
 			:visualization="viz"
-			:datasource="viz.visualizationComponents.dataSource"
+			:datasource="Array.isArray(viz.visualizationComponents.dataSource) ? viz.visualizationComponents.dataSource[0] : viz.visualizationComponents.dataSource"
+			:controlstream="Array.isArray(viz.controlstream) ? viz.controlstream[0] : viz.controlstream"
 			v-if="viz.type === 'geoPtz'"
 		></GeoPTZ>
 		<slot name="after" />

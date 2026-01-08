@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import {
-	fetchSchema,
-	mineDatasourceObsPropsFromDS,
-	SchemaFieldProperty,
+  fetchSchema,
+  mineDatasourceObsPropsFromDS,
 } from '@/lib/DatasourceUtils';
-import { OSHDatastream } from '@/lib/OSHConnectDataStructs';
-import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { computed, onMounted, ref, watch } from 'vue'
 
@@ -19,6 +16,7 @@ const listDatastreams = computed(() => {
   return vizwizStore.datastreams
 })
 
+console.log("vizwizStore.dsConfig[props.role]", vizwizStore.dsConfig)
 // Update selected datastream for this role in vizwiz store
 const selectedDatastream = computed({
   get: () => vizwizStore.dsConfig[props.role]?.dsId,
@@ -26,8 +24,8 @@ const selectedDatastream = computed({
 })
 
 const selectedProperty = computed({
-  get: () => vizwizStore.dsConfig[props.role]?.property,
-  set: (val: string) => vizwizStore.updateDsConfig(props.role, { property: val })
+  get: () => vizwizStore.dsConfig[props.role]?.label,
+  set: (val: any) => (vizwizStore.updateDsConfig(props.role, { property: val.name, label: val.label ?? val.name, uom: val.uom?.code ?? '' }))
 })
 
 // Properties schema for selected datastream
@@ -37,6 +35,12 @@ const dsSchema = ref<any>(null)
 async function fetchProps() {
   const { ds, observedProps } = mineDatasourceObsPropsFromDS(selectedDatastream.value)
   dsSchema.value = await fetchSchema(ds.datastream)
+
+  console.log(dsSchema.value)
+  console.log('[DataSourcePicker] ds.datastream.properties:', ds.datastream.properties)
+  console.log('[DataSourcePicker] outputName:', ds.datastream.properties.outputName)
+  vizwizStore.updateDsConfig(props.role, { outputName: ds.datastream.properties.outputName })
+  console.log('[DataSourcePicker] dsConfig after update:', JSON.stringify(vizwizStore.dsConfig, null, 2))
 }
 
 // Watch for changes in selected datastream to update properties
@@ -44,6 +48,8 @@ watch(selectedDatastream, async (newVal) => {
   if (!newVal) return
   await fetchProps()
 })
+
+
 
 </script>
 
@@ -54,7 +60,8 @@ watch(selectedDatastream, async (newVal) => {
 
   <!-- Select for property -->
   <v-select v-if="dsSchema && dsSchema.recordSchema" v-model="selectedProperty" :items="dsSchema.recordSchema.fields"
-    label="Select property" item-title="name" persistent-hint item-value="name"></v-select>
+    label="Select property" :item-title="(item: any) => item.label || item.name" persistent-hint
+    :item-value="(item: any) => item"></v-select>
 </template>
 
 <style scoped></style>
