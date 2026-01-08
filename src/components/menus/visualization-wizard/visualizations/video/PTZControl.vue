@@ -197,17 +197,10 @@ watch(controlStreamType, (newVal) => {
 						zIndex: 1000,
 					}"
 				>
-<<<<<<< HEAD
-					<img class="icon" :src="`/ptzIcons/${dir}.svg`" :alt="`${dir}`" />
-				</button>
-				<button class="homeButton" @click="handleMove('home')">
-					<img class="homeIcon" src="/ptzIcons/home.svg" alt="home" />
-=======
 					<img class="icon" :src="`/ptzIcons/${dir}.png`" :alt="`${dir}`" />
 				</button>
 				<button class="homeButton" @click="handleMove('home')">
 					<img class="homeIcon" src="/ptzIcons/home.png" alt="home" />
->>>>>>> 91-migrate-to-new-visualization-wizard
 				</button>
 			</div>
 			<v-text-field
