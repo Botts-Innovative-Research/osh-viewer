@@ -106,7 +106,23 @@ const vizComponents: any = {
 				)
 		),
 		Builder: () => import('@/components/menus/visualization-wizard/visualizations/chart/Builder'),
-	}
+	},
+	text: {
+		Config: defineAsyncComponent(
+			() =>
+				import(
+					'@/components/menus/visualization-wizard/visualizations/text/Config.vue'
+				)
+		),
+		Customize: defineAsyncComponent(
+			() =>
+				import(
+					'@/components/menus/visualization-wizard/visualizations/text/Customize.vue'
+				)
+		),
+		Builder: () =>
+			import('@/components/menus/visualization-wizard/visualizations/text/Builder'),
+	},
 	// add other types here
 };
 

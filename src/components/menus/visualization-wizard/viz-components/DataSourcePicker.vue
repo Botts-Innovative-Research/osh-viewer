@@ -8,6 +8,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 
 const props = defineProps<{
   role: string, // Property role to be used as key in vizwiz store
+  multiple?: boolean, // Whether multiple properties can be selected
 }>()
 
 // Get datastreams from vizwiz store
@@ -24,9 +25,33 @@ const selectedDatastream = computed({
 })
 
 const selectedProperty = computed({
-  get: () => vizwizStore.dsConfig[props.role]?.label,
-  set: (val: any) => (vizwizStore.updateDsConfig(props.role, { property: val.name, label: val.label ?? val.name, uom: val.uom?.code ?? '' }))
+  get: () => vizwizStore.dsConfig[props.role]?.label
+    ?? (props.multiple ? [] : ''),
+  
+  set: (val) => {
+    const fields = dsSchema.value?.recordSchema?.fields ?? []
+
+    if (Array.isArray(val)) {
+      const selected = fields.filter((f: any) => val.includes(f.label))
+
+      vizwizStore.updateDsConfig(props.role, {
+        property: selected.map((f: any) => f.name),
+        label: selected.map((f: any) => f.label ?? f.name),
+        uom: selected.map((f: any) => f.uom?.code ?? ''),
+      })
+    } else if (val) {
+      const field = fields.find((f: any) => f.label === val)
+      if (!field) return
+
+      vizwizStore.updateDsConfig(props.role, {
+        property: field.name,
+        label: field.label ?? field.name,
+        uom: field.uom?.code ?? '',
+      })
+    }
+  }
 })
+
 
 // Properties schema for selected datastream
 const dsSchema = ref<any>(null)
@@ -49,8 +74,6 @@ watch(selectedDatastream, async (newVal) => {
   await fetchProps()
 })
 
-
-
 </script>
 
 <template>
@@ -60,8 +83,8 @@ watch(selectedDatastream, async (newVal) => {
 
   <!-- Select for property -->
   <v-select v-if="dsSchema && dsSchema.recordSchema" v-model="selectedProperty" :items="dsSchema.recordSchema.fields"
-    label="Select property" :item-title="(item: any) => item.label || item.name" persistent-hint
-    :item-value="(item: any) => item"></v-select>
+    label="Select property" :item-title="(item: any) => item.label ?? item.name" persistent-hint
+    :item-value="(item: any) => item.label ?? item.name" :multiple="props.multiple"></v-select>
 </template>
 
 <style scoped></style>

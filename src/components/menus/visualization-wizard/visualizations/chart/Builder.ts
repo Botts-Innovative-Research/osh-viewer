@@ -16,11 +16,11 @@ export function build() {
     const datastreams = AggregateDatastreams();
     console.log('Aggregated datastreams for PM Orientation:', datastreams);
   
-    const pmResult = CreateChartViewProps(datastreams, vizwizStore.visualizationCustomizationOptions);
+    const chartResult = CreateChartViewProps(datastreams, vizwizStore.visualizationCustomizationOptions);
     const visualizationComponents: VisualizationComponents = {
-      dataSource: pmResult.vizDatasources,
-      dataLayer: pmResult.chartLayer,
-      dataView: pmResult.chartView,
+      dataSource: chartResult.vizDatasources,
+      dataLayer: chartResult.chartLayer,
+      dataView: chartResult.chartView,
     };
   
     const newViz: OSHVisualization = new OSHVisualization(
@@ -37,7 +37,7 @@ export function build() {
 }
 
 export function CreateChartViewProps(datastreams: { [key: string]: any }, visOptions: any) {
-      const vizwizStore = useVizWizStore();
+  const vizwizStore = useVizWizStore();
   const datastreamStore = useDataStreamStore();
   console.log('Datastreams: ', datastreamStore.dataStreams);
 
