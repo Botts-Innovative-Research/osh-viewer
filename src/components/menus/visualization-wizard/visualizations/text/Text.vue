@@ -92,7 +92,11 @@ onMounted(async () => {
     <v-card-title>{{ visualization.name }}</v-card-title>
     <v-container>
       <h3>Received data:</h3>
-      <p>{{ receivedData }}</p>
+      <ul>
+        <li v-for="(value, key) in receivedData" :key="key">
+          <strong>{{ key }}:</strong> {{ value }}
+        </li>
+      </ul>
     </v-container>
   </v-card>
 </template>

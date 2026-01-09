@@ -21,7 +21,7 @@ export function build() {
 	);
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: textResult.vizDatasources,
-		dataLayer: null,
+		dataLayer: textResult.dataLayer,
 		dataView: null,
 	};
 
@@ -39,9 +39,11 @@ export function build() {
 }
 
 export function CreateTextViewProps(datastreams: { [key: string]: any }, visOptions: any) {
-	const vizDatasources: ISweApiDataSourceProperties[] = [];
 	const datastreamStore = useDataStreamStore();
 	console.log('Datastreams: ', datastreamStore.dataStreams);
+
+  const vizDatasources: ISweApiDataSourceProperties[] = [];
+  let dataLayer: any = {};
 
 	// Iterate through each unique datastream ID
 	for (const [dsId, entry] of Object.entries(datastreams)) {
@@ -71,7 +73,8 @@ export function CreateTextViewProps(datastreams: { [key: string]: any }, visOpti
 			},
 		};
 		vizDatasources.push(currentDataSource);
+    dataLayer.name = currentOSHDatastream[0]?.name || 'Text Data Layer';
 	}
 
-	return { vizDatasources: vizDatasources };
+	return { vizDatasources: vizDatasources, dataLayer };
 }
