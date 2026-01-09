@@ -27,25 +27,30 @@ const selectedDatastream = computed({
 const selectedProperty = computed({
   get: () => vizwizStore.dsConfig[props.role]?.label
     ?? (props.multiple ? [] : ''),
-  
+
   set: (val) => {
     const fields = dsSchema.value?.recordSchema?.fields ?? []
 
+    // Helper to get the display value (label or name)
+    const display = (f: any) => f.label ?? f.name
+
     if (Array.isArray(val)) {
-      const selected = fields.filter((f: any) => val.includes(f.label))
+      // Multi-select: match by label OR name
+      const selected = fields.filter((f: any) => val.includes(display(f)))
 
       vizwizStore.updateDsConfig(props.role, {
         property: selected.map((f: any) => f.name),
-        label: selected.map((f: any) => f.label ?? f.name),
+        label: selected.map(display),
         uom: selected.map((f: any) => f.uom?.code ?? ''),
       })
     } else if (val) {
-      const field = fields.find((f: any) => f.label === val)
+      // Single-select: match by label OR name
+      const field = fields.find((f: any) => display(f) === val)
       if (!field) return
 
       vizwizStore.updateDsConfig(props.role, {
         property: field.name,
-        label: field.label ?? field.name,
+        label: display(field),
         uom: field.uom?.code ?? '',
       })
     }
