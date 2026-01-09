@@ -4,6 +4,7 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import Chart from './menus/visualization-wizard/visualizations/chart/Chart.vue';
 import Video from './menus/visualization-wizard/visualizations/video/Video.vue';
 import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
+import Text from './menus/visualization-wizard/visualizations/text/Text.vue';
 
 const props = defineProps({
 	viz: { type: OSHVisualization, required: true },
@@ -35,6 +36,11 @@ const props = defineProps({
 			:controlstream="Array.isArray(viz.controlstream) ? viz.controlstream[0] : viz.controlstream"
 			v-if="viz.type === 'geoPtz'"
 		></GeoPTZ>
+		<Text
+			:visualization="viz"
+			:datasource="Array.isArray(viz.visualizationComponents.dataSource) ? viz.visualizationComponents.dataSource[0] : viz.visualizationComponents.dataSource"
+			v-if="viz.type === 'text'"
+		></Text>
 		<slot name="after" />
 		<slot name="overlay" />
 	</div>
