@@ -127,7 +127,6 @@ function initializeVideo() {
       getTimestamp = {
         dataSourceIds: [dsInstance.id],
         handler: (rec: any) => {
-          console.log('rec', rec)
           let rawDs = toRaw(dsProps);
           const data = rec[rawDs.properties.video.outputName];
           let newDate = data.time == undefined ? new Date(data.sampleTime).getTime() : new Date(data.time).getTime()
