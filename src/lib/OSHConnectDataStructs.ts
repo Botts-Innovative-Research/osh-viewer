@@ -130,7 +130,11 @@ export class OSHNode {
 
 	async collectAndStoreSystems(): Promise<OSHSystem[]> {
 		// make request
-		const systems: any = new Systems({ endpointUrl: this.getEndpointUrl(), tls: this.tls, connectorOpts: { username: this.username, password: this.password} });
+		const systems: any = new Systems({
+			endpointUrl: this.getEndpointUrl(),
+			tls: this.tls,
+			connectorOpts: { username: this.username, password: this.password },
+		});
 		let retrievedSystems: any[] = [];
 		const results: System = await systems.searchSystems(new SystemFilter(), 100);
 
@@ -143,19 +147,23 @@ export class OSHNode {
 		const systemStore = getSharedStores().systemStore;
 
 		// transform results into OSHSystem objects for state management and keep OSH-JS references
-		const mappedSystems: OSHSystem[] = retrievedSystems
-			.map((sys: any) => {
+		const mappedSystems: OSHSystem[] = await Promise.all(
+			retrievedSystems.map(async (sys: any) => {
 				if (!systemStore?.checkIfSystemExists?.(sys.properties.id)) {
 					const newSys = new OSHSystem(sys, this);
-					newSys.getDataStreams();
-					newSys.getControlStreams();
-					newSys.getSamplingFeatures();
+
+					await Promise.all([
+						newSys.getDataStreams(),
+						newSys.getControlStreams(),
+						newSys.getSamplingFeatures(),
+					]);
+					
 					systemStore?.addSystem?.(newSys);
 					return newSys;
 				}
-				return undefined;
+				return systemStore.getSystemById(sys.properties.id);
 			})
-			.filter(Boolean) as OSHSystem[];
+		);
 
 		this.systems = mappedSystems;
 		return mappedSystems;
@@ -175,6 +183,8 @@ export class OSHSystem {
 	system: System;
 	parentNode: OSHNode;
 	children: string[];
+	datastreams: OSHDatastream[] = []; // Datastreams associated with this system
+	controlstreams: OSHControlStream[] = []; // Control streams associated with this system
 	subsystems: string[] = [];
 	samplingFeatures: any[] = [];
 
@@ -187,6 +197,7 @@ export class OSHSystem {
 		this.system = system;
 		this.parentNode = parentNode;
 		this.children = [];
+		this.datastreams = [];
 
 		console.log(`[OSHConnect-System] Created system: ${this.name} (ID: ${this.id})`);
 	}
@@ -200,7 +211,7 @@ export class OSHSystem {
 		while (result.hasNext()) {
 			const items: any[] = await result.nextPage();
 
-            console.log("items - datastreams", items);
+			console.log('items - datastreams', items);
 			// dataStreams.push(...items);
 
 			// create new OSHDatastream objects for each item
@@ -209,6 +220,7 @@ export class OSHSystem {
 				const newStream = new OSHDatastream(item.properties.name, item, this.id);
 				datastreamStore?.addDataStream?.(newStream);
 				this.children.push(newStream.uuid);
+				this.datastreams.push(newStream); // Push OSHDatastream object
 			});
 		}
 		return dataStreams;
@@ -222,15 +234,16 @@ export class OSHSystem {
 
 		while (result.hasNext()) {
 			const items: any[] = await result.nextPage();
-            console.log("items - control streams", items);
+			console.log('items - control streams', items);
 			// controlStreams.push(...items);
 
 			// create new OSHControlStream objects for each item
 			items.forEach((item: any) => {
 				console.log(`result data:`, item);
-				const newStream = new OSHControlStream(item.properties.name, this.id, item,);
+				const newStream = new OSHControlStream(item.properties.name, this.id, item);
 				controlstreamStore?.addControlStream?.(newStream);
 				this.children.push(newStream.id);
+				this.controlstreams.push(newStream); // Push OSHControlStream object
 			});
 		}
 		return controlStreams;
@@ -258,17 +271,16 @@ export class OSHSystem {
 		return datastreamStore.getDataStreamsById(this.children);
 	}
 
-  // Get controlstreams from this system
-  getCSChildren(): OSHControlStream[] {
-    const controlstreamStore = getSharedStores().controlstreamStore;
-    return controlstreamStore.getControlStreamsById(this.children)
-  }
+	// Get controlstreams from this system
+	getCSChildren(): OSHControlStream[] {
+		const controlstreamStore = getSharedStores().controlstreamStore;
+		return controlstreamStore.getControlStreamsById(this.children);
+	}
 
-
-  // Get TLS value for parent node
-  getTls(): boolean {
-    return this.parentNode.tls;
-  }
+	// Get TLS value for parent node
+	getTls(): boolean {
+		return this.parentNode.tls;
+	}
 }
 
 export class OSHDatastream {
@@ -302,13 +314,13 @@ export class OSHControlStream {
 	name: string;
 	parentId: string | null;
 	children: string[] = [];
-    controlstream: any;
+	controlstream: any;
 
 	constructor(name: string, parentId: string | null, controlstream: any) {
 		this.id = controlstream.properties.id;
 		this.name = name;
 		this.parentId = parentId;
-        this.controlstream = controlstream
+		this.controlstream = controlstream;
 	}
 }
 

@@ -6,7 +6,7 @@ import { useOSHConnectStore } from '@/stores/oshconnectstore.js'
 import { useDataStreamStore } from '@/stores/datastreamstore.js'
 import { useUIStore } from '@/stores/uistore.ts'
 import { useVisualizationStore } from '@/stores/visualizationstore.js'
-import { OSHSystem, OSHVisualization } from '@/lib/OSHConnectDataStructs.js'
+import { OSHControlStream, OSHDatastream, OSHNode, OSHSystem, OSHVisualization } from '@/lib/OSHConnectDataStructs.js'
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js'
 import NodeConfigForm from '@/components/menus/NodeConfigForm.vue'
 import { storeToRefs } from 'pinia'
@@ -16,35 +16,50 @@ import VisualizationWizard from '../menus/visualization-wizard/VisualizationWiza
 const oshConnect = useOSHConnectStore().getInstance();
 const nodeStore = useNodeStore()
 const systems = useSystemStore().systems
-const datastreamStore = useDataStreamStore()
 const visualizationStore = useVisualizationStore()
 const uiStore = storeToRefs(useUIStore())
-const activeTab = ref('systems') // Default active tab
-const tabLabels = ref(['Systems', 'DataStreams', 'Nodes'])
+const activeTab = ref('test') // Default active tab
+const tabLabels = ref(['Systems', 'DataStreams', 'Nodes', 'Test'])
 const nodeConfigFormOpen = uiStore.nodeConfigFormOpen
 const openNodeConfigForm = useUIStore().openNodeConfigForm
 const vizWizOpen = uiStore.vizWizOpen
 
-/*
-const getSystems = () => {
-  // This function will be called when the button is clicked
-  console.log('Get Systems button clicked')
-
-  nodeStore.nodes.forEach((node) => {
-    console.log('Node:', node)
-    node.getAllSystems()
-  })
-  // node.getAllSystems()
-}
-
-const getAllDatastreams = () => {
-  console.log('Get Data Streams button clicked')
-  nodeStore.nodes.forEach((node) => {
-    console.log('Node:', node)
-    node.getAllDataStreams()
-  })
-}
-*/
+const treeItems = computed(() => {
+	return nodeStore.nodes.map((node: OSHNode) => {
+		return {
+			id: node.uuid,
+			title: node.name,
+			type: 'node',
+			raw: node,
+			children: node.systems.map((system: OSHSystem) => {
+				return {
+					id: system.id,
+					title: system.name,
+					type: 'system',
+					raw: system,
+					children: [
+						...system.datastreams.map((ds: OSHDatastream) => {
+							return {
+								id: ds.id,
+								title: ds.name,
+								type: 'ds',
+								raw: ds,
+							};
+						}),
+						...system.controlstreams.map((cs: OSHControlStream) => {
+							return {
+								id: cs.id,
+								title: cs.name,
+								type: 'cs',
+								raw: cs,
+							};
+						}),
+					],
+				};
+			}),
+		};
+	});
+});
 
 const fetchResources = () => {
 	console.log('Fetch Resources button clicked', oshConnect);
@@ -111,99 +126,58 @@ const addAllSamplingFeaturePMs = () => {
 	});
 };
 
-const getItemChildren = computed(() => {
-	return (item) => {
-		return item?.getDSChildren ? item.getDSChildren() : [];
-	};
-});
 </script>
 <template>
-	<v-tabs v-model="activeTab">
-		<v-tab v-for="(label, index) in tabLabels" :key="index" :value="label.toLowerCase()">
-			{{ label }}
-		</v-tab>
-	</v-tabs>
-	<v-btn @click="fetchResources">Fetch Resources</v-btn>
-	<v-btn @click="addAllSamplingFeaturePMs">All PMS</v-btn>
+	<v-card class="node-sidebar">
+		<v-card-title class="title ma-4">
+			<span class="title mr-4">Nodes</span>
+		</v-card-title>
+		<v-divider></v-divider>
 
-	<v-tabs-window v-model="activeTab">
-		<v-tabs-window-item value="systems" class="tab">
-			<v-treeview
-				width="100%"
-				:items="systems"
-				item-value="uuid"
-				item-title="name"
-				:item-children="getItemChildren"
-				color="primary"
-				activatable
-			>
-				<template v-slot:prepend>
-					<v-icon icon="mdi-cogs"></v-icon>
+		<v-sheet class="pa-4">
+			<v-btn @click="fetchResources">Fetch Resources</v-btn>
+			<v-btn @click="addAllSamplingFeaturePMs">All PMS</v-btn>
+
+			<v-btn block prepend-icon="mdi-plus-circle" variant="flat" color="success" @click="() => openNodeConfig()">
+				Add Node
+			</v-btn>
+			<v-treeview :items="treeItems" item-value="id" item-children="children" density="compact"
+				items-registration="props" open-all>
+				<template v-slot:prepend="{ item }">
+					<v-icon v-if="item.type === 'node'" icon="mdi-server"></v-icon>
+					<v-icon v-if="item.type === 'system'" icon="mdi-cogs"></v-icon>
+					<v-icon v-if="item.type === 'ds' || item.type === 'cs'" icon="mdi-cable-data"></v-icon>
 				</template>
 				<template v-slot:append="{ item }">
-					<v-btn icon="mdi-map-marker-plus" @click="() => addFeatureMarker(item)"></v-btn>
-				</template>
-			</v-treeview>
-		</v-tabs-window-item>
-
-		<v-tabs-window-item value="datastreams" class="tab">
-			<v-treeview
-				width="100%"
-				:items="datastreamStore.dataStreams"
-				item-value="uuid"
-				item-title="name"
-				color="primary"
-				activatable
-			>
-				<template v-slot:prepend>
-					<v-icon icon="mdi-cable-data"></v-icon>
-				</template>
-
-				<template v-slot:append="{ item }">
-					<v-tooltip text="Properties" location="bottom">
+					<v-tooltip v-if="item.type === 'ds' || item.type === 'cs'" text="Properties" location="bottom"
+						open-delay="500">
 						<template #activator="{ props }">
-							<v-btn v-bind="props" icon="mdi-list-box-outline" size="small"></v-btn>
+							<v-btn v-bind="props" icon="mdi-dots-vertical" size="small" variant="text"></v-btn>
 						</template>
 					</v-tooltip>
 				</template>
 			</v-treeview>
-		</v-tabs-window-item>
+		</v-sheet>
+	</v-card>
 
-		<v-tabs-window-item value="nodes" class="tab">
-			<v-btn
-				block
-				prepend-icon="mdi-plus-circle"
-				variant="flat"
-				color="success"
-				@click="() => openNodeConfig()"
-			>
-				Add Node
-			</v-btn>
-			<v-treeview
-				width="100%"
-				:items="nodeStore.nodes"
-				item-value="uuid"
-				item-title="name"
-				color="primary"
-				activatable
-			>
-				<template v-slot:prepend>
-					<v-icon icon="mdi-server"></v-icon>
-				</template>
-			</v-treeview>
-		</v-tabs-window-item>
-	</v-tabs-window>
-
-  <v-dialog v-model="nodeConfigFormOpen" max-width="540">
-    <NodeConfigForm />
-  </v-dialog>
-  <v-dialog v-model="vizWizOpen" max-width="540">
-    <VisualizationWizard />
-  </v-dialog>
+	<v-dialog v-model="nodeConfigFormOpen" max-width="540">
+		<NodeConfigForm />
+	</v-dialog>
+	<v-dialog v-model="vizWizOpen" max-width="540">
+		<VisualizationWizard />
+	</v-dialog>
 </template>
 
 <style scoped>
-.tab {
-	margin: 2%;
+.node-sidebar {
+	width: 100%;
+	height: 100%;
+}
+
+.title {
+	text-align: center;
+	width: 100%;
+	font-size: 1.5rem;
+	font-weight: bold;
 }
 </style>
