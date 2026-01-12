@@ -18,8 +18,6 @@ const nodeStore = useNodeStore()
 const systems = useSystemStore().systems
 const visualizationStore = useVisualizationStore()
 const uiStore = storeToRefs(useUIStore())
-const activeTab = ref('test') // Default active tab
-const tabLabels = ref(['Systems', 'DataStreams', 'Nodes', 'Test'])
 const nodeConfigFormOpen = uiStore.nodeConfigFormOpen
 const openNodeConfigForm = useUIStore().openNodeConfigForm
 const vizWizOpen = uiStore.vizWizOpen
@@ -126,11 +124,16 @@ const addAllSamplingFeaturePMs = () => {
 	});
 };
 
+const deleteNode = (node: OSHNode) => {
+	nodeStore.removeNode(node);
+	console.log('Deleted node:', node);
+}
+
 </script>
 <template>
-	<v-card class="node-sidebar">
-		<v-card-title class="title ma-4">
-			<span class="title mr-4">Nodes</span>
+	<v-card id="node-sidebar">
+		<v-card-title class="title ma-2">
+			<span class="title">Nodes</span>
 		</v-card-title>
 		<v-divider></v-divider>
 
@@ -138,21 +141,36 @@ const addAllSamplingFeaturePMs = () => {
 			<v-btn @click="fetchResources">Fetch Resources</v-btn>
 			<v-btn @click="addAllSamplingFeaturePMs">All PMS</v-btn>
 
-			<v-btn block prepend-icon="mdi-plus-circle" variant="flat" color="success" @click="() => openNodeConfig()">
+			<!-- Add Node -->
+			<v-btn block prepend-icon="mdi-plus-circle" variant="flat" color="success" @click="openNodeConfig">
 				Add Node
 			</v-btn>
+
+			<!-- Tree view of nodes/systems/datastreams -->
 			<v-treeview :items="treeItems" item-value="id" item-children="children" density="compact"
 				items-registration="props" open-all>
+				<!-- Icons -->
 				<template v-slot:prepend="{ item }">
 					<v-icon v-if="item.type === 'node'" icon="mdi-server"></v-icon>
 					<v-icon v-if="item.type === 'system'" icon="mdi-cogs"></v-icon>
 					<v-icon v-if="item.type === 'ds' || item.type === 'cs'" icon="mdi-cable-data"></v-icon>
 				</template>
+
+				<!-- Actions -->
 				<template v-slot:append="{ item }">
+					<!-- Remove node -->
+					<v-tooltip v-if="item.type === 'node'" text="Delete" location="bottom" open-delay="500">
+						<template #activator="{ props }">
+							<v-btn v-bind="props" icon="mdi-window-close" size="small" variant="plain" class="close-btn"
+								@click="deleteNode(item.raw)"></v-btn>
+						</template>
+					</v-tooltip>
+					<!-- DS/CS properties -->
+					<!-- TODO: Implement properties popup -->
 					<v-tooltip v-if="item.type === 'ds' || item.type === 'cs'" text="Properties" location="bottom"
 						open-delay="500">
 						<template #activator="{ props }">
-							<v-btn v-bind="props" icon="mdi-dots-vertical" size="small" variant="text"></v-btn>
+							<v-btn v-bind="props" icon="mdi-dots-vertical" size="small" variant="plain"></v-btn>
 						</template>
 					</v-tooltip>
 				</template>
@@ -169,7 +187,7 @@ const addAllSamplingFeaturePMs = () => {
 </template>
 
 <style scoped>
-.node-sidebar {
+#node-sidebar {
 	width: 100%;
 	height: 100%;
 }
@@ -179,5 +197,18 @@ const addAllSamplingFeaturePMs = () => {
 	width: 100%;
 	font-size: 1.5rem;
 	font-weight: bold;
+}
+
+/* Color styling for delete button */
+.close-btn {
+	transition: color 0.2s ease-in-out;
+}
+
+.close-btn:hover {
+	color: red;
+}
+
+.close-btn:active {
+	color: red;
 }
 </style>

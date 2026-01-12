@@ -54,4 +54,8 @@ const getDataStreams = () => {
 </template>
 
 <style scoped>
+.splitpanes--horizontal>.splitpanes__splitter {
+	min-height: 6px;
+	background: linear-gradient(0deg, #ccc, #111);
+}
 </style>
