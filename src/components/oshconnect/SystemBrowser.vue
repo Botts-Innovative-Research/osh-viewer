@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useSystemStore } from '@/stores/systemstore.ts'
 import { useNodeStore } from '@/stores/nodestore.js'
 import { useOSHConnectStore } from '@/stores/oshconnectstore.js'
-import { useDataStreamStore } from '@/stores/datastreamstore.js'
 import { useUIStore } from '@/stores/uistore.ts'
 import { useVisualizationStore } from '@/stores/visualizationstore.js'
 import { OSHControlStream, OSHDatastream, OSHNode, OSHSystem, OSHVisualization } from '@/lib/OSHConnectDataStructs.js'
@@ -147,7 +146,7 @@ const deleteNode = (node: OSHNode) => {
 			</v-btn>
 
 			<!-- Tree view of nodes/systems/datastreams -->
-			<v-treeview :items="treeItems" item-value="id" item-children="children" density="compact"
+			<v-treeview :items="treeItems" item-value="id" item-children="children" density="compact" fluid
 				items-registration="props" open-all>
 				<!-- Icons -->
 				<template v-slot:prepend="{ item }">
