@@ -28,6 +28,10 @@ export const useVisualizationStore = defineStore('visualizations',
             return stream != null ? Object.keys(stream) : [];
         }
 
+        if (visualization.type === 'pointmarker-feature') {
+            console.log("skipping fois for serialization")
+            return;
+        }
         serializedVisualizations.value.push({
             id: visualization.id,
             name: visualization.name,
