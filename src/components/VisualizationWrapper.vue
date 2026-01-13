@@ -33,7 +33,7 @@ const props = defineProps({
 		<GeoPTZ
 			:visualization="viz"
 			:datasource="Array.isArray(viz.visualizationComponents.dataSource) ? viz.visualizationComponents.dataSource[0] : viz.visualizationComponents.dataSource"
-			:controlstream="Array.isArray(viz.controlstream) ? viz.controlstream[0] : viz.controlstream"
+			:controlstream="viz.visualizationComponents.controlstream"
 			v-if="viz.type === 'geoPtz'"
 		></GeoPTZ>
 		<Text

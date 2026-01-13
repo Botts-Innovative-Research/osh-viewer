@@ -335,6 +335,13 @@ watch(featureVisualizations, (updated) => {
 				markerId: viz.id + '-feature' + randomUUID(),
 			});
 		}
+
+		if (newFiltered.length > 0 && updated.length > 0) {
+			const bounds = L.latLngBounds(
+				updated.map((viz) => [viz.geometry.coordinates[1], viz.geometry.coordinates[0]])
+			);
+			mapView.value.map.fitBounds(bounds, { padding: [50, 50] });
+		}
 	}
 },
 	{ deep: true }
