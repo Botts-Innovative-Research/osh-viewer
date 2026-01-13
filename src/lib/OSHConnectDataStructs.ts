@@ -48,19 +48,20 @@ export class OSHConnect {
 	}
 
 	// Fetch all resources that are relatively static
-	fetchSlowResources(): void {
+	async fetchSlowResources(): Promise<void> {
 		console.log('Fetching slow resources...');
 		// fetch all systems of all nodes'
 		const nodes = this.nodeStore.nodes;
-		for (const node of nodes) {
+		const promises = nodes.map((node: OSHNode) =>
 			node.collectAndStoreSystems()
 				.then((systems: OSHSystem[]) => {
 					console.log(`Collected ${systems.length} systems for node ${node.name}`);
 				})
 				.catch((error: any) => {
 					console.error(`Error collecting systems for node ${node.name}:`, error);
-				});
-		}
+				})
+		);
+		await Promise.all(promises);
 	}
 
 	fetchDataStreamsOfSystem(system: OSHSystem): void {

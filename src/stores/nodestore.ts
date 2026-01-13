@@ -53,7 +53,6 @@ export const useNodeStore = defineStore('nodes',
 	const rehydrateNodes = async (oshConnect: OSHConnect): Promise<void> => {
 		if (serializedNodes.value.length === 0 || nodes.value.length > 0) return;
 
-        const promises: Promise<any>[] = [];
 		for (const serialized of serializedNodes.value) {
 			const node = new OSHNode(
 				serialized.name,
@@ -66,10 +65,8 @@ export const useNodeStore = defineStore('nodes',
 				oshConnect
 			);
 			nodes.value.push(node);
-
-            promises.push(node.collectAndStoreSystems());
 		}
-        await Promise.all(promises);
+		await oshConnect.fetchSlowResources();
 		console.log('[NodeStore] Rehydrated nodes from persisted data:', nodes.value.length);
 	};
 
