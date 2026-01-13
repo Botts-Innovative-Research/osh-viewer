@@ -55,9 +55,9 @@ export function sendCommand(commandBaseUrl: string, controlStreamId: string, com
  * @returns
  */
 export async function fetchControlStreamSchema(controlstream: any, networkProperties: any) {
-	const props = {
+    const props = {
 		id: controlstream.id,
-		'system@id': controlstream.parentId,
+		'system@id': controlstream.parentId == null ? controlstream['system@id'] : controlstream.parentId,
 		name: controlstream.name,
 		type: controlstream.type,
 	};

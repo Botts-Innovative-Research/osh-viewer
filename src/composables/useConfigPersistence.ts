@@ -2,8 +2,10 @@ import { useNodeStore } from '@/stores/nodestore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useSystemStore } from '@/stores/systemstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
+import { useOSHConnectStore } from '@/stores/oshconnectstore';
+import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { showToast } from '@/composables/useToast';
-import type { OSHNode } from '@/lib/OSHConnectDataStructs';
+import { OSHNode, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 
 const CONFIG_UID = 'urn:osh:client:config';
 const CONFIG_DS_NAME = 'Client Config';
@@ -13,6 +15,8 @@ export function useConfigPersistence() {
     const visualizationStore = useVisualizationStore();
     const systemStore = useSystemStore();
     const datastreamStore = useDataStreamStore();
+    const oshConnectStore = useOSHConnectStore();
+    const controlstreamStore = useControlStreamStore();
 
     function getAuthHeader(node: OSHNode): string {
         return `Basic ${btoa(`${node.username}:${node.password}`)}`;
@@ -247,16 +251,71 @@ export function useConfigPersistence() {
                     const latestObs = data.items[0].result;
                     let cfgJson = JSON.parse(latestObs.fileData);
                     console.log("Cfg json", cfgJson)
-                    let loadedNodes = cfgJson.nodes;
-                    let loadedVisualizations = cfgJson.visualizations
+                    let loadedNodes = cfgJson.nodes || [];
+                    let loadedVisualizations = cfgJson.visualizations || [];
 
-                    nodeStore.addNode(loadedNodes);
-                    visualizationStore.addVisualization(loadedVisualizations)
+                    const oshConnect = oshConnectStore.getInstance();
+                    let nodesAdded = 0;
+
+                    for (const serializedNode of loadedNodes) {
+                        if (!nodeStore.checkIfNodeExists(serializedNode.name)) {
+                            const newNode = new OSHNode(
+                                serializedNode.name,
+                                serializedNode.host,
+                                serializedNode.port,
+                                serializedNode.apiRoot,
+                                serializedNode.username,
+                                serializedNode.password,
+                                serializedNode.tls,
+                                oshConnect
+                            )
+                            nodeStore.addNode(newNode)
+                            nodesAdded++;
+                        }
+                    }
+
+                    if (nodesAdded > 0)
+                        await oshConnect.fetchSlowResources();
+
+                    let visualizationsAdded = 0;
+                    for (const serializedViz of loadedVisualizations) {
+                        if (!visualizationStore.getVisualizationById(serializedViz.id)) {
+                            const datastreamArray = datastreamStore.getDataStreamsById(serializedViz.datastreamIds);
+                            const datastreams: { [key: string]: any } = {};
+                            for (const ds of datastreamArray) {
+                                datastreams[ds.id] = ds;
+                            }
+
+                            const controlstreamArray = controlstreamStore.getControlStreamsById(serializedViz.controlstreamIds);
+                            const controlstreams: { [key: string]: any } = {};
+                            for (const cs of controlstreamArray) {
+                                controlstreams[cs.id] = cs;
+                            }
+
+                            const visualization = new OSHVisualization(
+                                serializedViz.id,
+                                serializedViz.name,
+                                serializedViz.type,
+                                serializedViz.parentId,
+                                datastreams,
+                                controlstreams
+                            );
+
+                            visualization.setVisualizationComponents(serializedViz.visualizationComponents);
+                            visualizationStore.addVisualization(visualization);
+                            visualizationsAdded++;
+                        }
+                    }
+
+                    showToast(`Loaded ${nodesAdded} nodes, ${visualizationsAdded} visualizations`, 'SUCCESS');
+                    return cfgJson;
                 }
             }
+            showToast('No saved configuration found', 'INFO');
             return null;
         } catch (error) {
             console.error('Error loading config:', error);
+            showToast('Failed to load configuration', 'ERROR');
             return null;
         }
     }

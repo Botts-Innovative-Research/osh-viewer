@@ -41,6 +41,11 @@ async function fetchProps() {
       ? csSchema.value.parametersSchema.items
       : csSchema.value.parametersSchema;
     getCommandType(schemaItems, selectedControlstream.value);
+
+    if (Array.isArray(schemaItems)) {
+      const allPropNames = schemaItems.map((item: any) => item.name);
+      vizwizStore.updateCsConfig(props.role, { property: allPropNames });
+    }
   }
 }
 

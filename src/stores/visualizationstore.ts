@@ -102,8 +102,18 @@ export const useVisualizationStore = defineStore('visualizations',
                 return;
             }
 
-            const datastreams = datastreamStore.getDataStreamsById(serialized.datastreamIds)
-            const controlstreams = controlstreamStore.getControlStreamsById(serialized.controlstreamIds);
+            // Convert arrays to dictionaries keyed by ID (matching builder pattern)
+            const datastreamArray = datastreamStore.getDataStreamsById(serialized.datastreamIds);
+            const datastreams: { [key: string]: any } = {};
+            for (const ds of datastreamArray) {
+                datastreams[ds.id] = ds;
+            }
+
+            const controlstreamArray = controlstreamStore.getControlStreamsById(serialized.controlstreamIds);
+            const controlstreams: { [key: string]: any } = {};
+            for (const cs of controlstreamArray) {
+                controlstreams[cs.id] = cs;
+            }
 
             const visualization = new OSHVisualization(
                 serialized.id,

@@ -8,6 +8,7 @@ import VideoView from 'osh-js/source/core/ui/view/video/VideoView.js';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import PTZControl from './PTZControl.vue'
 import {useControlStreamStore} from "@/stores/controlstreamstore";
+import {fetchControlStreamSchema} from "@/lib/ControlstreamUtils";
 
 const props = defineProps<{
   visualization: OSHVisualization;
@@ -152,8 +153,28 @@ function initializeVideo() {
   console.log('[VideoView] Creating VideoDataLayer:', videoLayer.value);
 }
 
-onMounted(() => {
+async function initializePtz() {
+  const viz = props.visualization;
+  if (!viz.controlstream || Object.keys(viz.controlstream).length === 0)
+    return;
+
+  const csId = Object.keys(viz.controlstream)[0];
+  if (!csId)
+    return;
+
+  const controlStreams = controlstreamStore.getControlStreamsById([csId]);
+  if (!controlStreams || controlStreams.length === 0)
+    return;
+
+  const cs = controlStreams[0];
+
+  console.log("cs", cs)
+
+  await fetchControlStreamSchema(cs.controlstream.properties, cs.controlstream.networkProperties);
+}
+onMounted(async() => {
   initializeVideo();
+  await initializePtz();
 });
 
 </script>
