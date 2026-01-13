@@ -8,7 +8,7 @@ const uiStore = useUIStore();
 
 // Define reactive variables for the form fields
 const nodeName = ref('Test');
-const nodeHost = ref('localhost');
+const nodeHost = ref(window.location.hostname);
 const nodePort = ref('8080');
 const nodePath = ref('sensorhub/api');
 const nodeUser = ref('admin');

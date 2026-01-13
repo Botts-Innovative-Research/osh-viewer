@@ -26,7 +26,8 @@ export function build() {
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: geoPtzResult.vizDatasources,
 		dataLayer: null,
-		dataView: null
+		dataView: null,
+		controlstream: geoPtzResult.vizControlstreams[0]
 	};
 
 	const newViz: OSHVisualization = new OSHVisualization(
