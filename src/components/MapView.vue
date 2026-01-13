@@ -27,17 +27,17 @@ const lobLayers = ref<any[]>([]); // Track LoB layers separately
 
 const geoPtzTargetPM = ref<any>(null);
 const mapVisualizations = computed(() => {
-	return visualizationStore.visualizations.filter(
-		(viz) => viz.type === 'pointmarker' || viz.type === 'pmorientation'
-	);
+  return visualizationStore.visualizations.filter(
+      (viz) => viz.type === 'pointmarker' || viz.type === 'pmorientation'
+  );
 });
 
 const featureVisualizations = computed(() => {
-	return visualizationStore.getVisualizationsByType('pointmarker-feature');
+  return visualizationStore.getVisualizationsByType('pointmarker-feature');
 });
 
 const lobVisualizations = computed(() => {
-	return visualizationStore.getVisualizationsByType('lob');
+  return visualizationStore.getVisualizationsByType('lob');
 });
 
 // Fetch UI store for GeoPTZ tool
@@ -152,102 +152,105 @@ watch(() => uiStore.selectedGeoPTZ,
 );
 
 watch(mapVisualizations, (updated) => {
-		// Remove visualizations that are no longer present
-		const removed = currentVisualizations.value.filter((val) => !updated.includes(val));
-		for (const viz of removed) {
-			// Remove corresponding layer from pmLayers and map
-			const idx = currentVisualizations.value.indexOf(viz);
-			if (idx !== -1) {
-				currentVisualizations.value.splice(idx, 1);
-				// Remove layer from pmLayers and mapView
-				const pmLayer = pmLayers.value[idx];
-				if (pmLayer && mapView.value) {
-					mapView.value.removeLayer?.(pmLayer);
-				}
-				pmLayers.value.splice(idx, 1);
-			}
-		}
+  // Remove visualizations that are no longer present (only check same types, use ID comparison)
+  const currentMapViz = currentVisualizations.value.filter(v => v.type === 'pointmarker' || v.type === 'pmorientation');
+  const updatedIds = updated.map(v => v.id);
+  const removed = currentMapViz.filter((val) => !updatedIds.includes(val.id));
+  for (const viz of removed) {
+    // Remove corresponding layer from pmLayers and map
+    const idx = currentVisualizations.value.indexOf(viz);
+    if (idx !== -1) {
+      currentVisualizations.value.splice(idx, 1);
+      // Remove layer from pmLayers and mapView
+      const pmLayer = pmLayers.value[idx];
+      if (pmLayer && mapView.value) {
+        mapView.value.removeLayer?.(pmLayer);
+      }
+      pmLayers.value.splice(idx, 1);
+    }
+  }
 
-		// Add new visualizations
-		const newFiltered = updated.filter(val => !currentVisualizations.value.includes(val))
-		console.log('New visualizations:', newFiltered)
-		for (const viz of newFiltered) {
-			currentVisualizations.value.push(viz)
+  // Add new visualizations (use ID comparison)
+  const currentIds = currentVisualizations.value.map(v => v.id);
+  const newFiltered = updated.filter(val => !currentIds.includes(val.id))
+  console.log('New visualizations:', newFiltered)
+  for (const viz of newFiltered) {
+    currentVisualizations.value.push(viz)
 
-			// Handle PM only
-			if (viz.type === 'pointmarker') {
-				let datasource = null;
-				if (Array.isArray(viz.visualizationComponents.dataSource)) {
-					datasource = viz.visualizationComponents.dataSource[0];
-				} else {
-					datasource = viz.visualizationComponents.dataSource;
-				}
+    // Handle PM only
+    if (viz.type === 'pointmarker') {
+      let datasource = null;
+      if (Array.isArray(viz.visualizationComponents.dataSource)) {
+        datasource = viz.visualizationComponents.dataSource[0];
+      } else {
+        datasource = viz.visualizationComponents.dataSource;
+      }
 
-				let dsInstance = new SweApi('pm-datasource-' + randomUUID(), {
-					endpointUrl: datasource.endpointUrl,
-					resource: datasource.resource,
-					tls: datasource.tls,
-					protocol: datasource.protocol,
-					startTime: datasource.startTime,
-					endTime: datasource.endTime,
-					mode: datasource.mode,
+      let dsInstance = new SweApi('pm-datasource-' + randomUUID(), {
+        endpointUrl: datasource.endpointUrl,
+        resource: datasource.resource,
+        tls: datasource.tls,
+        protocol: datasource.protocol,
+        startTime: datasource.startTime,
+        endTime: datasource.endTime,
+        mode: datasource.mode,
+        connectorOpts: {
+          username: datasource?.connectorOpts.username,
+          password: datasource?.connectorOpts.password
+        }
+      });
+      console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstance);
+      const layerOpts = viz.visualizationComponents.dataLayer;
+      const pmLayer = new PointMarkerLayer({
+        name: viz.name,
+        dataSourceIds: [dsInstance.id],
+        getLocation: layerOpts.getLocation,
+        // getLocation: (rec, timestamp) => {
+        //   return {
+        //     x: rec.location.lat,
+        //     y: rec.location.lon,
+        //     z: rec.location.alt || 0
+        //   }
+        // },
+        label: viz.visualizationComponents.dataLayer.name,
+        icon: '/icons/map/map-marker.svg',
+        iconSize: [32, 32],
+        labelOffset: [-16, -32],
+      });
+      pmLayers.value.push(pmLayer);
+      mapView.value.addLayer(pmLayer);
+      console.log('[MapView] Creating PointMarkerLayer:', pmLayer);
+      dsInstance.connect();
+    }
+    else if (viz.type === 'pmorientation') {
+      // Array of datasources
+      const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
+          ? viz.visualizationComponents.dataSource
+          : [viz.visualizationComponents.dataSource];
+
+      // Array of SweApi instances for datasources
+      const dsInstances: SweApi[] = [];
+
+      // Undefined initially
+      let getLocation: any;
+      let getOrientation: any;
+      let getMarkerId: any;
+
+      for (const dsProps of dsArray) {
+        const dsInstance = new SweApi(dsProps.id, {
+          endpointUrl: dsProps.endpointUrl,
+          resource: dsProps.resource,
+          tls: dsProps.tls,
+          protocol: dsProps.protocol,
+          startTime: dsProps.startTime,
+          endTime: dsProps.endTime,
+          mode: dsProps.mode,
+          responseFormat: dsProps.responseFormat,
           connectorOpts: {
-            username: datasource?.connectorOpts.username,
-            password: datasource?.connectorOpts.password
+            username: dsProps?.connectorOpts.username,
+            password: dsProps?.connectorOpts.password
           }
-				});
-				console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstance);
-				const layerOpts = viz.visualizationComponents.dataLayer;
-				const pmLayer = new PointMarkerLayer({
-					name: viz.name,
-					dataSourceIds: [dsInstance.id],
-					getLocation: layerOpts.getLocation,
-					// getLocation: (rec, timestamp) => {
-					//   return {
-					//     x: rec.location.lat,
-					//     y: rec.location.lon,
-					//     z: rec.location.alt || 0
-					//   }
-					// },
-					label: viz.visualizationComponents.dataLayer.name,
-					icon: '/icons/map/map-marker.svg',
-					iconSize: [32, 32],
-					labelOffset: [-16, -32],
-				});
-				pmLayers.value.push(pmLayer);
-				mapView.value.addLayer(pmLayer);
-				console.log('[MapView] Creating PointMarkerLayer:', pmLayer);
-				dsInstance.connect();
-			}
-      else if (viz.type === 'pmorientation') {
-				// Array of datasources
-				const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
-					? viz.visualizationComponents.dataSource
-					: [viz.visualizationComponents.dataSource];
-
-				// Array of SweApi instances for datasources
-				const dsInstances: SweApi[] = [];
-
-				// Undefined initially
-				let getLocation: any;
-				let getOrientation: any;
-				let getMarkerId: any;
-
-				for (const dsProps of dsArray) {
-					const dsInstance = new SweApi(dsProps.id, {
-						endpointUrl: dsProps.endpointUrl,
-						resource: dsProps.resource,
-						tls: dsProps.tls,
-						protocol: dsProps.protocol,
-						startTime: dsProps.startTime,
-						endTime: dsProps.endTime,
-						mode: dsProps.mode,
-						responseFormat: dsProps.responseFormat,
-            connectorOpts: {
-              username: dsProps?.connectorOpts.username,
-              password: dsProps?.connectorOpts.password
-            }
-					});
+        });
 
         // Check for location property
         if (dsProps.properties.location) {
@@ -283,26 +286,26 @@ watch(mapVisualizations, (updated) => {
           }
         }
 
-					dsInstance.connect();
-					dsInstances.push(dsInstance);
-				}
+        dsInstance.connect();
+        dsInstances.push(dsInstance);
+      }
 
-				console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstances)
-				const layerOpts = viz.visualizationComponents.dataLayer
-				const pmLayer = new PointMarkerLayer({
-					...layerOpts,
-					name: viz.name,
-					dataSourceIds: dsInstances.map(ds => ds.id),
-					...(getLocation ? { getLocation } : {}),
-					...(getOrientation ? { getOrientation } : {}),
-					...(getMarkerId ? { getMarkerId } : {}),
-				})
-				pmLayers.value.push(pmLayer)
-				mapView.value.addLayer(pmLayer)
-				console.log('[MapView] Creating PointMarkerLayer:', pmLayer)
-			}
-		}
-	}, { deep: true })
+      console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstances)
+      const layerOpts = viz.visualizationComponents.dataLayer
+      const pmLayer = new PointMarkerLayer({
+        ...layerOpts,
+        name: viz.name,
+        dataSourceIds: dsInstances.map(ds => ds.id),
+        ...(getLocation ? { getLocation } : {}),
+        ...(getOrientation ? { getOrientation } : {}),
+        ...(getMarkerId ? { getMarkerId } : {}),
+      })
+      pmLayers.value.push(pmLayer)
+      mapView.value.addLayer(pmLayer)
+      console.log('[MapView] Creating PointMarkerLayer:', pmLayer)
+    }
+  }
+}, { deep: true })
 
 watch(featureVisualizations, (updated) => {
       // Remove feature visualizations that are no longer present (only check same type, use ID comparison)
@@ -365,16 +368,16 @@ watch(lobVisualizations, (updated) => {
         console.log('[MapView] Adding new LoB visualization:', viz);
         currentVisualizations.value.push(viz);
 
-			// Array of datasources
-			const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
-				? viz.visualizationComponents.dataSource
-				: [viz.visualizationComponents.dataSource];
+        // Array of datasources
+        const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
+            ? viz.visualizationComponents.dataSource
+            : [viz.visualizationComponents.dataSource];
 
-			//  Array of SweApi instances for datasources
-			const dsInstances: SweApi[] = [];
+        //  Array of SweApi instances for datasources
+        const dsInstances: SweApi[] = [];
 
-			let getOrigin: RoleDatastream | null = null;
-			let getBearing: RoleDatastream | null = null;
+        let getOrigin: RoleDatastream | null = null;
+        let getBearing: RoleDatastream | null = null;
 
         for (const dsProps of dsArray) {
           const dsInstance = new SweApi('lob-datasource-' + randomUUID(), {
@@ -405,9 +408,9 @@ watch(lobVisualizations, (updated) => {
             };
           }
 
-				dsInstance.connect();
-				dsInstances.push(dsInstance);
-			}
+          dsInstance.connect();
+          dsInstances.push(dsInstance);
+        }
 
         if (!getOrigin || !getBearing) {
           console.log('[MapView] LoB datasource missing origin or bearing property');
@@ -505,13 +508,13 @@ function checkAndRemoveLob(updated: OSHVisualization[]) {
 }
 
 function addCesiumMarker(viz: any) {
-	console.log('[MapView] TEST Adding Cesium marker');
-	const viewer = mapView.value.viewer;
-	const location = {
-		x: viz.geometry.coordinates[0],
-		y: viz.geometry.coordinates[1],
-		z: viz.geometry.coordinates[2] || 10,
-	};
+  console.log('[MapView] TEST Adding Cesium marker');
+  const viewer = mapView.value.viewer;
+  const location = {
+    x: viz.geometry.coordinates[0],
+    y: viz.geometry.coordinates[1],
+    z: viz.geometry.coordinates[2] || 10,
+  };
 
 	/*viewer.entities.add({
 		// position: Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883),
@@ -521,20 +524,20 @@ function addCesiumMarker(viz: any) {
 		}
 	})*/
 
-	const markerProps = {
-		location: {
-			x: viz.geometry.coordinates[0],
-			y: viz.geometry.coordinates[1],
-			z: viz.geometry.coordinates[2] || 0,
-		},
-		label: viz.name,
-		labelOffset: [0, 0],
-		icon: '/icons/map/map-marker.svg',
-		iconSize: [32, 32],
-		iconAnchor: [16, 32],
-		id: viz.id,
-		markerId: viz.id + '-feature' + randomUUID(),
-	};
+  const markerProps = {
+    location: {
+      x: viz.geometry.coordinates[0],
+      y: viz.geometry.coordinates[1],
+      z: viz.geometry.coordinates[2] || 0,
+    },
+    label: viz.name,
+    labelOffset: [0, 0],
+    icon: '/icons/map/map-marker.svg',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    id: viz.id,
+    markerId: viz.id + '-feature' + randomUUID(),
+  };
 
 	let markerEnt = mapView.value.addMarker(markerProps, undefined);
 
