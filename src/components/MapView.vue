@@ -161,7 +161,6 @@ watch(mapVisualizations, (updated) => {
     const idx = currentVisualizations.value.indexOf(viz);
     if (idx !== -1) {
       currentVisualizations.value.splice(idx, 1);
-      // Remove layer from pmLayers and mapView
       const pmLayer = pmLayers.value[idx];
       if (pmLayer && mapView.value) {
         mapView.value.removeLayer?.(pmLayer);
@@ -170,14 +169,12 @@ watch(mapVisualizations, (updated) => {
     }
   }
 
-  // Add new visualizations (use ID comparison)
   const currentIds = currentVisualizations.value.map(v => v.id);
   const newFiltered = updated.filter(val => !currentIds.includes(val.id))
   console.log('New visualizations:', newFiltered)
   for (const viz of newFiltered) {
     currentVisualizations.value.push(viz)
 
-    // Handle PM only
     if (viz.type === 'pointmarker') {
       let datasource = null;
       if (Array.isArray(viz.visualizationComponents.dataSource)) {
@@ -205,13 +202,6 @@ watch(mapVisualizations, (updated) => {
         name: viz.name,
         dataSourceIds: [dsInstance.id],
         getLocation: layerOpts.getLocation,
-        // getLocation: (rec, timestamp) => {
-        //   return {
-        //     x: rec.location.lat,
-        //     y: rec.location.lon,
-        //     z: rec.location.alt || 0
-        //   }
-        // },
         label: viz.visualizationComponents.dataLayer.name,
         icon: '/icons/map/map-marker.svg',
         iconSize: [32, 32],
@@ -223,15 +213,11 @@ watch(mapVisualizations, (updated) => {
       dsInstance.connect();
     }
     else if (viz.type === 'pmorientation') {
-      // Array of datasources
       const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
           ? viz.visualizationComponents.dataSource
           : [viz.visualizationComponents.dataSource];
 
-      // Array of SweApi instances for datasources
       const dsInstances: SweApi[] = [];
-
-      // Undefined initially
       let getLocation: any;
       let getOrientation: any;
       let getMarkerId: any;
@@ -252,7 +238,6 @@ watch(mapVisualizations, (updated) => {
           }
         });
 
-        // Check for location property
         if (dsProps.properties.location) {
           getLocation = {
             dataSourceIds: [dsInstance.id],
@@ -265,7 +250,7 @@ watch(mapVisualizations, (updated) => {
             },
           }
         }
-        // Check for orientation property
+
         if (dsProps.properties.orientation) {
           getOrientation = {
             dataSourceIds: [dsInstance.id],
@@ -276,7 +261,7 @@ watch(mapVisualizations, (updated) => {
             },
           }
         }
-        // Check for markerId property
+
         if (dsProps.properties.markerId) {
           getMarkerId = {
             dataSourceIds: [dsInstance.id],
@@ -308,7 +293,6 @@ watch(mapVisualizations, (updated) => {
 }, { deep: true })
 
 watch(featureVisualizations, (updated) => {
-      // Remove feature visualizations that are no longer present (only check same type, use ID comparison)
       const currentFeatureViz = currentVisualizations.value.filter(v => v.type === 'pointmarker-feature');
       const updatedIds = updated.map(v => v.id);
       const removed = currentFeatureViz.filter(val => !updatedIds.includes(val.id))
@@ -316,11 +300,9 @@ watch(featureVisualizations, (updated) => {
         const idx = currentVisualizations.value.indexOf(viz)
         if (idx !== -1) {
           currentVisualizations.value.splice(idx, 1)
-          // Optionally remove marker from mapView if needed
         }
       }
 
-      // Add new feature visualizations (use ID comparison)
       const currentIds = currentVisualizations.value.map(v => v.id);
       const newFiltered = updated.filter((val) => !currentIds.includes(val.id));
 
@@ -359,7 +341,6 @@ watch(featureVisualizations, (updated) => {
 );
 
 watch(lobVisualizations, (updated) => {
-      // Remove old LoB visualizations first
       checkAndRemoveLob(updated);
 
       const currentIds = currentVisualizations.value.map(v => v.id);
@@ -368,12 +349,10 @@ watch(lobVisualizations, (updated) => {
         console.log('[MapView] Adding new LoB visualization:', viz);
         currentVisualizations.value.push(viz);
 
-        // Array of datasources
         const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
             ? viz.visualizationComponents.dataSource
             : [viz.visualizationComponents.dataSource];
 
-        //  Array of SweApi instances for datasources
         const dsInstances: SweApi[] = [];
 
         let getOrigin: RoleDatastream | null = null;
@@ -420,7 +399,6 @@ watch(lobVisualizations, (updated) => {
         console.log('[MapView] Creating datasource for LoBLayer:', dsInstances)
         const layerOpts = viz.visualizationComponents.dataLayer;
 
-        // Generate unique layer ID for this specific LoB instance
         const layerId = `lob-layer-${viz.id}-${randomUUID()}`;
 
         let lobLayerOpts: any = {
@@ -454,7 +432,6 @@ watch(lobVisualizations, (updated) => {
               return bearingData.heading != null ? bearingData.heading : bearingData;
             },
           };
-          // Use the viz.id as the lobId to distinguish multiple LoB instances
           lobLayerOpts.getLobId = {
             dataSourceIds: [getOrigin.id],
             handler: () => viz.id,
@@ -463,7 +440,6 @@ watch(lobVisualizations, (updated) => {
 
         const lobLayer = new LoBLayer(lobLayerOpts);
 
-        // Store the layer with its viz.id for later removal
         lobLayers.value.push({ vizId: viz.id, layer: lobLayer, layerId: layerId });
 
         mapView.value.addLayer(lobLayer);
@@ -474,7 +450,6 @@ watch(lobVisualizations, (updated) => {
 );
 
 function checkAndRemoveLob(updated: OSHVisualization[]) {
-  // Only check lob visualizations - use ID comparison instead of reference equality
   const currentLobViz = currentVisualizations.value.filter(v => v.type === 'lob');
   const updatedIds = updated.map(v => v.id);
   const removed = currentLobViz.filter((val) => !updatedIds.includes(val.id));
@@ -485,7 +460,6 @@ function checkAndRemoveLob(updated: OSHVisualization[]) {
       currentVisualizations.value.splice(idx, 1);
 
       if (viz.type === 'pointmarker') {
-        // Remove corresponding layer from pmLayers and map
         const pmLayer = pmLayers.value[idx];
         if (pmLayer && mapView.value) {
           mapView.value.removeLayer?.(pmLayer);
@@ -494,7 +468,6 @@ function checkAndRemoveLob(updated: OSHVisualization[]) {
       } else if (viz.type === 'pointmarker-feature') {
         mapView.value.removeLayer?.(viz.id);
       } else if (viz.type === 'lob') {
-        // Find and remove the corresponding LoB layer
         const lobLayerIndex = lobLayers.value.findIndex(l => l.vizId === viz.id);
         if (lobLayerIndex !== -1) {
           const lobLayerEntry = lobLayers.value[lobLayerIndex];
