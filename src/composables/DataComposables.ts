@@ -22,15 +22,15 @@ export function createRTDataSource(ds: any, isVideo: boolean) {
   });
 }
 
-export function createBatchDataSource(datastream: OSHDatastream, isVideo: boolean) {
+export function createBatchDataSource(datastream: OSHDatastream, isVideo: boolean, startTime: string, endTime: string) {
     return new SweApi(datastream.name, {
         endpointUrl: datastream.datastream.networkProperties.endpointUrl,
         resource: `/datastreams/${datastream.datastream.properties.id}/observations`,
         tls: datastream.datastream.networkProperties.tls,
         protocol: 'ws',
         mode: Mode.BATCH,
-        startTime: 'now',
-        endTime: '2125-08-01T00:00:00Z',
+        startTime: startTime,
+        endTime: endTime,
         responseFormat: isVideo ? 'application/swe+binary' : 'application/swe+json',
         connectorOpts: {
             username: datastream.datastream.networkProperties?.connectorOpts.username,
@@ -39,15 +39,15 @@ export function createBatchDataSource(datastream: OSHDatastream, isVideo: boolea
     });
 }
 
-export function createReplayDataSource(datastream: OSHDatastream, isVideo: boolean) {
+export function createReplayDataSource(datastream: OSHDatastream, isVideo: boolean, startTime: string, endTime: string) {
     return new SweApi(datastream.name, {
         endpointUrl: datastream.datastream.networkProperties.endpointUrl,
         resource: `/datastreams/${datastream.datastream.properties.id}/observations`,
         tls: datastream.datastream.networkProperties.tls,
         protocol: 'ws',
         mode: Mode.REPLAY,
-        startTime: 'now',
-        endTime: '2125-08-01T00:00:00Z',
+        startTime: startTime,
+        endTime: endTime,
         responseFormat: isVideo ? 'application/swe+binary' : 'application/swe+json',
         connectorOpts: {
             username: datastream.datastream.networkProperties?.connectorOpts.username,
