@@ -22,13 +22,13 @@ const controlstreamStore = useControlStreamStore();
 const videoView = ref<any>(null);
 const videoLayer = ref<VideoDataLayer | null>(null);
 
-function createVideoView(videoType: string) {
+function createVideoView(codec: string) {
   if (videoView.value) {
     videoView.value.destroy?.();
     videoView.value = null;
   }
 
-  if (videoType === 'H264') {
+  if (codec === 'H264') {
     videoView.value = new VideoView({
       container: videoDivId.value,
       css: 'video-h264',
@@ -85,8 +85,6 @@ function initializeVideo() {
   const viz = props.visualization;
   if (!viz || viz.type !== 'video') return;
 
-  const videoType = viz.visualizationComponents?.dataView?.videoType || 'MJPEG';
-  createVideoView(videoType);
 
   const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
       ? viz.visualizationComponents.dataSource
@@ -98,6 +96,7 @@ function initializeVideo() {
   let getTimestamp: any;
 
   for (const dsProps of dsArray) {
+    let rawDs = toRaw(dsProps);
     const dsInstance = new SweApi(dsProps.id, {
       endpointUrl: dsProps.endpointUrl,
       resource: dsProps.resource,
@@ -117,7 +116,6 @@ function initializeVideo() {
       getFrameData = {
         dataSourceIds: [dsInstance.id],
         handler: (rec: any) => {
-          let rawDs = toRaw(dsProps);
           return rec[rawDs.properties.video.outputName][rawDs.properties.video.property] != null
               ? rec[rawDs.properties.video.outputName][rawDs.properties.video.property]
               : rec[rawDs.properties.video.property];
@@ -127,8 +125,6 @@ function initializeVideo() {
       getTimestamp = {
         dataSourceIds: [dsInstance.id],
         handler: (rec: any) => {
-          console.log('rec', rec)
-          let rawDs = toRaw(dsProps);
           const data = rec[rawDs.properties.video.outputName];
           let newDate = data.time == undefined ? new Date(data.sampleTime).getTime() : new Date(data.time).getTime()
 
@@ -136,6 +132,8 @@ function initializeVideo() {
         }
       };
     }
+
+    createVideoView(rawDs.properties.video.compression);
 
     dsInstance.connect();
     dsInstances.push(dsInstance);
