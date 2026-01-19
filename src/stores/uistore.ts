@@ -37,7 +37,16 @@ export const useUIStore = defineStore('ui', () => {
 		altitude: number;
 	} | null>(null);
 
-	// Theme state
+    const selectedFlightPath = ref<{
+        controlStreamId: string;
+        commandBaseUrl: string;
+        auth: string;
+    } | null>(null);
+
+    const flightPathWaypoints = ref<{ lat: number; lon: number; alt: number }[]>([]);
+    const clearFlightPathMarkersSignal = ref(false);
+
+    // Theme state
 	const theme = ref<'dark' | 'light'>('dark');
 
 	// Example actions
@@ -98,6 +107,27 @@ export const useUIStore = defineStore('ui', () => {
 		vizWizOpen.value = true;
 	}
 
+    function setSelectedFlightPath(controlStreamId: string, commandBaseUrl: string, auth: string) {
+        selectedFlightPath.value = { controlStreamId, commandBaseUrl, auth };
+    }
+    function clearSelectedFlightPath() {
+        selectedFlightPath.value = null;
+        flightPathWaypoints.value = [];
+    }
+
+    function clearFlightPathWaypoints() {
+        flightPathWaypoints.value = [];
+    }
+    function setFlightPathWaypoints(waypoints: { lat: number; lon: number; alt: number }[]) {
+        flightPathWaypoints.value = waypoints;
+    }
+
+    function triggerClearFlightPathMarkers() {
+        clearFlightPathMarkersSignal.value = true;
+    }
+    function resetClearFlightPathMarkersSignal() {
+        clearFlightPathMarkersSignal.value = false;
+    }
 	return {
 		leftSidebarOpen,
 		rightSidebarOpen,
@@ -129,5 +159,15 @@ export const useUIStore = defineStore('ui', () => {
 		vizWizOpen,
 		toggleVizWiz,
 		openVizWiz,
+
+        selectedFlightPath,
+        setSelectedFlightPath,
+        clearSelectedFlightPath,
+		flightPathWaypoints,
+		clearFlightPathWaypoints,
+		setFlightPathWaypoints,
+        clearFlightPathMarkersSignal,
+        triggerClearFlightPathMarkers,
+        resetClearFlightPathMarkersSignal
 	};
 });
