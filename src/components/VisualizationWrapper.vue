@@ -5,6 +5,7 @@ import Chart from './menus/visualization-wizard/visualizations/chart/Chart.vue';
 import Video from './menus/visualization-wizard/visualizations/video/Video.vue';
 import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
 import Text from './menus/visualization-wizard/visualizations/text/Text.vue';
+import FlightPath from './menus/visualization-wizard/visualizations/flightpath/FlightPath.vue';
 
 const props = defineProps({
 	viz: { type: OSHVisualization, required: true },
@@ -41,6 +42,12 @@ const props = defineProps({
 			:datasource="Array.isArray(viz.visualizationComponents.dataSource) ? viz.visualizationComponents.dataSource[0] : viz.visualizationComponents.dataSource"
 			v-if="viz.type === 'text'"
 		></Text>
+    <FlightPath
+        :visualization="viz"
+        :datasource="Array.isArray(viz.visualizationComponents.dataSource) ? viz.visualizationComponents.dataSource[0] : viz.visualizationComponents.dataSource"
+        :controlstream="Array.isArray(viz.controlstream) ? viz.controlstream[0] : viz.controlstream"
+        v-if="viz.type === 'flightPath'"
+    ></FlightPath>
 		<slot name="after" />
 		<slot name="overlay" />
 	</div>

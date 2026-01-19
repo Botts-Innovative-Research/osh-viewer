@@ -15,6 +15,7 @@ const iconOptions = [
   { label: 'Camera', icon: 'camera-marker' },
   { label: 'Cellphone', icon: 'cellphone-marker' },
   { label: 'Eye', icon: 'eye' },
+  { label: 'Drone', icon: 'quadcopter' },
 ]
 
 function selectIcon(val: string) {

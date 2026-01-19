@@ -45,6 +45,7 @@ const visualizationTypes: VisualizationType[] = [
   { label: 'Text', value: 'text', icon: 'mdi-format-text' },
   { label: 'GeoPTZ', value: 'geoPtz', icon: 'mdi-map' },
 	{ label: 'Line of Bearing', value: 'lob', icon: 'mdi-ray-start' },
+	{ label: 'Flight Path', value: 'flightPath', icon: 'mdi-quadcopter' },
 ]
 
 const vizComponents: any = {
@@ -124,6 +125,11 @@ const vizComponents: any = {
 			import('@/components/menus/visualization-wizard/visualizations/text/Builder'),
 	},
 	// add other types here
+  flightPath: {
+    Config: defineAsyncComponent(() => import('@/components/menus/visualization-wizard/visualizations/flightpath/Config.vue')),
+    Customize: defineAsyncComponent(() => import('@/components/menus/visualization-wizard/visualizations/flightpath/Customize.vue')),
+    Builder: () => import('@/components/menus/visualization-wizard/visualizations/flightpath/Builder'),
+  },
 };
 
 const getStepComponent = (index: number) => {
