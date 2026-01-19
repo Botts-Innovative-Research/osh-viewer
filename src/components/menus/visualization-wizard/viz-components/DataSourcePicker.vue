@@ -66,9 +66,12 @@ async function fetchProps() {
   const { ds, observedProps } = mineDatasourceObsPropsFromDS(selectedDatastream.value)
   dsSchema.value = await fetchSchema(ds.datastream)
 
-  console.log(dsSchema.value)
-  console.log('[DataSourcePicker] ds.datastream.properties:', ds.datastream.properties)
-  console.log('[DataSourcePicker] outputName:', ds.datastream.properties.outputName)
+  let isBinary = dsSchema.value.obsFormat === 'application/swe+binary';
+  if (isBinary) {
+    let compression = dsSchema.value.recordEncoding.members[1].compression;
+    if (compression)
+      vizwizStore.updateDsConfig(props.role, { compression: compression })
+  }
   vizwizStore.updateDsConfig(props.role, { outputName: ds.datastream.properties.outputName })
   console.log('[DataSourcePicker] dsConfig after update:', JSON.stringify(vizwizStore.dsConfig, null, 2))
 }
