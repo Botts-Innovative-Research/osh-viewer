@@ -41,6 +41,7 @@ export default defineConfig(({ mode }) => {
       }
     },
     build: {
+        outDir: 'web',
       rollupOptions: {
         external: ['fsevents', 'node:path'],
       }
