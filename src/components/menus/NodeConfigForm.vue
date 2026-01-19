@@ -28,6 +28,7 @@ const createNode = () => {
 		tls.value,
 		this
 	);
+	oshconnect.fetchSlowResources();
 	cancelForm();
 };
 
