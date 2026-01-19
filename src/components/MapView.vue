@@ -57,6 +57,12 @@ onMounted(() => {
     leafletMapView.map.on('click', (event: any) => {
       console.log('[MapView] Point clicked:', event);
 
+      const geoPtzIcon = L.icon({
+        iconUrl: '/icons/map/map-marker.svg',
+        iconSize: [32,32],
+        iconAnchor: [16,16]
+      })
+
       // Fetch selected GeoPTZ in UI store
       const selectedGeoPTZ = uiStore.selectedGeoPTZ;
       if (selectedGeoPTZ) {
@@ -71,11 +77,7 @@ onMounted(() => {
         if (geoPtzTargetPM.value) {
           leafletMapView.map.removeLayer(geoPtzTargetPM.value);
         }
-        const geoPtzIcon = L.icon({
-          iconUrl: '/icons/map/map-marker.svg',
-          iconSize: [32,32],
-          iconAnchor: [16,16]
-        })
+
         geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon }).addTo(leafletMapView.map)
 
         // L.marker([lat, lon]).addTo(leafletMapView.map)
@@ -99,7 +101,7 @@ onMounted(() => {
         const lon = event.latlng.lng;
         const alt = 100.0;
 
-        flightPathTargetPM.value.push(L.marker([lat, lon]).addTo(leafletMapView.map));
+        flightPathTargetPM.value.push(L.marker([lat, lon], { icon: geoPtzIcon }).addTo(leafletMapView.map));
 
         uiStore.setCurrentLLA(lat, lon, alt);
       }
