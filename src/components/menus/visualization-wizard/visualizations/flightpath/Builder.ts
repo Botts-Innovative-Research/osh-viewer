@@ -15,8 +15,6 @@ export function build() {
     const datastreams = vizwizStore.datastreams;
     const controlstreams = AggregateControlstreams();
 
-    console.log(datastreams)
-
     const flightPathResult = CreateFlightPathViewProps(
         datastreams[0],
         controlstreams,
@@ -26,7 +24,8 @@ export function build() {
     const visualizationComponents: VisualizationComponents = {
         dataSource: flightPathResult.vizDatasources,
         dataLayer: null,
-        dataView: null
+        dataView: null,
+        controlstream: flightPathResult.vizControlstreams[0]
     };
 
     const newViz: OSHVisualization = new OSHVisualization(

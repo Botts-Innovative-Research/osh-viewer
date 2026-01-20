@@ -15,8 +15,6 @@ export function build() {
 	const datastreams = vizwizStore.datastreams;
 	const controlstreams = AggregateControlstreams();
 
-	console.log(datastreams)
-
 	const geoPtzResult = CreateGeoPtzViewProps(
 		datastreams[0],
 		controlstreams,
