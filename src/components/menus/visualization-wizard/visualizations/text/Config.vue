@@ -15,7 +15,7 @@ const checkedRoles = reactive({
   }),
 })
 
-// Initialize dsConfig with x and y selected by default when mounted
+// Initialize dsConfig with stream selected by default when mounted
 onMounted(() => {
   console.log("Mounted Text Config")
   if (!vizwizStore.dsConfig.stream) {

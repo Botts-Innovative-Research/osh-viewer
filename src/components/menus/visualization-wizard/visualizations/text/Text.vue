@@ -53,7 +53,6 @@ onMounted(async () => {
 
   const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
 
-  console.log('TEST', props.datasource)
   // dataBroadcastChannel.onmessage = (message) => {
   //   if (message.data.type === 'data') {
   //     const data = message.data.values[0].data;

@@ -13,7 +13,6 @@ export function build() {
 	const visualizationStore = useVisualizationStore();
 
 	const datastreams = AggregateDatastreams();
-	console.log(datastreams);
 
 	const textResult = CreateTextViewProps(
 		datastreams,
@@ -30,8 +29,8 @@ export function build() {
 		`${visualizationComponents.dataLayer?.name || 'Text Visualization'}`,
 		'text',
 		null,
-		textResult.vizDatasources,
-		null
+        datastreams,
+        null
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
 	visualizationStore.addVisualization(newViz);
@@ -40,7 +39,6 @@ export function build() {
 
 export function CreateTextViewProps(datastreams: { [key: string]: any }, visOptions: any) {
 	const datastreamStore = useDataStreamStore();
-	console.log('Datastreams: ', datastreamStore.dataStreams);
 
   const vizDatasources: ISweApiDataSourceProperties[] = [];
   let dataLayer: any = {};
@@ -66,15 +64,16 @@ export function CreateTextViewProps(datastreams: { [key: string]: any }, visOpti
 			id: randomUUID(),
 			properties: properties,
 			connectorOpts: {
-				username:
-					currentOSHDatastream[0].datastream.networkProperties.connectorOpts.username,
-				password:
-					currentOSHDatastream[0].datastream.networkProperties.connectorOpts.password,
+				username: currentOSHDatastream[0].datastream.networkProperties.connectorOpts.username,
+				password: currentOSHDatastream[0].datastream.networkProperties.connectorOpts.password,
 			},
 		};
 		vizDatasources.push(currentDataSource);
     dataLayer.name = currentOSHDatastream[0]?.name || 'Text Data Layer';
 	}
 
-	return { vizDatasources: vizDatasources, dataLayer };
+	return {
+        vizDatasources,
+        dataLayer
+    };
 }
