@@ -140,7 +140,7 @@ function initializeVideo() {
     dsInstances.push(dsInstance);
   }
 
-  console.log('[VideoView] Creating datasource for VideoDataLayer:', dsInstances);
+  console.log('[Video.vue] Creating datasource for VideoDataLayer:', dsInstances);
   const layerOpts = viz.visualizationComponents.dataLayer;
   videoLayer.value = new VideoDataLayer({
     ...layerOpts,

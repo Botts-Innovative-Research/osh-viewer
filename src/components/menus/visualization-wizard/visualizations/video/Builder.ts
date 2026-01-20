@@ -57,6 +57,7 @@ export function CreateVideoViewProps(datastreams: { [key: string]: any }, contro
 
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
 	let videoLayer: any = {};
+
     let videoView: any = {
         container: `video-container-${randomUUID()}`,
         css: 'video-view',
