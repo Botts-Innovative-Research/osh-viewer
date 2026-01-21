@@ -173,6 +173,7 @@ export class OSHNode {
 	getEndpointUrl(): string {
 		return `${this.host}:${this.port}/${this.apiRoot}`;
 	}
+
 }
 
 export class OSHSystem {

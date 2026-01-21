@@ -15,6 +15,7 @@ export interface SerializeNode {
 export const useNodeStore = defineStore('nodes',
     () => {
 	const nodes: Ref<OSHNode[]> = ref([]);
+    const defaultNodeId = ref<string | null>(null);
 	const serializedNodes: Ref<SerializeNode[]> = ref([]);
 
 	const addNode = (node: OSHNode): any => {
@@ -70,13 +71,25 @@ export const useNodeStore = defineStore('nodes',
 		console.log('[NodeStore] Rehydrated nodes from persisted data:', nodes.value.length);
 	};
 
-	return {
+    const updateDefaultNode = (nodeId: string | null) => {
+        defaultNodeId.value = nodeId
+    }
+
+    const getNodeById = (id: string) => {
+        return nodes.value.find(
+            node => `${node.host}:${node.port}` === id
+        )
+    }
+ 	return {
         nodes,
+        defaultNodeId,
         serializedNodes,
         addNode,
         removeNode,
         getNodeByName,
         checkIfNodeExists,
-        rehydrateNodes
+        rehydrateNodes,
+        updateDefaultNode,
+        getNodeById
     };
-}, { persist: { pick: ['serializedNodes'] } });
+}, { persist: { pick: ['serializedNodes', 'defaultNodeId'] } });

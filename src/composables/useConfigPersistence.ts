@@ -169,7 +169,9 @@ export function useConfigPersistence() {
     }
 
     async function saveConfig(): Promise<boolean> {
-        const defaultNode = nodeStore.nodes[0];
+        const defaultNode = nodeStore.defaultNodeId
+            ? nodeStore.getNodeById(nodeStore.defaultNodeId)
+            : nodeStore.nodes[0];
         if (!defaultNode) {
             showToast('No nodes configured', 'ERROR');
             return false;
@@ -219,7 +221,9 @@ export function useConfigPersistence() {
     }
 
     async function loadConfig(): Promise<any | null> {
-        const defaultNode = nodeStore.nodes[0];
+        const defaultNode = nodeStore.defaultNodeId
+            ? nodeStore.getNodeById(nodeStore.defaultNodeId)
+            : nodeStore.nodes[0];
         if (!defaultNode) {
             return null;
         }

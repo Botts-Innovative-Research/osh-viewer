@@ -17,8 +17,6 @@ const nodeStore = useNodeStore();
 const  visualizationStore = useVisualizationStore();
 nodeStore.rehydrateNodes(connect).then(() => { visualizationStore.rehydrateVisualizations(); })
 
-
-
 </script>
 
 <template>
