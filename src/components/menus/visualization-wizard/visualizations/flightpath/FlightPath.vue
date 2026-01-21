@@ -42,6 +42,8 @@ const altInput = ref<number>(0.0);
 
 const uiStore = useUIStore();
 const isSelected = ref(false);
+const fileInputRef = ref<any | null>(null);
+const selectedFile = ref<File | null>(null);
 
 const commandBaseUrl = computed(() => {
   const protocol = props.controlstream.tls ? 'https' : 'http';
@@ -52,22 +54,18 @@ const csAuth = computed(() => {
   return {username: props.controlstream.connectorOpts.username, password: props.controlstream.connectorOpts.password}
 });
 
-watch(
-    () => uiStore.selectedFlightPath,
-    (newVal) => {
+watch(() => uiStore.selectedFlightPath, (newVal) => {
       if (newVal?.controlStreamId === props.controlstream.id) {
-        console.log('[FlightPathView] This flightpath instance is selected:', newVal?.controlStreamId);
+        console.log('[FlightPath.vue] This flightpath instance is selected:', newVal?.controlStreamId);
         isSelected.value = true;
       } else {
-        console.log('[FlightPathView] This instance is NOT selected:', newVal?.controlStreamId);
+        console.log('[FlightPath.vue] This instance is NOT selected:', newVal?.controlStreamId);
         isSelected.value = false;
       }
     }
 );
 
-watch(
-    () => uiStore.currentLLA,
-    (newVal) => {
+watch(() => uiStore.currentLLA, (newVal) => {
       if (isSelected.value && newVal) {
         latInput.value = newVal.latitude;
         lonInput.value = newVal.longitude;
@@ -93,19 +91,19 @@ function addWaypoint() {
     alt: altInput.value,
   };
   waypoints.value.push(newWaypoint);
-  console.log('[FlightPathView] Added waypoint:', newWaypoint);
+  console.log('[FlightPath.vue] Added waypoint:', newWaypoint);
 }
 
 function removeWaypoint(id: string) {
   waypoints.value = waypoints.value.filter(wp => wp.id !== id);
-  console.log('[FlightPathView] Removed waypoint:', id);
+  console.log('[FlightPath.vue] Removed waypoint:', id);
 }
 
 function clearWaypoints() {
   waypoints.value = [];
   uiStore.clearFlightPathWaypoints();
   uiStore.triggerClearFlightPathMarkers();
-  console.log('[FlightPathView] Cleared all waypoints');
+  console.log('[FlightPath.vue] Cleared all waypoints');
 }
 
 watch(waypoints, (newWaypoints) => {
@@ -128,9 +126,66 @@ function onSend() {
     },
   };
 
-  console.log('[FlightPathView] Sending FlightPath command:', command);
-  sendCommand(commandBaseUrl.value, props.controlstream.id, command, `${csAuth.value.username}:${csAuth.value.password}`);
+  console.log('[FlightPath.vue] Sending FlightPath command:', command);
+  sendCommand(
+      commandBaseUrl.value,
+      props.controlstream.id,
+      command,
+      `${csAuth.value.username}:${csAuth.value.password}`
+  );
 }
+
+function handleFileChange(event: Event){
+  const input = event.target as HTMLInputElement;
+
+  if (!input.files || input.files.length === 0) {
+    return;
+  }
+
+  const file = input.files[0];
+
+  if (!file.name.toLowerCase().endsWith('.path')) {
+    console.warn('[FlightPath.vue] Invalid file type:', file.name);
+    selectedFile.value = null;
+    return;
+  }
+  selectedFile.value = file;
+  console.warn('[FlightPath.vue] Selected file:', file.name);
+
+}
+
+const triggerFileInput = () => {
+  fileInputRef.value?.click();
+}
+
+function sendMissionFile() {
+  if (!selectedFile.value) {
+    console.warn('[FlightPath.vue] No file selected')
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = (e) => {
+    const command = {
+      parameters: {
+        file: reader.result
+      }
+    }
+
+    console.log('[FlightPath.vue] Sending mission file command:', command);
+    sendCommand(
+        commandBaseUrl.value,
+        props.controlstream.id,
+        command,
+        `${csAuth.value.username}:${csAuth.value.password}`
+    );
+  }
+  reader.onerror = (e) => {
+    console.error('[FlightPath.vue] File reader error:', e);
+  }
+}
+
 </script>
 
 <template>
@@ -196,8 +251,54 @@ function onSend() {
 
       <v-row class="mt-2">
         <v-col>
-          <v-btn color="primary" block @click="onSend" :disabled="waypoints.length === 0" prepend-icon="mdi-send">
+          <v-btn
+              color="primary"
+              block
+              @click="onSend"
+              :disabled="waypoints.length === 0"
+              prepend-icon="mdi-send"
+          >
             Send Flight Path
+          </v-btn>
+        </v-col>
+      </v-row>
+    </v-container>
+
+    <v-container>
+
+
+      <v-divider class="my-3"></v-divider>
+
+      <v-row class="mt-2">
+        <v-col>
+          <v-btn
+              block
+              @click="triggerFileInput"
+              prepend-icon="mdi-file-upload"
+          >
+            Upload Mission
+          </v-btn>
+          <input
+            type="file"
+            ref="fileInputRef"
+            style="display: none"
+            @change="handleFileChange"
+            accept=".path"
+          />
+        </v-col>
+      </v-row>
+
+
+      <v-row class="mt-2">
+        <v-col>
+          <v-btn
+              color="primary"
+              block
+              @click="sendMissionFile"
+              prepend-icon="mdi-send"
+              :disabled="!selectedFile"
+          >
+            Send Mission Plan
           </v-btn>
         </v-col>
       </v-row>
