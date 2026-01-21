@@ -133,10 +133,7 @@ export function useConfigPersistence() {
     }
 
     async function findOrCreateConfigSystem(node: OSHNode): Promise<string | null> {
-        // Check if config system already exists in store
-        const cfgSystem = systemStore.systems.find(
-            (sys) => sys.system.properties.properties?.uid === CONFIG_UID
-        );
+        const cfgSystem = systemStore.systems.find((sys) => sys.system.properties.properties?.uid === CONFIG_UID);
 
         if (cfgSystem) {
             return cfgSystem.id;
@@ -147,9 +144,7 @@ export function useConfigPersistence() {
 
     async function findOrCreateConfigDatastream(node: OSHNode, systemId: string): Promise<string | null> {
         const cfgDatastream = datastreamStore.dataStreams.find(
-            (ds) => ds.datastream.properties.name === CONFIG_DS_NAME &&
-                    ds.datastream.properties['system@id'] === systemId
-        );
+            (ds) => ds.datastream.properties.name === CONFIG_DS_NAME && ds.datastream.properties['system@id'] === systemId);
 
         if (cfgDatastream) {
             return cfgDatastream.id;

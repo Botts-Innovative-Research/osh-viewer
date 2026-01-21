@@ -12,7 +12,6 @@ import {useVisualizationStore} from "@/stores/visualizationstore.js";
 const uistore = useUIStore();
 const { theme } = storeToRefs(uistore);
 
-// Rehydrate persisted nodes on app startup
 const connect = new OSHConnect();
 const nodeStore = useNodeStore();
 const  visualizationStore = useVisualizationStore();
