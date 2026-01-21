@@ -327,7 +327,7 @@ watch(mapVisualizations, (updated) => {
           getMarkerId = {
             dataSourceIds: [dsInstance.id],
             handler: (rec: any) => {
-              return rec[dsProps.properties.markerId];
+              return rec[dsProps.properties.markerId.property];
             },
           }
         }
