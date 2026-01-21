@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
-import { ref, computed, reactive, watch, ReactiveEffect, onMounted } from 'vue';
+import { computed, reactive, watch, onMounted } from 'vue';
 import DataSourcePicker from '../../viz-components/DataSourcePicker.vue';
 
 

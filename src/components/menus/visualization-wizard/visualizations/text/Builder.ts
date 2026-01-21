@@ -1,7 +1,7 @@
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { ISweApiDataSourceProperties, VisualizationComponents } from '@/lib/VisualizationHelpers';
-import { OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { Mode } from 'osh-js/source/core/datasource/Mode';
 import { AggregateDatastreams, BuildRoleProperty } from '../../shared/helpers';
