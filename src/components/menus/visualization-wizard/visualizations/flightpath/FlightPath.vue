@@ -144,7 +144,7 @@ function handleFileChange(event: Event){
 
   const file = input.files[0];
 
-  if (!file.name.toLowerCase().endsWith('.path')) {
+  if (!file.name.toLowerCase().endsWith('.path') && !file.name.toLowerCase().endsWith('.plan')) {
     console.warn('[FlightPath.vue] Invalid file type:', file.name);
     selectedFile.value = null;
     return;
@@ -167,9 +167,11 @@ function sendMissionFile() {
   const reader = new FileReader();
 
   reader.onload = (e) => {
+    const fileContent = reader.result as string;
+
     const command = {
       parameters: {
-        file: reader.result
+        qGroundControlPlan: fileContent
       }
     }
 
@@ -184,6 +186,8 @@ function sendMissionFile() {
   reader.onerror = (e) => {
     console.error('[FlightPath.vue] File reader error:', e);
   }
+
+  reader.readAsText(selectedFile.value);
 }
 
 </script>
@@ -283,11 +287,18 @@ function sendMissionFile() {
             ref="fileInputRef"
             style="display: none"
             @change="handleFileChange"
-            accept=".path"
           />
         </v-col>
       </v-row>
 
+      <v-row v-if="selectedFile" class="mt-2">
+        <v-col>
+          <v-chip closable @click:close="selectedFile = null" color="primary" variant="outlined">
+            <v-icon start>mdi-file-document</v-icon>
+            {{ selectedFile.name }}
+          </v-chip>
+        </v-col>
+      </v-row>
 
       <v-row class="mt-2">
         <v-col>
