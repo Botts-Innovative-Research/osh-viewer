@@ -1,14 +1,13 @@
 <script setup>
 import { ref } from 'vue';
 import AppSettings from './menus/AppSettings.vue';
-import { useConfigPersistence } from '@/composables/useConfigPersistence';
-import SaveConfigSettings from "@/components/menus/SaveConfigSettings.vue";
+import SaveStateSettings from "@/components/menus/SaveStateSettings.vue";
+import LoadStateSettings from "@/components/menus/LoadStateSettings.vue";
 
 const settingsDialog = ref(false);
 const saveDialog = ref(false);
+const loadDialog = ref(false);
 const viewerName = import.meta.env.VITE_VIEWER_NAME;
-
-const { saveConfig, loadConfig } = useConfigPersistence();
 </script>
 
 <template>
@@ -22,12 +21,17 @@ const { saveConfig, loadConfig } = useConfigPersistence();
       <v-tooltip activator="parent" location="bottom"> Save State </v-tooltip>
     </v-btn>
     <v-dialog v-model="saveDialog" max-width="400">
-      <SaveConfigSettings @saved="saveDialog = false" />
+      <SaveStateSettings @saved="saveDialog = false" />
     </v-dialog>
-    <v-btn icon @click="loadConfig">
+
+    <v-btn icon @click="loadDialog = true">
       <v-icon>mdi-reload</v-icon>
       <v-tooltip activator="parent" location="bottom"> Load State </v-tooltip>
     </v-btn>
+    <v-dialog v-model="loadDialog" max-width="400">
+      <LoadStateSettings @load="loadDialog = false" />
+    </v-dialog>
+    
 		<v-btn icon @click="settingsDialog = true">
 			<v-icon>mdi-cog</v-icon>
 			<v-tooltip activator="parent" location="bottom"> Settings </v-tooltip>
