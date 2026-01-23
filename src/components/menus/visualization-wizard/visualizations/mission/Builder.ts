@@ -8,47 +8,45 @@ import { AggregateControlstreams, BuildRoleProperty } from '../../shared/helpers
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 
 export function build() {
-    console.log('Building Flight Path Visualization...');
+    console.log('Building Mission Visualization...');
     const vizwizStore = useVizWizStore();
     const visualizationStore = useVisualizationStore();
 
     const datastreams = vizwizStore.datastreams;
     const controlstreams = AggregateControlstreams();
 
-    const flightPathResult = CreateFlightPathViewProps(
+    console.log(datastreams)
+
+    const missionResult = CreateMissionViewProps(
         datastreams[0],
         controlstreams,
         vizwizStore.visualizationCustomizationOptions
     );
 
     const visualizationComponents: VisualizationComponents = {
-        dataSource: flightPathResult.vizDatasources,
+        dataSource: missionResult.vizDatasources,
         dataLayer: null,
-        dataView: null,
-        controlstream: flightPathResult.vizControlstreams[0]
+        dataView: null
     };
 
     const newViz: OSHVisualization = new OSHVisualization(
         `visualization-${randomUUID()}`,
-        vizwizStore.visualizationCustomizationOptions.name,
-        'flightPath',
+        `Mission Planner`,
+        'mission',
         null,
-        flightPathResult.vizDatasources,
-        flightPathResult.vizControlstreams[0]
+        missionResult.vizDatasources,
+        missionResult.vizControlstreams[0]
     );
     newViz.setVisualizationComponents(visualizationComponents);
     visualizationStore.addVisualization(newViz);
-    console.log('Created Flight Path Visualization:', newViz);
+    console.log('Created Mission Visualization:', newViz);
 }
 
-export function CreateFlightPathViewProps(datastream: OSHDatastream, controlstreams: { [key: string]: any }, visOptions: any) {
+export function CreateMissionViewProps(datastream: OSHDatastream, controlstreams: { [key: string]: any }, visOptions: any) {
     const controlstreamStore = useControlStreamStore();
-    console.log('Controlstreams: ', controlstreamStore.controlStreams);
 
     const vizControlstreams: any[] = [];
 
-    // Push new ISweApiDataSourceProperties
-    console.log('Current OSH Datastream: ', datastream);
     const currentDataSource: ISweApiDataSourceProperties = {
         endpointUrl: datastream.datastream.networkProperties.endpointUrl,
         resource: `/datastreams/${datastream.id}/observations`,
@@ -65,18 +63,12 @@ export function CreateFlightPathViewProps(datastream: OSHDatastream, controlstre
         }
     };
 
-    // Iterate through each unique controlstream ID
     for (const [csId, entry] of Object.entries(controlstreams)) {
-        console.log('Processing controlstream ID:', csId, 'with entry:', entry);
-
-        // Get selected properties for each role of the controlstream
         const properties = BuildRoleProperty(entry);
 
-        // Push new ISweApiDataSourceProperties
         const currentOSHControlstream = controlstreamStore.getControlStreamsById([csId])[0];
         const currentControlstream: any = {
             endpointUrl: currentOSHControlstream.controlstream.networkProperties.endpointUrl,
-            // resource: `/datastreams/${csId}/observations`,
             tls: currentOSHControlstream.controlstream.networkProperties.tls,
             protocol: 'ws',
             startTime: 'now',
