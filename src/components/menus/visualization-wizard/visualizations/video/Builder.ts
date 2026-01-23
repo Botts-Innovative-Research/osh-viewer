@@ -66,7 +66,7 @@ export function CreateVideoViewProps(datastreams: { [key: string]: any }, contro
         showStats: true,
     }
 
-    const videoFormat = visOptions?.videoFormat || 'MJPEG'; // default to mjpeg? or maybe h264 idc
+    const videoFormat = visOptions?.videoFormat || 'H264'; // default to mjpeg? or maybe h264 idc
 
 	for (const [dsId, entry] of Object.entries(datastreams)) {
         const properties = BuildRoleProperty(entry);

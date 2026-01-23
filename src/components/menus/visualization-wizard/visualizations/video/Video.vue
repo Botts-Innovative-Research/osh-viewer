@@ -22,19 +22,38 @@ const controlstreamStore = useControlStreamStore();
 const videoView = ref<any>(null);
 const videoLayer = ref<VideoDataLayer | null>(null);
 
-function createVideoView(codec: string) {
+function normalizeCodec(codec: string | null | undefined) {
+  if (!codec) return '';
+  return codec.toString().trim().toLowerCase();
+}
+
+function isH264Codec(codec: string | null | undefined) {
+  const normalized = normalizeCodec(codec);
+  if (!normalized) return false;
+  if (normalized === 'h264') return true;
+  if (normalized.startsWith('avc1')) return true;
+  if (normalized.includes('h.264')) return true;
+  if (normalized.includes('h264')) return true;
+  return false;
+}
+
+function createVideoView(codec: string, viewOptions: any) {
   if (videoView.value) {
     videoView.value.destroy?.();
     videoView.value = null;
   }
 
-  if (codec === 'H264') {
+  const useWebCodecApi = isH264Codec(codec) ? false : (viewOptions?.useWebCodecApi ?? true);
+  const showTime = viewOptions?.showTime ?? true;
+  const showStats = viewOptions?.showStats ?? true;
+
+  if (isH264Codec(codec)) {
     videoView.value = new VideoView({
       container: videoDivId.value,
       css: 'video-h264',
-      showTime: true,
-      showStats: true,
-      useWebCodecApi: true,
+      showTime: showTime,
+      showStats: showStats,
+      useWebCodecApi: useWebCodecApi,
       width: videoWidth.value,
       height: videoHeight.value,
       layers: [],
@@ -44,8 +63,8 @@ function createVideoView(codec: string) {
     videoView.value = new MJPEGView({
       container: videoDivId.value,
       css: 'video-mjpeg',
-      showTime: true,
-      showStats: true,
+      showTime: showTime,
+      showStats: showStats,
       width: videoWidth.value,
       height: videoHeight.value,
       layers: [],
@@ -85,6 +104,13 @@ function initializeVideo() {
   const viz = props.visualization;
   if (!viz || viz.type !== 'video') return;
 
+  const viewOptions = viz.visualizationComponents?.dataView || {};
+  if (viewOptions?.width) {
+    videoWidth.value = viewOptions.width;
+  }
+  if (viewOptions?.height) {
+    videoHeight.value = viewOptions.height;
+  }
 
   const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
       ? viz.visualizationComponents.dataSource
@@ -116,24 +142,44 @@ function initializeVideo() {
       getFrameData = {
         dataSourceIds: [dsInstance.id],
         handler: (rec: any) => {
-          return rec[rawDs.properties.video.outputName][rawDs.properties.video.property] != null
-              ? rec[rawDs.properties.video.outputName][rawDs.properties.video.property]
-              : rec[rawDs.properties.video.property];
+          const output = rec?.[rawDs.properties.video.outputName];
+          const property = rawDs.properties.video.property;
+          const value = output?.[property] ?? rec?.[property] ?? output;
+          if (value?.data instanceof Uint8Array) {
+            return value;
+          }
+          if (value instanceof Uint8Array) {
+            return {
+              compression: rawDs.properties.video.compression,
+              data: value,
+            };
+          }
+          if (value?.buffer instanceof ArrayBuffer && typeof value?.byteLength === 'number') {
+            return {
+              compression: rawDs.properties.video.compression,
+              data: new Uint8Array(value),
+            };
+          }
+          return value ?? null;
         },
       };
 
       getTimestamp = {
         dataSourceIds: [dsInstance.id],
         handler: (rec: any) => {
-          const data = rec[rawDs.properties.video.outputName];
-          let newDate = data.time == undefined ? new Date(data.sampleTime).getTime() : new Date(data.time).getTime()
-
-          return Number.isNaN(rec.timestamp) ? newDate : rec.timestamp
+          const data = rec?.[rawDs.properties.video.outputName];
+          const timeValue = data?.time ?? data?.sampleTime;
+          const parsedTime = timeValue == null ? NaN : new Date(timeValue).getTime();
+          if (!Number.isNaN(parsedTime)) {
+            return parsedTime;
+          }
+          return rec?.timestamp ?? Date.now();
         }
       };
     }
 
-    createVideoView(rawDs.properties.video.compression);
+    const selectedCodec = rawDs.properties.video?.compression ?? viewOptions?.videoType;
+    createVideoView(selectedCodec, viewOptions);
 
     dsInstance.connect();
     dsInstances.push(dsInstance);
