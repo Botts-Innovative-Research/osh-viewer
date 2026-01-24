@@ -43,7 +43,7 @@ function createVideoView(codec: string, viewOptions: any) {
     videoView.value = null;
   }
 
-  const useWebCodecApi = isH264Codec(codec) ? false : (viewOptions?.useWebCodecApi ?? true);
+//  const useWebCodecApi = isH264Codec(codec) ? true : (viewOptions?.useWebCodecApi ?? true);
   const showTime = viewOptions?.showTime ?? true;
   const showStats = viewOptions?.showStats ?? true;
 
@@ -53,7 +53,7 @@ function createVideoView(codec: string, viewOptions: any) {
       css: 'video-h264',
       showTime: showTime,
       showStats: showStats,
-      useWebCodecApi: useWebCodecApi,
+//      useWebCodecApi: useWebCodecApi,
       width: videoWidth.value,
       height: videoHeight.value,
       layers: [],
