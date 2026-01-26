@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { SweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
-import { computed, ref, watch } from 'vue';
+import {computed, onMounted, ref, watch} from 'vue';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useUIStore } from '@/stores/uistore';
 import { sendCommand } from '@/lib/ControlstreamUtils';
 import {showToast} from "@/composables/useToast";
+import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
+import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 
 const flightPathId = ref('flightPath-' + randomUUID());
 
@@ -35,7 +37,16 @@ interface Waypoint {
   alt: number;
 }
 
+interface LLAData {
+  lat: number;
+  lon: number;
+  alt: number;
+}
+
 const missionSource = ref<'waypoints' | 'file'>('waypoints')
+
+const receivedLLA = ref<LLAData>({ lat: 0, lon: 0, alt: 0 });
+
 
 const waypoints = ref<Waypoint[]>([]);
 
@@ -47,6 +58,9 @@ const uiStore = useUIStore();
 const isSelected = ref(false);
 const fileInputRef = ref<any | null>(null);
 const selectedFile = ref<File | null>(null);
+
+const droneDatasource = ref<any>(null);
+
 
 const commandBaseUrl = computed(() => {
   const protocol = props.controlstream.tls ? 'https' : 'http';
@@ -143,12 +157,6 @@ function sendWaypoints() {
   const command = {
     parameters: {
       qGroundControlPlan: JSON.stringify(plan)
-      // numWaypoints: waypoints.value.length,
-      // flightPathArray: waypoints.value.map(wp => ({
-      //   lat: wp.lat,
-      //   lon: wp.lon,
-      //   alt: wp.alt,
-      // })),
     }
   };
 
@@ -302,6 +310,43 @@ function generateQGroundControlPlan() {
   };
 
 }
+
+onMounted(async () => {
+  // Create SweApi instance from props.datasource if provided
+  let dsInstance: any = null;
+
+  dsInstance = new SweApi('mission-datasource', {
+    endpointUrl: props.datasource.endpointUrl,
+    resource: props.datasource.resource,
+    tls: props.datasource.tls,
+    protocol: props.datasource.protocol,
+    startTime: props.datasource.startTime,
+    endTime: props.datasource.endTime,
+    mode: props.datasource.mode,
+    responseFormat: props.datasource.responseFormat,
+    connectorOpts: {
+      username: props.datasource.connectorOpts.username ?? '',
+      password: props.datasource.connectorOpts.password ?? '',
+    }
+  });
+  droneDatasource.value = dsInstance;
+  console.log('[MissionPlanner] Mission Planner datasource created:', droneDatasource.value);
+
+  dsInstance.connect();
+
+  const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
+
+  dataBroadcastChannel.onmessage = (message) => {
+    if (message.data.type === 'data') {
+      const data = message.data.values[0].data;
+      receivedLLA.value = {
+        lat: data.lat,
+        lon: data.lon,
+        alt: data.alt,
+      };
+    }
+  };
+});
 
 </script>
 
@@ -474,6 +519,13 @@ function generateQGroundControlPlan() {
         </v-row>
 
       </v-container>
+
+    <v-col>
+      <h3>Current LLA:</h3>
+      <p>Lat: {{ receivedLLA.lat }}</p>
+      <p>Lon: {{ receivedLLA.lon }}</p>
+      <p>Alt: {{ receivedLLA.alt }}</p>
+    </v-col>
   </v-card>
 </template>
 
