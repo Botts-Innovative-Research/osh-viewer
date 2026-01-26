@@ -207,10 +207,18 @@ function handleFileChange(event: Event) {
 
   selectedFile.value = input.files[0];
   missionSource.value = 'file'
+  input.value = '';
 }
 
 const triggerFileInput = () => {
   fileInputRef.value?.click();
+}
+
+function clearSelectedFile() {
+  selectedFile.value = null;
+  if (fileInputRef.value) {
+    fileInputRef.value.value = '';
+  }
 }
 
 function generateQGroundControlPlan() {
@@ -430,7 +438,7 @@ function generateQGroundControlPlan() {
                 variant="tonal"
                 density="compact"
                 closable
-                @click:close="selectedFile = null"
+                @click:close="clearSelectedFile"
             >
               <template v-slot:prepend>
                 <v-icon>mdi-file-document</v-icon>
