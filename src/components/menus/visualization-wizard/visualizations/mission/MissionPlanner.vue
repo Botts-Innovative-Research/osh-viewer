@@ -339,7 +339,6 @@ onMounted(async () => {
   dataBroadcastChannel.onmessage = (message) => {
     if (message.data.type === 'data') {
       const data = message.data.values[0].data;
-      console.log('[MissionPlanner] Received data:', props);
       receivedLLA.value = {
         lat: data.Location.lat ?? 0,
         lon: data.Location.lon ?? 0,
@@ -525,7 +524,7 @@ onMounted(async () => {
       <h3>Current LLA:</h3>
       <p>Lat: {{ receivedLLA.lat.toFixed(6) }}</p>
       <p>Lon: {{ receivedLLA.lon.toFixed(6) }}</p>
-      <p>Alt: {{ receivedLLA.alt.toFixed(2) }}</p>
+      <p>Alt: {{ receivedLLA.alt.toFixed(2) }} MSL</p>
     </v-col>
   </v-card>
 </template>
