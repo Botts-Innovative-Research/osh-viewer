@@ -137,7 +137,12 @@ const deleteNode = (node: OSHNode) => {
 		<v-divider></v-divider>
 
 		<v-sheet class="pa-4">
-			<v-btn @click="fetchResources">Fetch Resources</v-btn>
+		    <!-- // fetch resources below -->
+			<v-btn
+			    @click="fetchResources"
+			    icon="mdi-refresh"
+			    size="small"
+			></v-btn>
 			<v-btn @click="addAllSamplingFeaturePMs">All PMS</v-btn>
 
 			<!-- Add Node -->
