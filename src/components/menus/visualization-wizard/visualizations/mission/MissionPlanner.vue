@@ -47,6 +47,7 @@ const missionSource = ref<'waypoints' | 'file'>('waypoints')
 
 const receivedLLA = ref<LLAData>({ lat: 0, lon: 0, alt: 0 });
 
+const hasReceivedFirstLLA = ref(false)
 
 const waypoints = ref<Waypoint[]>([]);
 
@@ -229,26 +230,32 @@ function clearSelectedFile() {
   }
 }
 
+let initialDroneLocation = ref<{ lat: number; lon: number; alt: number } | null>(null);
+
 function generateQGroundControlPlan() {
   if (waypoints.value.length === 0) {
     console.warn("[MissionPlanner.vue] No waypoints to generate plan");
     return null;
   }
 
+
   const plannedHomePosition = [
-    waypoints.value[0].lat,
-    waypoints.value[0].lon,
-    waypoints.value[0].alt,
+    initialDroneLocation.value?.lat ?? waypoints.value[0].lat,
+    initialDroneLocation.value?.lon ?? waypoints.value[0].lon,
+    initialDroneLocation.value?.alt ?? waypoints.value[0].alt,
   ]
 
+
   const items = waypoints.value.map((wp, index) => {
-    const isFirstWaypoint = index === 0;
+    // const isFirstWaypoint = index === 0;
+
     return {
       AMSLAltAboveTerrain: null,
       Altitude: 50,
       AltitudeMode: 1,
       autoContinue: true,
-      command: isFirstWaypoint ? 22 : 16, // 22 = takeoff, 16 = waypoint, 21 = landing
+      command: 16, // 22 = takeoff, 16 = waypoint, 21 = landing
+      // command: isFirstWaypoint ? 22 : 16, // 22 = takeoff, 16 = waypoint, 21 = landing
       doJumpId: index + 1,
       frame: 3,
       params: [
@@ -264,6 +271,7 @@ function generateQGroundControlPlan() {
     }
   });
 
+  // return to home item:
   items.push({
     AMSLAltAboveTerrain: null,
     Altitude: 0,
@@ -277,8 +285,8 @@ function generateQGroundControlPlan() {
       0,
       0,
       null,
-      waypoints.value[0].lat,
-      waypoints.value[0].lon,
+      initialDroneLocation.value?.lat ?? waypoints.value[0].lat,
+      initialDroneLocation.value?.lon ?? waypoints.value[0].lon,
       0
     ],
     type: "SimpleItem"
@@ -339,6 +347,14 @@ onMounted(async () => {
   dataBroadcastChannel.onmessage = (message) => {
     if (message.data.type === 'data') {
       const data = message.data.values[0].data;
+      if (!hasReceivedFirstLLA.value) {
+        initialDroneLocation.value = {
+          lat: data.Location.lat,
+          lon: data.Location.lon,
+          alt: data.Location.alt
+        };
+        hasReceivedFirstLLA.value = true;
+      }
       receivedLLA.value = {
         lat: data.Location.lat ?? 0,
         lon: data.Location.lon ?? 0,
@@ -521,10 +537,18 @@ onMounted(async () => {
       </v-container>
 
     <v-col>
-      <h3>Current LLA:</h3>
-      <p>Lat: {{ receivedLLA.lat.toFixed(6) }}</p>
-      <p>Lon: {{ receivedLLA.lon.toFixed(6) }}</p>
-      <p>Alt: {{ receivedLLA.alt.toFixed(2) }} MSL</p>
+      <h3>Current LLA</h3>
+      <v-row dense>
+        <v-col cols="4">
+          <p>Lat: {{ receivedLLA.lat.toFixed(6) }}</p>
+        </v-col>
+        <v-col cols="4">
+          <p>Lon: {{ receivedLLA.lon.toFixed(6) }}</p>
+        </v-col>
+        <v-col cols="4">
+          <p>Alt: {{ receivedLLA.alt.toFixed(2) }} MSL</p>
+        </v-col>
+      </v-row>
     </v-col>
   </v-card>
 </template>
