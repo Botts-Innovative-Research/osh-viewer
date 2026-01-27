@@ -131,11 +131,6 @@ const deleteNode = (node: OSHNode) => {
 </script>
 <template>
 	<v-card id="node-sidebar">
-		<v-card-title class="title ma-2">
-			<span class="title">Nodes</span>
-		</v-card-title>
-		<v-divider></v-divider>
-
 		<v-sheet class="pa-4">
 			<v-btn @click="fetchResources">Fetch Resources</v-btn>
 			<v-btn @click="addAllSamplingFeaturePMs">All PMS</v-btn>
@@ -145,6 +140,8 @@ const deleteNode = (node: OSHNode) => {
 				Add Node
 			</v-btn>
 
+			<v-divider class="my-4"></v-divider>
+			
 			<!-- Tree view of nodes/systems/datastreams -->
 			<v-treeview :items="treeItems" item-value="id" item-children="children" density="compact" fluid
 				items-registration="props" open-all>
