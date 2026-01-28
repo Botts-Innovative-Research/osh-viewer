@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import VideoFormatControl from '../../viz-components/customizations/VideoFormatControl.vue';
 
 </script>
 
 <template>
-  <VideoFormatControl />
+  <p>There are no customizations available.</p>
 </template>
