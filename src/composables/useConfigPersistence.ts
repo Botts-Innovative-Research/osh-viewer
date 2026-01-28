@@ -249,7 +249,7 @@ export function useConfigPersistence() {
                 if (data.items && data.items.length > 0) {
                     const latestObs = data.items[0].result;
                     let cfgJson = JSON.parse(latestObs.fileData);
-                    console.log("Cfg json", cfgJson)
+
                     let loadedNodes = cfgJson.nodes || [];
                     let loadedVisualizations = cfgJson.visualizations || [];
 
@@ -257,7 +257,8 @@ export function useConfigPersistence() {
                     let nodesAdded = 0;
 
                     for (const serializedNode of loadedNodes) {
-                        if (!nodeStore.checkIfNodeExists(serializedNode.name)) {
+                        if (!nodeStore.checkIfNodeExists(serializedNode.name) &&
+                            !nodeStore.checkIfNodeEndpointExists(serializedNode.host, serializedNode.port)) {
                             const newNode = new OSHNode(
                                 serializedNode.name,
                                 serializedNode.host,

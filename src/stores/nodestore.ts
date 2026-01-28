@@ -51,6 +51,10 @@ export const useNodeStore = defineStore('nodes',
 		return nodes.value.some((node) => node.name === name);
 	};
 
+    const checkIfNodeEndpointExists = (host: string, port: string | number) : boolean => {
+        return nodes.value.some((node) => node.host === host && node.port == port);
+    };
+
 	const rehydrateNodes = async (oshConnect: OSHConnect): Promise<void> => {
 		if (serializedNodes.value.length === 0 || nodes.value.length > 0) return;
 
@@ -88,6 +92,7 @@ export const useNodeStore = defineStore('nodes',
         removeNode,
         getNodeByName,
         checkIfNodeExists,
+        checkIfNodeEndpointExists,
         rehydrateNodes,
         updateDefaultNode,
         getNodeById
