@@ -246,17 +246,37 @@ function generateQGroundControlPlan() {
   ]
 
 
-  const items = waypoints.value.map((wp, index) => {
-    // const isFirstWaypoint = index === 0;
+  // send takeoff
+  const takeoffLocation = initialDroneLocation.value ?? waypoints.value[0];
 
-    return {
+  const items: any[] = [{
+    AMSLAltAboveTerrain: null,
+    Altitude: 50,
+    AltitudeMode: 1,
+    autoContinue: true,
+    command: 22, // 22 = takeoff
+    doJumpId: 1,
+    frame: 3,
+    params: [
+      0,
+      0,
+      0,
+      null,
+      takeoffLocation.lat,
+      takeoffLocation.lon,
+      takeoffLocation.alt,
+    ],
+    type: "SimpleItem"
+  }];
+
+  waypoints.value.forEach((wp, index) => {
+    items.push({
       AMSLAltAboveTerrain: null,
       Altitude: 50,
       AltitudeMode: 1,
       autoContinue: true,
-      command: 16, // 22 = takeoff, 16 = waypoint, 21 = landing
-      // command: isFirstWaypoint ? 22 : 16, // 22 = takeoff, 16 = waypoint, 21 = landing
-      doJumpId: index + 1,
+      command: 16, // 16 = waypoint
+      doJumpId: index + 2,
       frame: 3,
       params: [
         0,
@@ -265,13 +285,12 @@ function generateQGroundControlPlan() {
         null,
         wp.lat,
         wp.lon,
-        wp.alt
+        wp.alt,
       ],
       type: "SimpleItem"
-    }
+    });
   });
 
-  // return to home item:
   items.push({
     AMSLAltAboveTerrain: null,
     Altitude: 0,
