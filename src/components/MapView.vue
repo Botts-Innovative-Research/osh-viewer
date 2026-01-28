@@ -56,7 +56,6 @@ onMounted(() => {
     // GEOPTZ - Add listener for point clicks
     leafletMapView.map.on('click', (event: any) => {
       console.log('[MapView] Point clicked:', event);
-
       const geoPtzIcon = L.icon({
         iconUrl: '/icons/map/map-marker.svg',
         iconSize: [32,32],
@@ -77,10 +76,8 @@ onMounted(() => {
         if (geoPtzTargetPM.value) {
           leafletMapView.map.removeLayer(geoPtzTargetPM.value);
         }
-
         geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon }).addTo(leafletMapView.map)
 
-        // L.marker([lat, lon]).addTo(leafletMapView.map)
         const command = {
           parameters: {
             lat: lat,

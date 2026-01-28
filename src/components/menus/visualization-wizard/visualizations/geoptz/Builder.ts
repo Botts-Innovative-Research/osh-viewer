@@ -15,8 +15,6 @@ export function build() {
 	const datastreams = vizwizStore.datastreams;
 	const controlstreams = AggregateControlstreams();
 
-	console.log(datastreams)
-
 	const geoPtzResult = CreateGeoPtzViewProps(
 		datastreams[0],
 		controlstreams,
@@ -26,7 +24,8 @@ export function build() {
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: geoPtzResult.vizDatasources,
 		dataLayer: null,
-		dataView: null
+		dataView: null,
+		controlstream: geoPtzResult.vizControlstreams[0]
 	};
 
 	const newViz: OSHVisualization = new OSHVisualization(
@@ -44,12 +43,10 @@ export function build() {
 
 export function CreateGeoPtzViewProps(datastream: OSHDatastream, controlstreams: { [key: string]: any }, visOptions: any) {
 	const controlstreamStore = useControlStreamStore();
-	console.log('Controlstreams: ', controlstreamStore.controlStreams);
-	
+
 	const vizControlstreams: any[] = [];
 
 	// Push new ISweApiDataSourceProperties
-	console.log('Current OSH Datastream: ', datastream);
 	const currentDataSource: ISweApiDataSourceProperties = {
 		endpointUrl: datastream.datastream.networkProperties.endpointUrl,
 		resource: `/datastreams/${datastream.id}/observations`,

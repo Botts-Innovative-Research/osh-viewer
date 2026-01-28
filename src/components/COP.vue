@@ -13,6 +13,7 @@ const storePaneSize = ({ panes }) => {
 	localStorage.paneSize2 = panes[1].size
 }
 
+
 const tab = ref('one')
 
 /*const connect = new OSHConnect()
@@ -35,6 +36,7 @@ const getDataStreams = () => {
 	console.log('Node:', node)
 	node.getAllDataStreams()
 }*/
+
 </script>
 
 <template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
-import { ref, computed, reactive, watch, ReactiveEffect, onMounted } from 'vue';
+import { computed, reactive, watch, onMounted } from 'vue';
 import DataSourcePicker from '../../viz-components/DataSourcePicker.vue';
 
 
@@ -15,7 +15,7 @@ const checkedRoles = reactive({
   }),
 })
 
-// Initialize dsConfig with x and y selected by default when mounted
+// Initialize dsConfig with stream selected by default when mounted
 onMounted(() => {
   console.log("Mounted Text Config")
   if (!vizwizStore.dsConfig.stream) {

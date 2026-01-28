@@ -64,9 +64,7 @@ const csAuth = computed(() => {
 
 onMounted(async () => {
 	// Create SweApi instance from props.datasource if provided
-	let dsInstance: any = null;
-
-	dsInstance = new SweApi('geoPtz-datasource', {
+	let dsInstance: any = new SweApi('geoPtz-datasource', {
 		endpointUrl: props.datasource.endpointUrl,
 		resource: props.datasource.resource,
 		tls: props.datasource.tls,

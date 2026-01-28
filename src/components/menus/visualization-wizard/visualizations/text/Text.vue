@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { ISweApiDataSourceProperties, VisualizationComponents } from "@/lib/VisualizationHelpers";
-import { computed, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
@@ -53,27 +52,13 @@ onMounted(async () => {
 
   const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
 
-  console.log('TEST', props.datasource)
-  // dataBroadcastChannel.onmessage = (message) => {
-  //   if (message.data.type === 'data') {
-  //     const data = message.data.values[0].data;
-  //     receivedData.value = computed(() => {
-  //       for (const [key, value] of Object.entries(props.datasource.properties.stream.property)) {
-  //         console.log('KEY', key);
-  //         return data[value as string];
-  //       }
-  //     })
-  //   }
-  // };
   dataBroadcastChannel.onmessage = (message) => {
     if (message.data.type !== 'data') return
 
     const data = message.data.values[0].data
     const selectedProps: Record<string, string> = props.datasource.properties.stream.property
 
-
     const result: Record<string, any> = {}
-
     for (const prop of Object.values(selectedProps)) {
       if (prop && prop in data) {
         result[prop] = data[prop]

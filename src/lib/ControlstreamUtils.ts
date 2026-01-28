@@ -3,6 +3,7 @@ import ControlFilter from 'osh-js/source/core/sweapi/control/ControlFilter';
 import Control from 'osh-js/source/core/sweapi/control/Control';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { showToast } from '@/composables/useToast';
+import {useToast} from "vue-toastification";
 
 type CommandType = {
 	type: string;
@@ -40,6 +41,7 @@ export function sendCommand(commandBaseUrl: string, controlStreamId: string, com
 		})
 		.then((data) => {
 			console.log('Command successful: ', data);
+            showToast(`Command successful: ${data}`, 'SUCCESS');
 		})
 		.catch((error) => {
 			console.error('Error sending command: ', error);
@@ -55,9 +57,9 @@ export function sendCommand(commandBaseUrl: string, controlStreamId: string, com
  * @returns
  */
 export async function fetchControlStreamSchema(controlstream: any, networkProperties: any) {
-	const props = {
+    const props = {
 		id: controlstream.id,
-		'system@id': controlstream.parentId,
+		'system@id': controlstream.parentId == null ? controlstream['system@id'] : controlstream.parentId,
 		name: controlstream.name,
 		type: controlstream.type,
 	};

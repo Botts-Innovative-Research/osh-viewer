@@ -65,4 +65,4 @@ export const useControlStreamStore = defineStore('controlstreams', () => {
 		getCSSchemaById,
 		getCSTypeById,
 	};
-});
+}, { persist: { pick: ['controlStreams', 'schemas'] } });

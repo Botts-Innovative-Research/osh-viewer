@@ -5,6 +5,7 @@ import { useDataStreamStore } from '@/stores/datastreamstore';
 import { computed, watch } from 'vue';
 import {OSHControlStream, OSHDatastream} from '@/lib/OSHConnectDataStructs';
 import {useControlStreamStore} from "@/stores/controlstreamstore";
+import { CONFIG_UID } from '@/composables/useConfigPersistence';
 
 // Stores
 const vizwizStore = useVizWizStore();
@@ -27,7 +28,7 @@ const selectedControlstreams = computed({
 });
 
 // List of available systems
-const listSystems = useSystemStore().systems;
+const listSystems = useSystemStore().getFilteredSystems();
 // Filter list of datastreams to include ONLY those from selected systems
 const listDatastreams = computed(() => {
 	if (!selectedSystems.value.length) return [];
