@@ -7,7 +7,7 @@ import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { showToast } from '@/composables/useToast';
 import { OSHNode, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 
-const CONFIG_UID = 'urn:osh:client:config';
+export const CONFIG_UID = 'urn:osh:client:config';
 const CONFIG_DS_NAME = 'Client Config';
 
 export function useConfigPersistence() {

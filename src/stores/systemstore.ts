@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { OSHSystem } from '@/lib/OSHConnectDataStructs';
+import { CONFIG_UID } from '@/composables/useConfigPersistence';
 
 export const useSystemStore = defineStore('systems', () => {
 	const systems = ref<OSHSystem[]>([]);
@@ -31,6 +32,11 @@ export const useSystemStore = defineStore('systems', () => {
 		return systems.value.find((system) => system.id === id);
 	};
 
+	// Fetch all systems EXCEPT the config system
+	const getFilteredSystems = () => {
+		return systems.value.filter(system => system.system.properties.properties.uid !== CONFIG_UID);
+	}
+
 	return {
 		systems,
 		addSystem,
@@ -38,5 +44,6 @@ export const useSystemStore = defineStore('systems', () => {
 		getSystemByName,
 		checkIfSystemExists,
 		getSystemById,
+		getFilteredSystems
 	};
 }, { persist: { pick: ['systems'] } });

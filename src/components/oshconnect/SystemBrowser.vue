@@ -28,7 +28,7 @@ const treeItems = computed(() => {
 			title: node.name,
 			type: 'node',
 			raw: node,
-			children: node.systems.map((system: OSHSystem) => {
+			children: node.getFilteredSystems().map((system: OSHSystem) => {
 				return {
 					id: system.id,
 					title: system.name,

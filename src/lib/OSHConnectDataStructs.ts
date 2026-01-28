@@ -10,6 +10,7 @@ import { useSystemStore } from '@/stores/systemstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { VisualizationComponents } from '@/lib/VisualizationHelpers';
+import { CONFIG_UID } from '@/composables/useConfigPersistence';
 
 let sharedStores: any = null;
 
@@ -174,6 +175,9 @@ export class OSHNode {
 		return `${this.host}:${this.port}/${this.apiRoot}`;
 	}
 
+	getFilteredSystems(): OSHSystem[] {
+		return this.systems.filter(system => system.system.properties.properties.uid !== CONFIG_UID);
+	}
 }
 
 export class OSHSystem {
