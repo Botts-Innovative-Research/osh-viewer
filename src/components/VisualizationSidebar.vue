@@ -19,7 +19,7 @@ const visualizationWizardOpen = uiStore.visualizationWizardOpen;
 
 <template>
 	<v-card id="viz-sidebar">
-		<v-card-title class="viz-title ma-2">
+		<v-card-title class="viz-title ma-1">
       <span class="viz-title mr-4">Visualizations</span>
       <v-tooltip text="Add Visualization" location="bottom">
         <template v-slot:activator="{ props }">
