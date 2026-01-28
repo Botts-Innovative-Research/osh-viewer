@@ -38,7 +38,7 @@ const visualizationWizardOpen = uiStore.visualizationWizardOpen;
 		<v-sheet class="visualization-list overflow-y-auto">
 			<div v-for="viz in visualizations" :key="viz.id" class="visualization-item">
 				<VisualizationWrapper :viz="viz">
-					<template #overlay>
+					<template v-if = overlay>
 						<v-btn
 							aria-label="Remove"
 							class="ma-2"
