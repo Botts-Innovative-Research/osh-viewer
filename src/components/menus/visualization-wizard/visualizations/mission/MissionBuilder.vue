@@ -116,19 +116,19 @@ function addWaypoint() {
     alt: altInput.value,
   };
   waypoints.value.push(newWaypoint);
-  console.log('[MissionPlanner.vue] Added waypoint:', newWaypoint);
+  console.log('[MissionBuilder.vue] Added waypoint:', newWaypoint);
 }
 
 function removeWaypoint(id: string) {
   waypoints.value = waypoints.value.filter(wp => wp.id !== id);
-  console.log('[MissionPlanner.vue] Removed waypoint:', id);
+  console.log('[MissionBuilder.vue] Removed waypoint:', id);
 }
 
 function clearWaypoints() {
   waypoints.value = [];
   uiStore.clearFlightPathWaypoints();
   uiStore.triggerClearFlightPathMarkers();
-  console.log('[MissionPlanner.vue] Cleared all waypoints');
+  console.log('[MissionBuilder.vue] Cleared all waypoints');
 }
 
 watch(waypoints, (newWaypoints) => {
@@ -151,7 +151,7 @@ function sendWaypoints() {
   const plan = generateQGroundControlPlan();
 
   if (!plan) {
-    showToast("Cannot send empty flight plan", 'ERROR');
+    showToast("Cannot send empty mission", 'ERROR');
   }
 
 
@@ -161,7 +161,7 @@ function sendWaypoints() {
     }
   };
 
-  console.log('[MissionPlanner.vue] Sending MissionPlanner command:', command);
+  console.log('[MissionBuilder.vue] Sending MissionBuilder command:', command);
   sendCommand(
       commandBaseUrl.value,
       props.controlstream.id,
@@ -173,7 +173,7 @@ function sendWaypoints() {
 
 function sendFileUpload() {
   if (!selectedFile.value) {
-    console.warn('[MissionPlanner.vue] No file selected')
+    console.warn('[MissionBuilder.vue] No file selected')
     return;
   }
 
@@ -188,7 +188,7 @@ function sendFileUpload() {
       }
     }
 
-    console.log('[MissionPlanner.vue] Sending mission file command:', command);
+    console.log('[MissionBuilder.vue] Sending mission file command:', command);
     sendCommand(
         commandBaseUrl.value,
         props.controlstream.id,
@@ -197,7 +197,7 @@ function sendFileUpload() {
     );
   }
   reader.onerror = (e) => {
-    console.error('[MissionPlanner.vue] File reader error:', e);
+    console.error('[MissionBuilder.vue] File reader error:', e);
   }
 
   reader.readAsText(selectedFile.value);
@@ -234,7 +234,7 @@ let initialDroneLocation = ref<{ lat: number; lon: number; alt: number } | null>
 
 function generateQGroundControlPlan() {
   if (waypoints.value.length === 0) {
-    console.warn("[MissionPlanner.vue] No waypoints to generate plan");
+    console.warn("[MissionBuilder.vue] No waypoints to generate plan");
     return null;
   }
 
@@ -357,7 +357,7 @@ onMounted(async () => {
     }
   });
   droneDatasource.value = dsInstance;
-  console.log('[MissionPlanner] Mission Planner datasource created:', droneDatasource.value);
+  console.log('[MissionBuilder] Mission datasource created:', droneDatasource.value);
 
   dsInstance.connect();
 

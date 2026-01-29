@@ -4,7 +4,7 @@ import Chart from './menus/visualization-wizard/visualizations/chart/Chart.vue';
 import Video from './menus/visualization-wizard/visualizations/video/Video.vue';
 import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
 import Text from './menus/visualization-wizard/visualizations/text/Text.vue';
-import MissionPlanner from '@/components/menus/visualization-wizard/visualizations/mission/MissionPlanner.vue';
+import MissionBuilder from '@/components/menus/visualization-wizard/visualizations/mission/MissionBuilder.vue';
 
 const { viz, customClass = '' } = defineProps<{
   viz: OSHVisualization,
@@ -36,12 +36,12 @@ const { viz, customClass = '' } = defineProps<{
 			:datasource="viz.visualizationComponents.dataSource[0]"
 			v-if="viz.type === 'text'"
 		></Text>
-    <MissionPlanner
+    <MissionBuilder
         :visualization="viz"
         :datasource="Array.isArray(viz.visualizationComponents.dataSource) ? viz.visualizationComponents.dataSource[0] : viz.visualizationComponents.dataSource"
         :controlstream="Array.isArray(viz.controlstream) ? viz.controlstream[0] : viz.controlstream"
         v-if="viz.type === 'mission'"
-    ></MissionPlanner>
+    ></MissionBuilder>
 		<slot name="after" />
 		<slot name="overlay" />
 	</div>

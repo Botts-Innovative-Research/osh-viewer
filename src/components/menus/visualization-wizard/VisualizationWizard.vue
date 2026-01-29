@@ -45,7 +45,7 @@ const visualizationTypes: VisualizationType[] = [
   { label: 'Text', value: 'text', icon: 'mdi-format-text' },
   { label: 'GeoPTZ', value: 'geoPtz', icon: 'mdi-map' },
 	{ label: 'Line of Bearing', value: 'lob', icon: 'mdi-ray-start' },
-	{ label: 'Mission Planner', value: 'mission', icon: 'mdi-quadcopter' },
+	{ label: 'Mission Builder', value: 'mission', icon: 'mdi-airplane-plus' },
 ]
 
 const vizComponents: any = {
