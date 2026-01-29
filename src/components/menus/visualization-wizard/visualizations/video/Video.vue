@@ -15,9 +15,6 @@ const props = defineProps<{
 }>();
 
 const videoDivId = ref('video-' + randomUUID());
-const videoCanvas = ref<HTMLCanvasElement | null>(null);
-const videoHeight = ref(360);
-const videoWidth = ref(480);
 
 const controlstreamStore = useControlStreamStore();
 const videoView = ref<any>(null);
@@ -36,8 +33,6 @@ function createVideoView(codec: string) {
       showTime: true,
       showStats: true,
       useWebCodecApi: true,
-      width: videoWidth.value,
-      height: videoHeight.value,
       layers: [],
     });
     console.log("[VideoView] H264 View created:", videoView.value);
@@ -47,8 +42,6 @@ function createVideoView(codec: string) {
       css: 'video-mjpeg',
       showTime: true,
       showStats: true,
-      width: videoWidth.value,
-      height: videoHeight.value,
       layers: [],
     });
     console.log("[VideoView] MJPEG View created:", videoView.value);
@@ -182,8 +175,7 @@ onMounted(async() => {
 <template>
   <v-card
       :id="videoDivId"
-      class="video-container pa-4"
-      :style="{ width: videoWidth + 'px', height: videoHeight + 'px' }"
+      class="video-mjpeg video-h264"
   >
     <v-card-title class="text-h5 text-center">
       {{ props.visualization.name || 'Video' }}
@@ -197,14 +189,15 @@ onMounted(async() => {
   />
 </template>
 
-<style scoped>
-.video-h264, .video-mjpeg {
+<style>
+.video-h264 canvas {
   width: 100%;
+  height: auto;
 }
 
-.video-container {
-  width: 480px;
-  height: 360px;
+.video-mjpeg {
+  width: 100%;
+  height: auto;
 }
 
 .ptz-controls {
