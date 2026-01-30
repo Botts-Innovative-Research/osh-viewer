@@ -152,7 +152,6 @@ function onSend() {
 
 <template>
 	<v-card :id="geoPtzId" class="pa-4">
-		<v-card-title>{{ visualization.name }}</v-card-title>
 		<v-container>
 			<v-row align="center">
 				<v-col align="center">

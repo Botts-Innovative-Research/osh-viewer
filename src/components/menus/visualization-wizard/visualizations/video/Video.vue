@@ -177,9 +177,6 @@ onMounted(async() => {
       :id="videoDivId"
       class="video-mjpeg video-h264"
   >
-    <v-card-title class="text-h5 text-center">
-      {{ props.visualization.name || 'Video' }}
-    </v-card-title>
   </v-card>
   <PTZControl
       v-if="ptzControl.hasControl"
