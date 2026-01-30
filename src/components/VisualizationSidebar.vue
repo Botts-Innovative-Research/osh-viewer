@@ -37,8 +37,8 @@ const visualizationWizardOpen = uiStore.visualizationWizardOpen;
 
 		<v-sheet class="visualization-list overflow-y-auto">
 			<div v-for="viz in visualizations" :key="viz.id" class="visualization-item">
-				<VisualizationWrapper :viz="viz">
-					<template #overlay>
+				<template v-if = overlay>
+				    <VisualizationWrapper :viz="viz">
 						<v-btn
 							aria-label="Remove"
 							class="ma-2"
@@ -47,8 +47,8 @@ const visualizationWizardOpen = uiStore.visualizationWizardOpen;
 							@click="visualizationStore.removeVisualization(viz)"
 							style="position: absolute; top: 8px; right: 8px; z-index: 10"
 						></v-btn>
-					</template>
-				</VisualizationWrapper>
+				    </VisualizationWrapper>
+				</template>
 			</div>
 		</v-sheet>
 	</v-card>
