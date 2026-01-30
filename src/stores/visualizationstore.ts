@@ -13,6 +13,15 @@ export interface SerializeVisualization {
     controlstreamIds: string[],
     visualizationComponents: any
 }
+
+export const PANEL_VISUALIZATIONS = [
+    'chart',
+    'video',
+    'text',
+    'geoPtz',
+    'flightPath'
+]
+
 export const useVisualizationStore = defineStore('visualizations',
     () => {
 	const visualizations: Ref<OSHVisualization[]> = ref([]);

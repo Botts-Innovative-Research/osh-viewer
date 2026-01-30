@@ -1,66 +1,52 @@
 <script setup lang="ts">
 // @ts-ignore
 import { useUIStore } from '@/stores/uistore.ts';
-import { useVisualizationStore } from '@/stores/visualizationstore';
+import { PANEL_VISUALIZATIONS, useVisualizationStore } from '@/stores/visualizationstore';
 import { storeToRefs } from 'pinia';
 import VisualizationWrapper from './VisualizationWrapper.vue';
+import { computed } from 'vue';
 
 // Each visualization can be represented by an object with a unique id
 // const visualizations = ref<VisualizationMetadata[]>([])
 const visualizationStore = useVisualizationStore();
 const { visualizations } = storeToRefs(visualizationStore);
 
+const panelVisualizations = computed(() => visualizations.value.filter(viz =>
+	PANEL_VISUALIZATIONS.includes(viz.type)
+));
+
+
 </script>
 
 <template>
 	<v-card id="viz-sidebar">
 		<v-card-title class="viz-title ma-1">
-      <span class="viz-title mr-4">Visualizations</span>
-      <v-tooltip text="Add Visualization" location="bottom">
-        <template v-slot:activator="{ props }">
-          <v-btn
-              v-bind="props"
-              icon="mdi-plus"
-              aria-label="Add Visualization"
-              @click="useUIStore().openVizWiz()"
-              size="small"
-          ></v-btn>
-        </template>
-      </v-tooltip>
-    </v-card-title>
+			<span class="viz-title mr-4">Visualizations</span>
+			<v-tooltip text="Add Visualization" location="bottom">
+				<template v-slot:activator="{ props }">
+					<v-btn v-bind="props" icon="mdi-plus" aria-label="Add Visualization" @click="useUIStore().openVizWiz()"
+						size="small"></v-btn>
+				</template>
+			</v-tooltip>
+		</v-card-title>
 		<v-divider></v-divider>
 
 		<v-sheet class="visualization-list overflow-y-auto">
-			<v-expansion-panels
-				:model-value="visualizations.map(v => v.id)"
-				multiple
-				variant="accordion"
-			>
-				<v-expansion-panel
-					v-for="viz in visualizations"
-					:key="viz.id"
-					class="visualization-item"
-					:value="viz.id"
-					static
-				>
+			<v-expansion-panels :model-value="panelVisualizations.map(v => v.id)" multiple variant="accordion">
+				<v-expansion-panel v-for="viz in panelVisualizations" :key="viz.id" class="visualization-item" :value="viz.id"
+					static>
 					<template #title>
 						<div class="panel-header">
 							<span>{{ viz.name }}</span>
-							<v-btn
-								aria-label="Remove"
-								class="ml-2 mr-2"
-								icon="mdi-close"
-								size="x-small"
-								variant="plain"
-								@click.stop="visualizationStore.removeVisualization(viz)"
-							></v-btn>
-							
+							<v-btn aria-label="Remove" class="ml-2 mr-2" icon="mdi-close" size="x-small" variant="plain"
+								@click.stop="visualizationStore.removeVisualization(viz)"></v-btn>
+
 						</div>
 					</template>
 					<v-expansion-panel-text>
 						<VisualizationWrapper :viz="viz">
 							<template #overlay>
-								
+
 							</template>
 						</VisualizationWrapper>
 					</v-expansion-panel-text>
