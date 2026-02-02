@@ -104,7 +104,7 @@ const buttonConfig = [
 	{ dir: 'up', angle: 270, rot: 0, scale: 1 },
 	// { dir: 'up-right', angle: 315, rot: 45, scale: 1 },
 ] as const;
-const containerSize = 200;
+const containerSize = 195;
 const radius = 75;
 const center = containerSize / 2;
 
@@ -182,7 +182,45 @@ watch(controlStreamType, (newVal) => {
 </script>
 
 <template>
-	<div class="wrapper">
+	<v-sheet v-if="hasRelative">
+		<v-container class="controlPadContainer">
+			<!-- ROW 1 -->
+			<v-row no-gutters>
+				<v-col cols="4">
+				</v-col>
+				<v-col cols="4" :style="{ display: 'flex', justifyContent: 'center', alignItems: 'start' }">
+					<v-btn icon="mdi-arrow-up-bold-circle" @click="handleMove('up')" variant="plain" density="compact" size="x-large"></v-btn>
+				</v-col>
+				<v-col cols="4">
+				</v-col>
+			</v-row>
+			<!-- ROW 2 -->
+			<v-row no-gutters>
+				<v-col cols="4" :style="{ display: 'flex', justifyContent: 'start', alignItems: 'center' }">
+					<v-btn icon="mdi-arrow-left-bold-circle" @click="handleMove('left')" variant="plain" density="compact" size="x-large"></v-btn>
+				</v-col>
+				<v-col cols="4" :style="{ display: 'flex', justifyContent: 'center', alignItems: 'center' }">
+					<v-btn icon="mdi-home-circle" @click="handleMove('home')" variant="plain" density="compact" size="x-large"></v-btn>
+				</v-col>
+				<v-col cols="4" :style="{ display: 'flex', justifyContent: 'end', alignItems: 'center' }">
+					<v-btn icon="mdi-arrow-right-bold-circle" @click="handleMove('right')" variant="plain" density="compact" size="x-large"></v-btn>
+				</v-col>
+			</v-row>
+			<!-- ROW 3 -->
+			<v-row no-gutters>
+				<v-col cols="4" :style="{ display: 'flex', justifyContent: 'end', alignItems: 'start' }">
+					<v-btn icon="mdi-minus-circle" @click="handleMove('zoomOut')" variant="plain" density="compact" size="x-large" :style="{scale: 0.75}"></v-btn>
+				</v-col>
+				<v-col cols="4" :style="{ display: 'flex', justifyContent: 'center', alignItems: 'end' }">
+					<v-btn icon="mdi-arrow-down-bold-circle" @click="handleMove('down')" variant="plain" density="compact" size="x-large"></v-btn>
+				</v-col>
+				<v-col cols="4" :style="{ display: 'flex', justifyContent: 'start', alignItems: 'start' }">
+					<v-btn icon="mdi-plus-circle" @click="handleMove('zoomIn')" variant="plain" density="compact" size="x-large" :style="{scale: 0.75}"></v-btn>
+				</v-col>
+			</v-row>
+		</v-container>
+	</v-sheet>
+	<!-- <div class="wrapper">
 		<div class="controlPadWrapper" v-if="hasRelative">
 			<div class="controlPadContainer">
 				<button
@@ -197,10 +235,10 @@ watch(controlStreamType, (newVal) => {
 						zIndex: 1000,
 					}"
 				>
-					<img class="icon" :src="`/ptzIcons/${dir}.png`" :alt="`${dir}`" />
+					<img class="icon" :src="`/ptzIcons/${dir}.svg`" :alt="`${dir}`" />
 				</button>
 				<button class="homeButton" @click="handleMove('home')">
-					<img class="homeIcon" src="/ptzIcons/home.png" alt="home" />
+					<img class="homeIcon" src="/ptzIcons/home.svg" alt="home" />
 				</button>
 			</div>
 			<v-text-field
@@ -262,7 +300,7 @@ watch(controlStreamType, (newVal) => {
 				<v-btn color="primary" @click="onSend">Send</v-btn>
 			</div>
 		</div>
-	</div>
+	</div> -->
 </template>
 
 <style scoped>
@@ -273,23 +311,14 @@ watch(controlStreamType, (newVal) => {
 }
 
 .controlPadWrapper {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
 }
 
 .controlPadContainer {
-	position: relative;
-	width: 200px;
-	height: 200px;
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	aspect-ratio: 1;
 	border-radius: 50%;
-	background: none;
-	background-repeat: no-repeat;
-	background-size: cover;
-	box-shadow:
-		inset 2px 2px 6px rgba(255, 255, 255, 0.6),
-		inset -2px -2px 6px rgba(0, 0, 0, 0.2),
-		0 0 8px rgba(0, 0, 0, 0.15);
 	border: 1px solid #888;
 }
 
@@ -315,11 +344,6 @@ watch(controlStreamType, (newVal) => {
 	background-repeat: no-repeat;
 	background-size: cover;
 	border-radius: 50%;
-	box-shadow:
-		inset 2px 2px 6px rgba(255, 255, 255, 0.6),
-		inset -2px -2px 6px rgba(0, 0, 0, 0.2),
-		0 0 8px rgba(0, 0, 0, 0.15);
-	border: 1px solid #ccc;
 	padding: 8px;
 	cursor: pointer;
 }
