@@ -132,7 +132,17 @@ const deleteNode = (node: OSHNode) => {
 <template>
 	<v-card id="node-sidebar">
 		<v-sheet class="pa-4">
-			<v-btn @click="fetchResources">Fetch Resources</v-btn>
+		<v-tooltip text="Fetch Resources" location="bottom">
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    aria-label="Fetch Resources"
+                    @click="fetchResources"
+                    icon="mdi-refresh"
+                    size="small"
+                ></v-btn>
+                </template>
+              </v-tooltip>
 			<v-btn @click="addAllSamplingFeaturePMs">All PMS</v-btn>
 
 			<!-- Add Node -->
