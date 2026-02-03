@@ -13,9 +13,17 @@ import {randomUUID} from 'osh-js/source/core/utils/Utils.js';
 import {sendCommand} from '@/lib/ControlstreamUtils';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import {RoleDatastream} from '@/types/types';
+import * as Cesium from "cesium";
+
+// First token isn't working for some reason?
+//Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3ZWYzYjhiMy0wMzcwLTQxMTktOGY1OS0wYzM1NzNlOTI3NDMiLCJpZCI6Mzk4MzMsImlhdCI6MTc0ODIwNDA4OX0.HBox4N50pESMU1yJs33-0cNd22sTvIv0KetnMAJMdXU'
+
+// THIS token is working, taken from showcase examples :P
+Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0NTkzNS02NzI0LTQwNDktODk4Zi0zZDJjOWI2NTdmYTMiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI1ODJ9.IbAajOLYnsoyKy1BOd7fY1p6GH-wwNVMdMduA2IzGjA';
+
 
 const visualizationStore = useVisualizationStore();
-const mapLayerType = ref('leaflet');
+const mapLayerType = ref('cesium');
 const mapView = ref<any>(null);
 const currentVisualizations = ref<OSHVisualization[]>([]);
 const pmLayers: PointMarkerLayer = ref([]);
@@ -41,7 +49,6 @@ const lobVisualizations = computed(() => {
 // Fetch UI store for GeoPTZ tool
 const uiStore = useUIStore();
 
-// Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3ZWYzYjhiMy0wMzcwLTQxMTktOGY1OS0wYzM1NzNlOTI3NDMiLCJpZCI6Mzk4MzMsImlhdCI6MTc0ODIwNDA4OX0.HBox4N50pESMU1yJs33-0cNd22sTvIv0KetnMAJMdXU'
 
 onMounted(() => {
   if (mapLayerType.value === 'leaflet') {
@@ -104,46 +111,51 @@ onMounted(() => {
       }
     });
   } else {
-    /*const customViewer = new Cesium.Viewer('cesiumContainer', {
-      terrain: Cesium.Terrain.fromWorldTerrain(),
-      baseLayer: Cesium.ImageryLayer.fromProviderAsync(
-        Cesium.IonImageryProvider.fromAssetId(3), {}
-      ),
-      timeline: false,
-      homeButton: false,
-      navigationInstructionsInitiallyVisible: false,
-      navigationHelpButton: true,
-      geocoder: true,
-      animation: false,
-      fullscreenButton: false,
-      baseLayerPicker: true
-    })*/
-
-    Ion.defaultAccessToken =
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzZDlhZDVkOC0yMWZmLTQyMzYtYTU5Zi0yNTQ3MjAxYzFiM2YiLCJpZCI6Mzk4MzMsImlhdCI6MTc1MTk1MTk0OH0.0eS77LohXhxKTRDy9yhLo-wmYGTn9mz31-f4xer7eT0';
-
-    const cesiumView = new CesiumView({
+    const cesiumMapView = new CesiumView({
       container: 'cesiumContainer',
-      // viewer: customViewer,
+      autoZoomOnFirstMarker: true,
+      layers: [],
     });
-    mapView.value = cesiumView;
 
-    /*mapView.value.addMarker({
-      location: {
-        x: 0,
-        y: 0,
-        z: 0
-      },
-      label: 'TEST',
-      labelOffset: [0, 0],
-      icon: '/icons/map/map-marker.svg',
-      iconSize: [32, 32],
-      iconAnchor: [16, 32],
-      id: 'test-marker',
-      markerId: 'test-marker' + '-feature' + randomUUID()
-    })*/
+    mapView.value = cesiumMapView;
 
-    // addCesiumMarker()
+    // const customViewer = new CesiumView.Viewer('cesiumContainer', {
+    //   terrain: CesiumView.Terrain.fromWorldTerrain(),
+    //   baseLayer: CesiumView.ImageryLayer.fromProviderAsync(
+    //     CesiumView.IonImageryProvider.fromAssetId(3), {}
+    //   ),
+    //   timeline: false,
+    //   homeButton: false,
+    //   navigationInstructionsInitiallyVisible: false,
+    //   navigationHelpButton: true,
+    //   geocoder: true,
+    //   animation: false,
+    //   fullscreenButton: false,
+    //   baseLayerPicker: true
+    // })
+
+    // const cesiumView = new CesiumView({
+    //   container: 'cesiumContainer',
+    //   viewer: customViewer,
+    // });
+    // mapView.value = cesiumView;
+
+    // mapView.value.addMarker({
+    //   location: {
+    //     x: 0,
+    //     y: 0,
+    //     z: 0
+    //   },
+    //   label: 'TEST',
+    //   labelOffset: [0, 0],
+    //   icon: '/icons/map/map-marker.svg',
+    //   iconSize: [32, 32],
+    //   iconAnchor: [16, 32],
+    //   id: 'test-marker',
+    //   markerId: 'test-marker' + '-feature' + randomUUID()
+    // })
+
+    //addCesiumMarker()
   }
 });
 
