@@ -9,6 +9,7 @@ import { sendCommand } from '@/lib/ControlstreamUtils';
 import {showToast} from "@/composables/useToast";
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
+import MissionCommandPad from './MissionCommandPad.vue';
 
 const flightPathId = ref('flightPath-' + randomUUID());
 
@@ -201,10 +202,6 @@ function sendFileUpload() {
   }
 
   reader.readAsText(selectedFile.value);
-}
-
-function cancelMission() {
-  // will add support later
 }
 
 function handleFileChange(event: Event) {
@@ -529,7 +526,7 @@ onMounted(async () => {
         </v-row>
 
         <v-row dense class="mt-2">
-         <v-col cols="12" sm="6">
+         <v-col cols="12">
            <v-btn
                color="primary"
                block
@@ -540,19 +537,9 @@ onMounted(async () => {
              Send Mission
            </v-btn>
          </v-col>
-          <v-col cols="12" sm="6">
-            <v-btn
-                color="error"
-                block
-                @click="cancelMission"
-                prepend-icon="mdi-stop-circle"
-                variant="outlined"
-            >
-              Cancel Mission
-            </v-btn>
-          </v-col>
         </v-row>
 
+        <MissionCommandPad :controlstream="controlstream" class="mt-3" />
       </v-container>
 
     <v-col>
@@ -565,7 +552,7 @@ onMounted(async () => {
           <p>Lon: {{ receivedLLA.lon.toFixed(6) }}</p>
         </v-col>
         <v-col cols="4">
-          <p>Alt: {{ receivedLLA.alt.toFixed(2) }} MSL</p>
+          <p>Alt: {{ receivedLLA.alt.toFixed(2) }} Relative(to home)</p>
         </v-col>
       </v-row>
     </v-col>

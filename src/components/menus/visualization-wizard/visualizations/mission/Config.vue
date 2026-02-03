@@ -8,46 +8,83 @@ const vizwizStore = useVizWizStore()
 
 // Checked status for each role
 const checkedRoles = reactive({
-  path: computed({
-    get: () => vizwizStore.csConfig.path?.selected ?? true,
-    set: (val: boolean) => vizwizStore.updateCsConfig("path", { selected: val })
+  plan: computed({
+    get: () => vizwizStore.csConfig.plan?.selected ?? true,
+    set: (val: boolean) => vizwizStore.updateCsConfig("plan", { selected: val })
   }),
-  cancel: computed({
-    get: () => vizwizStore.csConfig.cancel?.selected ?? true,
-    set: (val: boolean) => vizwizStore.updateCsConfig("cancel", { selected: val })
+  land: computed({
+    get: () => vizwizStore.csConfig.land?.selected ?? true,
+    set: (val: boolean) => vizwizStore.updateCsConfig("land", { selected: val })
+  }),
+  pause: computed({
+    get: () => vizwizStore.csConfig.pause?.selected ?? true,
+    set: (val: boolean) => vizwizStore.updateCsConfig("pause", { selected: val })
+  }),
+  rtl: computed({
+    get: () => vizwizStore.csConfig.rtl?.selected ?? true,
+    set: (val: boolean) => vizwizStore.updateCsConfig("rtl", { selected: val })
   }),
 })
 
 // Initialize csConfig with selected by default when mounted
 onMounted(() => {
-  if (!vizwizStore.csConfig.path) {
-    vizwizStore.updateCsConfig("path", { selected: true })
+  if (!vizwizStore.csConfig.plan) {
+    vizwizStore.updateCsConfig("plan", { selected: true })
   }
-  if (!vizwizStore.csConfig.cancel) {
-    vizwizStore.updateCsConfig("cancel", { selected: true })
+
+  if (!vizwizStore.csConfig.land) {
+    vizwizStore.updateCsConfig("land", { selected: true })
+  }
+
+  if (!vizwizStore.csConfig.pause) {
+    vizwizStore.updateCsConfig("pause", { selected: true })
+  }
+
+  if (!vizwizStore.csConfig.rtl) {
+    vizwizStore.updateCsConfig("rtl", { selected: true })
   }
 })
 
-// If dsConfig is reset, ensure  is selected by default
+// If csConfig is reset, ensure  is selected by default
 watch(() => vizwizStore.csConfig, (newVal) => {
-  if (!newVal.path) {
-    vizwizStore.updateCsConfig("path", { selected: true })
+  if (!newVal.plan) {
+    vizwizStore.updateCsConfig("plan", { selected: true })
   }
-  if (!newVal.cancel) {
-    vizwizStore.updateCsConfig("cancel", { selected: true })
+
+  if (!newVal.pause) {
+    vizwizStore.updateCsConfig("pause", { selected: true })
   }
+
+  if (!newVal.rtl) {
+    vizwizStore.updateCsConfig("rtl", { selected: true })
+  }
+
+  if (!newVal.land) {
+    vizwizStore.updateCsConfig("land", { selected: true })
+  }
+
 }, { deep: true })
 
 </script>
 <template>
   <v-container>
-    <v-checkbox label="Mission Control" v-model="checkedRoles.path" disabled></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.path" role="path" />
+    <v-checkbox label="Mission Control Plan" v-model="checkedRoles.plan" disabled></v-checkbox>
+    <ControlStreamPicker v-if="checkedRoles.plan" role="plan" />
   </v-container>
 
   <v-container>
-    <v-checkbox label="Cancel Mission Control" v-model="checkedRoles.cancel" disabled></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.cancel" role="cancel" />
+    <v-checkbox label="Pause Mission" v-model="checkedRoles.pause" disabled></v-checkbox>
+    <ControlStreamPicker v-if="checkedRoles.pause" role="pause" />
+  </v-container>
+
+  <v-container>
+    <v-checkbox label="Return to Launch" v-model="checkedRoles.rtl" disabled></v-checkbox>
+    <ControlStreamPicker v-if="checkedRoles.rtl" role="rtl" />
+  </v-container>
+
+  <v-container>
+    <v-checkbox label="Land Mission" v-model="checkedRoles.land" disabled></v-checkbox>
+    <ControlStreamPicker v-if="checkedRoles.land" role="land" />
   </v-container>
 </template>
 
