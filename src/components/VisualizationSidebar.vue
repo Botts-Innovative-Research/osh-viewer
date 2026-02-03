@@ -1,55 +1,57 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 // @ts-ignore
 import { useUIStore } from '@/stores/uistore.ts';
-import { useVisualizationStore } from '@/stores/visualizationstore';
+import { PANEL_VISUALIZATIONS, useVisualizationStore } from '@/stores/visualizationstore';
 import { storeToRefs } from 'pinia';
 import VisualizationWrapper from './VisualizationWrapper.vue';
+import { computed } from 'vue';
 
 // Each visualization can be represented by an object with a unique id
 // const visualizations = ref<VisualizationMetadata[]>([])
 const visualizationStore = useVisualizationStore();
 const { visualizations } = storeToRefs(visualizationStore);
-const dataSource = ref<any>(null);
-const dsProps = ref<any[]>([]);
-const wizardDialog = ref(false);
-const uiStore = storeToRefs(useUIStore());
-const visualizationWizardOpen = uiStore.visualizationWizardOpen;
+
+const panelVisualizations = computed(() => visualizations.value.filter(viz =>
+	PANEL_VISUALIZATIONS.includes(viz.type)
+));
+
+
 </script>
 
 <template>
 	<v-card id="viz-sidebar">
 		<v-card-title class="viz-title ma-1">
-      <span class="viz-title mr-4">Visualizations</span>
-      <v-tooltip text="Add Visualization" location="bottom">
-        <template v-slot:activator="{ props }">
-          <v-btn
-              v-bind="props"
-              icon="mdi-plus"
-              aria-label="Add Visualization"
-              @click="useUIStore().openVizWiz()"
-              size="small"
-          ></v-btn>
-        </template>
-      </v-tooltip>
-    </v-card-title>
+			<span class="viz-title mr-4">Visualizations</span>
+			<v-tooltip text="Add Visualization" location="bottom">
+				<template v-slot:activator="{ props }">
+					<v-btn v-bind="props" icon="mdi-plus" aria-label="Add Visualization" @click="useUIStore().openVizWiz()"
+						size="small"></v-btn>
+				</template>
+			</v-tooltip>
+		</v-card-title>
 		<v-divider></v-divider>
 
 		<v-sheet class="visualization-list overflow-y-auto">
-			<div v-for="viz in visualizations" :key="viz.id" class="visualization-item">
-				<template v-if = overlay>
-				    <VisualizationWrapper :viz="viz">
-						<v-btn
-							aria-label="Remove"
-							class="ma-2"
-							icon="mdi-close"
-							size="x-small"
-							@click="visualizationStore.removeVisualization(viz)"
-							style="position: absolute; top: 8px; right: 8px; z-index: 10"
-						></v-btn>
-				    </VisualizationWrapper>
-				</template>
-			</div>
+			<v-expansion-panels :model-value="panelVisualizations.map(v => v.id)" multiple variant="accordion">
+				<v-expansion-panel v-for="viz in panelVisualizations" :key="viz.id" class="visualization-item" :value="viz.id"
+					static>
+					<template #title>
+						<div class="panel-header">
+							<span>{{ viz.name }}</span>
+							<v-btn aria-label="Remove" class="ml-2 mr-2" icon="mdi-close" size="x-small" variant="plain"
+								@click.stop="visualizationStore.removeVisualization(viz)"></v-btn>
+
+						</div>
+					</template>
+					<v-expansion-panel-text>
+						<VisualizationWrapper :viz="viz">
+							<template #overlay>
+
+							</template>
+						</VisualizationWrapper>
+					</v-expansion-panel-text>
+				</v-expansion-panel>
+			</v-expansion-panels>
 		</v-sheet>
 	</v-card>
 </template>
@@ -73,5 +75,12 @@ const visualizationWizardOpen = uiStore.visualizationWizardOpen;
 	gap: 10px;
 	overflow-y: scroll;
 	max-height: 90vh;
+}
+
+.panel-header {
+	display: flex;
+	width: 100%;
+	align-items: center;
+	justify-content: space-between;
 }
 </style>

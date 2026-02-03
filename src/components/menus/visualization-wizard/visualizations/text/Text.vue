@@ -74,7 +74,6 @@ onMounted(async () => {
 
 <template>
   <v-card :id="textboxId" class="pa-4">
-    <v-card-title>{{ visualization.name }}</v-card-title>
     <v-container>
       <h3>Received data:</h3>
       <ul>
