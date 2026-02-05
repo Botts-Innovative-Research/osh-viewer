@@ -11,10 +11,22 @@ import { computed } from 'vue';
 const visualizationStore = useVisualizationStore();
 const { visualizations } = storeToRefs(visualizationStore);
 
+// Separate visualizations into panel and map types
 const panelVisualizations = computed(() => visualizations.value.filter(viz =>
 	PANEL_VISUALIZATIONS.includes(viz.type)
 ));
+const mapVisualizations = computed(() => visualizations.value.filter(viz =>
+	!PANEL_VISUALIZATIONS.includes(viz.type)
+));
 
+const toggleSelectedMapItem = (item: any) => {
+	const uiStore = useUIStore();
+	if (uiStore.selectedMapItem && uiStore.selectedMapItem.id === item.id) {
+		uiStore.setSelectedMapItem(null);
+	} else {
+		uiStore.setSelectedMapItem(item);
+	}
+};
 
 </script>
 
@@ -33,6 +45,23 @@ const panelVisualizations = computed(() => visualizations.value.filter(viz =>
 
 		<v-sheet class="visualization-list overflow-y-auto">
 			<v-expansion-panels :model-value="panelVisualizations.map(v => v.id)" multiple variant="accordion" eager>
+
+				<!-- MAP VISUALIZATIONS -->
+				<v-expansion-panel
+					static
+					:disabled="mapVisualizations.length == 0"
+				>
+					<v-expansion-panel-title>Map Visualizations</v-expansion-panel-title>
+					<v-expansion-panel-text>
+						<v-list activatable density="compact" select-strategy="leaf">
+							<v-list-item v-for="viz in mapVisualizations" :key="viz.id" @click="toggleSelectedMapItem(viz)">
+								{{ viz.name }}
+							</v-list-item>
+						</v-list>
+					</v-expansion-panel-text>
+				</v-expansion-panel>
+
+				<!-- PANEL VISUALIZATIONS -->
 				<v-expansion-panel v-for="viz in panelVisualizations" :key="viz.id" class="visualization-item" :value="viz.id"
 					static>
 					<template #title>
@@ -51,6 +80,7 @@ const panelVisualizations = computed(() => visualizations.value.filter(viz =>
 						</VisualizationWrapper>
 					</v-expansion-panel-text>
 				</v-expansion-panel>
+
 			</v-expansion-panels>
 		</v-sheet>
 	</v-card>

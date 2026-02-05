@@ -54,7 +54,7 @@ onMounted(() => {
     mapView.value = leafletMapView;
 
     // GEOPTZ - Add listener for point clicks
-    leafletMapView.map.on('click', (event: any) => {
+    mapView.value.map.on('click', (event: any) => {
       console.log('[MapView] Point clicked:', event);
       const geoPtzIcon = L.icon({
         iconUrl: '/icons/map/map-marker.svg',
@@ -74,9 +74,9 @@ onMounted(() => {
         const auth = selectedGeoPTZ.auth
 
         if (geoPtzTargetPM.value) {
-          leafletMapView.map.removeLayer(geoPtzTargetPM.value);
+          mapView.value.map.removeLayer(geoPtzTargetPM.value);
         }
-        geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon }).addTo(leafletMapView.map)
+        geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon }).addTo(mapView.value.map)
 
         const command = {
           parameters: {
@@ -98,7 +98,7 @@ onMounted(() => {
         const lon = event.latlng.lng;
         const alt = 100.0;
 
-        flightPathTargetPM.value.push(L.marker([lat, lon], { icon: geoPtzIcon }).addTo(leafletMapView.map));
+        flightPathTargetPM.value.push(L.marker([lat, lon], { icon: geoPtzIcon }).addTo(mapView.value.map));
 
         uiStore.setCurrentLLA(lat, lon, alt);
       }
@@ -147,6 +147,33 @@ onMounted(() => {
   }
 });
 
+// Watch for selected map item changes to fly to location
+watch(() => uiStore.selectedMapItem,
+    (newVal) => {
+
+      if (!newVal) return; // Only fly when a map item is selected
+      const map = mapView.value.map;
+
+      // Find marker from pmLayers
+      const marker = pmLayers.value.find((pmLayer: any) => {
+        // Match by visualization ID
+        return pmLayer.properties.id === newVal.id;
+      });
+
+      console.log('Found marker for selected map item:', marker.getCurrentProps().location);
+
+      // Fly to lat/lon
+      if (marker) {
+        const location = marker.getCurrentProps().location;
+        map.flyTo([
+          location.y,
+          location.x,
+        ]);
+      }
+      
+    }
+);
+
 watch(() => uiStore.selectedGeoPTZ,
     (newVal) => {
       const map = mapView.value.map;
@@ -169,7 +196,6 @@ watch(() => uiStore.selectedFlightPath,
       container.style.cursor = newVal ? 'crosshair' : ''
     }
 );
-
 watch(() => uiStore.clearFlightPathMarkersSignal, (newVal) => {
       if (newVal && mapView.value?.map) {
         for (const marker of flightPathTargetPM.value) {
@@ -338,6 +364,7 @@ watch(mapVisualizations, (updated) => {
       const pmLayer = new PointMarkerLayer({
         ...layerOpts,
         name: viz.name,
+        id: viz.id,
         dataSourceIds: dsInstances.map(ds => ds.id),
         ...(getLocation ? {getLocation} : {}),
         ...(getOrientation ? {getOrientation} : {}),
@@ -482,6 +509,7 @@ watch(lobVisualizations, (updated) => {
         }
 
         const lobLayer = new LoBLayer(lobLayerOpts)
+        pmLayers.value.push(lobLayer)
         mapView.value.addLayer(lobLayer);
         console.log('[MapView] Created LoBLayer:', lobLayer)
       }

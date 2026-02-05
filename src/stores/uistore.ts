@@ -23,6 +23,9 @@ export const useUIStore = defineStore('ui', () => {
 
 	const selectedProperty = ref<SchemaFieldProperty | null>(null);
 
+	// Currently selected map item from list of map visualizations
+	const selectedMapItem = ref<any | null>(null);
+
 	// Currently selected GeoPTZ instance (null or controlstream data)
 	const selectedGeoPTZ = ref<{
 		controlStreamId: string;
@@ -82,6 +85,11 @@ export const useUIStore = defineStore('ui', () => {
 	}
 	function openNodeConfigForm() {
 		nodeConfigFormOpen.value = true;
+	}
+	
+	// Handle selection of map item
+	function setSelectedMapItem(item: any | null) {
+		selectedMapItem.value = item;
 	}
 
 	// Handle selection of GeoPTZ instance
@@ -168,6 +176,8 @@ export const useUIStore = defineStore('ui', () => {
 		setFlightPathWaypoints,
         clearFlightPathMarkersSignal,
         triggerClearFlightPathMarkers,
-        resetClearFlightPathMarkersSignal
+        resetClearFlightPathMarkersSignal,
+				selectedMapItem,
+				setSelectedMapItem,
 	};
 });
