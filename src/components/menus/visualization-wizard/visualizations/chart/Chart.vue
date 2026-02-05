@@ -106,16 +106,6 @@ watch(visualizationUpdateTrigger, (id) => {
   }
 })
 
-// onBeforeUnmount(() => {
-//   for (const ds of dsInstances) {
-//     console.log('[Chart.vue] Disconnecting datasource:', ds);
-//     ds.disconnect();
-//   }
-//   // if (chartView.value) {
-//   //   chartView.value.destroy?.();
-//   //   chartView.value = null;
-//   // }
-// });
 useVisualizationCleanup(ref(dsInstances));
 </script>
 

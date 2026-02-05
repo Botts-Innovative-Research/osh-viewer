@@ -9,6 +9,7 @@ import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useUIStore } from '@/stores/uistore';
 import { sendCommand } from '@/lib/ControlstreamUtils';
+import { useVisualizationCleanup } from '../../shared/helpers';
 
 // Generate a random ID when the component is created
 const geoPtzId = ref('geoPtz-' + randomUUID());
@@ -148,6 +149,8 @@ function onSend() {
 	console.log('[GeoPtzView] Sending GeoPTZ command:', command);
 	sendCommand(commandBaseUrl.value, props.controlstream.id, command, `${csAuth.value.username}:${csAuth.value.password}`);
 }
+
+useVisualizationCleanup(ref(geoPtzDatasource));
 </script>
 
 <template>

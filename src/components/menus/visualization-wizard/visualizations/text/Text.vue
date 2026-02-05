@@ -4,6 +4,7 @@ import { onMounted, ref } from 'vue';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
+import { useVisualizationCleanup } from '../../shared/helpers';
 
 
 // Generate a random ID when the component is created
@@ -70,6 +71,7 @@ onMounted(async () => {
 
 });
 
+useVisualizationCleanup(ref(textboxDatasource));
 </script>
 
 <template>

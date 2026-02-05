@@ -96,6 +96,11 @@ export function BuildRoleProperty(entry: any[]) {
   )
 }
 
+/**
+ * Disconnects SweApi datasources on component unmount
+ * 
+ * @param dsInstances 
+ */
 export function useVisualizationCleanup(dsInstances: Ref<any[]>) {
   onBeforeUnmount(() => {
     const raw = dsInstances.value;
