@@ -97,6 +97,7 @@ export function CreateLobViewProps(datastreams: { [key: string]: any }, visOptio
 		opacity: visOptions.opacity,
 		distanceKm: visOptions.distanceKm,
 		icon: visOptions.icon,
+		iconName: visOptions.iconName,
 		iconSize: [32, 32],
 		labelOffset: [-16, -32],
 		label: `${randomUUID()} - PM Orientation Layer`,

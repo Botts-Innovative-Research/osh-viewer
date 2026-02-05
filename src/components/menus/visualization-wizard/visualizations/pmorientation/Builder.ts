@@ -89,6 +89,7 @@ export function CreateMapViewProps(datastreams: { [key: string]: any }, visOptio
             label: `${currentOSHDatastream[0].datastream.properties.name}`,
             // label: `${randomUUID()} - PM Orientation Layer`,
             icon: visOptions.icon,
+            iconName: visOptions.iconName,
             iconSize: [32, 32],
             labelOffset: [-16, -32],
         };

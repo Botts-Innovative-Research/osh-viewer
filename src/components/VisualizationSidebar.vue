@@ -55,7 +55,14 @@ const toggleSelectedMapItem = (item: any) => {
 					<v-expansion-panel-text>
 						<v-list activatable density="compact" select-strategy="leaf">
 							<v-list-item v-for="viz in mapVisualizations" :key="viz.id" @click="toggleSelectedMapItem(viz)">
-								{{ viz.name }}
+								<template #prepend>
+									<v-icon :icon="`mdi-${viz.visualizationComponents.dataLayer.iconName}`" size="16"></v-icon>
+								</template>
+								<template #title>{{ viz.name }}</template>
+								<template #append>
+									<v-btn aria-label="Remove" class="close-btn" icon="mdi-window-close" size="x-small" variant="plain"
+										@click.stop="visualizationStore.removeVisualization(viz)"></v-btn>
+								</template>
 							</v-list-item>
 						</v-list>
 					</v-expansion-panel-text>
@@ -67,7 +74,7 @@ const toggleSelectedMapItem = (item: any) => {
 					<template #title>
 						<div class="panel-header">
 							<span>{{ viz.name }}</span>
-							<v-btn aria-label="Remove" class="ml-2 mr-2" icon="mdi-close" size="x-small" variant="plain"
+							<v-btn aria-label="Remove" class="ml-2 mr-2 close-btn" icon="mdi-close" size="x-small" variant="plain"
 								@click.stop="visualizationStore.removeVisualization(viz)"></v-btn>
 
 						</div>
@@ -112,5 +119,18 @@ const toggleSelectedMapItem = (item: any) => {
 	width: 100%;
 	align-items: center;
 	justify-content: space-between;
+}
+
+/* Color styling for delete button */
+.close-btn {
+	transition: color 0.2s ease-in-out;
+}
+
+.close-btn:hover {
+	color: red;
+}
+
+.close-btn:active {
+	color: red;
 }
 </style>
