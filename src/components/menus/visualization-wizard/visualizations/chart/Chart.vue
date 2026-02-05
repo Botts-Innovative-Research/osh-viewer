@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import {defineProps, onMounted, ref, toRaw} from 'vue';
+import {defineProps, onBeforeUnmount, onMounted, ref, toRaw, watch} from 'vue';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import ChartJsView from 'osh-js/source/core/ui/view/chart/ChartJsView.js';
 import CurveLayer from 'osh-js/source/core/ui/layer/CurveLayer.js';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { useVisualizationStore } from '@/stores/visualizationstore';
+import { storeToRefs } from 'pinia';
+import { useVisualizationCleanup } from '../../shared/helpers';
 
 
 const props = defineProps<{
@@ -15,9 +18,15 @@ const chartId = ref('chart-' + randomUUID());
 let curveLayer = ref<CurveLayer | null>(null);
 let chartView =  ref<ChartJsView | null>(null);
 
+const visualizationStore = useVisualizationStore();
+const { visualizationUpdateTrigger } = storeToRefs(visualizationStore);
+
 onMounted(async () => {
   initializeChart();
 });
+
+// Array of SweApi instances for datasources
+const dsInstances: SweApi[] = [];
 
 function initializeChart() {
   const viz = props.visualization;
@@ -27,9 +36,6 @@ function initializeChart() {
   const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
       ? viz.visualizationComponents.dataSource
       : [viz.visualizationComponents.dataSource];
-
-  // Array of SweApi instances for datasources
-  const dsInstances: SweApi[] = [];
 
   for (const dsProps of dsArray) {
     let rawDs = toRaw(dsProps);
@@ -89,6 +95,28 @@ function initializeChart() {
   });
   console.log('[Chart.vue] Chart view created:', chartView.value);
 }
+
+watch(visualizationUpdateTrigger, (id) => {
+  if (!id) return;
+  if (id === props.visualization.id) {
+    for (const ds of dsInstances) {
+      console.log(ds)
+      ds.disconnect();
+    }
+  }
+})
+
+// onBeforeUnmount(() => {
+//   for (const ds of dsInstances) {
+//     console.log('[Chart.vue] Disconnecting datasource:', ds);
+//     ds.disconnect();
+//   }
+//   // if (chartView.value) {
+//   //   chartView.value.destroy?.();
+//   //   chartView.value = null;
+//   // }
+// });
+useVisualizationCleanup(ref(dsInstances));
 </script>
 
 <template>

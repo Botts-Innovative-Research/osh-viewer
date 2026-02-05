@@ -1,4 +1,5 @@
 import { useVizWizStore } from "@/stores/vizwizstore"
+import { onBeforeUnmount, Ref } from "vue"
 
 /**
  * Aggregates datastreams from vizwizStore.dsConfig based on selected roles.
@@ -93,4 +94,20 @@ export function BuildRoleProperty(entry: any[]) {
         return [role, { property: roleEntry.property, outputName: roleEntry.outputName }]
     }),
   )
+}
+
+export function useVisualizationCleanup(dsInstances: Ref<any[]>) {
+  onBeforeUnmount(() => {
+    const raw = dsInstances.value;
+
+    const dsList = Array.isArray(raw)
+      ? raw
+      : raw
+        ? [raw]
+        : [];
+    for (const ds of dsList) {
+      console.log('[Visualization Cleanup] Disconnecting datasource:', ds)
+      ds.disconnect()
+    }
+  })
 }
