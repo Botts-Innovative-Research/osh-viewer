@@ -63,8 +63,11 @@ function deleteVisualizations(removedVizIds: string[]) {
     // Collect datasource IDs
     removedDsIds.push(...layer.dataSourceIds);
 
+    console.log(mapView.value)
+
     // Remove layer from the actual map
-    mapView.value.removeLayer(layer);
+    // TODO: Does not remove LoB layers
+    mapView.value.removeAllFromLayer(layer);
 
     // Remove layer from list of map layers
     mapItemLayers.value.delete(vizId);
@@ -316,6 +319,8 @@ onMounted(() => {
         const commandBaseUrl = selectedGeoPTZ.commandBaseUrl;
         const controlStreamId = selectedGeoPTZ.controlStreamId;
         const auth = selectedGeoPTZ.auth
+
+        console.log(geoPtzTargetPM.value)
 
         if (geoPtzTargetPM.value) {
           mapView.value.map.removeLayer(geoPtzTargetPM.value);
