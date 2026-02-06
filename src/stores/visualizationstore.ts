@@ -19,7 +19,13 @@ export const PANEL_VISUALIZATIONS = [
     'video',
     'text',
     'geoPtz',
-    'flightPath'
+    'flightPath',
+]
+
+export const MAP_VISUALIZATIONS = [
+    'pointmarker',  // TODO: Delete this type
+    'pmorientation',
+    'lob',
 ]
 
 export const useVisualizationStore = defineStore('visualizations',
@@ -29,12 +35,17 @@ export const useVisualizationStore = defineStore('visualizations',
 	const currentVisDataStreamOptions: Ref<any> = ref({});
 	const currentVisualizationCustomizationOptions: Ref<any> = ref({});
 
-    const mapVisualizations = computed(() => {
-        console.log(visualizations.value.filter((v: OSHVisualization) => 
-            !PANEL_VISUALIZATIONS.includes(v.type)
-        ))
+    // Filter only PANEL visualizations
+    const panelVisualizations = computed(() => {
         return visualizations.value.filter((v: OSHVisualization) =>
-            !PANEL_VISUALIZATIONS.includes(v.type)
+            PANEL_VISUALIZATIONS.includes(v.type)
+        )
+    })
+
+    // Filter only MAP visualizations
+    const mapVisualizations = computed(() => {
+        return visualizations.value.filter((v: OSHVisualization) =>
+            MAP_VISUALIZATIONS.includes(v.type)
         )
     })
 
@@ -151,6 +162,7 @@ export const useVisualizationStore = defineStore('visualizations',
 	return {
 		visualizations,
         serializedVisualizations,
+        panelVisualizations,
         mapVisualizations,
 		addVisualization,
 		removeVisualization,
