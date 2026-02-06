@@ -33,7 +33,7 @@ export function build() {
 		`${visualizationComponents.dataLayer.label}`,
 		'pmorientation',
 		null,
-		datastreams,
+		visualizationComponents.dataSource,
 		null
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
@@ -73,7 +73,7 @@ export function CreateMapViewProps(datastreams: { [key: string]: any }, visOptio
             endTime: '2125-08-01T00:00:00Z',
             mode: Mode.REAL_TIME,
             responseFormat: 'application/swe+json',
-            id: randomUUID(),
+            id: dsId,
             properties: properties,
             connectorOpts: {
                 username: currentOSHDatastream[0].datastream.networkProperties.connectorOpts.username,

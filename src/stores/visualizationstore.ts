@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, Ref } from 'vue';
+import { computed, ref, Ref } from 'vue';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {useDataStreamStore} from "@/stores/datastreamstore";
 import {useControlStreamStore} from "@/stores/controlstreamstore";
@@ -28,6 +28,15 @@ export const useVisualizationStore = defineStore('visualizations',
 	const serializedVisualizations: Ref<SerializeVisualization[]> = ref([]);
 	const currentVisDataStreamOptions: Ref<any> = ref({});
 	const currentVisualizationCustomizationOptions: Ref<any> = ref({});
+
+    const mapVisualizations = computed(() => {
+        console.log(visualizations.value.filter((v: OSHVisualization) => 
+            !PANEL_VISUALIZATIONS.includes(v.type)
+        ))
+        return visualizations.value.filter((v: OSHVisualization) =>
+            !PANEL_VISUALIZATIONS.includes(v.type)
+        )
+    })
 
 	const addVisualization = (visualization: OSHVisualization): void => {
 		console.log('[VisualizationStore] Adding visualization:', visualization);
@@ -138,9 +147,11 @@ export const useVisualizationStore = defineStore('visualizations',
         }
         console.log('[VizStore] Rehydrated visualizations:', visualizations.value.length);
     }
+
 	return {
 		visualizations,
         serializedVisualizations,
+        mapVisualizations,
 		addVisualization,
 		removeVisualization,
 		getVisualizationById,
@@ -151,6 +162,6 @@ export const useVisualizationStore = defineStore('visualizations',
 		currentVisualizationCustomizationOptions,
 		updateCurrentVisualizationCustomizationOptions,
 		clearCurrentVisualizationCustomizationOptions,
-        rehydrateVisualizations
+        rehydrateVisualizations,
 	};
 }, { persist: { pick: ['serializedVisualizations'] } });

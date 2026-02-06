@@ -97,22 +97,31 @@ export function BuildRoleProperty(entry: any[]) {
 }
 
 /**
- * Disconnects SweApi datasources on component unmount
+ * Disconnects datasources on component UNMOUNT
  * 
  * @param dsInstances 
  */
 export function useVisualizationCleanup(dsInstances: Ref<any[]>) {
   onBeforeUnmount(() => {
-    const raw = dsInstances.value;
-
-    const dsList = Array.isArray(raw)
-      ? raw
-      : raw
-        ? [raw]
-        : [];
-    for (const ds of dsList) {
-      console.log('[Visualization Cleanup] Disconnecting datasource:', ds)
-      ds.disconnect()
-    }
+    useDisconnectDatasources(dsInstances)
   })
+}
+
+/**
+ * Disconnects SweApi datasources
+ * 
+ * @param dsInstances 
+ */
+export function useDisconnectDatasources(dsInstances: Ref<any[]>) {
+  const raw = dsInstances.value;
+
+  const dsList = Array.isArray(raw)
+    ? raw
+    : raw
+      ? [raw]
+      : [];
+  for (const ds of dsList) {
+    console.log('[Disconnect Datasources] Disconnecting datasource:', ds)
+    ds.disconnect()
+  }
 }
