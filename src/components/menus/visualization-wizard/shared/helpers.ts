@@ -1,5 +1,6 @@
 import { useVizWizStore } from "@/stores/vizwizstore"
 import { onBeforeUnmount, Ref } from "vue"
+import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 
 /**
  * Aggregates datastreams from vizwizStore.dsConfig based on selected roles.
@@ -101,7 +102,7 @@ export function BuildRoleProperty(entry: any[]) {
  * 
  * @param dsInstances 
  */
-export function useVisualizationCleanup(dsInstances: Ref<any[]>) {
+export function useVisualizationCleanup(dsInstances: Ref<SweApi[]>) {
   onBeforeUnmount(() => {
     useDisconnectDatasources(dsInstances)
   })
@@ -112,7 +113,7 @@ export function useVisualizationCleanup(dsInstances: Ref<any[]>) {
  * 
  * @param dsInstances 
  */
-export function useDisconnectDatasources(dsInstances: Ref<any[]>) {
+export function useDisconnectDatasources(dsInstances: Ref<SweApi[]>) {
   const raw = dsInstances.value;
 
   const dsList = Array.isArray(raw)

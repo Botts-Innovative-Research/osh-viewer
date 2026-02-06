@@ -13,14 +13,12 @@ import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { sendCommand } from '@/lib/ControlstreamUtils';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import { RoleDatastream } from '@/types/types';
-import { useDisconnectDatasources } from './menus/visualization-wizard/shared/helpers';
-import { storeToRefs } from 'pinia';
 
 const visualizationStore = useVisualizationStore();
 const mapLayerType = ref('leaflet');
 const mapView = ref<any>(null);
 const currentVisualizations = ref<OSHVisualization[]>([]);
-const pmLayers: PointMarkerLayer = ref([]);
+const mapItemLayers: PointMarkerLayer | LoBLayer = ref([]);
 const listDatasourceInstances = ref<SweApi[]>([]);
 
 const geoPtzTargetPM = ref<any>(null);
@@ -33,9 +31,9 @@ const mapVisualizations = computed(() => {
   );
 });
 
-// Fetch only visualizations that appear on map
-//const mapVisualizations = ref(visualizationStore.mapVisualizations)
-
+/**
+ * Delete mapItemLayers and disconnect datasources for removed visualizations
+ */
 watch(
   () => visualizationStore.mapVisualizations.map(v => v.id),
   (newIds, oldIds) => {
@@ -47,14 +45,14 @@ watch(
     const removedDsIds: string[] = []
 
     // Find matching visualization ID (starts with "visualization-") and collect datasource IDs
-    pmLayers.value.map((layer: PointMarkerLayer) => {
+    mapItemLayers.value.map((layer: PointMarkerLayer) => {
       if (removedVizIds?.includes(layer.properties.id)) {
         removedDsIds.push(...layer.dataSourceIds)
       }
     })
 
-    // Remove deleted pmLayers
-    pmLayers.value = pmLayers.value.filter((layer: PointMarkerLayer) =>
+    // Remove deleted mapItemLayers
+    mapItemLayers.value = mapItemLayers.value.filter((layer: PointMarkerLayer) =>
       !removedVizIds?.includes(layer.properties.id)
     )
 
@@ -198,8 +196,8 @@ watch(() => uiStore.selectedMapItem,
     if (!newVal) return; // Only fly when a map item is selected
     const map = mapView.value.map;
 
-    // Find marker from pmLayers
-    const marker = pmLayers.value.find((pmLayer: any) => {
+    // Find marker from mapItemLayers
+    const marker = mapItemLayers.value.find((pmLayer: any) => {
       // Match by visualization ID
       return pmLayer.properties.id === newVal.id;
     });
@@ -218,28 +216,37 @@ watch(() => uiStore.selectedMapItem,
   }
 );
 
-watch(() => uiStore.selectedGeoPTZ,
-  (newVal) => {
-    const map = mapView.value.map;
-    const container = map.getContainer();
 
-    // Clear cursor styles
-    container.style.cursor = '';
+watch(() => [uiStore.selectedGeoPTZ, uiStore.selectedFlightPath], ([geoPtz, flight]) => {
+  const map = mapView.value.map;
+  const container = map.getContainer();
 
-    if (newVal) {
-      // Change cursor to crosshair when a GeoPTZ is selected
-      container.style.cursor = 'crosshair';
-    }
-  }
-);
+  container.style.cursor = geoPtz || flight ? 'crosshair' : '' 
+})
 
-watch(() => uiStore.selectedFlightPath,
-  (newVal) => {
-    const map = mapView.value.map;
-    const container = map.getContainer();
-    container.style.cursor = newVal ? 'crosshair' : ''
-  }
-);
+
+// watch(() => uiStore.selectedGeoPTZ,
+//   (newVal) => {
+//     const map = mapView.value.map;
+//     const container = map.getContainer();
+
+//     // Clear cursor styles
+//     container.style.cursor = '';
+
+//     if (newVal) {
+//       // Change cursor to crosshair when a GeoPTZ is selected
+//       container.style.cursor = 'crosshair';
+//     }
+//   }
+// );
+
+// watch(() => uiStore.selectedFlightPath,
+//   (newVal) => {
+//     const map = mapView.value.map;
+//     const container = map.getContainer();
+//     container.style.cursor = newVal ? 'crosshair' : ''
+//   }
+// );
 watch(() => uiStore.clearFlightPathMarkersSignal, (newVal) => {
   if (newVal && mapView.value?.map) {
     for (const marker of flightPathTargetPM.value) {
@@ -316,7 +323,7 @@ watch(mapVisualizations, (updated) => {
         iconSize: [32, 32],
         labelOffset: [-16, -32],
       });
-      pmLayers.value.push(pmLayer);
+      mapItemLayers.value.push(pmLayer);
       mapView.value.addLayer(pmLayer);
       console.log('[MapView] Creating PointMarkerLayer:', pmLayer);
       dsInstance.connect();
@@ -400,7 +407,7 @@ watch(mapVisualizations, (updated) => {
         ...(getOrientation ? { getOrientation } : {}),
         ...(getMarkerId ? { getMarkerId } : {}),
       })
-      pmLayers.value.push(pmLayer)
+      mapItemLayers.value.push(pmLayer)
       mapView.value.addLayer(pmLayer)
       console.log('[MapView] Creating PointMarkerLayer:', pmLayer)
     }
@@ -540,7 +547,7 @@ watch(lobVisualizations, (updated) => {
     }
 
     const lobLayer = new LoBLayer(lobLayerOpts)
-    pmLayers.value.push(lobLayer)
+    mapItemLayers.value.push(lobLayer)
     mapView.value.addLayer(lobLayer);
     console.log('[MapView] Created LoBLayer:', lobLayer)
   }
@@ -556,12 +563,12 @@ function checkAndRemove(updated: OSHVisualization[]) {
       currentVisualizations.value.splice(idx, 1);
 
       if (viz.type === 'pointmarker') {
-        // Remove corresponding layer from pmLayers and map
-        const pmLayer = pmLayers.value[idx];
+        // Remove corresponding layer from mapItemLayers and map
+        const pmLayer = mapItemLayers.value[idx];
         if (pmLayer && mapView.value) {
           mapView.value.removeLayer?.(pmLayer);
         }
-        pmLayers.value.splice(idx, 1);
+        mapItemLayers.value.splice(idx, 1);
       } else if (viz.type === 'pointmarker-feature') {
         mapView.value.removeLayer?.(viz.id);
       } else if (viz.type === 'lob') {
