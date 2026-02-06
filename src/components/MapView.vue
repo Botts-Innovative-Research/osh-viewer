@@ -13,6 +13,9 @@ import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { sendCommand } from '@/lib/ControlstreamUtils';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import { RoleDatastream } from '@/types/types';
+import { createDatasource } from './menus/visualization-wizard/shared/helpers';
+
+// Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3ZWYzYjhiMy0wMzcwLTQxMTktOGY1OS0wYzM1NzNlOTI3NDMiLCJpZCI6Mzk4MzMsImlhdCI6MTc0ODIwNDA4OX0.HBox4N50pESMU1yJs33-0cNd22sTvIv0KetnMAJMdXU'
 
 const visualizationStore = useVisualizationStore();
 const mapLayerType = ref('leaflet');
@@ -21,18 +24,179 @@ const currentVisualizations = ref<OSHVisualization[]>([]);
 const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer>>(new Map())
 const listDatasourceInstances = ref<SweApi[]>([]);
 
+const uiStore = useUIStore();
 const geoPtzTargetPM = ref<any>(null);
 const flightPathTargetPM = ref<any[]>([]);
 const flightPathPolyline = ref<any>(null);
 
+// TODO: Delete deprecated mapVisualizations
 const mapVisualizations = computed(() => {
   return visualizationStore.visualizations.filter(
       (viz) => viz.type === 'pointmarker' || viz.type === 'pmorientation'
   );
 });
+// TODO: Delete deprecated lobVisualizations
+const lobVisualizations = computed(() => {
+  return visualizationStore.getVisualizationsByType('lob');
+});
+
+// TODO: Update feature visualization code
+const featureVisualizations = computed(() => {
+  return visualizationStore.getVisualizationsByType('pointmarker-feature');
+});
+watch(featureVisualizations, (updated) => {
+  // Remove feature visualizations that are no longer present
+  const removed = currentVisualizations.value.filter(val => !updated.includes(val))
+  for (const viz of removed) {
+    const idx = currentVisualizations.value.indexOf(viz)
+    if (idx !== -1) {
+      currentVisualizations.value.splice(idx, 1)
+      // Optionally remove marker from mapView if needed
+    }
+  }
+
+  // Add new feature visualizations
+  const newFiltered = updated.filter((val) => !currentVisualizations.value.includes(val));
+
+  if (mapLayerType.value === 'cesium') {
+    for (const viz of newFiltered) {
+      addCesiumMarker(viz);
+    }
+  } else {
+    for (const viz of newFiltered) {
+      currentVisualizations.value.push(viz);
+      mapView.value.addMarker({
+        location: {
+          x: viz.geometry.coordinates[0],
+          y: viz.geometry.coordinates[1],
+          z: viz.geometry.coordinates[2] || 0,
+        },
+        label: viz.name,
+        labelOffset: [0, 0],
+        icon: '/icons/map/map-marker.svg',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        id: viz.id,
+        markerId: viz.id + '-feature' + randomUUID(),
+      });
+    }
+  }
+},
+  { deep: true }
+);
 
 /**
- * Delete mapItemLayers and disconnect datasources for removed visualizations
+ * Determine mapLayerType
+ * Handle click listener - GeoPTZ, FlightPath
+ */
+onMounted(() => {
+  if (mapLayerType.value === 'leaflet') {
+    const leafletMapView = new LeafletView({
+      container: 'cesiumContainer',
+      layers: [],
+      autoZoomOnFirstMarker: true,
+    });
+
+    mapView.value = leafletMapView;
+
+    // Add listener for point clicks
+    mapView.value.map.on('click', (event: any) => {
+      console.log('[MapView] Point clicked:', event);
+      const geoPtzIcon = L.icon({
+        iconUrl: '/icons/map/map-marker.svg',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+      })
+
+      // GEO PTZ
+      const selectedGeoPTZ = uiStore.selectedGeoPTZ;
+      if (selectedGeoPTZ) {
+        var lat = event.latlng.lat;
+        var lon = event.latlng.lng;
+
+        // Send GeoPTZ command to selected GeoPTZ visualization
+        const commandBaseUrl = selectedGeoPTZ.commandBaseUrl;
+        const controlStreamId = selectedGeoPTZ.controlStreamId;
+        const auth = selectedGeoPTZ.auth
+
+        console.log(geoPtzTargetPM.value)
+
+        if (geoPtzTargetPM.value) {
+          mapView.value.map.removeLayer(geoPtzTargetPM.value);
+        }
+        geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon }).addTo(mapView.value.map)
+
+        const command = {
+          parameters: {
+            lat: lat,
+            lon: lon,
+            alt: 120.0,
+          },
+        };
+
+        sendCommand(commandBaseUrl, controlStreamId, command, auth);
+
+        uiStore.setCurrentLLA(lat, lon, 120.0);
+      }
+
+      // FLIGHT PATH
+      const selectedFlightPath = uiStore.selectedFlightPath;
+      if (selectedFlightPath) {
+        const lat = event.latlng.lat;
+        const lon = event.latlng.lng;
+        const alt = 100.0;
+
+        flightPathTargetPM.value.push(L.marker([lat, lon], { icon: geoPtzIcon }).addTo(mapView.value.map));
+
+        uiStore.setCurrentLLA(lat, lon, alt);
+      }
+    });
+  } else {
+    /*const customViewer = new Cesium.Viewer('cesiumContainer', {
+      terrain: Cesium.Terrain.fromWorldTerrain(),
+      baseLayer: Cesium.ImageryLayer.fromProviderAsync(
+        Cesium.IonImageryProvider.fromAssetId(3), {}
+      ),
+      timeline: false,
+      homeButton: false,
+      navigationInstructionsInitiallyVisible: false,
+      navigationHelpButton: true,
+      geocoder: true,
+      animation: false,
+      fullscreenButton: false,
+      baseLayerPicker: true
+    })*/
+
+    Ion.defaultAccessToken =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzZDlhZDVkOC0yMWZmLTQyMzYtYTU5Zi0yNTQ3MjAxYzFiM2YiLCJpZCI6Mzk4MzMsImlhdCI6MTc1MTk1MTk0OH0.0eS77LohXhxKTRDy9yhLo-wmYGTn9mz31-f4xer7eT0';
+
+    const cesiumView = new CesiumView({
+      container: 'cesiumContainer',
+      // viewer: customViewer,
+    });
+    mapView.value = cesiumView;
+
+    /*mapView.value.addMarker({
+      location: {
+        x: 0,
+        y: 0,
+        z: 0
+      },
+      label: 'TEST',
+      labelOffset: [0, 0],
+      icon: '/icons/map/map-marker.svg',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      id: 'test-marker',
+      markerId: 'test-marker' + '-feature' + randomUUID()
+    })*/
+
+    // addCesiumMarker()
+  }
+});
+
+/**
+ * Watch for changes to mapVisualizations to handle deletion/creation of new viz
  */
 watch(
   () => visualizationStore.mapVisualizations.map(v => v.id),
@@ -53,6 +217,11 @@ watch(
   { immediate: true, deep: true }
 );
 
+/**
+ * Delete mapItemLayers and disconnect datasources for removed visualizations
+ * 
+ * @param removedVizIds - OSHVisualization IDs of visualizations to delete
+ */
 function deleteVisualizations(removedVizIds: string[]) {
   const removedDsIds: string[] = []
 
@@ -87,6 +256,11 @@ function deleteVisualizations(removedVizIds: string[]) {
   )
 }
 
+/**
+ * Create new visualizations based on viz type
+ * 
+ * @param addedVizIds - OSHVisualization IDs of visualizations to be added
+ */
 function createVisualizations(addedVizIds: string[]) {
   const newOSHVisualizations: OSHVisualization[] = addedVizIds
     .map(id => visualizationStore.getVisualizationById(id))
@@ -110,21 +284,7 @@ function createVisualizations(addedVizIds: string[]) {
       let getMarkerId: any;
 
       for (const dsProps of dsArray) {
-        const dsInstance = new SweApi(dsProps.id, {
-          endpointUrl: dsProps.endpointUrl,
-          resource: dsProps.resource,
-          tls: dsProps.tls,
-          protocol: dsProps.protocol,
-          startTime: dsProps.startTime,
-          endTime: dsProps.endTime,
-          mode: dsProps.mode,
-          responseFormat: dsProps.responseFormat,
-          connectorOpts: {
-            username: dsProps?.connectorOpts.username,
-            password: dsProps?.connectorOpts.password
-          }
-        });
-        //const dsInstance = createDatasource(dsProps);
+        const dsInstance = createDatasource(dsProps);
 
         // Check for location property
         if (dsProps.properties.location) {
@@ -196,20 +356,7 @@ function createVisualizations(addedVizIds: string[]) {
       let getBearing: RoleDatastream | null = null;
 
       for (const dsProps of dsArray) {
-        const dsInstance = new SweApi(dsProps.id, {
-          endpointUrl: dsProps.endpointUrl,
-          resource: dsProps.resource,
-          tls: dsProps.tls,
-          protocol: dsProps.protocol,
-          startTime: dsProps.startTime,
-          endTime: dsProps.endTime,
-          mode: dsProps.mode,
-          responseFormat: dsProps.responseFormat,
-          connectorOpts: {
-            username: dsProps?.connectorOpts.username,
-            password: dsProps?.connectorOpts.password
-          }
-        });
+        const dsInstance = createDatasource(dsProps);
 
         if (dsProps.properties.origin) {
           getOrigin = {
@@ -275,127 +422,6 @@ function createVisualizations(addedVizIds: string[]) {
   }
 }
 
-
-
-const featureVisualizations = computed(() => {
-  return visualizationStore.getVisualizationsByType('pointmarker-feature');
-});
-
-const lobVisualizations = computed(() => {
-  return visualizationStore.getVisualizationsByType('lob');
-});
-
-// Fetch UI store for GeoPTZ tool
-const uiStore = useUIStore();
-
-// Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3ZWYzYjhiMy0wMzcwLTQxMTktOGY1OS0wYzM1NzNlOTI3NDMiLCJpZCI6Mzk4MzMsImlhdCI6MTc0ODIwNDA4OX0.HBox4N50pESMU1yJs33-0cNd22sTvIv0KetnMAJMdXU'
-
-onMounted(() => {
-  if (mapLayerType.value === 'leaflet') {
-    const leafletMapView = new LeafletView({
-      container: 'cesiumContainer',
-      layers: [],
-      autoZoomOnFirstMarker: true,
-    });
-
-    mapView.value = leafletMapView;
-
-    // GEOPTZ - Add listener for point clicks
-    mapView.value.map.on('click', (event: any) => {
-      console.log('[MapView] Point clicked:', event);
-      const geoPtzIcon = L.icon({
-        iconUrl: '/icons/map/map-marker.svg',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16]
-      })
-
-      // Fetch selected GeoPTZ in UI store
-      const selectedGeoPTZ = uiStore.selectedGeoPTZ;
-      if (selectedGeoPTZ) {
-        var lat = event.latlng.lat;
-        var lon = event.latlng.lng;
-
-        // Send GeoPTZ command to selected GeoPTZ visualization
-        const commandBaseUrl = selectedGeoPTZ.commandBaseUrl;
-        const controlStreamId = selectedGeoPTZ.controlStreamId;
-        const auth = selectedGeoPTZ.auth
-
-        console.log(geoPtzTargetPM.value)
-
-        if (geoPtzTargetPM.value) {
-          mapView.value.map.removeLayer(geoPtzTargetPM.value);
-        }
-        geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon }).addTo(mapView.value.map)
-
-        const command = {
-          parameters: {
-            lat: lat,
-            lon: lon,
-            alt: 120.0,
-          },
-        };
-
-        sendCommand(commandBaseUrl, controlStreamId, command, auth);
-
-        uiStore.setCurrentLLA(lat, lon, 120.0);
-      }
-
-
-      const selectedFlightPath = uiStore.selectedFlightPath;
-      if (selectedFlightPath) {
-        const lat = event.latlng.lat;
-        const lon = event.latlng.lng;
-        const alt = 100.0;
-
-        flightPathTargetPM.value.push(L.marker([lat, lon], { icon: geoPtzIcon }).addTo(mapView.value.map));
-
-        uiStore.setCurrentLLA(lat, lon, alt);
-      }
-    });
-  } else {
-    /*const customViewer = new Cesium.Viewer('cesiumContainer', {
-      terrain: Cesium.Terrain.fromWorldTerrain(),
-      baseLayer: Cesium.ImageryLayer.fromProviderAsync(
-        Cesium.IonImageryProvider.fromAssetId(3), {}
-      ),
-      timeline: false,
-      homeButton: false,
-      navigationInstructionsInitiallyVisible: false,
-      navigationHelpButton: true,
-      geocoder: true,
-      animation: false,
-      fullscreenButton: false,
-      baseLayerPicker: true
-    })*/
-
-    Ion.defaultAccessToken =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzZDlhZDVkOC0yMWZmLTQyMzYtYTU5Zi0yNTQ3MjAxYzFiM2YiLCJpZCI6Mzk4MzMsImlhdCI6MTc1MTk1MTk0OH0.0eS77LohXhxKTRDy9yhLo-wmYGTn9mz31-f4xer7eT0';
-
-    const cesiumView = new CesiumView({
-      container: 'cesiumContainer',
-      // viewer: customViewer,
-    });
-    mapView.value = cesiumView;
-
-    /*mapView.value.addMarker({
-      location: {
-        x: 0,
-        y: 0,
-        z: 0
-      },
-      label: 'TEST',
-      labelOffset: [0, 0],
-      icon: '/icons/map/map-marker.svg',
-      iconSize: [32, 32],
-      iconAnchor: [16, 32],
-      id: 'test-marker',
-      markerId: 'test-marker' + '-feature' + randomUUID()
-    })*/
-
-    // addCesiumMarker()
-  }
-});
-
 /**
  * Fly to pointmarker when selected in visualizations panel
  */
@@ -422,7 +448,7 @@ watch(() => uiStore.selectedMapItem,
 );
 
 /**
- * Handle cursor styling for GeoPTZ and FlightPath
+ * Handle cursor styling - GeoPTZ, FlightPath
  */
 watch(() => [uiStore.selectedGeoPTZ, uiStore.selectedFlightPath], ([geoPtz, flight]) => {
   const map = mapView.value.map;
@@ -469,6 +495,7 @@ watch(() => uiStore.flightPathWaypoints,
   { deep: true }
 );
 
+// TODO: Remove deprecated "new viz" code
 // watch(mapVisualizations, (updated) => {
 
 //   // Add new visualizations
@@ -601,48 +628,6 @@ watch(() => uiStore.flightPathWaypoints,
 //     }
 //   }
 // }, { deep: true })
-
-watch(featureVisualizations, (updated) => {
-  // Remove feature visualizations that are no longer present
-  const removed = currentVisualizations.value.filter(val => !updated.includes(val))
-  for (const viz of removed) {
-    const idx = currentVisualizations.value.indexOf(viz)
-    if (idx !== -1) {
-      currentVisualizations.value.splice(idx, 1)
-      // Optionally remove marker from mapView if needed
-    }
-  }
-
-  // Add new feature visualizations
-  const newFiltered = updated.filter((val) => !currentVisualizations.value.includes(val));
-
-  if (mapLayerType.value === 'cesium') {
-    for (const viz of newFiltered) {
-      addCesiumMarker(viz);
-    }
-  } else {
-    for (const viz of newFiltered) {
-      currentVisualizations.value.push(viz);
-      mapView.value.addMarker({
-        location: {
-          x: viz.geometry.coordinates[0],
-          y: viz.geometry.coordinates[1],
-          z: viz.geometry.coordinates[2] || 0,
-        },
-        label: viz.name,
-        labelOffset: [0, 0],
-        icon: '/icons/map/map-marker.svg',
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
-        id: viz.id,
-        markerId: viz.id + '-feature' + randomUUID(),
-      });
-    }
-  }
-},
-  { deep: true }
-);
-
 // watch(lobVisualizations, (updated) => {
 //   checkAndRemove(updated);
 
@@ -739,93 +724,69 @@ watch(featureVisualizations, (updated) => {
 //     mapView.value.addLayer(lobLayer);
 //     console.log('[MapView] Created LoBLayer:', lobLayer)
 //   }
-// },
-//   { deep: true }
-// );
+// }, { deep: true } );
 
-/**
- * Create a SweApi datasource from given datasource properties
- * 
- * @param dsProps - Array of datasource properties to create SweApi object
- * @returns Generated SweApi datasource instance
- */
-function createDatasource(dsProps: any) {
-  const dsInstance = new SweApi(dsProps.id, {
-    endpointUrl: dsProps.endpointUrl,
-    resource: dsProps.resource,
-    tls: dsProps.tls,
-    protocol: dsProps.protocol,
-    startTime: dsProps.startTime,
-    endTime: dsProps.endTime,
-    mode: dsProps.mode,
-    responseFormat: dsProps.responseFormat,
-    connectorOpts: {
-      username: dsProps?.connectorOpts.username,
-      password: dsProps?.connectorOpts.password
-    }
-  });
-  return dsInstance;
-}
+// function checkAndRemove(updated: OSHVisualization[]) {
+//   const removed = currentVisualizations.value.filter((val) => !updated.includes(val));
+//   for (const viz of removed) {
+//     const idx = currentVisualizations.value.indexOf(viz);
+//     if (idx !== -1) {
+//       currentVisualizations.value.splice(idx, 1);
 
-function checkAndRemove(updated: OSHVisualization[]) {
-  const removed = currentVisualizations.value.filter((val) => !updated.includes(val));
-  for (const viz of removed) {
-    const idx = currentVisualizations.value.indexOf(viz);
-    if (idx !== -1) {
-      currentVisualizations.value.splice(idx, 1);
+//       if (viz.type === 'pointmarker') {
+//         // Remove corresponding layer from mapItemLayers and map
+//         const pmLayer = mapItemLayers.value[idx];
+//         if (pmLayer && mapView.value) {
+//           mapView.value.removeLayer?.(pmLayer);
+//         }
+//         mapItemLayers.value.splice(idx, 1);
+//       } else if (viz.type === 'pointmarker-feature') {
+//         mapView.value.removeLayer?.(viz.id);
+//       } else if (viz.type === 'lob') {
+//         mapView.value.removeLayer?.(viz.id);
+//       }
+//     }
+//   }
+// }
 
-      if (viz.type === 'pointmarker') {
-        // Remove corresponding layer from mapItemLayers and map
-        const pmLayer = mapItemLayers.value[idx];
-        if (pmLayer && mapView.value) {
-          mapView.value.removeLayer?.(pmLayer);
-        }
-        mapItemLayers.value.splice(idx, 1);
-      } else if (viz.type === 'pointmarker-feature') {
-        mapView.value.removeLayer?.(viz.id);
-      } else if (viz.type === 'lob') {
-        mapView.value.removeLayer?.(viz.id);
-      }
-    }
-  }
-}
+// TODO: Handle Cesium marker code
+// function addCesiumMarker(viz: any) {
+//   console.log('[MapView] TEST Adding Cesium marker');
+//   const viewer = mapView.value.viewer;
+//   const location = {
+//     x: viz.geometry.coordinates[0],
+//     y: viz.geometry.coordinates[1],
+//     z: viz.geometry.coordinates[2] || 10,
+//   };
 
-function addCesiumMarker(viz: any) {
-  console.log('[MapView] TEST Adding Cesium marker');
-  const viewer = mapView.value.viewer;
-  const location = {
-    x: viz.geometry.coordinates[0],
-    y: viz.geometry.coordinates[1],
-    z: viz.geometry.coordinates[2] || 10,
-  };
+//   /*viewer.entities.add({
+//     // position: Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883),
+//     position: Cesium.Cartesian3.fromDegrees(location.x, location.y, location.z),
+//     billboard: {
+//       image: '/icons/map/map-marker.svg'
+//     }
+//   })*/
 
-  /*viewer.entities.add({
-    // position: Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883),
-    position: Cesium.Cartesian3.fromDegrees(location.x, location.y, location.z),
-    billboard: {
-      image: '/icons/map/map-marker.svg'
-    }
-  })*/
+//   const markerProps = {
+//     location: {
+//       x: viz.geometry.coordinates[0],
+//       y: viz.geometry.coordinates[1],
+//       z: viz.geometry.coordinates[2] || 0,
+//     },
+//     label: viz.name,
+//     labelOffset: [0, 0],
+//     icon: '/icons/map/map-marker.svg',
+//     iconSize: [32, 32],
+//     iconAnchor: [16, 32],
+//     id: viz.id,
+//     markerId: viz.id + '-feature' + randomUUID(),
+//   };
 
-  const markerProps = {
-    location: {
-      x: viz.geometry.coordinates[0],
-      y: viz.geometry.coordinates[1],
-      z: viz.geometry.coordinates[2] || 0,
-    },
-    label: viz.name,
-    labelOffset: [0, 0],
-    icon: '/icons/map/map-marker.svg',
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    id: viz.id,
-    markerId: viz.id + '-feature' + randomUUID(),
-  };
+//   let markerEnt = mapView.value.addMarker(markerProps, undefined);
 
-  let markerEnt = mapView.value.addMarker(markerProps, undefined);
+//   mapView.value.addMarkerToLayer(markerEnt, markerProps);
+// }
 
-  mapView.value.addMarkerToLayer(markerEnt, markerProps);
-}
 </script>
 
 <template>

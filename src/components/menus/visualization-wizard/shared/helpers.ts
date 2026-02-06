@@ -98,6 +98,30 @@ export function BuildRoleProperty(entry: any[]) {
 }
 
 /**
+ * Create a SweApi datasource from given datasource properties
+ * 
+ * @param dsProps - Array of datasource properties to create SweApi object
+ * @returns Generated SweApi datasource instance
+ */
+export function createDatasource(dsProps: any) {
+  const dsInstance = new SweApi(dsProps.id, {
+    endpointUrl: dsProps.endpointUrl,
+    resource: dsProps.resource,
+    tls: dsProps.tls,
+    protocol: dsProps.protocol,
+    startTime: dsProps.startTime,
+    endTime: dsProps.endTime,
+    mode: dsProps.mode,
+    responseFormat: dsProps.responseFormat,
+    connectorOpts: {
+      username: dsProps?.connectorOpts.username,
+      password: dsProps?.connectorOpts.password
+    }
+  });
+  return dsInstance;
+}
+
+/**
  * Disconnects datasources on component UNMOUNT
  * 
  * @param dsInstances 

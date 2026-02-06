@@ -1,22 +1,23 @@
 <script setup lang="ts">
 // @ts-ignore
 import { useUIStore } from '@/stores/uistore.ts';
-import { PANEL_VISUALIZATIONS, useVisualizationStore } from '@/stores/visualizationstore';
+import { MAP_VISUALIZATIONS, PANEL_VISUALIZATIONS, useVisualizationStore } from '@/stores/visualizationstore';
 import { storeToRefs } from 'pinia';
 import VisualizationWrapper from './VisualizationWrapper.vue';
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 // Each visualization can be represented by an object with a unique id
 // const visualizations = ref<VisualizationMetadata[]>([])
 const visualizationStore = useVisualizationStore();
 const { visualizations } = storeToRefs(visualizationStore);
+const mapPanelOpen = ref(true);
 
 // Separate visualizations into panel and map types
 const panelVisualizations = computed(() => visualizations.value.filter(viz =>
 	PANEL_VISUALIZATIONS.includes(viz.type)
 ));
 const mapVisualizations = computed(() => visualizations.value.filter(viz =>
-	!PANEL_VISUALIZATIONS.includes(viz.type)
+	MAP_VISUALIZATIONS.includes(viz.type)
 ));
 
 const toggleSelectedMapItem = (item: any) => {
@@ -27,6 +28,12 @@ const toggleSelectedMapItem = (item: any) => {
 		uiStore.setSelectedMapItem(item);
 	}
 };
+
+onMounted(() => {
+	if (mapVisualizations.value.length > 0) {
+		mapPanelOpen.value = true;
+	}
+});
 
 </script>
 
@@ -44,14 +51,14 @@ const toggleSelectedMapItem = (item: any) => {
 		<v-divider></v-divider>
 
 		<v-sheet class="visualization-list overflow-y-auto">
-			<v-expansion-panels :model-value="panelVisualizations.map(v => v.id)" multiple variant="accordion" eager>
-
-				<!-- MAP VISUALIZATIONS -->
-				<v-expansion-panel
-					static
-					:disabled="mapVisualizations.length == 0"
-				>
-					<v-expansion-panel-title>Map Visualizations</v-expansion-panel-title>
+			<!-- MAP VISUALIZATIONS -->
+			<v-expansion-panels multiple eager>
+				<v-expansion-panel :disabled="mapVisualizations.length == 0" static>
+					<template #title>
+						<div class="panel-header">
+							Map Visualizations
+						</div>
+					</template>
 					<v-expansion-panel-text>
 						<v-list activatable density="compact" select-strategy="leaf">
 							<v-list-item v-for="viz in mapVisualizations" :key="viz.id" @click="toggleSelectedMapItem(viz)">
@@ -67,8 +74,9 @@ const toggleSelectedMapItem = (item: any) => {
 						</v-list>
 					</v-expansion-panel-text>
 				</v-expansion-panel>
-
-				<!-- PANEL VISUALIZATIONS -->
+			</v-expansion-panels>
+			<!-- PANEL VISUALIZATIONS -->
+			<v-expansion-panels :model-value="panelVisualizations.map(v => v.id)" multiple eager>
 				<v-expansion-panel v-for="viz in panelVisualizations" :key="viz.id" class="visualization-item" :value="viz.id"
 					static>
 					<template #title>
