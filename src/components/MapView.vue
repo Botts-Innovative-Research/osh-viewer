@@ -29,16 +29,6 @@ const geoPtzTargetPM = ref<any>(null);
 const flightPathTargetPM = ref<any[]>([]);
 const flightPathPolyline = ref<any>(null);
 
-// TODO: Delete deprecated mapVisualizations
-const mapVisualizations = computed(() => {
-  return visualizationStore.visualizations.filter(
-      (viz) => viz.type === 'pointmarker' || viz.type === 'pmorientation'
-  );
-});
-// TODO: Delete deprecated lobVisualizations
-const lobVisualizations = computed(() => {
-  return visualizationStore.getVisualizationsByType('lob');
-});
 
 // TODO: Update feature visualization code
 const featureVisualizations = computed(() => {
@@ -235,7 +225,6 @@ function deleteVisualizations(removedVizIds: string[]) {
     console.log(mapView.value)
 
     // Remove layer from the actual map
-    // TODO: Does not remove LoB layers
     mapView.value.removeAllFromLayer(layer);
 
     // Remove layer from list of map layers
