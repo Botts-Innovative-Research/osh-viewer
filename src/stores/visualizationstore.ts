@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, Ref } from 'vue';
+import { computed, ref, Ref } from 'vue';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {useDataStreamStore} from "@/stores/datastreamstore";
 import {useControlStreamStore} from "@/stores/controlstreamstore";
@@ -19,7 +19,13 @@ export const PANEL_VISUALIZATIONS = [
     'video',
     'text',
     'geoPtz',
-    'flightPath'
+    'flightPath',
+]
+
+export const MAP_VISUALIZATIONS = [
+    'pointmarker',  // TODO: Delete this type
+    'pmorientation',
+    'lob',
 ]
 
 export const useVisualizationStore = defineStore('visualizations',
@@ -28,6 +34,20 @@ export const useVisualizationStore = defineStore('visualizations',
 	const serializedVisualizations: Ref<SerializeVisualization[]> = ref([]);
 	const currentVisDataStreamOptions: Ref<any> = ref({});
 	const currentVisualizationCustomizationOptions: Ref<any> = ref({});
+
+    // Filter only PANEL visualizations
+    const panelVisualizations = computed(() => {
+        return visualizations.value.filter((v: OSHVisualization) =>
+            PANEL_VISUALIZATIONS.includes(v.type)
+        )
+    })
+
+    // Filter only MAP visualizations
+    const mapVisualizations = computed(() => {
+        return visualizations.value.filter((v: OSHVisualization) =>
+            MAP_VISUALIZATIONS.includes(v.type)
+        )
+    })
 
 	const addVisualization = (visualization: OSHVisualization): void => {
 		console.log('[VisualizationStore] Adding visualization:', visualization);
@@ -138,9 +158,12 @@ export const useVisualizationStore = defineStore('visualizations',
         }
         console.log('[VizStore] Rehydrated visualizations:', visualizations.value.length);
     }
+
 	return {
 		visualizations,
         serializedVisualizations,
+        panelVisualizations,
+        mapVisualizations,
 		addVisualization,
 		removeVisualization,
 		getVisualizationById,
@@ -151,6 +174,6 @@ export const useVisualizationStore = defineStore('visualizations',
 		currentVisualizationCustomizationOptions,
 		updateCurrentVisualizationCustomizationOptions,
 		clearCurrentVisualizationCustomizationOptions,
-        rehydrateVisualizations
+        rehydrateVisualizations,
 	};
 }, { persist: { pick: ['serializedVisualizations'] } });

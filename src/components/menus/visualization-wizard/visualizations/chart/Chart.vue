@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import {defineProps, onMounted, ref, toRaw} from 'vue';
+import {defineProps, onBeforeUnmount, onMounted, ref, toRaw, watch} from 'vue';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import ChartJsView from 'osh-js/source/core/ui/view/chart/ChartJsView.js';
 import CurveLayer from 'osh-js/source/core/ui/layer/CurveLayer.js';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { useVisualizationStore } from '@/stores/visualizationstore';
+import { storeToRefs } from 'pinia';
+import { createDatasource, useVisualizationCleanup } from '../../shared/helpers';
 
 
 const props = defineProps<{
@@ -19,6 +22,9 @@ onMounted(async () => {
   initializeChart();
 });
 
+// Array of SweApi instances for datasources
+const dsInstances: SweApi[] = [];
+
 function initializeChart() {
   const viz = props.visualization;
   if (!viz || viz.type !== 'chart') return;
@@ -28,26 +34,10 @@ function initializeChart() {
       ? viz.visualizationComponents.dataSource
       : [viz.visualizationComponents.dataSource];
 
-  // Array of SweApi instances for datasources
-  const dsInstances: SweApi[] = [];
-
   for (const dsProps of dsArray) {
     let rawDs = toRaw(dsProps);
 
-    const dsInstance = new SweApi(dsProps.id, {
-      endpointUrl: dsProps.endpointUrl,
-      resource: dsProps.resource,
-      tls: dsProps.tls,
-      protocol: dsProps.protocol,
-      startTime: dsProps.startTime,
-      endTime: dsProps.endTime,
-      mode: dsProps.mode,
-      responseFormat: dsProps.responseFormat,
-      connectorOpts: {
-        username: dsProps?.connectorOpts.username,
-        password: dsProps?.connectorOpts.password
-      }
-    });
+    const dsInstance = createDatasource(dsProps)
 
     if (rawDs.properties?.x && rawDs.properties?.y) {
       getValues = (rec: any, timestamp: any) => {
@@ -89,6 +79,8 @@ function initializeChart() {
   });
   console.log('[Chart.vue] Chart view created:', chartView.value);
 }
+
+useVisualizationCleanup(ref(dsInstances));
 </script>
 
 <template>
