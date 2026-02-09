@@ -9,6 +9,7 @@ import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import PTZControl from './PTZControl.vue'
 import {useControlStreamStore} from "@/stores/controlstreamstore";
 import {fetchControlStreamSchema} from "@/lib/ControlstreamUtils";
+import { createDatasource, useVisualizationCleanup } from '../../shared/helpers';
 
 const props = defineProps<{
   visualization: OSHVisualization;
@@ -19,6 +20,7 @@ const videoDivId = ref('video-' + randomUUID());
 const controlstreamStore = useControlStreamStore();
 const videoView = ref<any>(null);
 const videoLayer = ref<VideoDataLayer | null>(null);
+const dsInstances: SweApi[] = [];
 
 function createVideoView(codec: string) {
   if (videoView.value) {
@@ -84,27 +86,13 @@ function initializeVideo() {
       ? viz.visualizationComponents.dataSource
       : [viz.visualizationComponents.dataSource];
 
-  const dsInstances: SweApi[] = [];
 
   let getFrameData: any;
   let getTimestamp: any;
 
   for (const dsProps of dsArray) {
     let rawDs = toRaw(dsProps);
-    const dsInstance = new SweApi(dsProps.id, {
-      endpointUrl: dsProps.endpointUrl,
-      resource: dsProps.resource,
-      tls: dsProps.tls,
-      protocol: dsProps.protocol,
-      startTime: dsProps.startTime,
-      endTime: dsProps.endTime,
-      mode: dsProps.mode,
-      responseFormat: dsProps.responseFormat,
-      connectorOpts: {
-        username: dsProps?.connectorOpts.username,
-        password: dsProps?.connectorOpts.password
-      }
-    });
+    const dsInstance = createDatasource(dsProps)
 
     if (dsProps.properties.video) {
       getFrameData = {
@@ -170,6 +158,7 @@ onMounted(async() => {
   await initializePtz();
 });
 
+useVisualizationCleanup(ref(dsInstances));
 </script>
 
 <template>
