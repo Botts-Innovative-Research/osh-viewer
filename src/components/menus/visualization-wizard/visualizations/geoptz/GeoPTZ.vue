@@ -9,7 +9,7 @@ import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useUIStore } from '@/stores/uistore';
 import { sendCommand } from '@/lib/ControlstreamUtils';
-import { useVisualizationCleanup } from '../../shared/helpers';
+import { createDatasource, useVisualizationCleanup } from '../../shared/helpers';
 
 // Generate a random ID when the component is created
 const geoPtzId = ref('geoPtz-' + randomUUID());
@@ -65,20 +65,8 @@ const csAuth = computed(() => {
 
 onMounted(async () => {
 	// Create SweApi instance from props.datasource if provided
-	let dsInstance: any = new SweApi('geoPtz-datasource', {
-		endpointUrl: props.datasource.endpointUrl,
-		resource: props.datasource.resource,
-		tls: props.datasource.tls,
-		protocol: props.datasource.protocol,
-		startTime: props.datasource.startTime,
-		endTime: props.datasource.endTime,
-		mode: props.datasource.mode,
-		responseFormat: props.datasource.responseFormat,
-		connectorOpts: {
-			username: props.datasource.connectorOpts.username ?? '',
-			password: props.datasource.connectorOpts.password ?? '',
-		}
-	});
+	const dsInstance = createDatasource(props.datasource)
+	
 	geoPtzDatasource.value = dsInstance;
 	console.log('[GeoPtzView] GeoPTZ datasource created:', geoPtzDatasource.value);
 

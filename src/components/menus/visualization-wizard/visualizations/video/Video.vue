@@ -9,7 +9,7 @@ import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import PTZControl from './PTZControl.vue'
 import {useControlStreamStore} from "@/stores/controlstreamstore";
 import {fetchControlStreamSchema} from "@/lib/ControlstreamUtils";
-import { useVisualizationCleanup } from '../../shared/helpers';
+import { createDatasource, useVisualizationCleanup } from '../../shared/helpers';
 
 const props = defineProps<{
   visualization: OSHVisualization;
@@ -92,20 +92,7 @@ function initializeVideo() {
 
   for (const dsProps of dsArray) {
     let rawDs = toRaw(dsProps);
-    const dsInstance = new SweApi(dsProps.id, {
-      endpointUrl: dsProps.endpointUrl,
-      resource: dsProps.resource,
-      tls: dsProps.tls,
-      protocol: dsProps.protocol,
-      startTime: dsProps.startTime,
-      endTime: dsProps.endTime,
-      mode: dsProps.mode,
-      responseFormat: dsProps.responseFormat,
-      connectorOpts: {
-        username: dsProps?.connectorOpts.username,
-        password: dsProps?.connectorOpts.password
-      }
-    });
+    const dsInstance = createDatasource(dsProps)
 
     if (dsProps.properties.video) {
       getFrameData = {

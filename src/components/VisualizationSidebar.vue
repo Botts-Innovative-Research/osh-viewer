@@ -76,7 +76,7 @@ onMounted(() => {
 				</v-expansion-panel>
 			</v-expansion-panels>
 			<!-- PANEL VISUALIZATIONS -->
-			<v-expansion-panels :model-value="panelVisualizations.map(v => v.id)" multiple eager>
+			<v-expansion-panels :model-value="panelVisualizations.map(v => v.id)" variant="accordion" multiple eager>
 				<v-expansion-panel v-for="viz in panelVisualizations" :key="viz.id" class="visualization-item" :value="viz.id"
 					static>
 					<template #title>

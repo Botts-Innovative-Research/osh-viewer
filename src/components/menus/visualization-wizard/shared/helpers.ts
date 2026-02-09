@@ -114,8 +114,8 @@ export function createDatasource(dsProps: any) {
     mode: dsProps.mode,
     responseFormat: dsProps.responseFormat,
     connectorOpts: {
-      username: dsProps?.connectorOpts.username,
-      password: dsProps?.connectorOpts.password
+      username: dsProps?.connectorOpts.username ?? '',
+      password: dsProps?.connectorOpts.password ?? '',
     }
   });
   return dsInstance;

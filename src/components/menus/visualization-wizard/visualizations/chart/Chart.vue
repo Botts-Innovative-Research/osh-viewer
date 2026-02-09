@@ -7,7 +7,7 @@ import CurveLayer from 'osh-js/source/core/ui/layer/CurveLayer.js';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { storeToRefs } from 'pinia';
-import { useVisualizationCleanup } from '../../shared/helpers';
+import { createDatasource, useVisualizationCleanup } from '../../shared/helpers';
 
 
 const props = defineProps<{
@@ -17,9 +17,6 @@ const props = defineProps<{
 const chartId = ref('chart-' + randomUUID());
 let curveLayer = ref<CurveLayer | null>(null);
 let chartView =  ref<ChartJsView | null>(null);
-
-const visualizationStore = useVisualizationStore();
-const { visualizationUpdateTrigger } = storeToRefs(visualizationStore);
 
 onMounted(async () => {
   initializeChart();
@@ -40,20 +37,7 @@ function initializeChart() {
   for (const dsProps of dsArray) {
     let rawDs = toRaw(dsProps);
 
-    const dsInstance = new SweApi(dsProps.id, {
-      endpointUrl: dsProps.endpointUrl,
-      resource: dsProps.resource,
-      tls: dsProps.tls,
-      protocol: dsProps.protocol,
-      startTime: dsProps.startTime,
-      endTime: dsProps.endTime,
-      mode: dsProps.mode,
-      responseFormat: dsProps.responseFormat,
-      connectorOpts: {
-        username: dsProps?.connectorOpts.username,
-        password: dsProps?.connectorOpts.password
-      }
-    });
+    const dsInstance = createDatasource(dsProps)
 
     if (rawDs.properties?.x && rawDs.properties?.y) {
       getValues = (rec: any, timestamp: any) => {
@@ -95,16 +79,6 @@ function initializeChart() {
   });
   console.log('[Chart.vue] Chart view created:', chartView.value);
 }
-
-watch(visualizationUpdateTrigger, (id) => {
-  if (!id) return;
-  if (id === props.visualization.id) {
-    for (const ds of dsInstances) {
-      console.log(ds)
-      ds.disconnect();
-    }
-  }
-})
 
 useVisualizationCleanup(ref(dsInstances));
 </script>
