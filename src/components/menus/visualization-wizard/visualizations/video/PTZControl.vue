@@ -95,16 +95,16 @@ function handleMove(direction: Direction) {
 const buttonConfig = [
 	{ dir: 'right', angle: 0, rot: 90, scale: 1 },
 	// { dir: 'down-right', angle: 45,  rot: 135, scale: 1 },
-	{ dir: 'zoomIn', angle: 45, rot: 135, scale: 0.75 },
+	{ dir: 'plus', angle: 45, rot: 135, scale: 0.65 },
 	{ dir: 'down', angle: 90, rot: 180, scale: 1 },
 	// { dir: 'down-left', angle: 135, rot: 235, scale: 1 },
-	{ dir: 'zoomOut', angle: 135, rot: 235, scale: 0.75 },
+	{ dir: 'minus', angle: 135, rot: 235, scale: 0.65 },
 	{ dir: 'left', angle: 180, rot: 270, scale: 1 },
 	// { dir: 'up-left', angle: 225, rot: 315, scale: 1 },
 	{ dir: 'up', angle: 270, rot: 0, scale: 1 },
 	// { dir: 'up-right', angle: 315, rot: 45, scale: 1 },
 ] as const;
-const containerSize = 195;
+const containerSize = 200;
 const radius = 75;
 const center = containerSize / 2;
 
@@ -182,174 +182,133 @@ watch(controlStreamType, (newVal) => {
 </script>
 
 <template>
-	<v-sheet v-if="hasRelative">
-		<v-container class="controlPadContainer">
-			<!-- ROW 1 -->
-			<v-row no-gutters>
-				<v-col cols="4">
-				</v-col>
-				<v-col cols="4" :style="{ display: 'flex', justifyContent: 'center', alignItems: 'start' }">
-					<v-btn icon="mdi-arrow-up-bold-circle" @click="handleMove('up')" variant="plain" density="compact" size="x-large"></v-btn>
-				</v-col>
-				<v-col cols="4">
-				</v-col>
-			</v-row>
-			<!-- ROW 2 -->
-			<v-row no-gutters>
-				<v-col cols="4" :style="{ display: 'flex', justifyContent: 'start', alignItems: 'center' }">
-					<v-btn icon="mdi-arrow-left-bold-circle" @click="handleMove('left')" variant="plain" density="compact" size="x-large"></v-btn>
-				</v-col>
-				<v-col cols="4" :style="{ display: 'flex', justifyContent: 'center', alignItems: 'center' }">
-					<v-btn icon="mdi-home-circle" @click="handleMove('home')" variant="plain" density="compact" size="x-large"></v-btn>
-				</v-col>
-				<v-col cols="4" :style="{ display: 'flex', justifyContent: 'end', alignItems: 'center' }">
-					<v-btn icon="mdi-arrow-right-bold-circle" @click="handleMove('right')" variant="plain" density="compact" size="x-large"></v-btn>
-				</v-col>
-			</v-row>
-			<!-- ROW 3 -->
-			<v-row no-gutters>
-				<v-col cols="4" :style="{ display: 'flex', justifyContent: 'end', alignItems: 'start' }">
-					<v-btn icon="mdi-minus-circle" @click="handleMove('zoomOut')" variant="plain" density="compact" size="x-large" :style="{scale: 0.75}"></v-btn>
-				</v-col>
-				<v-col cols="4" :style="{ display: 'flex', justifyContent: 'center', alignItems: 'end' }">
-					<v-btn icon="mdi-arrow-down-bold-circle" @click="handleMove('down')" variant="plain" density="compact" size="x-large"></v-btn>
-				</v-col>
-				<v-col cols="4" :style="{ display: 'flex', justifyContent: 'start', alignItems: 'start' }">
-					<v-btn icon="mdi-plus-circle" @click="handleMove('zoomIn')" variant="plain" density="compact" size="x-large" :style="{scale: 0.75}"></v-btn>
-				</v-col>
-			</v-row>
-		</v-container>
-	</v-sheet>
-	<!-- <div class="wrapper">
-		<div class="controlPadWrapper" v-if="hasRelative">
-			<div class="controlPadContainer">
-				<button
-					v-for="({ dir, angle, rot, scale }, index) in buttonConfig"
+	<v-container class="controlsContainer">
+		<v-sheet v-if="hasRelative" class="wrapper">
+			<v-container class="controlPadContainer">
+				<v-btn
+					:icon="dir === 'minus' || dir === 'plus' ? `mdi-${dir}-circle` : `mdi-arrow-${dir}-drop-circle`" 
+					:alt="`${dir}`"
+					v-for="({ dir, angle, scale }) in buttonConfig"
 					:key="dir"
-					@mousedown="handleMove(dir)"
+					@mousedown="handleMove(dir === 'minus' ? 'zoomOut' : dir === 'plus' ? 'zoomIn' : dir)"
 					class="button"
 					:style="{
 						left: `${center - 25 + radius * Math.cos((angle * Math.PI) / 180)}px`,
 						top: `${center - 25 + radius * Math.sin((angle * Math.PI) / 180)}px`,
 						scale: scale,
 						zIndex: 1000,
+						fontSize: '35px',
 					}"
-				>
-					<img class="icon" :src="`/ptzIcons/${dir}.svg`" :alt="`${dir}`" />
-				</button>
-				<button class="homeButton" @click="handleMove('home')">
-					<img class="homeIcon" src="/ptzIcons/home.svg" alt="home" />
-				</button>
-			</div>
+					variant="text"
+				></v-btn>
+				<v-btn icon="mdi-home-circle" alt="home" @click="handleMove('home')" class="homeButton" variant="text" :style="{zIndex: 1000, fontSize: '35px'}"></v-btn>
+			</v-container>
 			<v-text-field
 				v-model.number="increment"
 				type="number"
 				label="Increment"
 				placeholder="5.0"
 			/>
-		</div>
-		<div class="">
-			<div class="tasking-section">
-				<v-select
-					v-model="selectedCommand"
-					:items="commandOptions"
-					label="Command Type"
-					class="command-select"
+		</v-sheet>
+		<v-sheet class="wrapper">
+			<v-select
+				v-model="selectedCommand"
+				:items="commandOptions"
+				label="Command Type"
+				class="w-100"
+			/>
+			<div v-if="isDataRecord">
+				<v-text-field
+					v-model.number="absPan"
+					type="number"
+					label="Pan"
+					placeholder="0.0"
+					class="w-100"
 				/>
-
-				<div v-if="isDataRecord" class="absolute-inputs">
-					<v-text-field
-						v-model.number="absPan"
-						type="number"
-						label="Pan"
-						placeholder="0.0"
-					/>
-					<v-text-field
-						v-model.number="absTilt"
-						type="number"
-						label="Tilt"
-						placeholder="0.0"
-					/>
-					<v-text-field
-						v-model.number="absZoom"
-						type="number"
-						label="Zoom"
-						placeholder="0.0"
-					/>
-				</div>
-
-				<div v-else-if="isPreset" class="preset-section">
-					<v-select
-						v-if="presetOptions"
-						v-model="singleValue"
-						:items="presetOptions"
-						label="Preset"
-						:placeholder="presetOptions[0]"
-					/>
-				</div>
-
-				<div v-else class="input-section">
-					<v-text-field
-						v-model="singleValue"
-						type="number"
-						:label="selectedCommand"
-						placeholder="Enter value"
-					/>
-				</div>
-
-				<v-btn color="primary" @click="onSend">Send</v-btn>
+				<v-text-field
+					v-model.number="absTilt"
+					type="number"
+					label="Tilt"
+					placeholder="0.0"
+					class="w-100"
+				/>
+				<v-text-field
+					v-model.number="absZoom"
+					type="number"
+					label="Zoom"
+					placeholder="0.0"
+					class="w-100"
+				/>
 			</div>
-		</div>
-	</div> -->
+
+			<div v-else-if="isPreset">
+				<v-select
+					v-if="presetOptions"
+					v-model="singleValue"
+					:items="presetOptions"
+					label="Preset"
+					:placeholder="presetOptions[0]"
+					class="w-100"
+				/>
+			</div>
+
+			<div v-else>
+				<v-text-field
+					v-model="singleValue"
+					type="number"
+					:label="selectedCommand"
+					placeholder="Enter value"
+					class="w-100"
+				/>
+			</div>
+			<v-btn color="primary" @click="onSend" block>Send</v-btn>
+		</v-sheet>
+	</v-container>
 </template>
 
 <style scoped>
-.wrapper {
+.controlsContainer {
 	display: flex;
+	flex-direction: row;
 	justify-content: center;
 	align-items: center;
+	gap: 5%;
 }
 
-.controlPadWrapper {
+.wrapper {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	width: 100%;
+	height: auto;
 }
 
 .controlPadContainer {
+	position: relative;
 	display: flex;
-	flex-direction: column;
-	width: 100%;
-	aspect-ratio: 1;
+	justify-content: center;
+	align-items: center;
+	width: 200px;
+	height: 200px;
 	border-radius: 50%;
 	border: 1px solid #888;
+	margin-bottom: 5%;
 }
 
 .button {
 	position: absolute;
 	border: none;
 	background: transparent;
+	padding: 0px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 	cursor: pointer;
-	padding: 4px;
-}
-
-.icon {
-	width: 48px;
-	height: 48px;
 }
 
 .homeButton {
 	position: absolute;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-	background: none;
-	background-repeat: no-repeat;
-	background-size: cover;
-	border-radius: 50%;
-	padding: 8px;
+	display: flex;
 	cursor: pointer;
-}
-
-.homeIcon {
-	width: 60px;
-	height: 60px;
 }
 </style>
