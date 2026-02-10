@@ -4,11 +4,19 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 import { generateVizName } from '../../shared/helpers';
 
 const props = defineProps<{
-  role: string;
+  role?: string;  // Role to use with generateVizName function
+  defaultName?: string; // Default value
 }>();
 
 const vwStore = useVizWizStore();
-const name = ref<string>(generateVizName(props.role));
+const name = ref<string>(
+  props.role ? generateVizName(props.role) : props.defaultName ? props.defaultName : ''
+)
+
+watch(props, (val) => {
+  if (val.role) name.value = generateVizName(val.role);
+  else if (val.defaultName) name.value = val.defaultName;
+})
 
 watch(name, (val) => {
   vwStore.updateVisualizationCustomizationOptions({ name: val });

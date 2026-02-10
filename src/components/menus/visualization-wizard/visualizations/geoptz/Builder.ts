@@ -30,7 +30,7 @@ export function build() {
 
 	const newViz: OSHVisualization = new OSHVisualization(
 		`visualization-${randomUUID()}`,
-		`GeoPTZ`,
+		vizwizStore.visualizationCustomizationOptions.name,
 		'geoPtz',
 		null,
 		geoPtzResult.vizDatasources,
