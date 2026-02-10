@@ -30,7 +30,7 @@ export function build() {
 
 	const newViz: OSHVisualization = new OSHVisualization(
 		`visualization-${randomUUID()}`,
-		`${visualizationComponents.dataLayer.label}`,
+        vizwizStore.visualizationCustomizationOptions.name,
 		'pmorientation',
 		null,
 		visualizationComponents.dataSource,
@@ -86,8 +86,8 @@ export function CreateMapViewProps(datastreams: { [key: string]: any }, visOptio
         // Build remaining mapLayer properties
         mapLayer = {
             ...mapLayer,
-            label: `${currentOSHDatastream[0].datastream.properties.name}`,
-            // label: `${randomUUID()} - PM Orientation Layer`,
+            name: visOptions.name ?? `${currentOSHDatastream[0].datastream.properties.name}`,
+            label: visOptions.name ?? `${currentOSHDatastream[0].datastream.properties.name}`,
             icon: visOptions.icon,
             iconName: visOptions.iconName,
             iconSize: [32, 32],

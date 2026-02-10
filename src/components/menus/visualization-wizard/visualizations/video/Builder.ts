@@ -33,7 +33,7 @@ export function build() {
 
 	const newViz: OSHVisualization = new OSHVisualization(
 		`visualization-${randomUUID()}`,
-		`${videoResult.videoLayer.name}`,
+        vizwizStore.visualizationCustomizationOptions.name,
 		'video',
 		null,
 		datastreams,
