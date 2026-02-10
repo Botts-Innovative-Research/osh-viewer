@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import NameControl from '../../viz-components/customizations/NameControl.vue';
+
 </script>
 
 <template>
-  <p>There are no customization options available for Text visualization.</p>
+  <NameControl role="stream" />
 </template>

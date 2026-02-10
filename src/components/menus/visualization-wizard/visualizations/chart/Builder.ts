@@ -25,7 +25,7 @@ export function build() {
 
     const newViz: OSHVisualization = new OSHVisualization(
         `visualization-${randomUUID()}`,
-        `${visualizationComponents.dataLayer.name || 'Chart Visualization'}`,
+        vizwizStore.visualizationCustomizationOptions.name,
         'chart',
         null,
         datastreams,

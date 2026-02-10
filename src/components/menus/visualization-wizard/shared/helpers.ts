@@ -150,3 +150,22 @@ export function useDisconnectDatasources(dsInstances: Ref<SweApi[]>) {
     ds.disconnect()
   }
 }
+
+/**
+ * Generates a default visualization name based on selected viz type and a given role's datastream name
+ * 
+ * @param role
+ * @returns 
+ */
+export function generateVizName(role: string) {
+  const vizwizStore = useVizWizStore()
+
+  // Find datastream ID of desired role
+  const dsId = vizwizStore.dsConfig[role].dsId
+
+  for (const ds of vizwizStore.datastreams) {
+    if (ds.id === dsId) return `${vizwizStore.visualizationType}: ${ds.name}`
+  }
+
+  return `New ${vizwizStore.visualizationType}`
+}

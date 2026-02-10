@@ -26,7 +26,7 @@ export function build() {
 
 	const newViz = new OSHVisualization(
 		`visualization-${randomUUID()}`,
-		`${visualizationComponents.dataLayer?.name || 'Text Visualization'}`,
+		vizwizStore.visualizationCustomizationOptions.name,
 		'text',
 		null,
         datastreams,
@@ -69,7 +69,7 @@ export function CreateTextViewProps(datastreams: { [key: string]: any }, visOpti
 			},
 		};
 		vizDatasources.push(currentDataSource);
-    dataLayer.name = currentOSHDatastream[0]?.name || 'Text Data Layer';
+    dataLayer.name = visOptions.name ?? currentOSHDatastream[0]?.name;
 	}
 
 	return {

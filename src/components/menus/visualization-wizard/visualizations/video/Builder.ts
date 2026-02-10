@@ -33,7 +33,7 @@ export function build() {
 
 	const newViz: OSHVisualization = new OSHVisualization(
 		`visualization-${randomUUID()}`,
-		`${videoResult.videoLayer.name}`,
+        vizwizStore.visualizationCustomizationOptions.name,
 		'video',
 		null,
 		datastreams,
@@ -95,12 +95,12 @@ export function CreateVideoViewProps(datastreams: { [key: string]: any }, contro
 
         videoLayer = {
             ...videoLayer,
-            name: `${ds.datastream.properties.name}`,
+            name: visOptions.name ?? `${ds.datastream.properties.name}`,
         };
 
         videoView = {
             ...videoView,
-            name: `${ds.datastream.properties.name}`,
+            name: visOptions.name ?? `${ds.datastream.properties.name}`,
             layers: [videoLayer],
             useWebCodecApi: videoFormat === 'MJPEG' ? false : true,
             videoType: videoFormat,

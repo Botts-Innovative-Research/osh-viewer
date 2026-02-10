@@ -30,7 +30,7 @@ export function build() {
 
     const newViz: OSHVisualization = new OSHVisualization(
         `visualization-${randomUUID()}`,
-        `FlightPath`,
+        vizwizStore.visualizationCustomizationOptions.name,
         'flightPath',
         null,
         flightPathResult.vizDatasources,
