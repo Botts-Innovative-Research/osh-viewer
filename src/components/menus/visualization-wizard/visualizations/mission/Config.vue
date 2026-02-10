@@ -24,6 +24,10 @@ const checkedRoles = reactive({
     get: () => vizwizStore.csConfig.rtl?.selected ?? true,
     set: (val: boolean) => vizwizStore.updateCsConfig("rtl", { selected: val })
   }),
+  offboard: computed({
+    get: () => vizwizStore.csConfig.offboard?.selected ?? true,
+    set: (val: boolean) => vizwizStore.updateCsConfig("offboard", { selected: val })
+  }),
 })
 
 // Initialize csConfig with selected by default when mounted
@@ -42,6 +46,10 @@ onMounted(() => {
 
   if (!vizwizStore.csConfig.rtl) {
     vizwizStore.updateCsConfig("rtl", { selected: true })
+  }
+
+  if (!vizwizStore.csConfig.offboard) {
+    vizwizStore.updateCsConfig("offboard", { selected: true })
   }
 })
 
@@ -63,28 +71,37 @@ watch(() => vizwizStore.csConfig, (newVal) => {
     vizwizStore.updateCsConfig("land", { selected: true })
   }
 
+  if (!newVal.offboard) {
+    vizwizStore.updateCsConfig("offboard", { selected: true })
+  }
+
 }, { deep: true })
 
 </script>
 <template>
   <v-container>
     <v-checkbox label="Mission Control Plan" v-model="checkedRoles.plan" disabled></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.plan" role="plan" />
+    <ControlStreamPicker v-if="checkedRoles.plan" role="plan"  :show-property-selector="false" />
   </v-container>
 
   <v-container>
     <v-checkbox label="Pause Mission" v-model="checkedRoles.pause" disabled></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.pause" role="pause" />
+    <ControlStreamPicker v-if="checkedRoles.pause" role="pause"  :show-property-selector="false" />
   </v-container>
 
   <v-container>
     <v-checkbox label="Return to Launch" v-model="checkedRoles.rtl" disabled></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.rtl" role="rtl" />
+    <ControlStreamPicker v-if="checkedRoles.rtl" role="rtl"  :show-property-selector="false" />
   </v-container>
 
   <v-container>
     <v-checkbox label="Land Mission" v-model="checkedRoles.land" disabled></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.land" role="land" />
+    <ControlStreamPicker v-if="checkedRoles.land" role="land"  :show-property-selector="false"/>
+  </v-container>
+
+  <v-container>
+    <v-checkbox label="Offboard Control" v-model="checkedRoles.offboard" disabled></v-checkbox>
+    <ControlStreamPicker v-if="checkedRoles.offboard" role="offboard"  :show-property-selector="false"/>
   </v-container>
 </template>
 

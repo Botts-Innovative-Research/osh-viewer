@@ -35,7 +35,7 @@ export function build() {
         'mission',
         null,
         missionResult.vizDatasources,
-        missionResult.vizControlstreams[0]
+        missionResult.vizControlstreams
     );
     newViz.setVisualizationComponents(visualizationComponents);
     visualizationStore.addVisualization(newViz);

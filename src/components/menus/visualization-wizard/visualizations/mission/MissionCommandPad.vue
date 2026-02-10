@@ -1,61 +1,92 @@
 <script setup lang="ts">
 import {computed, ref} from 'vue';
 import {sendCommand} from '@/lib/ControlstreamUtils';
+import Joystick from "@/components/menus/visualization-wizard/visualizations/mission/Joystick.vue";
+import DPad from "@/components/menus/visualization-wizard/visualizations/mission/DPad.vue";
 
 const props = defineProps({
-  controlstream: {
-    type: Object,
+  controlstreams: {
+    type: Array,
     required: true,
+    default: () => [],
   }
 });
 
-const commandBaseUrl = computed(() => {
-  const protocol = props.controlstream.tls ? 'https' : 'http';
-  return `${protocol}://${props.controlstream.endpointUrl}`;
-});
+function getControlstreamByRole(role: string) {
+  return props.controlstreams.find((cs: any) => cs.properties && cs.properties[role]);
+}
 
-const csAuth = computed(() => {
+const pauseControlstream = computed(() => getControlstreamByRole('pause'));
+const rtlControlstream = computed(() => getControlstreamByRole('rtl'));
+const landControlstream = computed(() => getControlstreamByRole('land'));
+const offboardControlstream = computed(() => getControlstreamByRole('offboard'));
+
+function getControlstreamConfig(cs: any) {
+  if (!cs) return null;
+  const protocol = cs.tls ? 'https' : 'http';
   return {
-    username: props.controlstream.connectorOpts.username,
-    password: props.controlstream.connectorOpts.password
+    baseUrl: `${protocol}://${cs.endpointUrl}`,
+    id: cs.id,
+    auth: `${cs.connectorOpts.username}:${cs.connectorOpts.password}`
   };
-});
+}
 
-function sendMissionCommand(command: string) {
-  const payload = {
-    parameters: {
-      missionCommand: command
-    }
-  };
-  console.log(`[MissionCommandPad] Sending ${command} command:`, payload);
+function sendCommandToRole(role: string, payload: any) {
+  const cs = getControlstreamByRole(role);
+  if (!cs) {
+    console.warn(`[MissionCommandPad] No controlstream configured for role: ${role}`);
+    return;
+  }
+
+  const config = getControlstreamConfig(cs);
+  if (!config) return;
+
+  console.log(`[MissionCommandPad] Sending command to ${role}:`, payload);
   sendCommand(
-      commandBaseUrl.value,
-      props.controlstream.id,
+      config.baseUrl,
+      config.id,
       payload,
-      `${csAuth.value.username}:${csAuth.value.password}`
+      config.auth
   );
 }
 
-
-
 function pauseMission() {
-  // sendMissionCommand('PAUSE');
+  const payload = {
+    parameters: {
+      Land: true
+    }
+  };
+  sendCommandToRole('pause', payload);
 }
 
-function returnToHome() {
-  // sendMissionCommand('RTL');
+function returnToLaunch() {
+  const payload = {
+    parameters: {}
+  };
+  sendCommandToRole('rtl',  payload);
 }
 
 function land() {
-  // sendMissionCommand('LAND');
+  const payload = {
+    parameters: {
+      disarm: true
+    }
+  };
+  sendCommandToRole('land', payload);
 }
 
 function cancel() {
-  // sendMissionCommand('CANCEL');
+  const payload = {
+    parameters: {}
+  };
+    sendCommandToRole('cancel',  payload);
 }
 
 function resumeMission() {
-  // sendMissionCommand('RESUME');
+  const payload = {
+    parameters: {}
+  };
+  sendCommandToRole('resume',  payload);
 }
 
 
@@ -71,65 +102,150 @@ function toggle() {
   isPaused.value = !isPaused.value;
   console.log('[MissionCommandPad] isPaused now:', isPaused.value);
 }
+
+function handleJoystickMove(data: { x: number, y: number, direction: string, magnitude: number }) {
+  console.log('[MissionCommandPad] Joystick move:', data);
+  const sensitivity = 10.0;
+
+  const payload = {
+    parameters: {
+      velocity: {
+        vx: data.x * sensitivity,
+        vy: -data.y * sensitivity,
+        vz: sensitivity,
+      },
+      yawRate: 100
+    }
+  };
+
+  sendCommandToRole('offboard',  payload);
+}
+
+function handleJoystickStop() {
+  console.log('[MissionCommandPad] Joystick released');
+
+  const payload = {
+    parameters: {
+      velocity: {
+        vx: 0,
+        vy: 0,
+        vz: 0
+      },
+      yawRate: 0
+    }
+  };
+
+  // sendCommandToRole('pause',  payload);
+}
+
 </script>
 
 <template>
-  <v-card class="pa-3">
-    <v-card-title class="text-subtitle-1 pa-0 mb-2">
+  <v-card class="pa-4 mission-control-card">
+    <v-card-title class="text-subtitle-1 pa-0 mb-3">
       Mission Control
     </v-card-title>
 
-    <v-row dense>
+    <div class="controls-wrapper mb-4">
+      <v-row dense align="center" justify="space-around">
+        <v-col cols="auto" class="control-column">
+          <div class="mb-1">Movement</div>
+          <Joystick
+              :size="150"
+              :max-distance="60"
+              @move="handleJoystickMove"
+              @stop="handleJoystickStop"
+          />
+        </v-col>
 
-      <v-col cols="12" sm="3">
+        <v-col cols="auto" class="control-column">
+          <div class="mb-1">Altitude</div>
+          <DPad
+              @up="handleDPadUp"
+              @down="handleDPadDown"
+              @release="handleDPadRelease"
+          />
+        </v-col>
+      </v-row>
+    </div>
+
+    <v-divider class="mb-3"></v-divider>
+
+    <v-row dense>
+      <v-col cols="6" sm="4">
         <v-btn
-            icon
+            block
+            variant="tonal"
             :color="isPaused ? 'primary' : 'grey'"
             @click="toggle"
+            class="command-btn"
         >
-          <v-icon>{{ isPaused ? 'mdi-play-circle' : 'mdi-pause-circle' }}</v-icon>
-          <v-tooltip activator="parent" location="top">
-            {{ isPaused ? 'Resume Mission' : 'Pause Mission' }}
-          </v-tooltip>
+          <v-icon start>{{ isPaused ? 'mdi-play-circle' : 'mdi-pause-circle' }}</v-icon>
+          {{ isPaused ? 'Resume' : 'Pause' }}
         </v-btn>
       </v-col>
 
-      <v-col cols="12" sm="3">
+      <v-col cols="6" sm="4">
         <v-btn
+            block
+            variant="tonal"
             color="info"
-            icon
-            @click="returnToHome"
+            @click="returnToLaunch"
+            class="command-btn"
         >
-          <v-icon>{{ 'mdi-home' }}</v-icon>
-          <v-tooltip activator="parent" location="bottom"> Return to Launch </v-tooltip>
+          <v-icon start>mdi-home</v-icon>
+          RTL
         </v-btn>
       </v-col>
 
-      <v-col cols="12" sm="3">
+      <v-col cols="6" sm="4">
         <v-btn
-            icon
-            @click="land"
+            block
+            variant="tonal"
             color="grey"
+            @click="land"
+            class="command-btn"
         >
-          <v-icon>{{ 'mdi-airplane-landing' }}</v-icon>
-          <v-tooltip activator="parent" location="bottom"> Land </v-tooltip>
+          <v-icon start>mdi-airplane-landing</v-icon>
+          Land
         </v-btn>
       </v-col>
 
-      <v-col cols="12" sm="3">
-        <v-btn
-            icon
-            @click="cancel"
-            color="error"
-        >
-          <v-icon>{{ 'mdi-cancel' }}</v-icon>
-          <v-tooltip activator="parent" location="bottom"> Cancel </v-tooltip>
-        </v-btn>
-      </v-col>
-
+<!--      <v-col cols="6" sm="3">-->
+<!--        <v-btn-->
+<!--            block-->
+<!--            variant="tonal"-->
+<!--            color="error"-->
+<!--            @click="cancel"-->
+<!--            class="command-btn"-->
+<!--        >-->
+<!--          <v-icon start>mdi-cancel</v-icon>-->
+<!--          Cancel-->
+<!--        </v-btn>-->
+<!--      </v-col>-->
     </v-row>
   </v-card>
 </template>
 
 <style scoped>
+.mission-control-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.controls-wrapper {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.control-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.command-btn {
+  text-transform: none;
+  font-weight: 500;
+}
 </style>

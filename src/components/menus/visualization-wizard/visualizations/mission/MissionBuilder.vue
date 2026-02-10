@@ -11,7 +11,18 @@ import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
 
-const flightPathId = ref('flightPath-' + randomUUID());
+const missionPlannerId = ref('missionPlanner-' + randomUUID());
+
+interface Controlstream {
+  id: string;
+  endpointUrl: string;
+  tls: boolean;
+  properties?: Record<string, any>;
+  connectorOpts: {
+    username: string;
+    password: string;
+  };
+}
 
 const props = defineProps({
   visualization: {
@@ -24,12 +35,20 @@ const props = defineProps({
     required: true,
     default: null,
   },
-  controlstream: {
-    type: Object,
+  controlstreams: {
+    type: Array as () => Controlstream[],
     required: true,
-    default: null,
+    default: () => [],
   }
 });
+
+// Helper to find controlstream by role
+function getControlstreamByRole(role: string): Controlstream | undefined {
+  return props.controlstreams.find((cs) => cs.properties && cs.properties[role]);
+}
+
+// Get the plan controlstream for sending missions
+const planControlstream = computed<Controlstream | undefined>(() => getControlstreamByRole('plan') || props.controlstreams[0]);
 
 interface Waypoint {
   id: string;
@@ -65,16 +84,21 @@ const droneDatasource = ref<any>(null);
 
 
 const commandBaseUrl = computed(() => {
-  const protocol = props.controlstream.tls ? 'https' : 'http';
-  return `${protocol}://${props.controlstream.endpointUrl}`;
+  const cs = planControlstream.value;
+  if (!cs) return '';
+  const protocol = cs.tls ? 'https' : 'http';
+  return `${protocol}://${cs.endpointUrl}`;
 });
 
 const csAuth = computed(() => {
-  return {username: props.controlstream.connectorOpts.username, password: props.controlstream.connectorOpts.password}
+  const cs = planControlstream.value;
+  if (!cs) return { username: '', password: '' };
+  return { username: cs.connectorOpts.username, password: cs.connectorOpts.password };
 });
 
 watch(() => uiStore.selectedFlightPath, (newVal) => {
-    if (newVal?.controlStreamId === props.controlstream.id) {
+    const cs = planControlstream.value;
+    if (cs && newVal?.controlStreamId === cs.id) {
       isSelected.value = true;
     } else {
       isSelected.value = false;
@@ -101,10 +125,11 @@ watch(missionSource, (source) => {
 
 
 function toggle() {
+  const cs = planControlstream.value;
   if (isSelected.value) {
     uiStore.clearSelectedFlightPath();
-  } else {
-    uiStore.setSelectedFlightPath(props.controlstream.id, commandBaseUrl.value, `${csAuth.value.username}:${csAuth.value.password}`);
+  } else if (cs) {
+    uiStore.setSelectedFlightPath(cs.id, commandBaseUrl.value, `${csAuth.value.username}:${csAuth.value.password}`);
   }
 }
 
@@ -162,10 +187,15 @@ function sendWaypoints() {
     }
   };
 
+  const cs = planControlstream.value;
+  if (!cs) {
+    showToast("No plan controlstream configured", 'ERROR');
+    return;
+  }
   console.log('[MissionBuilder.vue] Sending MissionBuilder command:', command);
   sendCommand(
       commandBaseUrl.value,
-      props.controlstream.id,
+      cs.id,
       command,
       `${csAuth.value.username}:${csAuth.value.password}`
   );
@@ -183,16 +213,22 @@ function sendFileUpload() {
   reader.onload = (e) => {
     const fileContent = reader.result as string;
 
+    const cs = planControlstream.value;
+    if (!cs) {
+      showToast("No plan controlstream configured", 'ERROR');
+      return;
+    }
+
     const command = {
       parameters: {
         qGroundControlPlan: fileContent
       }
     }
 
-    console.log('[MissionBuilder.vue] Sending mission file command:', command);
+    console.log('[MissionBuilder.vue] Sending mission file command:', command, planControlstream.value);
     sendCommand(
         commandBaseUrl.value,
-        props.controlstream.id,
+        planControlstream.value.id,
         command,
         `${csAuth.value.username}:${csAuth.value.password}`
     );
@@ -383,10 +419,28 @@ onMounted(async () => {
 </script>
 
 <template>
-  <v-card :id="flightPathId" class="pa-0">
-    <v-card-title>
+  <v-card :id="missionPlannerId">
+    <v-card-title class="d-flex align-center pa-4">
       {{ visualization.name }}
     </v-card-title>
+
+    <v-card class="ma-2 telemetry-card">
+      <v-card-text>Live Telemetry</v-card-text>
+      <v-row dense class="">
+        <v-col cols="4">
+          <v-card-subtitle>Latitude</v-card-subtitle>
+          <v-card-title>{{ receivedLLA.lat.toFixed(6) }}</v-card-title>
+        </v-col>
+        <v-col cols="4">
+          <v-card-subtitle>Longitude</v-card-subtitle>
+          <v-card-title>{{ receivedLLA.lon.toFixed(6) }}</v-card-title>
+        </v-col>
+        <v-col cols="4">
+          <v-card-subtitle>Altitude</v-card-subtitle>
+          <v-card-title>{{ receivedLLA.alt.toFixed(2) }}</v-card-title>
+        </v-col>
+      </v-row>
+    </v-card>
 
     <v-container class="pa-4">
       <v-row dense align="center">
@@ -539,23 +593,9 @@ onMounted(async () => {
          </v-col>
         </v-row>
 
-        <MissionCommandPad :controlstream="controlstream" class="mt-3" />
+        <MissionCommandPad :controlstreams="controlstreams" class="mt-3" />
       </v-container>
 
-    <v-col>
-      <h3>Current LLA</h3>
-      <v-row dense>
-        <v-col cols="4">
-          <p>Lat: {{ receivedLLA.lat.toFixed(6) }}</p>
-        </v-col>
-        <v-col cols="4">
-          <p>Lon: {{ receivedLLA.lon.toFixed(6) }}</p>
-        </v-col>
-        <v-col cols="4">
-          <p>Alt: {{ receivedLLA.alt.toFixed(2) }} Relative(to home)</p>
-        </v-col>
-      </v-row>
-    </v-col>
   </v-card>
 </template>
 
@@ -563,6 +603,5 @@ onMounted(async () => {
 .waypoints-list {
   max-height: 300px;
   overflow-y: auto;
-
 }
 </style>
