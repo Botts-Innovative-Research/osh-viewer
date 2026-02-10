@@ -110,9 +110,8 @@ const center = containerSize / 2;
 
 /***************************** INPUT PROPERTIES *****************************/
 const controlStreamStore = useControlStreamStore();
-const { schemas } = storeToRefs(controlStreamStore);
-const controlStreamSchema = computed(() => schemas.value[props.id]?.schema || {});
-const controlStreamType = computed(() => schemas.value[props.id]?.type || {});
+const controlStreamSchema = computed(() => controlStreamStore.getCSSchemaById(props.id) || {});
+const controlStreamType = computed(() => controlStreamStore.getCSTypeById(props.id) || {});
 
 // List of command options based on schema
 const commandOptions = computed(() => {
@@ -174,11 +173,26 @@ const absPan = ref<number>(0.0);
 const absTilt = ref<number>(0.0);
 const absZoom = ref<number>(0.0);
 // Default increment for relative commands
-const increment = ref(5.0);
+const increment = ref(10.0);
 
-watch(controlStreamType, (newVal) => {
-	console.log('[PanTiltControl] controlStreamType changed:', newVal);
-});
+// Compute constraints for absolute commands
+const constraints = computed(() => {
+	let minPan, maxPan, minTilt, maxTilt, minZoom, maxZoom = 0;
+	if (controlStreamSchema.value.pan) {
+		minPan = controlStreamSchema.value.pan.constraint[0]
+		maxPan = controlStreamSchema.value.pan.constraint[1]
+	}
+	if (controlStreamSchema.value.tilt) {
+		minTilt = controlStreamSchema.value.tilt.constraint[0]
+		maxTilt = controlStreamSchema.value.tilt.constraint[1]
+	}
+	if (controlStreamSchema.value.zoom) {
+		minZoom = controlStreamSchema.value.zoom.constraint[0]
+		maxZoom = controlStreamSchema.value.zoom.constraint[1]
+	}
+	return { minPan, maxPan, minTilt, maxTilt, minZoom, maxZoom }
+})
+
 </script>
 
 <template>
@@ -207,7 +221,6 @@ watch(controlStreamType, (newVal) => {
 				v-model.number="increment"
 				type="number"
 				label="Increment"
-				placeholder="5.0"
 			/>
 		</v-sheet>
 		<v-sheet class="wrapper">
@@ -224,6 +237,8 @@ watch(controlStreamType, (newVal) => {
 					label="Pan"
 					placeholder="0.0"
 					class="w-100"
+					:min="constraints.minPan"
+					:max="constraints.maxPan"
 				/>
 				<v-text-field
 					v-model.number="absTilt"
@@ -231,6 +246,8 @@ watch(controlStreamType, (newVal) => {
 					label="Tilt"
 					placeholder="0.0"
 					class="w-100"
+					:min="constraints.minTilt"
+					:max="constraints.maxTilt"
 				/>
 				<v-text-field
 					v-model.number="absZoom"
@@ -238,6 +255,8 @@ watch(controlStreamType, (newVal) => {
 					label="Zoom"
 					placeholder="0.0"
 					class="w-100"
+					:min="constraints.minZoom"
+					:max="constraints.maxZoom"
 				/>
 			</div>
 
@@ -259,6 +278,8 @@ watch(controlStreamType, (newVal) => {
 					:label="selectedCommand"
 					placeholder="Enter value"
 					class="w-100"
+					:min="selectedCommand === 'pan' ? constraints.minPan : selectedCommand === 'tilt' ? constraints.minTilt : constraints.minZoom"
+					:max="selectedCommand === 'pan' ? constraints.maxPan : selectedCommand === 'tilt' ? constraints.maxTilt : constraints.maxZoom"
 				/>
 			</div>
 			<v-btn color="primary" @click="onSend" block>Send</v-btn>

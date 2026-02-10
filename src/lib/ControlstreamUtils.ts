@@ -41,7 +41,7 @@ export function sendCommand(commandBaseUrl: string, controlStreamId: string, com
 		})
 		.then((data) => {
 			console.log('Command successful: ', data);
-            showToast(`Command successful: ${data}`, 'SUCCESS');
+			showToast(`Command successful: ${data}`, 'SUCCESS');
 		})
 		.catch((error) => {
 			console.error('Error sending command: ', error);
@@ -132,15 +132,15 @@ export function getCommandType(schema: any, id: string) {
 			// Add absolute PTZ command schema
 			commandSchema.pan = {
 				type: 'number',
-				constraint: schema.find((item: any) => item.name === 'pan').constraint.intervals,
+				constraint: schema.find((item: any) => item.name === 'pan').constraint.intervals[0],
 			};
 			commandSchema.tilt = {
 				type: 'number',
-				constraint: schema.find((item: any) => item.name === 'tilt').constraint.intervals,
+				constraint: schema.find((item: any) => item.name === 'tilt').constraint.intervals[0],
 			};
 			commandSchema.zoom = {
 				type: 'number',
-				constraint: schema.find((item: any) => item.name === 'zoom').constraint.intervals,
+				constraint: schema.find((item: any) => item.name === 'zoom').constraint.intervals[0],
 			};
 		}
 		if (schema.some((item: any) => item.name === 'rpan')) {
