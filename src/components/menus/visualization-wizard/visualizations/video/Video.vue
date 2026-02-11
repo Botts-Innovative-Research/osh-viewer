@@ -141,7 +141,7 @@ useVisualizationCleanup(ref(dsInstances));
 <template>
   <v-card
       :id="videoDivId"
-      class="video-mjpeg video-h264"
+      class="video-container"
   >
   </v-card>
   <PTZControl
@@ -153,8 +153,9 @@ useVisualizationCleanup(ref(dsInstances));
 </template>
 
 <style>
-.video-container :deep(canvas) {
+.video-container canvas {
   width: 100%;
-  height: 100%;
+  height: auto;
 }
+
 </style>

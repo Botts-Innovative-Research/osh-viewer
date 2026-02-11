@@ -59,8 +59,6 @@ export function CreateVideoViewProps(datastreams: { [key: string]: any }, contro
     let videoView: any = {
         container: `video-container-${randomUUID()}`,
         css: 'video-view',
-        width: 640,
-        height: 320,
         useWebCodecApi: visOptions?.webCodec,
         showTime: visOptions?.time,
         showStats: visOptions?.stats,
