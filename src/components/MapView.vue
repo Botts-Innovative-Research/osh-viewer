@@ -109,12 +109,11 @@ onMounted(() => {
         const controlStreamId = selectedGeoPTZ.controlStreamId;
         const auth = selectedGeoPTZ.auth
 
-        console.log(geoPtzTargetPM.value)
-
         if (geoPtzTargetPM.value) {
           mapView.value.map.removeLayer(geoPtzTargetPM.value);
         }
         geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon }).addTo(mapView.value.map)
+        geoPtzTargetPM.value.vizId = selectedGeoPTZ.vizId;
 
         const command = {
           parameters: {
@@ -202,7 +201,7 @@ watch(
       (newId) => !oldIds?.some((id) => id === newId)
     )
     if (addedVizIds) createVisualizations(addedVizIds);
-    
+
   },
   { immediate: true, deep: true }
 );
@@ -437,13 +436,28 @@ watch(() => uiStore.selectedMapItem,
 );
 
 /**
- * Handle cursor styling - GeoPTZ, FlightPath
+ * Handle change in GeoPTZ selection
  */
-watch(() => [uiStore.selectedGeoPTZ, uiStore.selectedFlightPath], ([geoPtz, flight]) => {
+watch(() => uiStore.selectedGeoPTZ, (geoPtz) => {
   const map = mapView.value.map;
   const container = map.getContainer();
+  container.style.cursor = geoPtz ? 'crosshair' : ''
 
-  container.style.cursor = geoPtz || flight ? 'crosshair' : '' 
+  // If a geoPtz marker exists AND (disselection or changed selection)
+  if (geoPtzTargetPM.value && (!geoPtz || geoPtzTargetPM.value.vizId !== geoPtz.vizId)) {
+    console.log('Removing GeoPTZ marker');
+    mapView.value.map.removeLayer(geoPtzTargetPM.value);
+    geoPtzTargetPM.value = null;
+  }
+})
+
+/**
+ * Handle FlightPath cursor style
+ */
+watch(() => uiStore.selectedFlightPath, (flight) => {
+  const map = mapView.value.map;
+  const container = map.getContainer();
+  container.style.cursor = flight ? 'crosshair' : ''
 })
 
 /**

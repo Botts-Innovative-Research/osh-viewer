@@ -90,14 +90,12 @@ onMounted(async () => {
 watch(
 	() => uiStore.selectedGeoPTZ,
 	(newVal) => {
-		// Check if ID matches this visualization's controlstream ID
+		// Check if ID matches this controlstream's ID
 		if (newVal?.controlStreamId === props.controlstream.id) {
 			console.log('[GeoPtzView] This GeoPTZ instance is selected:', newVal?.controlStreamId);
-			// Add logic to highlight or focus on this GeoPTZ instance in the UI
 			isSelected.value = true;
 		} else {
 			console.log('[GeoPtzView] This GeoPTZ instance is NOT selected:', newVal?.controlStreamId);
-			// Remove highlight or focus if needed
 			isSelected.value = false;
 		}
 	}
@@ -120,7 +118,7 @@ function toggle() {
 	if (isSelected.value) {
 		uiStore.clearSelectedGeoPTZ();
 	} else {
-		uiStore.setSelectedGeoPTZ(props.controlstream.id, commandBaseUrl.value, `${csAuth.value.username}:${csAuth.value.password}`);
+		uiStore.setSelectedGeoPTZ(props.controlstream.id, commandBaseUrl.value, `${csAuth.value.username}:${csAuth.value.password}`, props.visualization.id);
 	}
 }
 
