@@ -32,6 +32,7 @@ export const useUIStore = defineStore('ui', () => {
 		commandBaseUrl: string;
 		auth: string;
 		vizId: string;	// ID of associated GeoPTZ visualization
+		vizName: string; // Name of GeoPTZ visualization
 	} | null>(null);
 
 	// Currently selected LLA coordinates
@@ -94,8 +95,8 @@ export const useUIStore = defineStore('ui', () => {
 	}
 
 	// Handle selection of GeoPTZ instance
-	function setSelectedGeoPTZ(controlStreamId: string, commandBaseUrl: string, auth: string, vizId: string) {
-		selectedGeoPTZ.value = { controlStreamId, commandBaseUrl, auth, vizId };
+	function setSelectedGeoPTZ(controlStreamId: string, commandBaseUrl: string, auth: string, vizId: string, vizName: string) {
+		selectedGeoPTZ.value = { controlStreamId, commandBaseUrl, auth, vizId, vizName };
 	}
 	function clearSelectedGeoPTZ() {
 		selectedGeoPTZ.value = null;

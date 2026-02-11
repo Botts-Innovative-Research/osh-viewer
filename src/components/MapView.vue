@@ -93,7 +93,7 @@ onMounted(() => {
     mapView.value.map.on('click', (event: any) => {
       console.log('[MapView] Point clicked:', event);
       const geoPtzIcon = L.icon({
-        iconUrl: '/icons/map/map-marker.svg',
+        iconUrl: '/icons/map/geoPtz-pin.svg',
         iconSize: [32, 32],
         iconAnchor: [16, 16]
       })
@@ -112,7 +112,7 @@ onMounted(() => {
         if (geoPtzTargetPM.value) {
           mapView.value.map.removeLayer(geoPtzTargetPM.value);
         }
-        geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon }).addTo(mapView.value.map)
+        geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon, title: selectedGeoPTZ.vizName }).addTo(mapView.value.map)
         geoPtzTargetPM.value.vizId = selectedGeoPTZ.vizId;
 
         const command = {

@@ -118,7 +118,7 @@ function toggle() {
 	if (isSelected.value) {
 		uiStore.clearSelectedGeoPTZ();
 	} else {
-		uiStore.setSelectedGeoPTZ(props.controlstream.id, commandBaseUrl.value, `${csAuth.value.username}:${csAuth.value.password}`, props.visualization.id);
+		uiStore.setSelectedGeoPTZ(props.controlstream.id, commandBaseUrl.value, `${csAuth.value.username}:${csAuth.value.password}`, props.visualization.id, props.visualization.name);
 	}
 }
 
