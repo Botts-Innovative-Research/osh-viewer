@@ -34,7 +34,7 @@ watch(() => vizwizStore.csConfig, (newVal) => {
   <!-- GeoPTZ -->
   <v-container>
     <v-checkbox label="GeoPTZ Control" v-model="checkedRoles.lla" disabled></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.lla" role="lla" />
+    <ControlStreamPicker v-if="checkedRoles.lla" role="lla" :show-property-selector="false" />
   </v-container>
 </template>
 
