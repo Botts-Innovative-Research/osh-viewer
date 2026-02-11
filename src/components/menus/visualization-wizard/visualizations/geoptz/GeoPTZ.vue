@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { SweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 // @ts-ignore
@@ -9,7 +9,7 @@ import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useUIStore } from '@/stores/uistore';
 import { sendCommand } from '@/lib/ControlstreamUtils';
-import { createDatasource, useVisualizationCleanup } from '../../shared/helpers';
+import { createDatasource, useDisconnectDatasources } from '../../shared/helpers';
 
 // Generate a random ID when the component is created
 const geoPtzId = ref('geoPtz-' + randomUUID());
@@ -138,7 +138,12 @@ function onSend() {
 	sendCommand(commandBaseUrl.value, props.controlstream.id, command, `${csAuth.value.username}:${csAuth.value.password}`);
 }
 
-useVisualizationCleanup(ref(geoPtzDatasource));
+onBeforeUnmount(() => {
+	// Disselect GeoPTZ before unmount
+	if (isSelected) uiStore.clearSelectedGeoPTZ();
+	// Disconnect datasources
+	useDisconnectDatasources(ref(geoPtzDatasource));
+})
 </script>
 
 <template>
