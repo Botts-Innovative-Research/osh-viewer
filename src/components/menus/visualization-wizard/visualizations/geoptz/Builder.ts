@@ -1,5 +1,5 @@
 import { OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { ISweApiDataSourceProperties, VisualizationComponents } from '@/lib/VisualizationHelpers';
+import { ISweApiControlStreamProperties, ISweApiDataSourceProperties, VisualizationComponents } from '@/lib/VisualizationHelpers';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
@@ -72,9 +72,8 @@ export function CreateGeoPtzViewProps(datastream: OSHDatastream, controlstreams:
 
 		// Push new ISweApiDataSourceProperties
 		const currentOSHControlstream = controlstreamStore.getControlStreamsById([csId])[0];
-		const currentControlstream: any = {
+		const currentControlstream: ISweApiControlStreamProperties = {
 			endpointUrl: currentOSHControlstream.controlstream.networkProperties.endpointUrl,
-			// resource: `/datastreams/${csId}/observations`,
 			tls: currentOSHControlstream.controlstream.networkProperties.tls,
 			protocol: 'ws',
 			startTime: 'now',

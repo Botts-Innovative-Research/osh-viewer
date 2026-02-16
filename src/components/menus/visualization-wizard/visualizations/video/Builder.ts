@@ -53,7 +53,6 @@ export function build() {
  */
 export function CreateVideoViewProps(datastreams: { [key: string]: any }, controlstreams: { [key: string]: any }, visOptions: any) {
 	const datastreamStore = useDataStreamStore();
-    const controlstreamStore = useControlStreamStore();
 
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
 	let videoLayer: any = {};

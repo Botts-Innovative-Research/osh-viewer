@@ -4,9 +4,28 @@ export interface IVisualizationHelper {}
 
 export interface DataSourceProperties {}
 
+export interface ControlStreamProperties {}
+
 export interface ISweApiDataSourceProperties extends DataSourceProperties {
   endpointUrl: string
   resource: string
+  tls: boolean
+  protocol: string
+  startTime?: string
+  endTime?: string
+  mode: string
+  responseFormat: string
+    connectorOpts: { username: string, password: string}
+  id?: string // ID to use for SweApi
+  properties?: {
+    // Role: property pair
+    // Ex: "location": { property: "loc" }
+    [key: string]: any
+  }
+}
+
+export interface ISweApiControlStreamProperties extends ControlStreamProperties {
+  endpointUrl: string
   tls: boolean
   protocol: string
   startTime?: string
@@ -97,7 +116,7 @@ export class VisualizationComponents {
   dataLayer: DataLayerProperties | any | null // TODO: Fix type
   dataView: DataViewProperties | null
   dataSource: DataSourceProperties | DataSourceProperties[]
-  controlstream?: any // Optional controlstream for visualizations like GeoPTZ
+  controlstream?: ControlStreamProperties | ControlStreamProperties[] // Optional controlstream for visualizations like GeoPTZ
 
   constructor(datasource: SweApi | SweApi[], dataLayer: any, dataView: any, controlstream?: any) {
     this.dataSource = datasource
@@ -128,6 +147,30 @@ export class SweApiDataSourceProperties implements ISweApiDataSourceProperties {
     this.mode = props.mode
     this.responseFormat = props.responseFormat
     this.connectorOpts = props.connectorOpts
+  }
+}
+
+export class SweApiControlStreamProperties implements ISweApiControlStreamProperties {
+  endpointUrl: string
+  tls: boolean
+  protocol: string
+  startTime?: string
+  endTime?: string
+  mode: string
+  responseFormat: string
+  connectorOpts: { username: string, password: string }
+  id: string
+
+  constructor(props: ISweApiControlStreamProperties) {
+    this.endpointUrl = props.endpointUrl
+    this.tls = props.tls
+    this.protocol = props.protocol
+    this.startTime = props.startTime
+    this.endTime = props.endTime
+    this.mode = props.mode
+    this.responseFormat = props.responseFormat
+    this.connectorOpts = props.connectorOpts
+    this.id = props.id ?? ''
   }
 }
 
