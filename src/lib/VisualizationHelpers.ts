@@ -1,5 +1,3 @@
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
-
 export interface IVisualizationHelper {}
 
 export interface DataSourceProperties {}
@@ -7,6 +5,25 @@ export interface DataSourceProperties {}
 export interface ISweApiDataSourceProperties extends DataSourceProperties {
   endpointUrl: string
   resource: string
+  tls: boolean
+  protocol: string
+  startTime?: string
+  endTime?: string
+  mode: string
+  responseFormat: string
+  connectorOpts: { username: string, password: string}
+  id?: string // ID to use for SweApi
+  properties?: {
+    // Role: property pair
+    // Ex: "location": { property: "loc" }
+    [key: string]: any
+  }
+}
+
+export interface ControlStreamProperties {}
+
+export interface ISweApiControlStreamProperties extends ControlStreamProperties {
+  endpointUrl: string
   tls: boolean
   protocol: string
   startTime?: string
@@ -94,13 +111,13 @@ export interface IMapViewProperties extends DataViewProperties {
 }
 
 export class VisualizationComponents {
-  dataLayer: DataLayerProperties | any | null // TODO: Fix type
+  dataLayer: DataLayerProperties | null
   dataView: DataViewProperties | null
   dataSource: DataSourceProperties | DataSourceProperties[]
-  controlstream?: any // Optional controlstream for visualizations like GeoPTZ
+  controlstream?: ControlStreamProperties | ControlStreamProperties[] // Optional controlstream for visualization
 
-  constructor(datasource: SweApi | SweApi[], dataLayer: any, dataView: any, controlstream?: any) {
-    this.dataSource = datasource
+  constructor(dataSource: DataSourceProperties | DataSourceProperties[], dataLayer: DataLayerProperties, dataView: DataViewProperties, controlstream?: ControlStreamProperties | ControlStreamProperties[]) {
+    this.dataSource = dataSource
     this.dataLayer = dataLayer
     this.dataView = dataView
     this.controlstream = controlstream
@@ -117,6 +134,11 @@ export class SweApiDataSourceProperties implements ISweApiDataSourceProperties {
   mode: string
   responseFormat: string
   connectorOpts: { username: string, password: string }
+  id?: string
+  properties?: {
+    // Role: property pair
+    [key: string]: any
+  }
 
   constructor(props: ISweApiDataSourceProperties) {
     this.endpointUrl = props.endpointUrl
@@ -128,6 +150,8 @@ export class SweApiDataSourceProperties implements ISweApiDataSourceProperties {
     this.mode = props.mode
     this.responseFormat = props.responseFormat
     this.connectorOpts = props.connectorOpts
+    this.id = props.id
+    this.properties = props.properties
   }
 }
 

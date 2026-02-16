@@ -66,7 +66,7 @@ export const useVisualizationStore = defineStore('visualizations',
             name: visualization.name,
             type: visualization.type,
             parentId: visualization.parentId,
-            datastreamIds: getIds(visualization.parentDatastream),
+            datastreamIds: getIds(visualization.datastream),
             controlstreamIds: getIds(visualization.controlstream),
             visualizationComponents: visualization.visualizationComponents
         });
