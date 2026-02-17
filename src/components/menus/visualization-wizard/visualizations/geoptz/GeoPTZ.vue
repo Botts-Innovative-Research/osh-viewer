@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { SweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
+import { ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
@@ -22,7 +22,7 @@ const props = defineProps({
 		default: null,
 	},
 	datasource: {
-		type: SweApiDataSourceProperties,
+		type: Object,
 		required: true,
 		default: null,
 	},

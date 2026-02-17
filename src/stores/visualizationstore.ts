@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { computed, ref, Ref } from 'vue';
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { OSHControlStream, OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {useDataStreamStore} from "@/stores/datastreamstore";
 import {useControlStreamStore} from "@/stores/controlstreamstore";
 
@@ -53,8 +53,9 @@ export const useVisualizationStore = defineStore('visualizations',
 		console.log('[VisualizationStore] Adding visualization:', visualization);
 		visualizations.value.push(visualization);
 
-        const getIds = (stream: any): string[] => {
-            return stream != null ? Object.keys(stream) : [];
+        const getIds = (streams: OSHDatastream[] | OSHControlStream[] | null): string[] => {
+            // return stream != null ? Object.keys(stream) : [];
+            return streams != null ? streams.map((item: OSHDatastream | OSHControlStream) => item.id) : [];
         }
 
         if (visualization.type === 'pointmarker-feature') {
@@ -65,9 +66,9 @@ export const useVisualizationStore = defineStore('visualizations',
             id: visualization.id,
             name: visualization.name,
             type: visualization.type,
-            parentId: visualization.parentId,
+            parentId: visualization.parentId ?? null,
             datastreamIds: getIds(visualization.datastream),
-            controlstreamIds: getIds(visualization.controlstream),
+            controlstreamIds: visualization.controlstream ? getIds(visualization.controlstream) : [],
             visualizationComponents: visualization.visualizationComponents
         });
 	};
@@ -148,9 +149,9 @@ export const useVisualizationStore = defineStore('visualizations',
                 serialized.id,
                 serialized.name,
                 serialized.type,
+                datastreamArray,
+                controlstreamArray,
                 serialized.parentId,
-                datastreams,
-                controlstreams
             )
 
             visualization.setVisualizationComponents(serialized.visualizationComponents);

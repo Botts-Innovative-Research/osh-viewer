@@ -14,6 +14,7 @@ import { sendCommand } from '@/lib/ControlstreamUtils';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import { RoleDatastream } from '@/types/types';
 import { createDatasource } from './menus/visualization-wizard/shared/helpers';
+import { DataSourceProperties, ILineOfBearingLayerProperties, IPointMarkerLayerProperties, ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
 
 // Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3ZWYzYjhiMy0wMzcwLTQxMTktOGY1OS0wYzM1NzNlOTI3NDMiLCJpZCI6Mzk4MzMsImlhdCI6MTc0ODIwNDA4OX0.HBox4N50pESMU1yJs33-0cNd22sTvIv0KetnMAJMdXU'
 
@@ -260,9 +261,7 @@ function createVisualizations(addedVizIds: string[]) {
   for (const viz of newOSHVisualizations) {
     if (viz.type === 'pmorientation') {
       // Array of datasources
-      const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
-        ? viz.visualizationComponents.dataSource
-        : [viz.visualizationComponents.dataSource];
+      const dsArray: ISweApiDataSourceProperties[] = viz.visualizationComponents.dataSource
 
       // Array of SweApi instances for datasources
       const dsInstances: SweApi[] = [];
@@ -315,7 +314,7 @@ function createVisualizations(addedVizIds: string[]) {
       }
 
       console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstances)
-      const layerOpts = viz.visualizationComponents.dataLayer
+      const layerOpts = viz.visualizationComponents.dataLayer as IPointMarkerLayerProperties
       const pmLayer = new PointMarkerLayer({
         ...layerOpts,
         name: viz.name,
@@ -334,9 +333,7 @@ function createVisualizations(addedVizIds: string[]) {
       currentVisualizations.value.push(viz);
 
       // Array of datasources
-      const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
-        ? viz.visualizationComponents.dataSource
-        : [viz.visualizationComponents.dataSource];
+      const dsArray: ISweApiDataSourceProperties[] = viz.visualizationComponents.dataSource
 
       //  Array of SweApi instances for datasources
       const dsInstances: SweApi[] = [];
@@ -370,8 +367,7 @@ function createVisualizations(addedVizIds: string[]) {
       }
 
       console.log('[MapView] Creating datasource for LoBLayer:', dsInstances)
-      const layerOpts = viz.visualizationComponents.dataLayer;
-      console.log('Icon size:', layerOpts.iconSize);
+      const layerOpts = viz.visualizationComponents.dataLayer as ILineOfBearingLayerProperties;
       let lobLayerOpts: LoBLayer = {
         ...layerOpts,
         name: viz.name,

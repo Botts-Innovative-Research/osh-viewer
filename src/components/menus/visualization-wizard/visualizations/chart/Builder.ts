@@ -1,9 +1,11 @@
 import {useVisualizationStore} from "@/stores/visualizationstore";
 import {useVizWizStore} from "@/stores/vizwizstore";
-import {AggregateDatastreams, BuildRoleProperty} from "../../shared/helpers";
+import {AggregateDatastreams, BuildRoleProperty, getUsedDatastreams} from "../../shared/helpers";
+//@ts-ignore
 import {randomUUID} from 'osh-js/source/core/utils/Utils.js';
 import {useDataStreamStore} from "@/stores/datastreamstore";
-import {ISweApiDataSourceProperties, VisualizationComponents} from "@/lib/VisualizationHelpers";
+import {IChartViewProperties, ICurveLayerProperties, ISweApiDataSourceProperties, VisualizationComponents} from "@/lib/VisualizationHelpers";
+//@ts-ignore
 import {Mode} from 'osh-js/source/core/datasource/Mode';
 import {OSHVisualization} from "@/lib/OSHConnectDataStructs";
 
@@ -12,11 +14,10 @@ export function build() {
     const vizwizStore = useVizWizStore();
     const visualizationStore = useVisualizationStore();
 
+    // Aggregate datastreams from vizwizStore
     const datastreams = AggregateDatastreams();
-    console.log('Aggregated datastreams for PM Orientation:', datastreams);
 
     const chartResult = CreateChartViewProps(datastreams, vizwizStore.visualizationCustomizationOptions);
-
     const visualizationComponents: VisualizationComponents = {
         dataSource: chartResult.vizDatasources,
         dataLayer: chartResult.curveLayer,
@@ -27,9 +28,7 @@ export function build() {
         `visualization-${randomUUID()}`,
         vizwizStore.visualizationCustomizationOptions.name,
         'chart',
-        null,
-        datastreams,
-        null
+        getUsedDatastreams(),
     );
     newViz.setVisualizationComponents(visualizationComponents);
     visualizationStore.addVisualization(newViz);
@@ -40,18 +39,29 @@ export function CreateChartViewProps(datastreams: { [key: string]: any }, visOpt
     const vizwizStore = useVizWizStore();
     const datastreamStore = useDataStreamStore();
 
+    // Create datasources, layer, and view
     const vizDatasources: ISweApiDataSourceProperties[] = [];
-    let curveLayer: any = {
-        fill: true,
+    let curveLayer: ICurveLayerProperties = {
+        name: vizwizStore.dsConfig['y'].label + (vizwizStore.dsConfig['y'].uom ? ` (${vizwizStore.dsConfig['y'].uom})` : '') || 'Y-Axis Data',
         maxValues: 1000,
+        lineColor: visOptions.lineColor || '#FF0000',
+        backgroundColor: visOptions.backgroundColor || '#FFFFFF',
+        fill: true,
+        getCurveId: (rec: any, timestamp: any) => '2',
+        xLabel: vizwizStore.dsConfig['x'].label != null ? vizwizStore.dsConfig['x'].label : 'X-Axis Data',
+        yLabel: vizwizStore.dsConfig['y'].label + (vizwizStore.dsConfig['y'].uom ? ` (${vizwizStore.dsConfig['y'].uom})` : '') || 'Y-Axis Data',
+        getValues: (rec: any, timestamp: any) => {
+            return {
+                x: rec[vizwizStore.dsConfig['x'].property || rec.timestamp],
+                y: rec[vizwizStore.dsConfig['y'].property || ''],
+            }
+        },
     }
-
-    let chartView: any = {
+    let chartView: IChartViewProperties = {
         container: `chart-container-${randomUUID()}`,
         css: 'chart-view',
-        datasetOptions: {
-            tension: 0.2,
-        },
+        layers: [curveLayer],
+        datasetOptions: { tension: 0.2 },
         refreshRate: 1000,
     }
 
@@ -76,31 +86,9 @@ export function CreateChartViewProps(datastreams: { [key: string]: any }, visOpt
             }
         };
         vizDatasources.push(currentDataSource);
-
-        curveLayer = {
-            ...curveLayer,
-            dataSourceIds: vizDatasources.map(ds => ds.id),
-            getValues: (rec: any, timestamp: any) => {
-                return {
-                    x: rec[vizwizStore.dsConfig['x'].property || rec.timestamp],
-                    y: rec[vizwizStore.dsConfig['y'].property || ''],
-                }
-            },
-            lineColor: visOptions.lineColor || '#FF0000',
-            backgroundColor: visOptions.backgroundColor || '#FFFFFF',
-            getCurveId: (rec: any, timestamp: any) => '2',
-            name: vizwizStore.dsConfig['y'].label + (vizwizStore.dsConfig['y'].uom ? ` (${vizwizStore.dsConfig['y'].uom})` : '') || 'Y-Axis Data',
-            xLabel: vizwizStore.dsConfig['x'].label != null ? vizwizStore.dsConfig['x'].label : 'X-Axis Data',
-            yLabel: vizwizStore.dsConfig['y'].label + (vizwizStore.dsConfig['y'].uom ? ` (${vizwizStore.dsConfig['y'].uom})` : '') || 'Y-Axis Data',
-        }
-
-        chartView = {
-            ...chartView,
-            layers: [curveLayer],
-        }
-
-        console.log('Created ChartViewProps:', {vizDatasources, curveLayer, chartView});
     }
+
+    console.log('Created ChartViewProps:', {vizDatasources, curveLayer, chartView});
 
     return {
         vizDatasources,

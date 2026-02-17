@@ -339,28 +339,28 @@ export class OSHControlStream {
 }
 
 export class OSHVisualization {
-	id: string;
+	id: string;	// Random ID following the format `visualization-${randomUUID()}`
 	name: string;
 	type: string;
-	parentId: string | null;
-	datastream: OSHDatastream | OSHDatastream[];
-	controlstream?: OSHControlStream | OSHControlStream[]; // Optional control stream
+	parentId?: string | null;
+	datastream: OSHDatastream[];
+	controlstream?: OSHControlStream[]; // Optional control stream
 	visualizationComponents!: VisualizationComponents;
 
 	constructor(
 		id: string,
 		name: string,
 		type: string,
-		parentId: string | null,
-		datastream: OSHDatastream | OSHDatastream[],
-		controlstream?: OSHControlStream | OSHControlStream[]
+		datastream: OSHDatastream[],
+		controlstream?: OSHControlStream[],
+		parentId?: string | null,
 	) {
 		this.id = id;
 		this.name = name;
 		this.type = type;
-		this.parentId = parentId;
 		this.datastream = datastream;
 		this.controlstream = controlstream;
+		this.parentId = parentId;
 	}
 
 	setVisualizationComponents(components: VisualizationComponents): void {

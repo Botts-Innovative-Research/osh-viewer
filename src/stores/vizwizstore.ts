@@ -30,7 +30,7 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 	const dsConfig = ref<Record<string, Record<string, any>>>({});
 	const dsCustomization = ref<Record<string, Record<string, any>>>({});
 	const csCustomization = ref<Record<string, Record<string, any>>>({});
-    const csConfig = ref<Record<string, Record<string, any>>>({});
+	const csConfig = ref<Record<string, Record<string, any>>>({});
 
     const visualizationCustomizationOptions = ref<any>({});
 

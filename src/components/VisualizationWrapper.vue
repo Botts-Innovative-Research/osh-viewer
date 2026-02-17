@@ -6,11 +6,12 @@ import Video from './menus/visualization-wizard/visualizations/video/Video.vue';
 import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
 import Text from './menus/visualization-wizard/visualizations/text/Text.vue';
 import FlightPath from './menus/visualization-wizard/visualizations/flightpath/FlightPath.vue';
+import { IChartViewProperties, ICurveLayerProperties, IVideoLayerProperties, IVideoViewProperties } from '@/lib/VisualizationHelpers';
 
-const props = defineProps({
-	viz: { type: OSHVisualization, required: true },
-	customClass: { type: String, default: '' },
-});
+const { viz: OSHVisualization, customClass = '' } = defineProps<{
+  viz: OSHVisualization,
+  customClass?: string,
+}>()
 
 </script>
 
@@ -20,31 +21,32 @@ const props = defineProps({
 		<Chart
 			:visualization="viz"
 			:datasource="viz.visualizationComponents.dataSource"
-			:curve-layer="viz.visualizationComponents.dataLayer"
-			:chart-view="viz.visualizationComponents.dataView"
+			:curve-layer="(viz.visualizationComponents.dataLayer as ICurveLayerProperties)"
+			:chart-view="(viz.visualizationComponents.dataView as IChartViewProperties)"
 			v-if="viz.type === 'chart'"
 		></Chart>
 		<Video
 			:visualization="viz"
 			:datasource="viz.visualizationComponents.dataSource"
-			:video-layer="viz.visualizationComponents.dataLayer"
-			:video-view="viz.visualizationComponents.dataView"
+			:video-layer="(viz.visualizationComponents.dataLayer as IVideoLayerProperties)"
+			:video-view="(viz.visualizationComponents.dataView as IVideoViewProperties)"
+			:controlstream="(viz.controlstream ? viz.controlstream[0] : undefined)"
 			v-if="viz.type === 'video'"
 		></Video>
 		<GeoPTZ
 			:visualization="viz"
-			:datasource="Array.isArray(viz.visualizationComponents.dataSource) ? viz.visualizationComponents.dataSource[0] : viz.visualizationComponents.dataSource"
+			:datasource="viz.visualizationComponents.dataSource[0]"
 			:controlstream="viz.visualizationComponents.controlstream"
 			v-if="viz.type === 'geoPtz'"
 		></GeoPTZ>
 		<Text
 			:visualization="viz"
-			:datasource="Array.isArray(viz.visualizationComponents.dataSource) ? viz.visualizationComponents.dataSource[0] : viz.visualizationComponents.dataSource"
+			:datasource="viz.visualizationComponents.dataSource[0]"
 			v-if="viz.type === 'text'"
 		></Text>
     <FlightPath
         :visualization="viz"
-        :datasource="Array.isArray(viz.visualizationComponents.dataSource) ? viz.visualizationComponents.dataSource[0] : viz.visualizationComponents.dataSource"
+        :datasource="viz.visualizationComponents.dataSource[0]"
         :controlstream="viz.visualizationComponents.controlstream"
         v-if="viz.type === 'flightPath'"
     ></FlightPath>
