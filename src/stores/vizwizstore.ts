@@ -1,8 +1,7 @@
 import {OSHControlStream, OSHDatastream} from '@/lib/OSHConnectDataStructs';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { VisualizationCustomizationOptions } from '@/lib/visualization/wizard/VisualizationCustomizationOptions';
-import { DatasourceOptions } from '@/lib/visualization/wizard/Datasources/DatasourceOptions';
+import { VisualizationCustomizationOptions } from '@/lib/VisualizationHelpers';
 
 // Define global config properties
 export interface CommonConfigProperties {
@@ -32,7 +31,7 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 	const csCustomization = ref<Record<string, Record<string, any>>>({});
 	const csConfig = ref<Record<string, Record<string, any>>>({});
 
-    const visualizationCustomizationOptions = ref<any>({});
+	const visualizationCustomizationOptions = ref<any>({});
 
 	const setType = (type: string): void => {
 		visualizationType.value = type;

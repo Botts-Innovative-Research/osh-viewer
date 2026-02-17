@@ -343,7 +343,7 @@ export class OSHVisualization {
 	name: string;
 	type: string;
 	parentId?: string | null;
-	datastream: OSHDatastream[];
+	datastream: OSHDatastream[] | null;	// TODO: null handles "All PMS"
 	controlstream?: OSHControlStream[]; // Optional control stream
 	visualizationComponents!: VisualizationComponents;
 
@@ -351,7 +351,7 @@ export class OSHVisualization {
 		id: string,
 		name: string,
 		type: string,
-		datastream: OSHDatastream[],
+		datastream: OSHDatastream[] | null,
 		controlstream?: OSHControlStream[],
 		parentId?: string | null,
 	) {

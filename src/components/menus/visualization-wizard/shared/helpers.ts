@@ -1,5 +1,6 @@
 import { useVizWizStore } from "@/stores/vizwizstore"
 import { onBeforeUnmount, Ref } from "vue"
+//@ts-ignore
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { OSHControlStream, OSHDatastream } from "@/lib/OSHConnectDataStructs";
 import { DataSourceProperties, ISweApiDataSourceProperties } from "@/lib/VisualizationHelpers";

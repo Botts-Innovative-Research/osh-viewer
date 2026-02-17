@@ -140,7 +140,7 @@ async function initializePtz() {
   if (!props.controlstream || Object.keys(props.controlstream).length === 0)
     return;
 
-  const csId = Object.keys(props.controlstream)[0];
+  const csId = props.controlstream.id;
   if (!csId)
     return;
 
@@ -149,8 +149,6 @@ async function initializePtz() {
     return;
 
   const cs = controlStreams[0];
-
-  console.log("YES IM REACHING HERE PLS SEE ME")
 
   await fetchControlStreamSchema(cs.controlstream.properties, cs.controlstream.networkProperties);
 }

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, defineProps } from 'vue';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import Chart from './menus/visualization-wizard/visualizations/chart/Chart.vue';
 import Video from './menus/visualization-wizard/visualizations/video/Video.vue';
@@ -8,7 +7,7 @@ import Text from './menus/visualization-wizard/visualizations/text/Text.vue';
 import FlightPath from './menus/visualization-wizard/visualizations/flightpath/FlightPath.vue';
 import { IChartViewProperties, ICurveLayerProperties, IVideoLayerProperties, IVideoViewProperties } from '@/lib/VisualizationHelpers';
 
-const { viz: OSHVisualization, customClass = '' } = defineProps<{
+const { viz, customClass = '' } = defineProps<{
   viz: OSHVisualization,
   customClass?: string,
 }>()
@@ -36,8 +35,8 @@ const { viz: OSHVisualization, customClass = '' } = defineProps<{
 		<GeoPTZ
 			:visualization="viz"
 			:datasource="viz.visualizationComponents.dataSource[0]"
-			:controlstream="viz.visualizationComponents.controlstream"
-			v-if="viz.type === 'geoPtz'"
+			:controlstream="viz.visualizationComponents.controlstream[0]"
+			v-if="viz.type === 'geoPtz' && viz.visualizationComponents.controlstream"
 		></GeoPTZ>
 		<Text
 			:visualization="viz"

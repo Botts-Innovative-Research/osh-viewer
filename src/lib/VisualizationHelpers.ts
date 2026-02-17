@@ -32,6 +32,12 @@ export interface VisualizationComponents {
   controlstream?: ISweApiControlStreamProperties[] // Optional controlstream for visualization
 }
 
+/**
+ * Visualization Customization Options
+ * Defines the set of customization options for different visualization types.
+ */
+export interface VisualizationCustomizationOptions {}
+
 
 /* DATASOURCE PROPERTIES */
 

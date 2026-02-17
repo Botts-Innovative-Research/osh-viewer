@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {defineProps, onMounted, ref, toRaw } from 'vue';
+import { onMounted, ref, toRaw } from 'vue';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import ChartJsView from 'osh-js/source/core/ui/view/chart/ChartJsView.js';
@@ -39,10 +39,10 @@ function initializeChart() {
 
     const dsInstance = createDatasource(dsProps)
 
-    if (rawDs.properties?.x && rawDs.properties?.y) {
+    if (rawDs && rawDs.properties?.x && rawDs.properties?.y) {
       getValues = (rec: any, timestamp: any) => {
-        const xProp = rawDs.properties.x;
-        const yProp = rawDs.properties.y;
+        const xProp = rawDs.properties?.x;
+        const yProp = rawDs.properties?.y;
         return {
           x: rec[xProp.outputName]?.[xProp.property] ?? rec[xProp.property] ?? timestamp,
           y: rec[yProp.outputName]?.[yProp.property] ?? rec[yProp.property] ?? '',
