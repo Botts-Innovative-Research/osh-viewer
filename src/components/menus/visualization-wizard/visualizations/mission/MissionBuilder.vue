@@ -86,6 +86,17 @@ const selectedFile = ref<File | null>(null);
 const droneDatasource = ref<any>(null);
 
 
+const cruiseSpeed = ref<number>(15);
+const hoverSpeed = ref<number>(5);
+const waypointAltitude = ref<number>(50);
+const altitudeMode = ref<number>(1);
+const autoContinue = ref<boolean>(true);
+const amslAltAboveTerrain = ref<number | null>(null);
+
+const altitudeModeOptions = [
+  { title: 'AMSL (Above Mean Sea Level)', value: 1 },
+];
+
 const commandBaseUrl = computed(() => {
   const cs = missionControlStream.value;
   if (!cs) return '';
@@ -256,6 +267,17 @@ function clearSelectedFile() {
 }
 
 let initialDroneLocation = ref<{ lat: number; lon: number; alt: number } | null>(null);
+let homeLocation = ref<{ lat: number; lon: number; alt: number }>({ lat: 0, lon: 0, alt: 0 });
+
+function setHomeToCurrentLocation() {
+  if (receivedLLA.value) {
+    homeLocation.value = {
+      lat: receivedLLA.value.lat,
+      lon: receivedLLA.value.lon,
+      alt: receivedLLA.value.alt
+    };
+  }
+}
 
 function generateMissionControlPlan() {
   if (waypoints.value.length === 0) {
@@ -263,23 +285,20 @@ function generateMissionControlPlan() {
     return null;
   }
 
-  // get schema
-
   const plannedHomePosition = [
-    initialDroneLocation.value?.lat ?? waypoints.value[0].lat,
-    initialDroneLocation.value?.lon ?? waypoints.value[0].lon,
-    initialDroneLocation.value?.alt ?? waypoints.value[0].alt,
+    homeLocation.value?.lat ?? waypoints.value[0].lat,
+    homeLocation.value?.lon ?? waypoints.value[0].lon,
+    homeLocation.value?.alt ?? waypoints.value[0].alt,
   ]
 
-
   // send takeoff
-  const takeoffLocation = initialDroneLocation.value ?? waypoints.value[0];
+  const takeoffLocation = homeLocation.value ?? waypoints.value[0];
 
   const items: any[] = [{
-    AMSLAltAboveTerrain: null,
-    Altitude: 50,
-    AltitudeMode: 1,
-    autoContinue: true,
+    AMSLAltAboveTerrain: amslAltAboveTerrain.value,
+    Altitude: waypointAltitude.value,
+    AltitudeMode: altitudeMode.value,
+    autoContinue: autoContinue.value,
     command: 22, // 22 = takeoff
     doJumpId: 1,
     frame: 3,
@@ -297,10 +316,10 @@ function generateMissionControlPlan() {
 
   waypoints.value.forEach((wp, index) => {
     items.push({
-      AMSLAltAboveTerrain: null,
-      Altitude: 50,
-      AltitudeMode: 1,
-      autoContinue: true,
+      AMSLAltAboveTerrain: amslAltAboveTerrain.value,
+      Altitude: waypointAltitude.value,
+      AltitudeMode: altitudeMode.value,
+      autoContinue: autoContinue.value,
       command: 16, // 16 = waypoint
       doJumpId: index + 2,
       frame: 3,
@@ -318,10 +337,10 @@ function generateMissionControlPlan() {
   });
 
   items.push({
-    AMSLAltAboveTerrain: null,
+    AMSLAltAboveTerrain: amslAltAboveTerrain.value,
     Altitude: 0,
-    AltitudeMode: 1,
-    autoContinue: true,
+    AltitudeMode: altitudeMode.value,
+    autoContinue: autoContinue.value,
     command: 21,
     doJumpId: items.length + 1,
     frame: 3,
@@ -330,8 +349,8 @@ function generateMissionControlPlan() {
       0,
       0,
       null,
-      initialDroneLocation.value?.lat ?? waypoints.value[0].lat,
-      initialDroneLocation.value?.lon ?? waypoints.value[0].lon,
+      homeLocation.value?.lat ?? waypoints.value[0].lat,
+      homeLocation.value?.lon ?? waypoints.value[0].lon,
       0
     ],
     type: "SimpleItem"
@@ -346,10 +365,10 @@ function generateMissionControlPlan() {
     },
     groundStation: "QGroundControl",
     mission: {
-      cruiseSpeed: 15,
+      cruiseSpeed: cruiseSpeed.value,
       firmwareType: 3,
       globalPlanAltitudeMode: 0,
-      hoverSpeed: 5,
+      hoverSpeed: hoverSpeed.value,
       items: items,
       plannedHomePosition: plannedHomePosition,
       vehicleType: 2,
@@ -398,6 +417,12 @@ onMounted(async () => {
           lon: data.Location.lon,
           alt: data.Location.alt
         };
+        // Set home location to initial drone location as default
+        homeLocation.value = {
+          lat: data.Location.lat,
+          lon: data.Location.lon,
+          alt: data.Location.alt
+        };
         hasReceivedFirstLLA.value = true;
       }
       receivedLLA.value = {
@@ -408,7 +433,6 @@ onMounted(async () => {
     }
   };
 });
-
 
 onBeforeUnmount(() => {
   if (isSelected) uiStore.clearSelectedFlightPath();
@@ -442,7 +466,7 @@ onBeforeUnmount(() => {
     </v-card>
 
     <v-container class="pa-4">
-      <v-tabs v-model="missionSource" grow class="mb-4">
+      <v-tabs v-model="missionSource" grow color="primary" class="mb-2">
         <v-tab value="waypoints" prepend-icon="mdi-map-marker-path">
           Manual Waypoints
         </v-tab>
@@ -510,9 +534,126 @@ onBeforeUnmount(() => {
             </v-col>
           </v-row>
 
+          <v-expansion-panels class="mt-3">
+            <v-expansion-panel title="Planned Home Position">
+              <v-expansion-panel-text>
+                <v-row dense class="mb-2">
+                  <v-col cols="6">
+                    <v-btn
+                        block
+                        size="small"
+                        variant="outlined"
+                        @click="setHomeToCurrentLocation"
+                        prepend-icon="mdi-crosshairs-gps"
+                        :disabled="!hasReceivedFirstLLA"
+                    >
+                      Use Current Location
+                    </v-btn>
+                  </v-col>
+                </v-row>
+                <v-row dense>
+                  <v-col cols="12" md="4">
+                    <v-text-field
+                        v-model.number="homeLocation.lat"
+                        type="number"
+                        label="Latitude"
+                        density="compact"
+                        hide-details
+                    />
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <v-text-field
+                        v-model.number="homeLocation.lon"
+                        type="number"
+                        label="Longitude"
+                        density="compact"
+                        hide-details
+                    />
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <v-text-field
+                        v-model.number="homeLocation.alt"
+                        type="number"
+                        label="Altitude"
+                        density="compact"
+                        hide-details
+                    />
+                  </v-col>
+                </v-row>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+            <v-expansion-panel title="Mission Settings">
+              <v-expansion-panel-text>
+                <v-row dense>
+                  <v-col cols="6" md="3">
+                    <v-text-field
+                        v-model.number="cruiseSpeed"
+                        type="number"
+                        label="Cruise Speed"
+                        density="compact"
+                        hide-details
+                    />
+                  </v-col>
+                  <v-col cols="6" md="3">
+                    <v-text-field
+                        v-model.number="hoverSpeed"
+                        type="number"
+                        label="Hover Speed"
+                        density="compact"
+                        hide-details
+                        clearable
+                    />
+                  </v-col>
+                </v-row>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+            <v-expansion-panel title="Waypoint Settings">
+              <v-expansion-panel-text>
+                <v-row dense>
+                  <v-col cols="6" md="3">
+                    <v-text-field
+                        v-model.number="waypointAltitude"
+                        type="number"
+                        label="Altitude (m)"
+                        density="compact"
+                        hide-details
+                    />
+                  </v-col>
+                  <v-col cols="6" md="3">
+                    <v-text-field
+                        v-model.number="amslAltAboveTerrain"
+                        type="number"
+                        label="AMSL Alt Above Terrain"
+                        density="compact"
+                        hide-details
+                        clearable
+                    />
+                  </v-col>
+                  <v-col cols="6" md="3">
+                    <v-select
+                        v-model="altitudeMode"
+                        :items="altitudeModeOptions"
+                        label="Altitude Mode"
+                        density="compact"
+                        hide-details
+                    />
+                  </v-col>
+                  <v-col cols="6" md="3">
+                    <v-checkbox
+                        v-model="autoContinue"
+                        label="Auto Continue"
+                        density="compact"
+                        hide-details
+                    />
+                  </v-col>
+                </v-row>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
+
           <v-divider class="my-3"></v-divider>
 
-          <div class="d-flex justify-space-between align-center mb-2">
+          <div  class="d-flex justify-space-between align-center mb-2">
             <span class="text-subtitle-2">Waypoints ({{ waypoints.length }})</span>
             <v-btn
                 size="small"
@@ -620,7 +761,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .waypoints-list {
-  max-height: 300px;
+  max-height: 125px;
   overflow-y: auto;
 }
 </style>
