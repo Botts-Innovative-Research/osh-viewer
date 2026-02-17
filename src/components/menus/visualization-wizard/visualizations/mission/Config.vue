@@ -36,6 +36,10 @@ const checkedRoles = reactive({
     get: () => vizwizStore.csConfig.takeoff?.selected ?? false,
     set: (val: boolean) => vizwizStore.updateCsConfig("takeoff", { selected: val })
   }),
+  cancel: computed({
+    get: () => vizwizStore.csConfig.takeoff?.cancel ?? false,
+    set: (val: boolean) => vizwizStore.updateCsConfig("cancel", { selected: val })
+  }),
 })
 
 // Initialize csConfig with selected by default when mounted

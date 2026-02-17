@@ -117,15 +117,6 @@ watch(() => uiStore.currentLLA, (newVal) => {
   }
 });
 
-watch(missionSource, (source) => {
-  if (source === 'waypoints') {
-    selectedFile.value = null;
-  }
-  if (source === 'file') {
-    clearWaypoints()
-  }
-});
-
 
 function toggle() {
   const cs = missionControlStream.value;
@@ -451,68 +442,76 @@ onBeforeUnmount(() => {
     </v-card>
 
     <v-container class="pa-4">
-      <v-row dense align="center">
-        <v-col cols="12" sm="auto">
-          <v-btn
-              icon
-              :color="isSelected ? 'primary' : 'grey'"
-              @click="toggle"
-          >
-            <v-icon>{{ isSelected ? 'mdi-crosshairs-gps' : 'mdi-crosshairs' }}</v-icon>
-            <v-tooltip activator="parent" location="top">
-              {{ isSelected ? 'Click map to add waypoints' : 'Enable map selection' }}
-            </v-tooltip>
-          </v-btn>
-        </v-col>
+      <v-tabs v-model="missionSource" grow class="mb-4">
+        <v-tab value="waypoints" prepend-icon="mdi-map-marker-path">
+          Manual Waypoints
+        </v-tab>
+        <v-tab value="file" prepend-icon="mdi-file-upload">
+          Upload Plan
+        </v-tab>
+      </v-tabs>
 
-        <v-col cols="12" sm="">
-          <v-row dense>
-            <v-col cols="12" md="3">
-              <v-text-field
-                  v-model.number="latInput"
-                  type="number"
-                  label="Latitude"
-                  density="compact"
-                  hide-details
-              />
-            </v-col>
-            <v-col cols="12" md="3">
-              <v-text-field
-                  v-model.number="lonInput"
-                  type="number"
-                  label="Longitude"
-                  density="compact"
-                  hide-details
-              />
-            </v-col>
-            <v-col cols="12" md="3">
-              <v-text-field
-                  v-model.number="altInput"
-                  type="number"
-                  label="Altitude"
-                  density="compact"
-                  hide-details
-              />
-            </v-col>
-            <v-col cols="12" md="3">
+      <v-window v-model="missionSource">
+        <v-window-item value="waypoints">
+          <v-row dense align="center">
+            <v-col cols="12" sm="auto">
               <v-btn
-                  block
-                  color="primary"
-                  @click="addWaypoint"
-                  prepend-icon="mdi-plus"
-                  variant="flat"
+                  icon
+                  :color="isSelected ? 'primary' : 'grey'"
+                  @click="toggle"
               >
-                Add
+                <v-icon>{{ isSelected ? 'mdi-crosshairs-gps' : 'mdi-crosshairs' }}</v-icon>
+                <v-tooltip activator="parent" location="top">
+                  {{ isSelected ? 'Click map to add waypoints' : 'Enable map selection' }}
+                </v-tooltip>
               </v-btn>
             </v-col>
+            <v-col cols="12" sm="">
+              <v-row dense>
+                <v-col cols="12" md="3">
+                  <v-text-field
+                      v-model.number="latInput"
+                      type="number"
+                      label="Latitude"
+                      density="compact"
+                      hide-details
+                  />
+                </v-col>
+                <v-col cols="12" md="3">
+                  <v-text-field
+                      v-model.number="lonInput"
+                      type="number"
+                      label="Longitude"
+                      density="compact"
+                      hide-details
+                  />
+                </v-col>
+                <v-col cols="12" md="3">
+                  <v-text-field
+                      v-model.number="altInput"
+                      type="number"
+                      label="Altitude"
+                      density="compact"
+                      hide-details
+                  />
+                </v-col>
+                <v-col cols="12" md="3">
+                  <v-btn
+                      block
+                      color="primary"
+                      @click="addWaypoint"
+                      prepend-icon="mdi-plus"
+                      variant="flat"
+                  >
+                    Add
+                  </v-btn>
+                </v-col>
+              </v-row>
+            </v-col>
           </v-row>
-        </v-col>
-      </v-row>
 
-      <v-divider class="my-3"></v-divider>
+          <v-divider class="my-3"></v-divider>
 
-      <v-row>
-        <v-col>
           <div class="d-flex justify-space-between align-center mb-2">
             <span class="text-subtitle-2">Waypoints ({{ waypoints.length }})</span>
             <v-btn
@@ -542,65 +541,65 @@ onBeforeUnmount(() => {
             </v-list-item>
           </v-list>
           <div v-else class="text-caption text-grey text-center pa-4">
-            No waypoints added. Click on the map or use the form to add waypoints.
+            No waypoints added. Click on the map or use the form above.
           </div>
-        </v-col>
-      </v-row>
+        </v-window-item>
 
-    </v-container>
+        <v-window-item value="file">
+          <v-row dense>
+            <v-col cols="12">
+              <v-btn
+                  block
+                  @click="triggerFileInput"
+                  prepend-icon="mdi-folder-open"
+                  variant="outlined"
+              >
+                Browse Files
+              </v-btn>
+              <input
+                  type="file"
+                  ref="fileInputRef"
+                  style="display: none"
+                  accept=".plan"
+                  @change="handleFileChange"
+              />
+            </v-col>
+          </v-row>
 
-    <v-container class="pa-4">
-      <v-row dense>
-        <v-col cols="12">
-          <v-btn
-              block
-              @click="triggerFileInput"
-              prepend-icon="mdi-file-upload"
-              variant="outlined"
-          >
-            Browse Files
-          </v-btn>
-          <input
-              type="file"
-              ref="fileInputRef"
-              style="display: none"
-              accept=".plan"
-              @change="handleFileChange"
-          />
-        </v-col>
-      </v-row>
+          <v-row v-if="selectedFile" dense class="mt-3">
+            <v-col cols="12">
+              <v-alert
+                  type="info"
+                  variant="tonal"
+                  density="compact"
+                  closable
+                  @click:close="clearSelectedFile"
+              >
+                <template v-slot:prepend>
+                  <v-icon>mdi-file-document</v-icon>
+                </template>
+                <span class="font-weight-medium">{{ selectedFile.name }}</span>
+              </v-alert>
+            </v-col>
+          </v-row>
 
-      <v-row v-if="selectedFile" dense class="mt-2">
-        <v-col cols="12">
-          <v-alert
-              type="info"
-              variant="tonal"
-              density="compact"
-              closable
-              @click:close="clearSelectedFile"
-          >
-            <template v-slot:prepend>
-              <v-icon>mdi-file-document</v-icon>
-            </template>
-            <span class="font-weight-medium">{{ selectedFile.name }}</span>
-          </v-alert>
-        </v-col>
-      </v-row>
+          <div v-else class="text-caption text-grey text-center pa-4">
+            Select a QGroundControl .plan file to upload.
+          </div>
+        </v-window-item>
+      </v-window>
 
-      <v-row dense class="mt-2">
-        <v-col cols="12">
-          <v-btn
-              color="primary"
-              block
-              @click="sendMission"
-              :disabled="(missionSource === 'waypoints' && waypoints.length === 0) || (missionSource === 'file' && !selectedFile)"
-              prepend-icon="mdi-send"
-          >
-            Send Mission
-          </v-btn>
-        </v-col>
-      </v-row>
+      <v-divider class="my-4"></v-divider>
 
+      <v-btn
+          color="primary"
+          block
+          @click="sendMission"
+          :disabled="(missionSource === 'waypoints' && waypoints.length === 0) || (missionSource === 'file' && !selectedFile)"
+          prepend-icon="mdi-send"
+      >
+        Send Mission
+      </v-btn>
 
       <MissionCommandPad
           :controlstreams="controlstreams"

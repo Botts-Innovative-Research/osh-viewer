@@ -139,17 +139,11 @@ function toggle() {
 <!--    </v-card-title>-->
 <!--    <v-divider class="mb-3"></v-divider>-->
 
-    <!--  pause, rtl, land -->
-
-    <div
-        v-if="getControlstreamByRole('pause') || getControlstreamByRole('rtl') || getControlstreamByRole('land') || getControlstreamByRole('cancel')"
-    >
-      <v-card-title
-          class="text-subtitle-1 pa-0 mb-3"
-      >
-        Flight Commands
+    <!--pause, rtl, land-->
+    <div v-if="getControlstreamByRole('pause') || getControlstreamByRole('rtl') || getControlstreamByRole('land') || getControlstreamByRole('cancel')">
+      <v-card-title class="text-subtitle-1 pa-0 mb-3">
+        Commands
       </v-card-title>
-
       <v-row dense>
         <v-col cols="6" sm="3" v-if="getControlstreamByRole('pause')">
           <v-btn
@@ -163,7 +157,6 @@ function toggle() {
             {{ isPaused ? 'Resume' : 'Pause' }}
           </v-btn>
         </v-col>
-
         <v-col cols="6" sm="3" v-if="getControlstreamByRole('rtl')">
           <v-btn
               block
@@ -176,20 +169,6 @@ function toggle() {
             RTL
           </v-btn>
         </v-col>
-
-        <v-col cols="6" sm="3" v-if="getControlstreamByRole('land')">
-          <v-btn
-              block
-              variant="tonal"
-              color="grey"
-              @click="land"
-              class="command-btn"
-          >
-            <v-icon start>mdi-airplane-landing</v-icon>
-            Land
-          </v-btn>
-        </v-col>
-
         <v-col cols="6" sm="3" v-if="getControlstreamByRole('cancel')">
           <v-btn
               block
@@ -202,14 +181,24 @@ function toggle() {
             Cancel
           </v-btn>
         </v-col>
+        <v-col cols="6" sm="3" v-if="getControlstreamByRole('land')">
+          <v-btn
+              block
+              variant="tonal"
+              color="grey"
+              @click="land"
+              class="command-btn"
+          >
+            <v-icon start>mdi-airplane-landing</v-icon>
+            Land
+          </v-btn>
+        </v-col>
       </v-row>
     </div>
 
-
-
-
+    <!--takeoff control-->
     <div v-if="getControlstreamByRole('takeoff')">
-      <v-divider class="mb-3"></v-divider>
+      <v-divider class="mb-4"></v-divider>
       <v-card-title class="text-subtitle-1 pa-0 mb-3">
         Takeoff Control
       </v-card-title>
@@ -238,9 +227,9 @@ function toggle() {
       </v-row>
     </div>
 
+    <!--offboard control-->
     <div v-if="getControlstreamByRole('offboard')">
-      <v-divider class="mb-3"></v-divider>
-      <!--    offboard control-->
+      <v-divider class="mb-4"></v-divider>
       <v-card-title class="text-subtitle-1 pa-0 mb-3">
         Offboard Control
       </v-card-title>
@@ -293,7 +282,6 @@ function toggle() {
               @click="offboard"
               class="command-btn"
           >
-            <v-icon start>mdi-airplane</v-icon>
             Offboard
           </v-btn>
         </v-col>
