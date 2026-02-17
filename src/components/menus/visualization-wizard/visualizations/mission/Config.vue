@@ -8,48 +8,44 @@ const vizwizStore = useVizWizStore()
 
 // Checked status for each role
 const checkedRoles = reactive({
+  qgc: computed({
+    get: () => vizwizStore.csConfig.qgc?.selected ?? true,
+    set: (val: boolean) => vizwizStore.updateCsConfig("qgc", { selected: val })
+  }),
   plan: computed({
     get: () => vizwizStore.csConfig.plan?.selected ?? true,
     set: (val: boolean) => vizwizStore.updateCsConfig("plan", { selected: val })
   }),
   land: computed({
-    get: () => vizwizStore.csConfig.land?.selected ?? true,
+    get: () => vizwizStore.csConfig.land?.selected ?? false,
     set: (val: boolean) => vizwizStore.updateCsConfig("land", { selected: val })
   }),
   pause: computed({
-    get: () => vizwizStore.csConfig.pause?.selected ?? true,
+    get: () => vizwizStore.csConfig.pause?.selected ?? false,
     set: (val: boolean) => vizwizStore.updateCsConfig("pause", { selected: val })
   }),
   rtl: computed({
-    get: () => vizwizStore.csConfig.rtl?.selected ?? true,
+    get: () => vizwizStore.csConfig.rtl?.selected ?? false,
     set: (val: boolean) => vizwizStore.updateCsConfig("rtl", { selected: val })
   }),
   offboard: computed({
-    get: () => vizwizStore.csConfig.offboard?.selected ?? true,
+    get: () => vizwizStore.csConfig.offboard?.selected ?? false,
     set: (val: boolean) => vizwizStore.updateCsConfig("offboard", { selected: val })
+  }),
+  takeoff: computed({
+    get: () => vizwizStore.csConfig.takeoff?.selected ?? false,
+    set: (val: boolean) => vizwizStore.updateCsConfig("takeoff", { selected: val })
   }),
 })
 
 // Initialize csConfig with selected by default when mounted
 onMounted(() => {
+  if (!vizwizStore.csConfig.qgc) {
+    vizwizStore.updateCsConfig("qgc", { selected: true })
+  }
+
   if (!vizwizStore.csConfig.plan) {
     vizwizStore.updateCsConfig("plan", { selected: true })
-  }
-
-  if (!vizwizStore.csConfig.land) {
-    vizwizStore.updateCsConfig("land", { selected: true })
-  }
-
-  if (!vizwizStore.csConfig.pause) {
-    vizwizStore.updateCsConfig("pause", { selected: true })
-  }
-
-  if (!vizwizStore.csConfig.rtl) {
-    vizwizStore.updateCsConfig("rtl", { selected: true })
-  }
-
-  if (!vizwizStore.csConfig.offboard) {
-    vizwizStore.updateCsConfig("offboard", { selected: true })
   }
 })
 
@@ -58,23 +54,9 @@ watch(() => vizwizStore.csConfig, (newVal) => {
   if (!newVal.plan) {
     vizwizStore.updateCsConfig("plan", { selected: true })
   }
-
-  if (!newVal.pause) {
-    vizwizStore.updateCsConfig("pause", { selected: true })
+  if (!newVal.qgc) {
+    vizwizStore.updateCsConfig("qgc", { selected: true })
   }
-
-  if (!newVal.rtl) {
-    vizwizStore.updateCsConfig("rtl", { selected: true })
-  }
-
-  if (!newVal.land) {
-    vizwizStore.updateCsConfig("land", { selected: true })
-  }
-
-  if (!newVal.offboard) {
-    vizwizStore.updateCsConfig("offboard", { selected: true })
-  }
-
 }, { deep: true })
 
 </script>
@@ -85,24 +67,35 @@ watch(() => vizwizStore.csConfig, (newVal) => {
   </v-container>
 
   <v-container>
-    <v-checkbox label="Pause Mission" v-model="checkedRoles.pause" disabled></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.pause" role="pause"  :show-property-selector="false" />
+    <v-checkbox label="QGCPlan" v-model="checkedRoles.qgc" disabled></v-checkbox>
+    <ControlStreamPicker v-if="checkedRoles.plan" role="qgc"  :show-property-selector="false" />
   </v-container>
 
   <v-container>
-    <v-checkbox label="Return to Launch" v-model="checkedRoles.rtl" disabled></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.rtl" role="rtl"  :show-property-selector="false" />
+    <v-checkbox label="Takeoff Control" v-model="checkedRoles.takeoff"></v-checkbox>
+    <ControlStreamPicker v-if="checkedRoles.takeoff" role="takeoff"  :show-property-selector="false"/>
   </v-container>
 
   <v-container>
-    <v-checkbox label="Land Mission" v-model="checkedRoles.land" disabled></v-checkbox>
+    <v-checkbox label="Land Mission" v-model="checkedRoles.land"></v-checkbox>
     <ControlStreamPicker v-if="checkedRoles.land" role="land"  :show-property-selector="false"/>
   </v-container>
 
   <v-container>
-    <v-checkbox label="Offboard Control" v-model="checkedRoles.offboard" disabled></v-checkbox>
+    <v-checkbox label="Pause Mission" v-model="checkedRoles.pause"></v-checkbox>
+    <ControlStreamPicker v-if="checkedRoles.pause" role="pause"  :show-property-selector="false" />
+  </v-container>
+
+  <v-container>
+    <v-checkbox label="Return to Launch" v-model="checkedRoles.rtl"></v-checkbox>
+    <ControlStreamPicker v-if="checkedRoles.rtl" role="rtl"  :show-property-selector="false" />
+  </v-container>
+
+  <v-container>
+    <v-checkbox label="Offboard Control" v-model="checkedRoles.offboard"></v-checkbox>
     <ControlStreamPicker v-if="checkedRoles.offboard" role="offboard"  :show-property-selector="false"/>
   </v-container>
+
 </template>
 
 <style scoped></style>

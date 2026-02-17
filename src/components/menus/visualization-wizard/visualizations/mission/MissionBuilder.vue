@@ -1,16 +1,17 @@
 <script setup lang="ts">
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { SweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
+import {OSHVisualization} from '@/lib/OSHConnectDataStructs';
+import {SweApiDataSourceProperties} from '@/lib/VisualizationHelpers';
 import {computed, onMounted, ref, watch} from 'vue';
 // @ts-ignore
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import { useUIStore } from '@/stores/uistore';
-import { sendCommand } from '@/lib/ControlstreamUtils';
+import {randomUUID} from 'osh-js/source/core/utils/Utils.js';
+import {useUIStore} from '@/stores/uistore';
+import {sendCommand} from '@/lib/ControlstreamUtils';
 import {showToast} from "@/composables/useToast";
-import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
+import {DATASOURCE_DATA_TOPIC} from 'osh-js/source/core/Constants.js';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
 
+//python sim_vehicle.py -v ArduCopter -f quad --console --map --location=Taiwan
 const missionPlannerId = ref('missionPlanner-' + randomUUID());
 
 interface Controlstream {
@@ -48,7 +49,8 @@ function getControlstreamByRole(role: string): Controlstream | undefined {
 }
 
 // Get the plan controlstream for sending missions
-const planControlstream = computed<Controlstream | undefined>(() => getControlstreamByRole('plan') || props.controlstreams[0]);
+const missionControlStream = computed<Controlstream | undefined>(() => getControlstreamByRole('plan'));
+const qgcControlStream = computed<Controlstream | undefined>(() => getControlstreamByRole('qgc'));
 
 interface Waypoint {
   id: string;
@@ -65,7 +67,7 @@ interface LLAData {
 
 const missionSource = ref<'waypoints' | 'file'>('waypoints')
 
-const receivedLLA = ref<LLAData>({ lat: 0, lon: 0, alt: 0 });
+const receivedLLA = ref<LLAData>({lat: 0, lon: 0, alt: 0});
 
 const hasReceivedFirstLLA = ref(false)
 
@@ -92,17 +94,17 @@ const commandBaseUrl = computed(() => {
 
 const csAuth = computed(() => {
   const cs = planControlstream.value;
-  if (!cs) return { username: '', password: '' };
-  return { username: cs.connectorOpts.username, password: cs.connectorOpts.password };
+  if (!cs) return {username: '', password: ''};
+  return {username: cs.connectorOpts.username, password: cs.connectorOpts.password};
 });
 
 watch(() => uiStore.selectedFlightPath, (newVal) => {
-    const cs = planControlstream.value;
-    if (cs && newVal?.controlStreamId === cs.id) {
-      isSelected.value = true;
-    } else {
-      isSelected.value = false;
-    }
+  const cs = missionControlStream.value;
+  if (cs && newVal?.controlStreamId === cs.id) {
+    isSelected.value = true;
+  } else {
+    isSelected.value = false;
+  }
 });
 
 watch(() => uiStore.currentLLA, (newVal) => {
@@ -125,7 +127,7 @@ watch(missionSource, (source) => {
 
 
 function toggle() {
-  const cs = planControlstream.value;
+  const cs = missionControlStream.value;
   if (isSelected.value) {
     uiStore.clearSelectedFlightPath();
   } else if (cs) {
@@ -163,46 +165,44 @@ watch(waypoints, (newWaypoints) => {
     lon: wp.lon,
     alt: wp.alt,
   })));
-}, { deep: true });
+}, {deep: true});
 
 function sendMission() {
   if (missionSource.value === 'waypoints')
     sendWaypoints()
 
   if (missionSource.value === 'file')
-    sendFileUpload()
+    sendQGCPlanFileUpload()
 }
 
 function sendWaypoints() {
-  const plan = generateQGroundControlPlan();
+  const plan = generateMissionControlPlan();
 
-  if (!plan) {
-    showToast("Cannot send empty mission", 'ERROR');
-  }
-
-
-  const command = {
-    parameters: {
-      qGroundControlPlan: JSON.stringify(plan)
+    if (!plan) {
+      showToast("Cannot send empty mission", 'ERROR');
     }
-  };
 
-  const cs = planControlstream.value;
-  if (!cs) {
-    showToast("No plan controlstream configured", 'ERROR');
-    return;
-  }
-  console.log('[MissionBuilder.vue] Sending MissionBuilder command:', command);
-  sendCommand(
-      commandBaseUrl.value,
-      cs.id,
-      command,
-      `${csAuth.value.username}:${csAuth.value.password}`
-  );
+    const command = {
+      parameters: {
+        qGroundControlPlan: JSON.stringify(plan)
+      }
+    };
 
+    const cs = missionControlStream.value;
+    if (!cs) {
+      showToast("No mission controlstream configured", 'ERROR');
+      return;
+    }
+    console.log('[MissionBuilder.vue] Sending MissionBuilder command:', command);
+    sendCommand(
+        commandBaseUrl.value,
+        cs.id,
+        command,
+        `${csAuth.value.username}:${csAuth.value.password}`
+    );
 }
 
-function sendFileUpload() {
+function sendQGCPlanFileUpload() {
   if (!selectedFile.value) {
     console.warn('[MissionBuilder.vue] No file selected')
     return;
@@ -213,7 +213,7 @@ function sendFileUpload() {
   reader.onload = (e) => {
     const fileContent = reader.result as string;
 
-    const cs = planControlstream.value;
+    const cs = qgcControlStream.value;
     if (!cs) {
       showToast("No plan controlstream configured", 'ERROR');
       return;
@@ -225,10 +225,10 @@ function sendFileUpload() {
       }
     }
 
-    console.log('[MissionBuilder.vue] Sending mission file command:', command, planControlstream.value);
+    console.log('[MissionBuilder.vue] Sending mission file command:', command, qgcControlStream.value);
     sendCommand(
         commandBaseUrl.value,
-        planControlstream.value.id,
+        qgcControlStream.value.id,
         command,
         `${csAuth.value.username}:${csAuth.value.password}`
     );
@@ -265,12 +265,13 @@ function clearSelectedFile() {
 
 let initialDroneLocation = ref<{ lat: number; lon: number; alt: number } | null>(null);
 
-function generateQGroundControlPlan() {
+function generateMissionControlPlan() {
   if (waypoints.value.length === 0) {
     console.warn("[MissionBuilder.vue] No waypoints to generate plan");
     return null;
   }
 
+  // get schema
 
   const plannedHomePosition = [
     initialDroneLocation.value?.lat ?? waypoints.value[0].lat,
@@ -344,7 +345,7 @@ function generateQGroundControlPlan() {
     type: "SimpleItem"
   });
 
-  return  {
+  return {
     fileType: "Plan",
     geoFence: {
       circles: [],
@@ -541,60 +542,72 @@ onMounted(async () => {
 
     </v-container>
 
-      <v-container class="pa-4">
-        <v-row dense>
-          <v-col cols="12">
-            <v-btn
-                block
-                @click="triggerFileInput"
-                prepend-icon="mdi-file-upload"
-                variant="outlined"
-            >
-              Browse Files
-            </v-btn>
-            <input
-                type="file"
-                ref="fileInputRef"
-                style="display: none"
-                accept=".plan"
-                @change="handleFileChange"
-            />
-          </v-col>
-        </v-row>
+    <v-container class="pa-4">
+      <v-row dense>
+        <v-col cols="12">
+          <v-btn
+              block
+              @click="triggerFileInput"
+              prepend-icon="mdi-file-upload"
+              variant="outlined"
+          >
+            Browse Files
+          </v-btn>
+          <input
+              type="file"
+              ref="fileInputRef"
+              style="display: none"
+              accept=".plan"
+              @change="handleFileChange"
+          />
+        </v-col>
+      </v-row>
 
-        <v-row v-if="selectedFile" dense class="mt-2">
-          <v-col cols="12">
-            <v-alert
-                type="info"
-                variant="tonal"
-                density="compact"
-                closable
-                @click:close="clearSelectedFile"
-            >
-              <template v-slot:prepend>
-                <v-icon>mdi-file-document</v-icon>
-              </template>
-              <span class="font-weight-medium">{{ selectedFile.name }}</span>
-            </v-alert>
-          </v-col>
-        </v-row>
+      <v-row v-if="selectedFile" dense class="mt-2">
+        <v-col cols="12">
+          <v-alert
+              type="info"
+              variant="tonal"
+              density="compact"
+              closable
+              @click:close="clearSelectedFile"
+          >
+            <template v-slot:prepend>
+              <v-icon>mdi-file-document</v-icon>
+            </template>
+            <span class="font-weight-medium">{{ selectedFile.name }}</span>
+          </v-alert>
+        </v-col>
+      </v-row>
 
-        <v-row dense class="mt-2">
-         <v-col cols="12">
-           <v-btn
-               color="primary"
-               block
-               @click="sendMission"
-               :disabled="(missionSource === 'waypoints' && waypoints.length === 0) || (missionSource === 'file' && !selectedFile)"
-               prepend-icon="mdi-send"
-           >
-             Send Mission
-           </v-btn>
-         </v-col>
-        </v-row>
+      <v-row dense class="mt-2">
+        <v-col cols="12">
+          <v-btn
+              color="primary"
+              block
+              @click="sendMission"
+              :disabled="(missionSource === 'waypoints' && waypoints.length === 0) || (missionSource === 'file' && !selectedFile)"
+              prepend-icon="mdi-send"
+          >
+            Send Mission
+          </v-btn>
+        </v-col>
+      </v-row>
 
-        <MissionCommandPad :controlstreams="controlstreams" class="mt-3" />
-      </v-container>
+
+      <MissionCommandPad
+          :controlstreams="controlstreams"
+          class="mt-3"
+          v-if="
+        getControlstreamByRole('land') ||
+        getControlstreamByRole('pause') ||
+        getControlstreamByRole('rtl') ||
+        getControlstreamByRole('offboard') ||
+        getControlstreamByRole('takeoff')
+      "
+      />
+    </v-container>
+
 
   </v-card>
 </template>
