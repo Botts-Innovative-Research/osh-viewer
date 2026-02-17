@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {OSHVisualization} from '@/lib/OSHConnectDataStructs';
 import {SweApiDataSourceProperties} from '@/lib/VisualizationHelpers';
-import {computed, onMounted, ref, watch} from 'vue';
+import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue';
 // @ts-ignore
 import {randomUUID} from 'osh-js/source/core/utils/Utils.js';
 import {useUIStore} from '@/stores/uistore';
@@ -10,6 +10,7 @@ import {showToast} from "@/composables/useToast";
 import {DATASOURCE_DATA_TOPIC} from 'osh-js/source/core/Constants.js';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
+import {useDisconnectDatasources} from "@/components/menus/visualization-wizard/shared/helpers";
 
 //python sim_vehicle.py -v ArduCopter -f quad --console --map --location=Taiwan
 const missionPlannerId = ref('missionPlanner-' + randomUUID());
@@ -86,14 +87,14 @@ const droneDatasource = ref<any>(null);
 
 
 const commandBaseUrl = computed(() => {
-  const cs = planControlstream.value;
+  const cs = missionControlStream.value;
   if (!cs) return '';
   const protocol = cs.tls ? 'https' : 'http';
   return `${protocol}://${cs.endpointUrl}`;
 });
 
 const csAuth = computed(() => {
-  const cs = planControlstream.value;
+  const cs = missionControlStream.value;
   if (!cs) return {username: '', password: ''};
   return {username: cs.connectorOpts.username, password: cs.connectorOpts.password};
 });
@@ -416,6 +417,12 @@ onMounted(async () => {
     }
   };
 });
+
+
+onBeforeUnmount(() => {
+  if (isSelected) uiStore.clearSelectedFlightPath();
+  useDisconnectDatasources(ref(droneDatasource));
+})
 
 </script>
 

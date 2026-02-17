@@ -4,13 +4,15 @@ import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { Mode } from 'osh-js/source/core/datasource/Mode';
-import { AggregateControlstreams, BuildRoleProperty } from '../../shared/helpers';
+import {AggregateControlstreams, AggregateDatastreams, BuildRoleProperty} from '../../shared/helpers';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
+import {useDataStreamStore} from "@/stores/datastreamstore";
 
 export function build() {
     console.log('Building Mission Visualization...');
     const vizwizStore = useVizWizStore();
     const visualizationStore = useVisualizationStore();
+
 
     const datastreams = vizwizStore.datastreams;
     const controlstreams = AggregateControlstreams();
@@ -24,7 +26,8 @@ export function build() {
     const visualizationComponents: VisualizationComponents = {
         dataSource: missionResult.vizDatasources,
         dataLayer: null,
-        dataView: null
+        dataView: null,
+        controlstream: missionResult.vizControlstreams
     };
 
     const newViz: OSHVisualization = new OSHVisualization(
@@ -42,7 +45,6 @@ export function build() {
 
 export function CreateMissionViewProps(datastream: OSHDatastream, controlstreams: { [key: string]: any }, visOptions: any) {
     const controlstreamStore = useControlStreamStore();
-
     const vizControlstreams: any[] = [];
 
     const currentDataSource: ISweApiDataSourceProperties = {

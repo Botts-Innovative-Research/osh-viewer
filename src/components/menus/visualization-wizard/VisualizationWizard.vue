@@ -124,7 +124,6 @@ const vizComponents: any = {
 		Builder: () =>
 			import('@/components/menus/visualization-wizard/visualizations/text/Builder'),
 	},
-	// add other types here
   mission: {
     Config: defineAsyncComponent(() => import('@/components/menus/visualization-wizard/visualizations/mission/Config.vue')),
     Customize: defineAsyncComponent(() => import('@/components/menus/visualization-wizard/visualizations/mission/Customize.vue')),

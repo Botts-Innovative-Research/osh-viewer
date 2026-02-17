@@ -39,7 +39,7 @@ const { viz, customClass = '' } = defineProps<{
     <MissionBuilder
         :visualization="viz"
         :datasource="Array.isArray(viz.visualizationComponents.dataSource) ? viz.visualizationComponents.dataSource[0] : viz.visualizationComponents.dataSource"
-        :controlstreams="Array.isArray(viz.controlstream) ? viz.controlstream : [viz.controlstream]"
+        :controlstreams="Array.isArray(viz.visualizationComponents.controlstream) ? viz.visualizationComponents.controlstream : [viz.visualizationComponents.controlstream]"
         v-if="viz.type === 'mission'"
     ></MissionBuilder>
 		<slot name="after" />
