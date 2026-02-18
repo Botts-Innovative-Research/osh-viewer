@@ -56,8 +56,6 @@ export function build() {
 export function CreateVideoViewProps(datastreams: { [key: string]: any }, controlstreams: { [key: string]: any }, visOptions: any) {
 	const datastreamStore = useDataStreamStore();
 
-    const videoFormat = visOptions?.videoFormat || 'MJPEG'; // default to mjpeg? or maybe h264 idc
-
     // Create datasources, layer, and view
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
 	let videoLayer: IVideoLayerProperties = {
@@ -75,11 +73,11 @@ export function CreateVideoViewProps(datastreams: { [key: string]: any }, contro
         layers: [videoLayer],
         width: 640,
         height: 480,
-        showTime: true,
-        showStats: true,
-        useWebCodecApi: videoFormat === 'MJPEG' ? false : true,
-        videoType: videoFormat,
+        useWebCodecApi: visOptions?.webCodec,
+        showTime: visOptions?.time,
+        showStats: visOptions?.stats,
     }
+
 
 	for (const [dsId, entry] of Object.entries(datastreams)) {
         const properties = BuildRoleProperty(entry);
@@ -90,8 +88,6 @@ export function CreateVideoViewProps(datastreams: { [key: string]: any }, contro
             resource: `/datastreams/${dsId}/observations`,
             tls: currentOSHDatastream[0].datastream.networkProperties.tls,
             protocol: 'ws',
-            startTime: 'now',
-            endTime: '2125-08-01T00:00:00Z',
             mode: Mode.REAL_TIME,
             responseFormat: 'application/swe+binary',
             id: randomUUID(),

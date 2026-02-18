@@ -84,7 +84,6 @@ export interface IVideoViewProperties extends DataViewProperties {
 	useWebCodecApi: boolean;
 	width: number;
 	height: number;
-	videoType: string;
 }
 
 /* POINT MARKER */
