@@ -1,238 +1,184 @@
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
+/* VISUALIZATION COMPONENTS */
 
-export interface IVisualizationHelper {}
-
-export interface DataSourceProperties {}
-
-export interface ISweApiDataSourceProperties extends DataSourceProperties {
+export interface DataSourceProperties {
   endpointUrl: string
-  resource: string
   tls: boolean
   protocol: string
   startTime?: string
   endTime?: string
   mode: string
   responseFormat: string
-    connectorOpts: { username: string, password: string}
-  id?: string // ID to use for SweApi
-  properties?: {
+  connectorOpts: { username: string, password: string}
+  id: string // ID to use for SweApi
+  properties: {
     // Role: property pair
     // Ex: "location": { property: "loc" }
     [key: string]: any
   }
 }
+export interface DataLayerProperties {
+  name: string
+}
+export interface DataViewProperties {
+  container: string
+  css: string
+  layers: DataLayerProperties[] | null
+}
 
-export interface DataLayerProperties {}
+export interface VisualizationComponents {
+  dataSource: ISweApiDataSourceProperties[]
+  dataLayer: DataLayerProperties | null
+  dataView: DataViewProperties | null
+  controlstream?: ISweApiControlStreamProperties[] // Optional controlstream for visualization
+}
 
-export interface DataViewProperties {}
+/**
+ * Visualization Customization Options
+ * Defines the set of customization options for different visualization types.
+ */
+export interface VisualizationCustomizationOptions {}
+
+
+/* DATASOURCE PROPERTIES */
+
+export interface ISweApiDataSourceProperties extends DataSourceProperties {
+  resource: string
+}
+
+/* CONTROLSTREAM PROPERTIES */
+
+export interface ISweApiControlStreamProperties extends DataSourceProperties {}
+
+/* CURVE LAYER */
 
 export interface ICurveLayerProperties extends DataLayerProperties {
   maxValues: number
-  dataSourceId: string
   getValues: (rec: any, timestamp: any) => { x: any; y: any }
   lineColor: string
   backgroundColor: string
   fill: boolean
-  getCurveId?: (rec: any, timestamp: any) => string
-  name: string
+  getCurveId: (rec: any, timestamp: any) => string
+  xLabel: string
+  yLabel: string
 }
 
-export class ChartHelper implements IVisualizationHelper {
-	xAxisProperty: string;
-	yAxisProperty: string;
-	xAxisLabel: string;
-
-	constructor(xAxisProperty: string, yAxisProperty: string, xAxisLabel: string) {
-		this.xAxisProperty = xAxisProperty;
-		this.yAxisProperty = yAxisProperty;
-		this.xAxisLabel = xAxisLabel;
-	}
-}
+/* CHART */
 
 export interface IChartViewProperties extends DataViewProperties {
-  container: string
   layers: ICurveLayerProperties[]
-  css: string
   datasetOptions?: any
   refreshRate?: number
 }
 
+/* VIDEO */
+
 export interface IVideoLayerProperties extends DataLayerProperties {
-	dataSourceId: ISweApiDataSourceProperties;
 	getFrameData: (rec: any, timestamp: any) => any;
 	getTimestamp: (rec: any, timestamp: any) => any;
 }
 
 export interface IVideoViewProperties extends DataViewProperties {
-	container: string;
-	css: string;
-	name: string;
+  layers: IVideoLayerProperties[];
 	showTime: boolean;
 	showStats: boolean;
 	useWebCodecApi: boolean;
 	width: number;
 	height: number;
-	layers: IVideoLayerProperties[];
-	videoType: string;
 }
 
+/* POINT MARKER */
+
 export interface IPointMarkerLayerProperties extends DataLayerProperties {
-	dataSourceId: string | string[];
 	getLocation?: (rec: any) => { x: number; y: number; z: number };
 	getOrientation?: (rec: any) => { heading: number };
 	getCoordinates?: (rec: any) => { lat: number; lon: number };
 	markerColor?: string;
 	markerIcon?: string;
-	name: string;
+  label: string;
+  icon: string;
+  iconName: string;
+  iconSize: number[]
+  labelOffset: number[]
 }
+
+/* MAP VIEW */
 
 export interface IMapViewProperties extends DataViewProperties {
-	container: string;
 	layers: IPointMarkerLayerProperties[];
-	css?: string;
 	refreshRate?: number;
 }
 
-export class VisualizationComponents {
-  dataLayer: DataLayerProperties | any | null // TODO: Fix type
-  dataView: DataViewProperties | null
-  dataSource: DataSourceProperties | DataSourceProperties[]
-  controlstream?: any // Optional controlstream for visualizations like GeoPTZ
+/* LOB LAYER */
 
-  constructor(datasource: SweApi | SweApi[], dataLayer: any, dataView: any, controlstream?: any) {
-    this.dataSource = datasource
-    this.dataLayer = dataLayer
-    this.dataView = dataView
-    this.controlstream = controlstream
-  }
+export interface ILineOfBearingLayerProperties extends DataLayerProperties {
+	getOriginAndBearing?: {
+		dataSourceIds: string[];
+		handler: (rec: any) => {
+			origin: { x: number; y: number; z: number };
+			bearing: number;
+		};
+	};
+	getPolylineId?: (rec: any) => any;
+	color: any;
+	weight: number;
+	opacity: number;
+	distanceKm: number;
+  icon: string;
+  iconName: string;
+  iconSize: number[];
+  labelOffset: number[];
+  label: string;
 }
 
-export class SweApiDataSourceProperties implements ISweApiDataSourceProperties {
-  endpointUrl: string
-  resource: string
-  tls: boolean
-  protocol: string
-  startTime?: string
-  endTime?: string
-  mode: string
-  responseFormat: string
-  connectorOpts: { username: string, password: string }
-
-  constructor(props: ISweApiDataSourceProperties) {
-    this.endpointUrl = props.endpointUrl
-    this.resource = props.resource
-    this.tls = props.tls
-    this.protocol = props.protocol
-    this.startTime = props.startTime
-    this.endTime = props.endTime
-    this.mode = props.mode
-    this.responseFormat = props.responseFormat
-    this.connectorOpts = props.connectorOpts
-  }
-}
-
-export class CurveLayerProperties implements ICurveLayerProperties {
-  maxValues: number
-  dataSourceId: string
-  getValues: (rec: any, timestamp: any) => { x: any; y: any }
-  lineColor: string
-  backgroundColor: string
-  fill: boolean
-  getCurveId?: (rec: any, timestamp: any) => string
-  name: string
-
-  constructor(props: ICurveLayerProperties) {
-    this.maxValues = props.maxValues
-    this.dataSourceId = props.dataSourceId
-    this.getValues = props.getValues
-    this.lineColor = props.lineColor
-    this.backgroundColor = props.backgroundColor
-    this.fill = props.fill
-    this.getCurveId = props.getCurveId
-    this.name = props.name
-  }
-}
-
-export class ChartViewProperties implements IChartViewProperties {
-  container: string
-  layers: ICurveLayerProperties[]
-  css: string
-  datasetOptions?: any
-  refreshRate?: number
-
-  constructor(props: IChartViewProperties) {
-    this.container = props.container
-    this.layers = props.layers
-    this.css = props.css
-    this.datasetOptions = props.datasetOptions
-    this.refreshRate = props.refreshRate
-  }
-}
-
-export class VideoLayerProperties implements IVideoLayerProperties {
-  dataSourceId: SweApiDataSourceProperties
-  getFrameData: (rec: any, timestamp: any) => any
-  getTimestamp: (rec: any, timestamp: any) => any
-
-  constructor(props: IVideoLayerProperties) {
-    this.dataSourceId = props.dataSourceId
-    this.getFrameData = props.getFrameData
-    this.getTimestamp = props.getTimestamp
-  }
-}
-
-export class VideoViewProperties implements DataViewProperties {
-  container: string
-  css: string
-  name: string
-  showTime: boolean
-  showStats: boolean
-  useWebCodecApi: boolean
-  width: number
-  height: number
-  layers: VideoLayerProperties[]
-  videoType: string
-
-	constructor(props: IVideoViewProperties) {
-		this.container = props.container;
-		this.css = props.css;
-		this.name = props.name;
-		this.showTime = props.showTime;
-		this.showStats = props.showStats;
-		this.useWebCodecApi = props.useWebCodecApi;
-		this.width = props.width;
-		this.height = props.height;
-		this.layers = props.layers.map((layer) => new VideoLayerProperties(layer));
-		this.videoType = props.videoType;
-	}
-}
-
-export class PointMarkerLayerProperties implements IPointMarkerLayerProperties {
-	dataSourceId: string;
-	getCoordinates: (rec: any) => { lat: number; lon: number };
-	markerColor?: string;
-	markerIcon?: string;
+export class LineOfBearingLayerProperties implements ILineOfBearingLayerProperties {
+	color: any;
+	distanceKm: number;
+	getOriginAndBearing?: {
+		dataSourceIds: string[];
+		handler: (rec: any) => {
+			origin: { x: number; y: number; z: number };
+			bearing: number;
+		};
+	};
 	name: string;
+	opacity: number;
+	weight: number;
+  icon: string;
+  iconName: string;
+  iconSize: number[];
+  labelOffset: number[];
+  label: string;
 
-	constructor(props: IPointMarkerLayerProperties) {
-		this.dataSourceId = props.dataSourceId;
-		this.getCoordinates = props.getCoordinates;
-		this.markerColor = props.markerColor;
-		this.markerIcon = props.markerIcon;
+	constructor(props: ILineOfBearingLayerProperties) {
+		this.color = props.color;
+		this.distanceKm = props.distanceKm;
+		this.getOriginAndBearing = props.getOriginAndBearing;
 		this.name = props.name;
+		this.opacity = props.opacity;
+		this.weight = props.weight;
+    this.icon = props.icon
+    this.iconName = props.iconName
+    this.iconSize = props.iconSize
+    this.labelOffset = props.labelOffset
+    this.label = props.label
 	}
 }
 
-export class MapViewProperties implements IMapViewProperties {
+export interface ILineOfBearingViewProperties extends DataViewProperties {
+	layers: ILineOfBearingLayerProperties[];
+	refreshRate?: number;
+}
+
+export class LobViewProperties implements DataViewProperties {
 	container: string;
-	layers: IPointMarkerLayerProperties[];
-	css?: string;
+	layers: ILineOfBearingLayerProperties[];
+	css: string;
 	refreshRate?: number;
 
-  constructor(props: IMapViewProperties) {
-    this.container = props.container
-    this.layers = props.layers
-    this.css = props.css
-    this.refreshRate = props.refreshRate
-  }
+	constructor(props: ILineOfBearingViewProperties) {
+		this.container = props.container;
+		this.layers = props.layers;
+		this.css = props.css;
+		this.refreshRate = props.refreshRate;
+	}
 }

@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useSystemStore } from '@/stores/systemstore.ts'
+import { useSystemStore } from '@/stores/systemstore'
 import { useNodeStore } from '@/stores/nodestore.js'
 import { useOSHConnectStore } from '@/stores/oshconnectstore.js'
-import { useUIStore } from '@/stores/uistore.ts'
+import { useUIStore } from '@/stores/uistore'
 import { useVisualizationStore } from '@/stores/visualizationstore.js'
 import { OSHControlStream, OSHDatastream, OSHNode, OSHSystem, OSHVisualization } from '@/lib/OSHConnectDataStructs.js'
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js'
-import NodeConfigForm from '@/components/menus/NodeConfigForm.vue'
+import NodeConfigForm from './menus/NodeConfigForm.vue'
 import { storeToRefs } from 'pinia'
 import { Geometry } from '@/lib/OSHConnectDefinitions'
-import VisualizationWizard from '../menus/visualization-wizard/VisualizationWizard.vue'
+import VisualizationWizard from './menus/visualization-wizard/VisualizationWizard.vue'
 
 const oshConnect = useOSHConnectStore().getInstance();
 const nodeStore = useNodeStore()
@@ -89,7 +89,6 @@ const addFeatureMarker = (item) => {
 			foi.properties.properties.name,
 			'pointmarker-feature',
 			null,
-			undefined
 		);
 		newViz.geometry = geom;
 
@@ -114,7 +113,6 @@ const addAllSamplingFeaturePMs = () => {
 				`${feature.properties.properties.name}`,
 				'pointmarker-feature',
 				null,
-				undefined
 			);
 			newViz.geometry = geom;
 

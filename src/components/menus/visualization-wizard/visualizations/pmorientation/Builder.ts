@@ -1,16 +1,18 @@
-import { OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
-	IMapLayerProperties,
 	IMapViewProperties,
+	IPointMarkerLayerProperties,
 	ISweApiDataSourceProperties,
 	VisualizationComponents,
 } from '@/lib/VisualizationHelpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
+//@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
+//@ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import { AggregateDatastreams, BuildRoleProperty } from '../../shared/helpers';
+import { AggregateDatastreams, BuildRoleProperty, getUsedDatastreams } from '../../shared/helpers';
 
 export function build() {
 	console.log('Building PM Orientation Visualization...');
@@ -19,12 +21,11 @@ export function build() {
 
 	// Aggregate datastreams from vizwizStore
 	const datastreams = AggregateDatastreams();
-	console.log('Aggregated datastreams for PM Orientation:', datastreams);
 
 	const pmResult = CreateMapViewProps(datastreams, vizwizStore.visualizationCustomizationOptions);
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: pmResult.vizDatasources,
-		dataLayer: pmResult.mapLayer,
+		dataLayer: pmResult.pointMarkerLayer,
 		dataView: pmResult.mapView,
 	};
 
@@ -32,9 +33,7 @@ export function build() {
 		`visualization-${randomUUID()}`,
         vizwizStore.visualizationCustomizationOptions.name,
 		'pmorientation',
-		null,
-		visualizationComponents.dataSource,
-		null
+		getUsedDatastreams(),
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
 	visualizationStore.addVisualization(newViz);
@@ -50,15 +49,26 @@ export function build() {
  */
 export function CreateMapViewProps(datastreams: { [key: string]: any }, visOptions: any) {
 	const datastreamStore = useDataStreamStore();
-	console.log('Datastreams: ', datastreamStore.dataStreams);
 
+    // Create datasources, layer, and view
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
-	let mapLayer: any = {};
+	let pointMarkerLayer: IPointMarkerLayerProperties = {
+        name: visOptions.name,
+        label: visOptions.name,
+        icon: visOptions.icon,
+        iconName: visOptions.iconName,
+        iconSize: [32, 32],
+        labelOffset: [-16, -32],
+    };
+    let mapView: IMapViewProperties = {
+        container: `map-container-${randomUUID()}`,
+        css: 'map-view',
+        layers: [pointMarkerLayer],
+        refreshRate: 1000,
+    }
 
 	// Iterate through each unique datastream ID
 	for (const [dsId, entry] of Object.entries(datastreams)) {
-        console.log('Processing datastream ID:', dsId, 'with entry:', entry);
-
         // Get selected properties for each role of the datastream
         const properties = BuildRoleProperty(entry);
 
@@ -81,32 +91,13 @@ export function CreateMapViewProps(datastreams: { [key: string]: any }, visOptio
             }
         };
         vizDatasources.push(currentDataSource);
-
-
-        // Build remaining mapLayer properties
-        mapLayer = {
-            ...mapLayer,
-            name: visOptions.name ?? `${currentOSHDatastream[0].datastream.properties.name}`,
-            label: visOptions.name ?? `${currentOSHDatastream[0].datastream.properties.name}`,
-            icon: visOptions.icon,
-            iconName: visOptions.iconName,
-            iconSize: [32, 32],
-            labelOffset: [-16, -32],
-        };
-
     }
-    // Build MapViewProperties
-    const mapView: IMapViewProperties = {
-        container: `map-container-${randomUUID()}`,
-        layers: [mapLayer],
-        css: 'map-view',
-        refreshRate: 1000,
-    };
-	console.log('Created MapViewProps:', { vizDatasources, mapLayer, mapView });
+
+	console.log('Created MapViewProps:', { vizDatasources, pointMarkerLayer, mapView });
 
 	return {
 		vizDatasources,
-		mapLayer,
+		pointMarkerLayer,
 		mapView,
 	};
 }
