@@ -3,7 +3,6 @@ import {computed, onMounted, ref, toRaw} from 'vue';
 import {randomUUID} from 'osh-js/source/core/utils/Utils.js';
 import VideoDataLayer from 'osh-js/source/core/ui/layer/VideoDataLayer.js';
 import {OSHVisualization} from '@/lib/OSHConnectDataStructs';
-import MJPEGView from 'osh-js/source/core/ui/view/video/MjpegView.js';
 import VideoView from 'osh-js/source/core/ui/view/video/VideoView.js';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import PTZControl from './PTZControl.vue'
@@ -22,32 +21,17 @@ const videoView = ref<any>(null);
 const videoLayer = ref<VideoDataLayer | null>(null);
 const dsInstances: SweApi[] = [];
 
-function createVideoView(codec: string) {
+function createVideoView(viewConfig: any) {
   if (videoView.value) {
     videoView.value.destroy?.();
     videoView.value = null;
   }
 
-  if (codec === 'H264') {
-    videoView.value = new VideoView({
-      container: videoDivId.value,
-      css: 'video-h264',
-      showTime: true,
-      showStats: true,
-      useWebCodecApi: true,
-      layers: [],
-    });
-    console.log("[VideoView] H264 View created:", videoView.value);
-  } else {
-    videoView.value = new MJPEGView({
-      container: videoDivId.value,
-      css: 'video-mjpeg',
-      showTime: true,
-      showStats: true,
-      layers: [],
-    });
-    console.log("[VideoView] MJPEG View created:", videoView.value);
-  }
+  videoView.value = new VideoView({
+    ...viewConfig,
+    container: videoDivId.value,
+    layers: [],
+  });
 }
 
 const ptzControl = computed(() => {
@@ -98,24 +82,19 @@ function initializeVideo() {
       getFrameData = {
         dataSourceIds: [dsInstance.id],
         handler: (rec: any) => {
-          return rec[rawDs.properties.video.outputName][rawDs.properties.video.property] != null
-              ? rec[rawDs.properties.video.outputName][rawDs.properties.video.property]
-              : rec[rawDs.properties.video.property];
+          return rec[rawDs.properties.video.property];
         },
       };
 
       getTimestamp = {
         dataSourceIds: [dsInstance.id],
         handler: (rec: any) => {
-          const data = rec[rawDs.properties.video.outputName];
-          let newDate = data.time == undefined ? new Date(data.sampleTime).getTime() : new Date(data.time).getTime()
-
-          return Number.isNaN(rec.timestamp) ? newDate : rec.timestamp
+          return rec.timestamp
         }
       };
     }
-
-    createVideoView(rawDs.properties.video.compression);
+    const viewConfig = viz.visualizationComponents.dataView;
+    createVideoView(viewConfig);
 
     dsInstance.connect();
     dsInstances.push(dsInstance);
@@ -148,8 +127,6 @@ async function initializePtz() {
     return;
 
   const cs = controlStreams[0];
-
-  console.log("cs", cs)
 
   await fetchControlStreamSchema(cs.controlstream.properties, cs.controlstream.networkProperties);
 }
@@ -186,9 +163,4 @@ useVisualizationCleanup(ref(dsInstances));
   height: auto;
 }
 
-.ptz-controls {
-  margin-top: 1rem;
-  display: flex;
-  justify-content: center;
-}
 </style>

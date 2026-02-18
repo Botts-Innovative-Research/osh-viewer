@@ -1,6 +1,6 @@
-import { OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
-    ISweApiDataSourceProperties, IVideoViewProperties,
+    ISweApiDataSourceProperties,
     VisualizationComponents,
 } from '@/lib/VisualizationHelpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
@@ -10,7 +10,6 @@ import { Mode } from 'osh-js/source/core/datasource/Mode';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { AggregateDatastreams, AggregateControlstreams, BuildRoleProperty } from '../../shared/helpers';
 import {toRaw} from "vue";
-import {useControlStreamStore} from "@/stores/controlstreamstore";
 
 export function build() {
 	console.log('Building Video Visualization...');
@@ -53,7 +52,6 @@ export function build() {
  */
 export function CreateVideoViewProps(datastreams: { [key: string]: any }, controlstreams: { [key: string]: any }, visOptions: any) {
 	const datastreamStore = useDataStreamStore();
-    const controlstreamStore = useControlStreamStore();
 
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
 	let videoLayer: any = {};
@@ -61,13 +59,11 @@ export function CreateVideoViewProps(datastreams: { [key: string]: any }, contro
     let videoView: any = {
         container: `video-container-${randomUUID()}`,
         css: 'video-view',
-        width: 640,
-        height: 480,
-        showTime: true,
-        showStats: true,
+        useWebCodecApi: visOptions?.webCodec,
+        showTime: visOptions?.time,
+        showStats: visOptions?.stats,
     }
 
-    const videoFormat = visOptions?.videoFormat || 'MJPEG'; // default to mjpeg? or maybe h264 idc
 
 	for (const [dsId, entry] of Object.entries(datastreams)) {
         const properties = BuildRoleProperty(entry);
@@ -78,8 +74,6 @@ export function CreateVideoViewProps(datastreams: { [key: string]: any }, contro
             resource: `/datastreams/${dsId}/observations`,
             tls: currentOSHDatastream[0].datastream.networkProperties.tls,
             protocol: 'ws',
-            startTime: 'now',
-            endTime: '2125-08-01T00:00:00Z',
             mode: Mode.REAL_TIME,
             responseFormat: 'application/swe+binary',
             id: randomUUID(),
@@ -95,15 +89,14 @@ export function CreateVideoViewProps(datastreams: { [key: string]: any }, contro
 
         videoLayer = {
             ...videoLayer,
-            name: visOptions.name ?? `${ds.datastream.properties.name}`,
+            name: `${ds.datastream.properties.name}`,
         };
 
         videoView = {
             ...videoView,
-            name: visOptions.name ?? `${ds.datastream.properties.name}`,
+            name: `${ds.datastream.properties.name}`,
             layers: [videoLayer],
-            useWebCodecApi: videoFormat === 'MJPEG' ? false : true,
-            videoType: videoFormat,
+
         };
         console.log('Created VideoViewProps:', { vizDatasources, videoLayer, videoView });
     }
