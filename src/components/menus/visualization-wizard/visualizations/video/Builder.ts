@@ -101,7 +101,7 @@ export function CreateVideoViewProps(datastreams: { [key: string]: any }, contro
             ...videoView,
             name: `${ds.datastream.properties.name}`,
             layers: [videoLayer],
-            useWebCodecApi: videoFormat === 'MJPEG' ? false : true,
+//             useWebCodecApi: videoFormat === 'MJPEG' ? false : true,
             videoType: videoFormat,
         };
         console.log('Created VideoViewProps:', { vizDatasources, videoLayer, videoView });
