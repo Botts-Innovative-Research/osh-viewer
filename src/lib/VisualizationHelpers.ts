@@ -105,6 +105,7 @@ export interface IPointMarkerLayerProperties extends DataLayerProperties {
 	markerIcon?: string;
 	label: string;
 	icon: string;
+	iconColor: string;
 	iconName: string;
 	iconSize: number[];
 	labelOffset: number[];
@@ -133,6 +134,7 @@ export interface ILineOfBearingLayerProperties extends DataLayerProperties {
 	opacity: number;
 	distanceKm: number;
 	icon: string;
+	iconColor: string;
 	iconName: string;
 	iconSize: number[];
 	labelOffset: number[];
