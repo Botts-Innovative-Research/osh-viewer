@@ -1,17 +1,19 @@
 <script setup lang="ts">
-import {defineProps, onBeforeUnmount, onMounted, ref, toRaw, watch} from 'vue';
+import { onMounted, ref, toRaw } from 'vue';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import ChartJsView from 'osh-js/source/core/ui/view/chart/ChartJsView.js';
 import CurveLayer from 'osh-js/source/core/ui/layer/CurveLayer.js';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { useVisualizationStore } from '@/stores/visualizationstore';
-import { storeToRefs } from 'pinia';
 import { createDatasource, useVisualizationCleanup } from '../../shared/helpers';
+import { IChartViewProperties, ICurveLayerProperties, ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
 
 
 const props = defineProps<{
   visualization: OSHVisualization,
+  datasource: ISweApiDataSourceProperties[],
+  curveLayer: ICurveLayerProperties,
+  chartView: IChartViewProperties,
 }>();
 
 const chartId = ref('chart-' + randomUUID());
@@ -30,19 +32,17 @@ function initializeChart() {
   if (!viz || viz.type !== 'chart') return;
 
   let getValues: any;
-  const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
-      ? viz.visualizationComponents.dataSource
-      : [viz.visualizationComponents.dataSource];
+  const dsArray: ISweApiDataSourceProperties[] = props.datasource
 
   for (const dsProps of dsArray) {
     let rawDs = toRaw(dsProps);
 
     const dsInstance = createDatasource(dsProps)
 
-    if (rawDs.properties?.x && rawDs.properties?.y) {
+    if (rawDs && rawDs.properties?.x && rawDs.properties?.y) {
       getValues = (rec: any, timestamp: any) => {
-        const xProp = rawDs.properties.x;
-        const yProp = rawDs.properties.y;
+        const xProp = rawDs.properties?.x;
+        const yProp = rawDs.properties?.y;
         return {
           x: rec[xProp.outputName]?.[xProp.property] ?? rec[xProp.property] ?? timestamp,
           y: rec[yProp.outputName]?.[yProp.property] ?? rec[yProp.property] ?? '',
@@ -55,7 +55,7 @@ function initializeChart() {
     console.log('[Chart.vue] Chart datasource created:', dsInstance);
   }
 
-  const layerOpts = viz.visualizationComponents.dataLayer;
+  const layerOpts: ICurveLayerProperties = props.curveLayer;
 
   curveLayer.value = new CurveLayer({
     ...layerOpts,
@@ -69,11 +69,7 @@ function initializeChart() {
     chartView.value = null;
   }
   chartView.value = new ChartJsView({
-    css: 'chart-view',
-    datasetOptions: {
-      tension: 0.2,
-    },
-    refreshRate: 1000,
+    ...props.chartView,
     container: chartId.value,
     layers: [curveLayer.value],
   });

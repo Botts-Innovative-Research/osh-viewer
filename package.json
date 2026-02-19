@@ -49,6 +49,7 @@
     "npm-run-all2": "^8.0.4",
     "prettier": "3.6.2",
     "serve": "^14.2.5",
+    "typedoc": "^0.28.17",
     "typescript": "^5.9.3",
     "vite": "7.1.11",
     "vite-plugin-static-copy": "^3.1.4",

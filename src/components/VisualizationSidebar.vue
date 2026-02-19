@@ -5,22 +5,30 @@ import { MAP_VISUALIZATIONS, PANEL_VISUALIZATIONS, useVisualizationStore } from 
 import { storeToRefs } from 'pinia';
 import VisualizationWrapper from './VisualizationWrapper.vue';
 import { computed, onMounted, ref } from 'vue';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { ILineOfBearingLayerProperties, IPointMarkerLayerProperties, VisualizationLayerProperties } from '@/lib/VisualizationHelpers';
 import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 
 // Each visualization can be represented by an object with a unique id
-// const visualizations = ref<VisualizationMetadata[]>([])
 const visualizationStore = useVisualizationStore();
 const { visualizations } = storeToRefs(visualizationStore);
 const mapPanelOpen = ref(true);
 
-// Separate visualizations into panel, map, and geoptz types
-const panelVisualizations = computed(() => visualizations.value.filter(viz =>
+// Separate visualizations into panel and map types
+const panelVisualizations = computed<OSHVisualization[]>(() => visualizations.value.filter(viz =>
 	PANEL_VISUALIZATIONS.includes(viz.type)
 ));
-const mapVisualizations = computed(() => visualizations.value.filter(viz =>
+const mapVisualizations = computed<OSHVisualization[]>(() => visualizations.value.filter(viz =>
 	MAP_VISUALIZATIONS.includes(viz.type)
 ));
+
+// Check that type is a map layer
+function isMapLayer(
+  layer: VisualizationLayerProperties | null
+): layer is IPointMarkerLayerProperties | ILineOfBearingLayerProperties {
+  return !!layer && 'iconName' in layer;
+}
 const geoPtzVisualizations = computed(() => visualizations.value.filter(viz =>
 	viz.type === 'geoPtz'
 ))
@@ -59,7 +67,7 @@ onMounted(() => {
 		<v-sheet class="visualization-list overflow-y-auto">
 			<!-- MAP VISUALIZATIONS -->
 			<v-expansion-panels multiple eager>
-				<v-expansion-panel :disabled="mapVisualizations.length == 0" static>
+				<v-expansion-panel :disabled="mapVisualizations.length == 0" :value="mapVisualizations.length > 0" static>
 					<template #title>
 						<div class="panel-header">
 							Map Visualizations
@@ -69,7 +77,7 @@ onMounted(() => {
 						<v-list activatable density="compact" select-strategy="leaf">
 							<v-list-item v-for="viz in mapVisualizations" :key="viz.id" @click="toggleSelectedMapItem(viz)">
 								<template #prepend>
-									<v-icon :icon="`mdi-${viz.visualizationComponents.dataLayer.iconName}`" size="16"></v-icon>
+									<v-icon :icon="`mdi-${isMapLayer(viz.visualizationComponents.dataLayer) ? viz.visualizationComponents.dataLayer.iconName : ''}`" size="16"></v-icon>
 								</template>
 								<template #title>{{ viz.name }}</template>
 								<template #append>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { SweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
+import { OSHControlStream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { ISweApiControlStreamProperties, ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
@@ -15,23 +15,11 @@ import { createDatasource, useDisconnectDatasources } from '../../shared/helpers
 const geoPtzId = ref('geoPtz-' + randomUUID());
 const geoPtzDatasource = ref<any>(null);
 
-const props = defineProps({
-	visualization: {
-		type: OSHVisualization,
-		required: false,
-		default: null,
-	},
-	datasource: {
-		type: SweApiDataSourceProperties,
-		required: true,
-		default: null,
-	},
-	controlstream: {
-		type: Object,
-		required: true,
-		default: null,
-	}
-});
+const props = defineProps<{
+  visualization: OSHVisualization,
+  datasource: ISweApiDataSourceProperties,
+  controlstream: ISweApiControlStreamProperties,
+}>();
 
 // Define PTZ data interface
 interface PTZData {

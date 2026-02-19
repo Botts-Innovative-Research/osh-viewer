@@ -1,16 +1,17 @@
-import { OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
-    ISweApiDataSourceProperties, IVideoViewProperties,
+    ISweApiDataSourceProperties, IVideoLayerProperties, IVideoViewProperties,
     VisualizationComponents,
 } from '@/lib/VisualizationHelpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
+//@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
+//@ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import { AggregateDatastreams, AggregateControlstreams, BuildRoleProperty } from '../../shared/helpers';
-import {toRaw} from "vue";
-import {useControlStreamStore} from "@/stores/controlstreamstore";
+import { AggregateDatastreams, AggregateControlstreams, BuildRoleProperty, getUsedDatastreams, getUsedControlstreams } from '../../shared/helpers';
+
 
 export function build() {
 	console.log('Building Video Visualization...');
@@ -31,13 +32,14 @@ export function build() {
 		dataView: videoResult.videoView,
 	};
 
+    console.log(getUsedControlstreams())
+
 	const newViz: OSHVisualization = new OSHVisualization(
 		`visualization-${randomUUID()}`,
         vizwizStore.visualizationCustomizationOptions.name,
 		'video',
-		null,
-		datastreams,
-		controlstreams
+		getUsedDatastreams(),
+		getUsedControlstreams()
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
 	visualizationStore.addVisualization(newViz);
@@ -54,19 +56,28 @@ export function build() {
 export function CreateVideoViewProps(datastreams: { [key: string]: any }, controlstreams: { [key: string]: any }, visOptions: any) {
 	const datastreamStore = useDataStreamStore();
 
+    // Create datasources, layer, and view
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
-	let videoLayer: any = {};
-
-    let videoView: any = {
+	let videoLayer: IVideoLayerProperties = {
+        name: visOptions.name,
+        getFrameData(rec, timestamp) {
+            return;
+        },
+        getTimestamp(rec, timestamp) {
+            return;
+        },
+    };
+    let videoView: IVideoViewProperties = {
         container: `video-container-${randomUUID()}`,
         css: 'video-view',
+        layers: [videoLayer],
         width: 640,
         height: 480,
-        showTime: true,
-        showStats: true,
+        useWebCodecApi: visOptions?.webCodec,
+        showTime: visOptions?.time,
+        showStats: visOptions?.stats,
     }
 
-    const videoFormat = visOptions?.videoFormat || 'MJPEG'; // default to mjpeg? or maybe h264 idc
 
 	for (const [dsId, entry] of Object.entries(datastreams)) {
         const properties = BuildRoleProperty(entry);
@@ -77,8 +88,6 @@ export function CreateVideoViewProps(datastreams: { [key: string]: any }, contro
             resource: `/datastreams/${dsId}/observations`,
             tls: currentOSHDatastream[0].datastream.networkProperties.tls,
             protocol: 'ws',
-            startTime: 'now',
-            endTime: '2125-08-01T00:00:00Z',
             mode: Mode.REAL_TIME,
             responseFormat: 'application/swe+binary',
             id: randomUUID(),
@@ -89,23 +98,9 @@ export function CreateVideoViewProps(datastreams: { [key: string]: any }, contro
             }
         };
         vizDatasources.push(currentDataSource);
-
-        let ds = toRaw(currentOSHDatastream[0]);
-
-        videoLayer = {
-            ...videoLayer,
-            name: visOptions.name ?? `${ds.datastream.properties.name}`,
-        };
-
-        videoView = {
-            ...videoView,
-            name: visOptions.name ?? `${ds.datastream.properties.name}`,
-            layers: [videoLayer],
-            useWebCodecApi: videoFormat === 'MJPEG' ? false : true,
-            videoType: videoFormat,
-        };
-        console.log('Created VideoViewProps:', { vizDatasources, videoLayer, videoView });
     }
+
+    console.log('Created VideoViewProps:', { vizDatasources, videoLayer, videoView });
 
 	return {
 		vizDatasources,

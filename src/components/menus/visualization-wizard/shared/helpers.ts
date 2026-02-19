@@ -1,6 +1,9 @@
 import { useVizWizStore } from "@/stores/vizwizstore"
 import { onBeforeUnmount, Ref } from "vue"
+//@ts-ignore
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
+import { OSHControlStream, OSHDatastream } from "@/lib/OSHConnectDataStructs";
+import { DataSourceProperties, ISweApiDataSourceProperties } from "@/lib/VisualizationHelpers";
 
 /**
  * Aggregates datastreams from vizwizStore.dsConfig based on selected roles.
@@ -98,12 +101,44 @@ export function BuildRoleProperty(entry: any[]) {
 }
 
 /**
+ * Returns an array of OSHDatastream objects that are actually being used (associated with a selected role)
+ * @returns 
+ */
+export function getUsedDatastreams(): OSHDatastream[] {
+  const vizwizStore = useVizWizStore()
+
+  // Get all dsIds that are actually selected for a role
+  const selectedDsIds = Object.values(vizwizStore.dsConfig)
+    .filter(entry => entry.selected && entry.dsId)
+    .map(entry => entry.dsId)
+
+  // Return OSHDatastream objects
+  return vizwizStore.datastreams.filter(ds => selectedDsIds.includes(ds.id))
+}
+
+/**
+ * Returns an array of OSHControlStream objects that are actually being used (associated with a selected role)
+ * @returns 
+ */
+export function getUsedControlstreams(): OSHControlStream[] {
+  const vizwizStore = useVizWizStore()
+
+  // Get all csIds that are actually selected for a role
+  const selectedCsIds = Object.values(vizwizStore.csConfig)
+    .filter(entry => entry.selected && entry.csId)
+    .map(entry => entry.csId)
+
+  // Return OSHControlStream objects
+  return vizwizStore.controlstreams.filter(cs => selectedCsIds.includes(cs.id))
+}
+
+/**
  * Create a SweApi datasource from given datasource properties
  * 
  * @param dsProps - Array of datasource properties to create SweApi object
  * @returns Generated SweApi datasource instance
  */
-export function createDatasource(dsProps: any) {
+export function createDatasource(dsProps: ISweApiDataSourceProperties) {
   const dsInstance = new SweApi(dsProps.id, {
     endpointUrl: dsProps.endpointUrl,
     resource: dsProps.resource,
