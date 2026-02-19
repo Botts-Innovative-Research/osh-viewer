@@ -1,7 +1,7 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
 	ILineOfBearingLayerProperties,
-	ILineOfBearingViewProperties,
+	IMapViewProperties,
 	ISweApiDataSourceProperties,
 } from '@/lib/VisualizationHelpers';
 //@ts-ignore
@@ -65,7 +65,7 @@ export function CreateLobViewProps(datastreams: { [key: string]: any }, visOptio
 		label: visOptions.name,
 		name: visOptions.name,
 	};
-	const lobView: ILineOfBearingViewProperties = {
+	const lobView: IMapViewProperties = {
 		container: `map-container-${randomUUID()}`,
 		layers: [lobLayer],
 		css: 'map-view',

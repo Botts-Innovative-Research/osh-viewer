@@ -14,7 +14,7 @@ import { sendCommand } from '@/lib/ControlstreamUtils';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import { RoleDatastream } from '@/types/types';
 import { createDatasource } from './menus/visualization-wizard/shared/helpers';
-import { DataSourceProperties, ILineOfBearingLayerProperties, IPointMarkerLayerProperties, ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
+import { ILineOfBearingLayerProperties, IPointMarkerLayerProperties, ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
 
 // Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3ZWYzYjhiMy0wMzcwLTQxMTktOGY1OS0wYzM1NzNlOTI3NDMiLCJpZCI6Mzk4MzMsImlhdCI6MTc0ODIwNDA4OX0.HBox4N50pESMU1yJs33-0cNd22sTvIv0KetnMAJMdXU'
 
@@ -225,8 +225,14 @@ function deleteVisualizations(removedVizIds: string[]) {
 
     console.log(mapView.value)
 
-    // Remove layer from the actual map
-    mapView.value.removeAllFromLayer(layer);
+     // Remove layer from the actual map safely
+    try {
+      if (mapView.value) {
+        mapView.value.removeAllFromLayer(layer);
+      }
+    } catch (err) {
+      console.warn(`[MapView] Failed to remove Leaflet layer ${vizId}:`, err);
+    }
 
     // Remove layer from list of map layers
     mapItemLayers.value.delete(vizId);
