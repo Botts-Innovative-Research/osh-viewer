@@ -3,24 +3,23 @@ import {computed, onMounted, ref, toRaw} from 'vue';
 import {randomUUID} from 'osh-js/source/core/utils/Utils.js';
 import VideoDataLayer from 'osh-js/source/core/ui/layer/VideoDataLayer.js';
 import {OSHVisualization} from '@/lib/OSHConnectDataStructs';
-import MJPEGView from 'osh-js/source/core/ui/view/video/MjpegView.js';
 import VideoView from 'osh-js/source/core/ui/view/video/VideoView.js';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import PTZControl from './PTZControl.vue'
 import {useControlStreamStore} from "@/stores/controlstreamstore";
+import {fetchControlStreamSchema} from "@/lib/ControlstreamUtils";
+import { createDatasource, useVisualizationCleanup } from '../../shared/helpers';
 
 const props = defineProps<{
   visualization: OSHVisualization;
 }>();
 
 const videoDivId = ref('video-' + randomUUID());
-const videoCanvas = ref<HTMLCanvasElement | null>(null);
-const videoHeight = ref(360);
-const videoWidth = ref(480);
 
 const controlstreamStore = useControlStreamStore();
 const videoView = ref<any>(null);
 const videoLayer = ref<VideoDataLayer | null>(null);
+const dsInstances: SweApi[] = [];
 
 function normalizeCodec(codec: string | null | undefined) {
   if (!codec) return '';
@@ -37,41 +36,18 @@ function isH264Codec(codec: string | null | undefined) {
   return false;
 }
 
-function createVideoView(codec: string, viewOptions: any) {
+// function createVideoView(codec: string, viewOptions: any) {
+function createVideoView(viewConfig: any) {
   if (videoView.value) {
     videoView.value.destroy?.();
     videoView.value = null;
   }
 
-//  const useWebCodecApi = isH264Codec(codec) ? true : (viewOptions?.useWebCodecApi ?? true);
-  const showTime = viewOptions?.showTime ?? true;
-  const showStats = viewOptions?.showStats ?? true;
-
-  if (isH264Codec(codec)) {
-    videoView.value = new VideoView({
-      container: videoDivId.value,
-      css: 'video-h264',
-      showTime: showTime,
-      showStats: showStats,
-      useWebCodecApi: false,
-      width: videoWidth.value,
-      height: videoHeight.value,
-      layers: [],
-    });
-    console.log("[VideoView] H264 View created:", videoView.value);
-  } else {
-    videoView.value = new MJPEGView({
-      container: videoDivId.value,
-      css: 'video-mjpeg',
-      showTime: showTime,
-      showStats: showStats,
-      useWebCodecApi: false,
-      width: videoWidth.value,
-      height: videoHeight.value,
-      layers: [],
-    });
-    console.log("[VideoView] MJPEG View created:", videoView.value);
-  }
+  videoView.value = new VideoView({
+    ...viewConfig,
+    container: videoDivId.value,
+    layers: [],
+  });
 }
 
 const ptzControl = computed(() => {
@@ -117,76 +93,37 @@ function initializeVideo() {
       ? viz.visualizationComponents.dataSource
       : [viz.visualizationComponents.dataSource];
 
-  const dsInstances: SweApi[] = [];
 
   let getFrameData: any;
   let getTimestamp: any;
 
   for (const dsProps of dsArray) {
     let rawDs = toRaw(dsProps);
-    const dsInstance = new SweApi(dsProps.id, {
-      endpointUrl: dsProps.endpointUrl,
-      resource: dsProps.resource,
-      tls: dsProps.tls,
-      protocol: dsProps.protocol,
-      startTime: dsProps.startTime,
-      endTime: dsProps.endTime,
-      mode: dsProps.mode,
-      responseFormat: dsProps.responseFormat,
-      connectorOpts: {
-        username: dsProps?.connectorOpts.username,
-        password: dsProps?.connectorOpts.password
-      }
-    });
+    const dsInstance = createDatasource(dsProps)
 
     if (dsProps.properties.video) {
       getFrameData = {
         dataSourceIds: [dsInstance.id],
         handler: (rec: any) => {
-          const output = rec?.[rawDs.properties.video.outputName];
-          const property = rawDs.properties.video.property;
-          const value = output?.[property] ?? rec?.[property] ?? output;
-          if (value?.data instanceof Uint8Array) {
-            return value;
-          }
-          if (value instanceof Uint8Array) {
-            return {
-              compression: rawDs.properties.video.compression,
-              data: value,
-            };
-          }
-          if (value?.buffer instanceof ArrayBuffer && typeof value?.byteLength === 'number') {
-            return {
-              compression: rawDs.properties.video.compression,
-              data: new Uint8Array(value),
-            };
-          }
-          return value ?? null;
+          return rec[rawDs.properties.video.property];
         },
       };
 
       getTimestamp = {
         dataSourceIds: [dsInstance.id],
         handler: (rec: any) => {
-          const data = rec?.[rawDs.properties.video.outputName];
-          const timeValue = data?.time ?? data?.sampleTime;
-          const parsedTime = timeValue == null ? NaN : new Date(timeValue).getTime();
-          if (!Number.isNaN(parsedTime)) {
-            return parsedTime;
-          }
-          return rec?.timestamp ?? Date.now();
+          return rec.timestamp
         }
       };
     }
-
-    const selectedCodec = rawDs.properties.video?.compression ?? viewOptions?.videoType;
-    createVideoView(selectedCodec, viewOptions);
+    const viewConfig = viz.visualizationComponents.dataView;
+    createVideoView(viewConfig);
 
     dsInstance.connect();
     dsInstances.push(dsInstance);
   }
 
-  console.log('[VideoView] Creating datasource for VideoDataLayer:', dsInstances);
+  console.log('[Video.vue] Creating datasource for VideoDataLayer:', dsInstances);
   const layerOpts = viz.visualizationComponents.dataLayer;
   videoLayer.value = new VideoDataLayer({
     ...layerOpts,
@@ -199,21 +136,36 @@ function initializeVideo() {
   console.log('[VideoView] Creating VideoDataLayer:', videoLayer.value);
 }
 
-onMounted(() => {
+async function initializePtz() {
+  const viz = props.visualization;
+  if (!viz.controlstream || Object.keys(viz.controlstream).length === 0)
+    return;
+
+  const csId = Object.keys(viz.controlstream)[0];
+  if (!csId)
+    return;
+
+  const controlStreams = controlstreamStore.getControlStreamsById([csId]);
+  if (!controlStreams || controlStreams.length === 0)
+    return;
+
+  const cs = controlStreams[0];
+
+  await fetchControlStreamSchema(cs.controlstream.properties, cs.controlstream.networkProperties);
+}
+onMounted(async() => {
   initializeVideo();
+  await initializePtz();
 });
 
+useVisualizationCleanup(ref(dsInstances));
 </script>
 
 <template>
   <v-card
       :id="videoDivId"
-      class="video-container pa-4"
-      :style="{ width: videoWidth + 'px', height: videoHeight + 'px' }"
+      class="video-mjpeg video-h264"
   >
-    <v-card-title class="text-h5 text-center">
-      {{ props.visualization.name || 'Video' }}
-    </v-card-title>
   </v-card>
   <PTZControl
       v-if="ptzControl.hasControl"
@@ -223,19 +175,15 @@ onMounted(() => {
   />
 </template>
 
-<style scoped>
-.video-h264, .video-mjpeg {
+<style>
+.video-h264 canvas {
   width: 100%;
+  height: auto;
 }
 
-.video-container {
-  width: 480px;
-  height: 360px;
+.video-mjpeg {
+  width: 100%;
+  height: auto;
 }
 
-.ptz-controls {
-  margin-top: 1rem;
-  display: flex;
-  justify-content: center;
-}
 </style>

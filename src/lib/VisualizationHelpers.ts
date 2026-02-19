@@ -97,11 +97,13 @@ export class VisualizationComponents {
   dataLayer: DataLayerProperties | any | null // TODO: Fix type
   dataView: DataViewProperties | null
   dataSource: DataSourceProperties | DataSourceProperties[]
+  controlstream?: any // Optional controlstream for visualizations like GeoPTZ
 
-  constructor(datasource: SweApi | SweApi[], dataLayer: any, dataView: any) {
+  constructor(datasource: SweApi | SweApi[], dataLayer: any, dataView: any, controlstream?: any) {
     this.dataSource = datasource
     this.dataLayer = dataLayer
     this.dataView = dataView
+    this.controlstream = controlstream
   }
 }
 

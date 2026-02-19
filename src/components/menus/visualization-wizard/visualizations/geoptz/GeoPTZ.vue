@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { SweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 // @ts-ignore
@@ -9,6 +9,7 @@ import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useUIStore } from '@/stores/uistore';
 import { sendCommand } from '@/lib/ControlstreamUtils';
+import { createDatasource, useDisconnectDatasources } from '../../shared/helpers';
 
 // Generate a random ID when the component is created
 const geoPtzId = ref('geoPtz-' + randomUUID());
@@ -64,22 +65,8 @@ const csAuth = computed(() => {
 
 onMounted(async () => {
 	// Create SweApi instance from props.datasource if provided
-	let dsInstance: any = null;
-
-	dsInstance = new SweApi('geoPtz-datasource', {
-		endpointUrl: props.datasource.endpointUrl,
-		resource: props.datasource.resource,
-		tls: props.datasource.tls,
-		protocol: props.datasource.protocol,
-		startTime: props.datasource.startTime,
-		endTime: props.datasource.endTime,
-		mode: props.datasource.mode,
-		responseFormat: props.datasource.responseFormat,
-		connectorOpts: {
-			username: props.datasource.connectorOpts.username ?? '',
-			password: props.datasource.connectorOpts.password ?? '',
-		}
-	});
+	const dsInstance = createDatasource(props.datasource)
+	
 	geoPtzDatasource.value = dsInstance;
 	console.log('[GeoPtzView] GeoPTZ datasource created:', geoPtzDatasource.value);
 
@@ -150,11 +137,17 @@ function onSend() {
 	console.log('[GeoPtzView] Sending GeoPTZ command:', command);
 	sendCommand(commandBaseUrl.value, props.controlstream.id, command, `${csAuth.value.username}:${csAuth.value.password}`);
 }
+
+onBeforeUnmount(() => {
+	// Disselect GeoPTZ before unmount
+	if (isSelected) uiStore.clearSelectedGeoPTZ();
+	// Disconnect datasources
+	useDisconnectDatasources(ref(geoPtzDatasource));
+})
 </script>
 
 <template>
 	<v-card :id="geoPtzId" class="pa-4">
-		<v-card-title>{{ visualization.name }}</v-card-title>
 		<v-container>
 			<v-row align="center">
 				<v-col align="center">

@@ -32,7 +32,7 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 	const csCustomization = ref<Record<string, Record<string, any>>>({});
     const csConfig = ref<Record<string, Record<string, any>>>({});
 
-    const visualizationCustomizationOptions = ref<VisualizationCustomizationOptions>({});
+    const visualizationCustomizationOptions = ref<any>({});
 
 	const setType = (type: string): void => {
 		visualizationType.value = type;

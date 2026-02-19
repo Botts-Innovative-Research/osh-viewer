@@ -30,10 +30,10 @@ export function build() {
 
 	const newViz: OSHVisualization = new OSHVisualization(
 		`visualization-${randomUUID()}`,
-		`${visualizationComponents.dataLayer.label}`,
+        vizwizStore.visualizationCustomizationOptions.name,
 		'pmorientation',
 		null,
-		datastreams,
+		visualizationComponents.dataSource,
 		null
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
@@ -73,7 +73,7 @@ export function CreateMapViewProps(datastreams: { [key: string]: any }, visOptio
             endTime: '2125-08-01T00:00:00Z',
             mode: Mode.REAL_TIME,
             responseFormat: 'application/swe+json',
-            id: randomUUID(),
+            id: dsId,
             properties: properties,
             connectorOpts: {
                 username: currentOSHDatastream[0].datastream.networkProperties.connectorOpts.username,
@@ -86,9 +86,10 @@ export function CreateMapViewProps(datastreams: { [key: string]: any }, visOptio
         // Build remaining mapLayer properties
         mapLayer = {
             ...mapLayer,
-            label: `${currentOSHDatastream[0].datastream.properties.name}`,
-            // label: `${randomUUID()} - PM Orientation Layer`,
+            name: visOptions.name ?? `${currentOSHDatastream[0].datastream.properties.name}`,
+            label: visOptions.name ?? `${currentOSHDatastream[0].datastream.properties.name}`,
             icon: visOptions.icon,
+            iconName: visOptions.iconName,
             iconSize: [32, 32],
             labelOffset: [-16, -32],
         };

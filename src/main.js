@@ -2,6 +2,7 @@ import './assets/main.css';
 
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import Toast from 'vue-toastification';
 import 'vue-toastification/dist/index.css';
 
@@ -29,8 +30,9 @@ const vuetify = createVuetify({
 });
 
 const pinia = createPinia();
-export { pinia };
+pinia.use(piniaPluginPersistedstate);
 
+export { pinia };
 const app = createApp(App);
 
 app.use(pinia);
@@ -50,6 +52,16 @@ app.use(Toast, {
 	closeButton: 'button',
 	icon: true,
 	rtl: false,
+	filterBeforeCreate: (toast, toasts) => {
+    if (toasts.filter(
+      t => t.type === toast.type
+    ).length !== 0) {
+      // Returning false discards the toast
+      return false;
+    }
+    // You can modify the toast if you want
+    return toast;
+  }
 });
 
 app.mount('#app');

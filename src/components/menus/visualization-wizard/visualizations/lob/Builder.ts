@@ -36,7 +36,7 @@ export function build() {
 	// TODO: allow construction of visualization with visualization components and improve defaults
 	const newViz: OSHVisualization = new OSHVisualization(
 		`visualization-${randomUUID()}`,
-		'test',
+		vizwizStore.visualizationCustomizationOptions.name,
 		'lob',
 		null,
 		datastreams,
@@ -79,7 +79,7 @@ export function CreateLobViewProps(datastreams: { [key: string]: any }, visOptio
 			endTime: '2125-08-01T00:00:00Z',
 			mode: Mode.REAL_TIME,
 			responseFormat: 'application/swe+json',
-			id: randomUUID(),
+			id: dsId,
 			properties: properties,
             connectorOpts: {
                 username: currentOSHDatastream[0].datastream.networkProperties.connectorOpts.username,
@@ -97,10 +97,11 @@ export function CreateLobViewProps(datastreams: { [key: string]: any }, visOptio
 		opacity: visOptions.opacity,
 		distanceKm: visOptions.distanceKm,
 		icon: visOptions.icon,
+		iconName: visOptions.iconName,
 		iconSize: [32, 32],
 		labelOffset: [-16, -32],
-		label: `${randomUUID()} - PM Orientation Layer`,
-		name: `${randomUUID()} - PM Orientation Layer`,
+		label: visOptions.name,
+		name: visOptions.name,
 	};
 
 	// Build MapViewProperties

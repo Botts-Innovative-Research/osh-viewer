@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import IconControl from '../../viz-components/customizations/IconControl.vue';
-import VideoCustomizationOptions
-  from "@/components/menus/visualization-wizard/visualizations/video/VideoCustomizationOptions.vue";
+import NameControl from '../../viz-components/customizations/NameControl.vue';
+
 </script>
 
 <template>
+  <NameControl default-name="New GeoPTZ"></NameControl>
 </template>

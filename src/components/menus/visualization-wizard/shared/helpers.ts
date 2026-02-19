@@ -1,4 +1,6 @@
 import { useVizWizStore } from "@/stores/vizwizstore"
+import { onBeforeUnmount, Ref } from "vue"
+import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 
 /**
  * Aggregates datastreams from vizwizStore.dsConfig based on selected roles.
@@ -93,4 +95,77 @@ export function BuildRoleProperty(entry: any[]) {
         return [role, { property: roleEntry.property, outputName: roleEntry.outputName }]
     }),
   )
+}
+
+/**
+ * Create a SweApi datasource from given datasource properties
+ * 
+ * @param dsProps - Array of datasource properties to create SweApi object
+ * @returns Generated SweApi datasource instance
+ */
+export function createDatasource(dsProps: any) {
+  const dsInstance = new SweApi(dsProps.id, {
+    endpointUrl: dsProps.endpointUrl,
+    resource: dsProps.resource,
+    tls: dsProps.tls,
+    protocol: dsProps.protocol,
+    startTime: dsProps.startTime,
+    endTime: dsProps.endTime,
+    mode: dsProps.mode,
+    responseFormat: dsProps.responseFormat,
+    connectorOpts: {
+      username: dsProps?.connectorOpts.username ?? '',
+      password: dsProps?.connectorOpts.password ?? '',
+    }
+  });
+  return dsInstance;
+}
+
+/**
+ * Disconnects datasources on component UNMOUNT
+ * 
+ * @param dsInstances 
+ */
+export function useVisualizationCleanup(dsInstances: Ref<SweApi[]>) {
+  onBeforeUnmount(() => {
+    useDisconnectDatasources(dsInstances)
+  })
+}
+
+/**
+ * Disconnects SweApi datasources
+ * 
+ * @param dsInstances 
+ */
+export function useDisconnectDatasources(dsInstances: Ref<SweApi[]>) {
+  const raw = dsInstances.value;
+
+  const dsList = Array.isArray(raw)
+    ? raw
+    : raw
+      ? [raw]
+      : [];
+  for (const ds of dsList) {
+    console.log('[Disconnect Datasources] Disconnecting datasource:', ds)
+    ds.disconnect()
+  }
+}
+
+/**
+ * Generates a default visualization name based on selected viz type and a given role's datastream name
+ * 
+ * @param role
+ * @returns 
+ */
+export function generateVizName(role: string) {
+  const vizwizStore = useVizWizStore()
+
+  // Find datastream ID of desired role
+  const dsId = vizwizStore.dsConfig[role].dsId
+
+  for (const ds of vizwizStore.datastreams) {
+    if (ds.id === dsId) return `${vizwizStore.visualizationType}: ${ds.name}`
+  }
+
+  return `New ${vizwizStore.visualizationType}`
 }

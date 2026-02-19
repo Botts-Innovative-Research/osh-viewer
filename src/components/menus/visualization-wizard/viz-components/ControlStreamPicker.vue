@@ -6,9 +6,12 @@ import { getCommandType } from '@/lib/ControlstreamUtils';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { computed, onMounted, ref, watch } from 'vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   role: string, // Property role to be used as key in vizwiz store
-}>()
+  showPropertySelector?: boolean,
+}>(), {
+  showPropertySelector: true,
+})
 
 // Get controlstreams from vizwiz store
 const vizwizStore = useVizWizStore()
@@ -41,6 +44,11 @@ async function fetchProps() {
       ? csSchema.value.parametersSchema.items
       : csSchema.value.parametersSchema;
     getCommandType(schemaItems, selectedControlstream.value);
+
+    if (Array.isArray(schemaItems)) {
+      const allPropNames = schemaItems.map((item: any) => item.name);
+      vizwizStore.updateCsConfig(props.role, { property: allPropNames });
+    }
   }
 }
 
@@ -61,7 +69,7 @@ watch(selectedControlstream, async (newVal) => {
 
   <!-- Select for property -->
   <v-select
-      v-if="csSchema && csSchema.parametersSchema"
+      v-if="showPropertySelector && csSchema && csSchema.parametersSchema"
       v-model="selectedProperty"
       :items="csSchema.parametersSchema.items"
       label="Select property"

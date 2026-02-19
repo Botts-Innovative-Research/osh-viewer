@@ -6,6 +6,7 @@ import { computed, ref, watch } from 'vue';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useUIStore } from '@/stores/uistore';
 import { sendCommand } from '@/lib/ControlstreamUtils';
+import {showToast} from "@/composables/useToast";
 
 const flightPathId = ref('flightPath-' + randomUUID());
 
@@ -126,7 +127,7 @@ function onSend() {
         alt: wp.alt,
       })),
     },
-  };8
+  };
 
   console.log('[FlightPathView] Sending FlightPath command:', command);
   sendCommand(commandBaseUrl.value, props.controlstream.id, command, `${csAuth.value.username}:${csAuth.value.password}`);
@@ -135,7 +136,6 @@ function onSend() {
 
 <template>
   <v-card :id="flightPathId" class="pa-4">
-    <v-card-title>{{ visualization.name }}</v-card-title>
     <v-container>
       <v-row align="center">
         <v-col cols="auto" align="center">

@@ -28,7 +28,7 @@ const treeItems = computed(() => {
 			title: node.name,
 			type: 'node',
 			raw: node,
-			children: node.systems.map((system: OSHSystem) => {
+			children: node.getFilteredSystems().map((system: OSHSystem) => {
 				return {
 					id: system.id,
 					title: system.name,
@@ -131,13 +131,18 @@ const deleteNode = (node: OSHNode) => {
 </script>
 <template>
 	<v-card id="node-sidebar">
-		<v-card-title class="title ma-2">
-			<span class="title">Nodes</span>
-		</v-card-title>
-		<v-divider></v-divider>
-
 		<v-sheet class="pa-4">
-			<v-btn @click="fetchResources">Fetch Resources</v-btn>
+		<v-tooltip text="Fetch Resources" location="bottom">
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    aria-label="Fetch Resources"
+                    @click="fetchResources"
+                    icon="mdi-refresh"
+                    size="small"
+                ></v-btn>
+                </template>
+              </v-tooltip>
 			<v-btn @click="addAllSamplingFeaturePMs">All PMS</v-btn>
 
 			<!-- Add Node -->
@@ -145,6 +150,8 @@ const deleteNode = (node: OSHNode) => {
 				Add Node
 			</v-btn>
 
+			<v-divider class="my-4"></v-divider>
+			
 			<!-- Tree view of nodes/systems/datastreams -->
 			<v-treeview :items="treeItems" item-value="id" item-children="children" density="compact" fluid
 				items-registration="props" open-all>
