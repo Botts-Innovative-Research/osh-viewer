@@ -8,7 +8,6 @@ import { computed, onMounted, ref } from 'vue';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { ILineOfBearingLayerProperties, IPointMarkerLayerProperties, VisualizationLayerProperties } from '@/lib/VisualizationHelpers';
 import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 
 // Each visualization can be represented by an object with a unique id
 const visualizationStore = useVisualizationStore();
