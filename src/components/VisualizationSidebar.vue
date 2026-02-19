@@ -99,21 +99,24 @@ onMounted(() => {
 						</div>
 					</template>
 					<v-expansion-panel-text>
-						<v-sheet :style="{display: 'flex'}">
-							<v-select
-								label="Process"
-								v-model="selectedGeoPtzControllers"
-								:items="geoPtzVisualizations"
-								item-title="name"
-								:item-value="(item: OSHVisualization) => item"
-								chips
-								multiple
-							></v-select>
-							<v-divider vertical></v-divider>
+						<v-sheet>
 							<GeoPTZ
 								v-if="selectedGeoPtzControllers"
 								:visualizations="selectedGeoPtzControllers"
-							></GeoPTZ>
+							>
+								<template #controllers>
+									<v-select
+										label="Process"
+										v-model="selectedGeoPtzControllers"
+										:items="geoPtzVisualizations"
+										item-title="name"
+										:item-value="(item: OSHVisualization) => item"
+										chips
+										multiple
+										hide-details
+									></v-select>
+								</template>
+							</GeoPTZ>
 						</v-sheet>
 					</v-expansion-panel-text>
 				</v-expansion-panel>

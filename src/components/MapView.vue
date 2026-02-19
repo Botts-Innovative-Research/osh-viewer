@@ -10,7 +10,6 @@ import { useUIStore } from '@/stores/uistore';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import { sendCommand } from '@/lib/ControlstreamUtils';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import { RoleDatastream } from '@/types/types';
 import { createDatasource } from './menus/visualization-wizard/shared/helpers';
@@ -100,21 +99,16 @@ onMounted(() => {
       })
 
       // GEO PTZ
-      const selectedGeoPTZ = uiStore.selectedGeoPTZ;
-      if (selectedGeoPTZ) {
+      const isGeoPTZSelected = uiStore.isGeoPTZSelected;
+      if (isGeoPTZSelected) {
         var lat = event.latlng.lat;
         var lon = event.latlng.lng;
 
         // Send GeoPTZ command to selected GeoPTZ visualization
-        const commandBaseUrl = selectedGeoPTZ.commandBaseUrl;
-        const controlStreamId = selectedGeoPTZ.controlStreamId;
-        const auth = selectedGeoPTZ.auth
-
         if (geoPtzTargetPM.value) {
           mapView.value.map.removeLayer(geoPtzTargetPM.value);
         }
-        geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon, title: selectedGeoPTZ.vizName }).addTo(mapView.value.map)
-        geoPtzTargetPM.value.vizId = selectedGeoPTZ.vizId;
+        geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon, label: 'test' }).addTo(mapView.value.map)
 
         const command = {
           parameters: {
@@ -124,8 +118,7 @@ onMounted(() => {
           },
         };
 
-        sendCommand(commandBaseUrl, controlStreamId, command, auth);
-
+        uiStore.sendGeoPTZCommand(command);
         uiStore.setCurrentLLA(lat, lon, 120.0);
       }
 
@@ -136,7 +129,7 @@ onMounted(() => {
         const lon = event.latlng.lng;
         const alt = 100.0;
 
-        flightPathTargetPM.value.push(L.marker([lat, lon], { icon: geoPtzIcon }).addTo(mapView.value.map));
+        flightPathTargetPM.value.push(L.marker([lat, lon], { icon: geoPtzIcon, title: "GeoPTZ" }).addTo(mapView.value.map));
 
         uiStore.setCurrentLLA(lat, lon, alt);
       }
@@ -440,13 +433,13 @@ watch(() => uiStore.selectedMapItem,
 /**
  * Handle change in GeoPTZ selection
  */
-watch(() => uiStore.selectedGeoPTZ, (geoPtz) => {
+watch(() => uiStore.isGeoPTZSelected, (geoPtz) => {
   const map = mapView.value.map;
   const container = map.getContainer();
   container.style.cursor = geoPtz ? 'crosshair' : ''
 
-  // If a geoPtz marker exists AND (disselection or changed selection)
-  if (geoPtzTargetPM.value && (!geoPtz || geoPtzTargetPM.value.vizId !== geoPtz.vizId)) {
+  // If a geoPtz marker exists geoPTZ is not selected
+  if (geoPtzTargetPM.value && !geoPtz) {
     console.log('Removing GeoPTZ marker');
     mapView.value.map.removeLayer(geoPtzTargetPM.value);
     geoPtzTargetPM.value = null;

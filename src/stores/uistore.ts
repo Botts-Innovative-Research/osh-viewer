@@ -32,6 +32,7 @@ export const useUIStore = defineStore('ui', () => {
 
 	// Currently selected GeoPTZ Visualization(s) or null if none selected
 	const selectedGeoPTZ = ref<OSHVisualization[] | null>(null);
+	const isGeoPTZSelected = ref<boolean>(false);
 
 	// Currently selected LLA coordinates
 	const currentLLA = ref<{
@@ -40,16 +41,16 @@ export const useUIStore = defineStore('ui', () => {
 		altitude: number;
 	} | null>(null);
 
-    const selectedFlightPath = ref<{
-        controlStreamId: string;
-        commandBaseUrl: string;
-        auth: string;
-    } | null>(null);
+	const selectedFlightPath = ref<{
+		controlStreamId: string;
+		commandBaseUrl: string;
+		auth: string;
+	} | null>(null);
 
-    const flightPathWaypoints = ref<{ lat: number; lon: number; alt: number }[]>([]);
-    const clearFlightPathMarkersSignal = ref(false);
+	const flightPathWaypoints = ref<{ lat: number; lon: number; alt: number }[]>([]);
+	const clearFlightPathMarkersSignal = ref(false);
 
-    // Theme state
+	// Theme state
 	const theme = ref<'dark' | 'light'>('dark');
 
 	// Example actions
@@ -86,19 +87,25 @@ export const useUIStore = defineStore('ui', () => {
 	function openNodeConfigForm() {
 		nodeConfigFormOpen.value = true;
 	}
-	
+
 	// Handle selection of map item
 	function setSelectedMapItem(item: any | null) {
 		selectedMapItem.value = item;
 	}
 
-	// Handle selection of GeoPTZ instance
-	function setSelectedGeoPTZ(vizList: OSHVisualization[] | null) {
+	// Handle list of selected GeoPTZ controllers
+	function setSelectedGeoPTZ(vizList: OSHVisualization[]) {
 		selectedGeoPTZ.value = vizList;
-		console.log("These visualizations are selected:", vizList?.map((viz: OSHVisualization) => viz.name))
+		if (vizList?.length === 0) setIsGeoPTZSelected(false);	// If list is empty, disselect geoptz
 	}
 	function clearSelectedGeoPTZ() {
 		selectedGeoPTZ.value = null;
+		setIsGeoPTZSelected(false);
+	}
+	
+	// Handle selection of GeoPTZ
+	function setIsGeoPTZSelected(val: boolean) {
+		isGeoPTZSelected.value = val;
 	}
 
 	// Handle current LLA coordinates
@@ -114,16 +121,22 @@ export const useUIStore = defineStore('ui', () => {
 		// Iterate thru GeoPTZ instances
 		if (selectedGeoPTZ) {
 			selectedGeoPTZ.value?.map((viz: OSHVisualization) => {
-				const controlstream: ISweApiControlStreamProperties | null = viz.visualizationComponents.controlstream ? viz.visualizationComponents.controlstream[0] : null;
+				const controlstream: ISweApiControlStreamProperties | null = viz
+					.visualizationComponents.controlstream
+					? viz.visualizationComponents.controlstream[0]
+					: null;
 				if (controlstream) {
 					const csId = controlstream.id;
 					const commandBaseUrl = `${controlstream.tls ? 'https' : 'http'}://${controlstream.endpointUrl}`;
-					const auth = { username: controlstream.connectorOpts.username, password: controlstream.connectorOpts.password };
-					sendCommand(commandBaseUrl, csId, command, `${auth.username}:${auth.password}`)
+					const auth = {
+						username: controlstream.connectorOpts.username,
+						password: controlstream.connectorOpts.password,
+					};
+					sendCommand(commandBaseUrl, csId, command, `${auth.username}:${auth.password}`);
 				} else {
 					console.error('Could not send command. No controlstream found.');
 				}
-			})
+			});
 		}
 	}
 
@@ -134,27 +147,27 @@ export const useUIStore = defineStore('ui', () => {
 		vizWizOpen.value = true;
 	}
 
-    function setSelectedFlightPath(controlStreamId: string, commandBaseUrl: string, auth: string) {
-        selectedFlightPath.value = { controlStreamId, commandBaseUrl, auth };
-    }
-    function clearSelectedFlightPath() {
-        selectedFlightPath.value = null;
-        flightPathWaypoints.value = [];
-    }
+	function setSelectedFlightPath(controlStreamId: string, commandBaseUrl: string, auth: string) {
+		selectedFlightPath.value = { controlStreamId, commandBaseUrl, auth };
+	}
+	function clearSelectedFlightPath() {
+		selectedFlightPath.value = null;
+		flightPathWaypoints.value = [];
+	}
 
-    function clearFlightPathWaypoints() {
-        flightPathWaypoints.value = [];
-    }
-    function setFlightPathWaypoints(waypoints: { lat: number; lon: number; alt: number }[]) {
-        flightPathWaypoints.value = waypoints;
-    }
+	function clearFlightPathWaypoints() {
+		flightPathWaypoints.value = [];
+	}
+	function setFlightPathWaypoints(waypoints: { lat: number; lon: number; alt: number }[]) {
+		flightPathWaypoints.value = waypoints;
+	}
 
-    function triggerClearFlightPathMarkers() {
-        clearFlightPathMarkersSignal.value = true;
-    }
-    function resetClearFlightPathMarkersSignal() {
-        clearFlightPathMarkersSignal.value = false;
-    }
+	function triggerClearFlightPathMarkers() {
+		clearFlightPathMarkersSignal.value = true;
+	}
+	function resetClearFlightPathMarkersSignal() {
+		clearFlightPathMarkersSignal.value = false;
+	}
 	return {
 		leftSidebarOpen,
 		rightSidebarOpen,
@@ -179,6 +192,8 @@ export const useUIStore = defineStore('ui', () => {
 		selectedGeoPTZ,
 		setSelectedGeoPTZ,
 		clearSelectedGeoPTZ,
+		isGeoPTZSelected,
+		setIsGeoPTZSelected,
 		currentLLA,
 		setCurrentLLA,
 		clearCurrentLLA,
@@ -187,16 +202,16 @@ export const useUIStore = defineStore('ui', () => {
 		toggleVizWiz,
 		openVizWiz,
 
-        selectedFlightPath,
-        setSelectedFlightPath,
-        clearSelectedFlightPath,
+		selectedFlightPath,
+		setSelectedFlightPath,
+		clearSelectedFlightPath,
 		flightPathWaypoints,
 		clearFlightPathWaypoints,
 		setFlightPathWaypoints,
-        clearFlightPathMarkersSignal,
-        triggerClearFlightPathMarkers,
-        resetClearFlightPathMarkersSignal,
-				selectedMapItem,
-				setSelectedMapItem,
+		clearFlightPathMarkersSignal,
+		triggerClearFlightPathMarkers,
+		resetClearFlightPathMarkersSignal,
+		selectedMapItem,
+		setSelectedMapItem,
 	};
 });

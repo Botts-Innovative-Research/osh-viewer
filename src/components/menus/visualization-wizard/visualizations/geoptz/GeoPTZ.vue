@@ -1,18 +1,12 @@
 <script setup lang="ts">
-import { OSHControlStream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { ISweApiControlStreamProperties, ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-// @ts-ignore
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
-import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useUIStore } from '@/stores/uistore';
-import { sendCommand } from '@/lib/ControlstreamUtils';
-import { createDatasource, useDisconnectDatasources } from '../../shared/helpers';
 
 const props = defineProps<{
-  visualizations: OSHVisualization[],
+	visualizations: OSHVisualization[],
 }>();
 
 // Define PTZ data interface
@@ -36,7 +30,7 @@ const lonInput = ref<number>(0.0);
 const altInput = ref<number>(0.0);
 
 const uiStore = useUIStore();
-const isSelected = ref(false);
+const isSelected = computed(() => uiStore.isGeoPTZSelected);
 
 // Watch for changes in currentLLA to update input fields, IF selected
 watch(
@@ -50,14 +44,22 @@ watch(
 	}
 );
 
+// Update selected GeoPTZ list
+watch(
+	() => props.visualizations,
+	(newVal) => {
+		uiStore.setSelectedGeoPTZ(newVal);
+	}
+)
+
 // Toggle selection of GeoPTZ in UI store and locally
 function toggle() {
 	if (isSelected.value) {
-		uiStore.clearSelectedGeoPTZ();
+		uiStore.setIsGeoPTZSelected(false);
 	} else {
+		uiStore.setIsGeoPTZSelected(true);
 		uiStore.setSelectedGeoPTZ(props.visualizations);
 	}
-	isSelected.value = !isSelected.value;
 }
 
 // Send PTZ command based on LLA inputs
@@ -79,30 +81,41 @@ function onSend() {
 
 onBeforeUnmount(() => {
 	// Disselect GeoPTZ before unmount
-	if (isSelected) uiStore.clearSelectedGeoPTZ();
+	if (isSelected.value) uiStore.clearSelectedGeoPTZ();
 })
 </script>
 
 <template>
-	<v-card :id="randomUUID()" class="pa-4">
-		<v-container>
-			<v-row align="center">
-				<v-col align="center">
-					<v-btn icon :color="isSelected ? 'primary' : 'grey'" @click="toggle">
-						<v-icon>{{
-							isSelected ? 'mdi-check-circle' : 'mdi-circle-outline'
-						}}</v-icon>
-					</v-btn>
-				</v-col>
-				<v-col class="lla-inputs">
-					<v-text-field v-model.number="latInput" type="number" label="Latitude" placeholder="0.0" />
-					<v-text-field v-model.number="lonInput" type="number" label="Longitude" placeholder="0.0" />
-					<v-text-field v-model.number="altInput" type="number" label="Altitude" placeholder="0.0" />
-					<v-btn color="primary" @click="onSend">Send</v-btn>
-				</v-col>
-			</v-row>
-		</v-container>
-	</v-card>
+	<v-container fluid>
+		<v-row class="d-flex align-center" no-gutters>
+			<v-col class="pr-4" cols="auto">
+				<v-tooltip :text="props.visualizations.length === 0 ? 'No GeoPTZ controllers selected' : 'Select map click-to-task'" location="top">
+					<template #activator="{ props: tooltipProps }">
+						<span v-bind="tooltipProps" style="display: inline-block;">
+							<v-btn icon :color="isSelected ? 'primary' : 'grey'" @click="toggle"
+								:disabled="props.visualizations.length === 0" class="pa-0">
+								<v-icon>
+									{{ isSelected ? 'mdi-check-circle' : 'mdi-circle-outline' }}
+								</v-icon>
+							</v-btn>
+						</span>
+					</template>
+				</v-tooltip>
+			</v-col>
+			<v-col>
+				<slot name="controllers"></slot>
+			</v-col>
+		</v-row>
+		<v-divider class="my-4" v-if="props.visualizations.length > 0"></v-divider>
+		<v-row :style="{display: props.visualizations.length > 0 ? 'block' : 'none'}">
+			<v-col no-gutters>
+				<v-text-field v-model.number="latInput" type="number" label="Latitude" placeholder="0.0" />
+				<v-text-field v-model.number="lonInput" type="number" label="Longitude" placeholder="0.0" />
+				<v-text-field v-model.number="altInput" type="number" label="Altitude" placeholder="0.0" />
+				<v-btn color="primary" @click="onSend" block>Send</v-btn>
+			</v-col>
+		</v-row>
+	</v-container>
 </template>
 
 <style scoped></style>
