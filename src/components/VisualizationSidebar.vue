@@ -21,6 +21,9 @@ const panelVisualizations = computed<OSHVisualization[]>(() => visualizations.va
 const mapVisualizations = computed<OSHVisualization[]>(() => visualizations.value.filter(viz =>
 	MAP_VISUALIZATIONS.includes(viz.type)
 ));
+const geoPtzVisualizations = computed<OSHVisualization[]>(() => visualizations.value.filter(viz =>
+	viz.type === 'geoPtz'
+))
 
 // Check that type is a map layer
 function isMapLayer(
@@ -28,10 +31,9 @@ function isMapLayer(
 ): layer is IPointMarkerLayerProperties | ILineOfBearingLayerProperties {
   return !!layer && 'iconName' in layer;
 }
-const geoPtzVisualizations = computed(() => visualizations.value.filter(viz =>
-	viz.type === 'geoPtz'
-))
-const selectedGeoPtzControllers = ref(geoPtzVisualizations ? geoPtzVisualizations.value[0] : {})
+
+// GeoPTZ variables
+const selectedGeoPtzControllers = ref<OSHVisualization[]>([])
 
 const toggleSelectedMapItem = (item: any) => {
 	const uiStore = useUIStore();
@@ -101,33 +103,18 @@ onMounted(() => {
 							<v-select
 								label="Process"
 								v-model="selectedGeoPtzControllers"
-								:model-value="geoPtzVisualizations[0]"
 								:items="geoPtzVisualizations"
 								item-title="name"
 								:item-value="(item: OSHVisualization) => item"
 								chips
-								
+								multiple
 							></v-select>
 							<v-divider vertical></v-divider>
-							<p>{{ selectedGeoPtzControllers?.name }}</p>
-							<!-- <GeoPTZ
-								:visualization="selectedGeoPtzControllers"
-								:datasource="Array.isArray(selectedGeoPtzControllers.visualizationComponents.dataSource) ? selectedGeoPtzControllers[0].visualizationComponents.dataSource[0] : selectedGeoPtzControllers.visualizationComponents.dataSource"
-								:controlstream="selectedGeoPtzControllers.visualizationComponents.controlstream"
-							></GeoPTZ> -->
+							<GeoPTZ
+								v-if="selectedGeoPtzControllers"
+								:visualizations="selectedGeoPtzControllers"
+							></GeoPTZ>
 						</v-sheet>
-						<!-- <v-list activatable density="compact" select-strategy="leaf">
-							<v-list-item v-for="viz in geoPtzVisualizations" :key="viz.id" @click="">
-								<template #prepend>
-									<v-icon :icon="`mdi-arrow`" size="16"></v-icon>
-								</template>
-								<template #title>{{ viz.name }}</template>
-								<template #append>
-									<v-btn aria-label="Remove" class="close-btn" icon="mdi-window-close" size="x-small" variant="plain"
-										@click.stop="visualizationStore.removeVisualization(viz)"></v-btn>
-								</template>
-							</v-list-item>
-						</v-list> -->
 					</v-expansion-panel-text>
 				</v-expansion-panel>
 			</v-expansion-panels>

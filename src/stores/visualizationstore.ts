@@ -18,7 +18,6 @@ export const PANEL_VISUALIZATIONS = [
     'chart',
     'video',
     'text',
-    'geoPtz',
     'flightPath',
 ]
 

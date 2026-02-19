@@ -1,6 +1,10 @@
 import { defineStore } from 'pinia';
 import { ref, Ref } from 'vue';
 import { SchemaFieldProperty } from '@/lib/DatasourceUtils';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { GeoPTZCommand } from '@/components/menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
+import { ISweApiControlStreamProperties } from '@/lib/VisualizationHelpers';
+import { sendCommand } from '@/lib/ControlstreamUtils';
 
 export const useUIStore = defineStore('ui', () => {
 	// Sidebar state (example: left and right sidebars)
@@ -26,14 +30,8 @@ export const useUIStore = defineStore('ui', () => {
 	// Currently selected map item from list of map visualizations
 	const selectedMapItem = ref<any | null>(null);
 
-	// Currently selected GeoPTZ instance (null or controlstream data)
-	const selectedGeoPTZ = ref<{
-		controlStreamId: string;
-		commandBaseUrl: string;
-		auth: string;
-		vizId: string;	// ID of associated GeoPTZ visualization
-		vizName: string; // Name of GeoPTZ visualization
-	} | null>(null);
+	// Currently selected GeoPTZ Visualization(s) or null if none selected
+	const selectedGeoPTZ = ref<OSHVisualization[] | null>(null);
 
 	// Currently selected LLA coordinates
 	const currentLLA = ref<{
@@ -95,8 +93,9 @@ export const useUIStore = defineStore('ui', () => {
 	}
 
 	// Handle selection of GeoPTZ instance
-	function setSelectedGeoPTZ(controlStreamId: string, commandBaseUrl: string, auth: string, vizId: string, vizName: string) {
-		selectedGeoPTZ.value = { controlStreamId, commandBaseUrl, auth, vizId, vizName };
+	function setSelectedGeoPTZ(vizList: OSHVisualization[] | null) {
+		selectedGeoPTZ.value = vizList;
+		console.log("These visualizations are selected:", vizList?.map((viz: OSHVisualization) => viz.name))
 	}
 	function clearSelectedGeoPTZ() {
 		selectedGeoPTZ.value = null;
@@ -108,6 +107,24 @@ export const useUIStore = defineStore('ui', () => {
 	}
 	function clearCurrentLLA() {
 		currentLLA.value = null;
+	}
+
+	// GeoPTZ Command Tasking
+	function sendGeoPTZCommand(command: GeoPTZCommand) {
+		// Iterate thru GeoPTZ instances
+		if (selectedGeoPTZ) {
+			selectedGeoPTZ.value?.map((viz: OSHVisualization) => {
+				const controlstream: ISweApiControlStreamProperties | null = viz.visualizationComponents.controlstream ? viz.visualizationComponents.controlstream[0] : null;
+				if (controlstream) {
+					const csId = controlstream.id;
+					const commandBaseUrl = `${controlstream.tls ? 'https' : 'http'}://${controlstream.endpointUrl}`;
+					const auth = { username: controlstream.connectorOpts.username, password: controlstream.connectorOpts.password };
+					sendCommand(commandBaseUrl, csId, command, `${auth.username}:${auth.password}`)
+				} else {
+					console.error('Could not send command. No controlstream found.');
+				}
+			})
+		}
 	}
 
 	function toggleVizWiz() {
@@ -165,7 +182,7 @@ export const useUIStore = defineStore('ui', () => {
 		currentLLA,
 		setCurrentLLA,
 		clearCurrentLLA,
-
+		sendGeoPTZCommand,
 		vizWizOpen,
 		toggleVizWiz,
 		openVizWiz,
