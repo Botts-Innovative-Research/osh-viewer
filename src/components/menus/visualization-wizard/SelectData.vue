@@ -63,7 +63,7 @@ watch(selectedControlstreams, (newVal, oldVal) => {
 </script>
 <template>
 	<!-- Select for systems -->
-	<v-select
+	<v-autocomplete
 		v-model="selectedSystems"
 		:items="listSystems"
 		hint="Select one or more systems"
@@ -73,9 +73,9 @@ watch(selectedControlstreams, (newVal, oldVal) => {
 		item-title="name"
 		item-value="id"
     class="mb-4"
-	></v-select>
+	></v-autocomplete>
 	<!-- Select for datastreams -->
-	<v-select
+	<v-autocomplete
 		v-model="selectedDatastreams"
 		:items="listDatastreams"
 		hint="Select one or more datastreams"
@@ -85,9 +85,9 @@ watch(selectedControlstreams, (newVal, oldVal) => {
 		item-title="name"
 		:item-value="(item: OSHDatastream) => item"
     class="mb-4"
-	></v-select>
+	></v-autocomplete>
   <!-- Select for controlstreams -->
-  <v-select
+  <v-autocomplete
       v-model="selectedControlstreams"
       :items="listControlstreams"
       hint="Select one or more controlstreams"
@@ -96,5 +96,5 @@ watch(selectedControlstreams, (newVal, oldVal) => {
       persistent-hint
       item-title="name"
       :item-value="(item: OSHControlStream) => item"
-  ></v-select>
+  ></v-autocomplete>
 </template>

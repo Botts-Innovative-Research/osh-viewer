@@ -4,7 +4,7 @@ import {
 } from '@/lib/DatasourceUtils';
 import { getCommandType } from '@/lib/ControlstreamUtils';
 import { useVizWizStore } from '@/stores/vizwizstore';
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = withDefaults(defineProps<{
   role: string, // Property role to be used as key in vizwiz store
@@ -64,18 +64,18 @@ watch(selectedControlstream, async (newVal) => {
 
 <template>
   <!-- Select for controlstreams -->
-  <v-select v-model="selectedControlstream" :items="listControlstreams" label="Select controlstream" persistent-hint
-    item-title="name" item-value="id"></v-select>
+  <v-autocomplete v-model="selectedControlstream" :items="listControlstreams" label="Select controlstream" persistent-hint
+    item-title="name" item-value="id"></v-autocomplete>
 
   <!-- Select for property -->
-  <v-select
+  <v-autocomplete
       v-if="showPropertySelector && csSchema && csSchema.parametersSchema"
       v-model="selectedProperty"
       :items="csSchema.parametersSchema.items"
       label="Select property"
       item-title="name"
       persistent-hint item-value="name"
-      multiple></v-select>
+      multiple></v-autocomplete>
 </template>
 
 <style scoped></style>
