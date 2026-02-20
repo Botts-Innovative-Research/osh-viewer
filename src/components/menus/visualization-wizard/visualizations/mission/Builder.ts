@@ -1,5 +1,5 @@
-import { OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { ISweApiDataSourceProperties, VisualizationComponents } from '@/lib/VisualizationHelpers';
+import {OSHControlStream, OSHVisualization} from '@/lib/OSHConnectDataStructs';
+import {ISweApiDataSourceProperties, VisualizationComponents} from '@/lib/VisualizationHelpers';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
@@ -14,11 +14,11 @@ export function build() {
     const visualizationStore = useVisualizationStore();
 
 
-    const datastreams = vizwizStore.datastreams;
+    const datastreams = AggregateDatastreams();
     const controlstreams = AggregateControlstreams();
 
     const missionResult = CreateMissionViewProps(
-        datastreams[0],
+        datastreams,
         controlstreams,
         vizwizStore.visualizationCustomizationOptions
     );
@@ -43,26 +43,33 @@ export function build() {
     console.log('Created Mission Visualization:', newViz);
 }
 
-export function CreateMissionViewProps(datastream: OSHDatastream, controlstreams: { [key: string]: any }, visOptions: any) {
+export function CreateMissionViewProps(datastreams:  { [key: string]: any }, controlstreams: { [key: string]: any }, visOptions: any) {
     const controlstreamStore = useControlStreamStore();
-    const vizControlstreams: any[] = [];
+    const datastreamStore = useDataStreamStore();
 
-    const currentDataSource: ISweApiDataSourceProperties = {
-        endpointUrl: datastream.datastream.networkProperties.endpointUrl,
-        resource: `/datastreams/${datastream.id}/observations`,
-        tls: datastream.datastream.networkProperties.tls,
-        protocol: 'ws',
-        startTime: 'now',
-        endTime: '2125-08-01T00:00:00Z',
-        mode: Mode.REAL_TIME,
-        responseFormat: 'application/swe+json',
-        id: randomUUID(),
-        connectorOpts: {
-            username: datastream.datastream.networkProperties.connectorOpts.username,
-            password: datastream.datastream.networkProperties.connectorOpts.password
-        }
-    };
+    const vizControlstreams: OSHControlStream[] = [];
+    const vizDatastreams: ISweApiDataSourceProperties[] = [];
 
+    for (const [dsId, entry] of Object.entries(datastreams)) {
+        const properties = BuildRoleProperty(entry);
+
+        const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
+        const currentDatastream: ISweApiDataSourceProperties = {
+            endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
+            resource: `/datastreams/${dsId}/observations`,
+            tls: currentOSHDatastream[0].datastream.networkProperties.tls,
+            protocol: 'ws',
+            mode: Mode.REAL_TIME,
+            responseFormat: 'application/swe+json',
+            id: currentOSHDatastream[0].id,
+            properties: properties,
+            connectorOpts: {
+                username: currentOSHDatastream[0].datastream.networkProperties.connectorOpts.username,
+                password: currentOSHDatastream[0].datastream.networkProperties.connectorOpts.password
+            }
+        };
+        vizDatastreams.push(currentDatastream);
+    }
     for (const [csId, entry] of Object.entries(controlstreams)) {
         const properties = BuildRoleProperty(entry);
 
@@ -86,7 +93,7 @@ export function CreateMissionViewProps(datastream: OSHDatastream, controlstreams
     }
 
     return {
-        vizDatasources: currentDataSource,
+        vizDatasources: vizDatastreams,
         vizControlstreams: vizControlstreams
     };
 }

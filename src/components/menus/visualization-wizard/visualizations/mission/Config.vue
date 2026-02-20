@@ -2,12 +2,21 @@
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { computed, reactive, watch, onMounted } from 'vue';
 import ControlStreamPicker from "@/components/menus/visualization-wizard/viz-components/ControlStreamPicker.vue";
+import DataSourcePicker from "@/components/menus/visualization-wizard/viz-components/DataSourcePicker.vue";
 
 // Retrieve controlstreams
 const vizwizStore = useVizWizStore()
 
 // Checked status for each role
 const checkedRoles = reactive({
+  home: computed({
+    get: () => vizwizStore.dsConfig.home?.selected ?? true,
+    set: (val: boolean) => vizwizStore.updateDsConfig("home", { selected: val })
+  }),
+  lla: computed({
+    get: () => vizwizStore.dsConfig.lla?.selected ?? true,
+    set: (val: boolean) => vizwizStore.updateDsConfig("lla", { selected: val })
+  }),
   qgc: computed({
     get: () => vizwizStore.csConfig.qgc?.selected ?? true,
     set: (val: boolean) => vizwizStore.updateCsConfig("qgc", { selected: val })
@@ -37,7 +46,7 @@ const checkedRoles = reactive({
     set: (val: boolean) => vizwizStore.updateCsConfig("takeoff", { selected: val })
   }),
   cancel: computed({
-    get: () => vizwizStore.csConfig.takeoff?.cancel ?? false,
+    get: () => vizwizStore.csConfig.cancel?.selected ?? false,
     set: (val: boolean) => vizwizStore.updateCsConfig("cancel", { selected: val })
   }),
 })
@@ -51,6 +60,14 @@ onMounted(() => {
   if (!vizwizStore.csConfig.plan) {
     vizwizStore.updateCsConfig("plan", { selected: true })
   }
+
+  if (!vizwizStore.dsConfig.lla) {
+    vizwizStore.updateDsConfig("lla", { selected: true })
+  }
+
+  if (!vizwizStore.dsConfig.home) {
+    vizwizStore.updateDsConfig("home", { selected: true })
+  }
 })
 
 // If csConfig is reset, ensure  is selected by default
@@ -63,8 +80,29 @@ watch(() => vizwizStore.csConfig, (newVal) => {
   }
 }, { deep: true })
 
+watch(() => vizwizStore.dsConfig, (newVal) => {
+  if (!newVal.home) {
+    vizwizStore.updateDsConfig("home", { selected: true })
+  }
+  if (!newVal.lla) {
+    vizwizStore.updateDsConfig("lla", { selected: true })
+  }
+}, { deep: true })
+
 </script>
 <template>
+
+  <v-container>
+    <v-checkbox label="Location" v-model="checkedRoles.lla" disabled></v-checkbox>
+    <DataSourcePicker v-if="checkedRoles.lla" role="lla"  :show-property-selector="false" />
+  </v-container>
+
+  <v-container>
+    <v-checkbox label="Home Location" v-model="checkedRoles.home" disabled></v-checkbox>
+    <DataSourcePicker v-if="checkedRoles.home" role="home"  :show-property-selector="false" />
+  </v-container>
+
+
   <v-container>
     <v-checkbox label="Mission Control Plan" v-model="checkedRoles.plan" disabled></v-checkbox>
     <ControlStreamPicker v-if="checkedRoles.plan" role="plan"  :show-property-selector="false" />

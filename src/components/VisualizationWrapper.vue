@@ -38,7 +38,7 @@ const { viz, customClass = '' } = defineProps<{
 		></Text>
     <MissionBuilder
         :visualization="viz"
-        :datasource="Array.isArray(viz.visualizationComponents.dataSource) ? viz.visualizationComponents.dataSource[0] : viz.visualizationComponents.dataSource"
+        :datasource="Array.isArray(viz.visualizationComponents.dataSource) ? viz.visualizationComponents.dataSource : [viz.visualizationComponents.dataSource]"
         :controlstreams="Array.isArray(viz.visualizationComponents.controlstream) ? viz.visualizationComponents.controlstream : [viz.visualizationComponents.controlstream]"
         v-if="viz.type === 'mission'"
     ></MissionBuilder>

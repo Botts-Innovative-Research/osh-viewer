@@ -7,12 +7,14 @@ import {randomUUID} from 'osh-js/source/core/utils/Utils.js';
 import {useUIStore} from '@/stores/uistore';
 import {sendCommand} from '@/lib/ControlstreamUtils';
 import {showToast} from "@/composables/useToast";
-import {DATASOURCE_DATA_TOPIC} from 'osh-js/source/core/Constants.js';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
-import {useDisconnectDatasources} from "@/components/menus/visualization-wizard/shared/helpers";
+import {createDatasource, useDisconnectDatasources, getLatestObservation} from "@/components/menus/visualization-wizard/shared/helpers";
+import {DATASOURCE_DATA_TOPIC} from 'osh-js/source/core/Constants.js';
+import {useDataStreamStore} from "@/stores/datastreamstore";
 
-//python sim_vehicle.py -v ArduCopter -f quad --console --map --location=Taiwan
+
+// python sim_vehicle.py -v ArduCopter -f quad --console --map --location=Taiwan
 const missionPlannerId = ref('missionPlanner-' + randomUUID());
 
 interface Controlstream {
@@ -33,9 +35,9 @@ const props = defineProps({
     default: null,
   },
   datasource: {
-    type: SweApiDataSourceProperties,
+    type:  Array as () => SweApiDataSourceProperties[],
     required: true,
-    default: null,
+    default: () => [],
   },
   controlstreams: {
     type: Array as () => Controlstream[],
@@ -70,7 +72,7 @@ const missionSource = ref<'waypoints' | 'file'>('waypoints')
 
 const receivedLLA = ref<LLAData>({lat: 0, lon: 0, alt: 0});
 
-const hasReceivedFirstLLA = ref(false)
+// const hasReceivedFirstLLA = ref(false)
 
 const waypoints = ref<Waypoint[]>([]);
 
@@ -79,16 +81,18 @@ const lonInput = ref<number>(0.0);
 const altInput = ref<number>(0.0);
 
 const uiStore = useUIStore();
-const isSelected = ref(false);
+const isSelected = ref<boolean>(false);
 const fileInputRef = ref<any | null>(null);
 const selectedFile = ref<File | null>(null);
 
-const droneDatasource = ref<any>(null);
+const droneDatasourceLLA = ref<SweApi | null>(null);
+const droneHomeDatasource = ref<SweApi | null>(null);
 
+let homeLocation = ref<{ lat: number; lon: number; alt: number }>({ lat: 0, lon: 0, alt: 0 });
 
 const cruiseSpeed = ref<number>(15);
 const hoverSpeed = ref<number>(5);
-const waypointAltitude = ref<number>(50);
+const waypointAltitude = ref<number>(25);
 const altitudeMode = ref<number>(1);
 const autoContinue = ref<boolean>(true);
 const amslAltAboveTerrain = ref<number | null>(null);
@@ -266,19 +270,6 @@ function clearSelectedFile() {
   }
 }
 
-let initialDroneLocation = ref<{ lat: number; lon: number; alt: number } | null>(null);
-let homeLocation = ref<{ lat: number; lon: number; alt: number }>({ lat: 0, lon: 0, alt: 0 });
-
-function setHomeToCurrentLocation() {
-  if (receivedLLA.value) {
-    homeLocation.value = {
-      lat: receivedLLA.value.lat,
-      lon: receivedLLA.value.lon,
-      alt: receivedLLA.value.alt
-    };
-  }
-}
-
 function generateMissionControlPlan() {
   if (waypoints.value.length === 0) {
     console.warn("[MissionBuilder.vue] No waypoints to generate plan");
@@ -383,48 +374,13 @@ function generateMissionControlPlan() {
 
 }
 
-onMounted(async () => {
-  // Create SweApi instance from props.datasource if provided
-  let dsInstance: any = null;
 
-  dsInstance = new SweApi('mission-datasource', {
-    endpointUrl: props.datasource.endpointUrl,
-    resource: props.datasource.resource,
-    tls: props.datasource.tls,
-    protocol: props.datasource.protocol,
-    startTime: props.datasource.startTime,
-    endTime: props.datasource.endTime,
-    mode: props.datasource.mode,
-    responseFormat: props.datasource.responseFormat,
-    connectorOpts: {
-      username: props.datasource.connectorOpts.username ?? '',
-      password: props.datasource.connectorOpts.password ?? '',
-    }
-  });
-  droneDatasource.value = dsInstance;
-  console.log('[MissionBuilder] Mission datasource created:', droneDatasource.value);
-
-  dsInstance.connect();
-
+function onLLAListener(dsInstance:SweApi) {
   const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
 
   dataBroadcastChannel.onmessage = (message) => {
     if (message.data.type === 'data') {
       const data = message.data.values[0].data;
-      if (!hasReceivedFirstLLA.value) {
-        initialDroneLocation.value = {
-          lat: data.Location.lat,
-          lon: data.Location.lon,
-          alt: data.Location.alt
-        };
-        // Set home location to initial drone location as default
-        homeLocation.value = {
-          lat: data.Location.lat,
-          lon: data.Location.lon,
-          alt: data.Location.alt
-        };
-        hasReceivedFirstLLA.value = true;
-      }
       receivedLLA.value = {
         lat: data.Location.lat ?? 0,
         lon: data.Location.lon ?? 0,
@@ -432,11 +388,44 @@ onMounted(async () => {
       };
     }
   };
+}
+
+
+onMounted(async () => {
+  // Create SweApi instance from props.datasource if provided
+  let dsInstances: SweApi[] = [];
+
+  const datastreamStore = useDataStreamStore();
+
+  for (const ds of props.datasource) {
+    let dsInstance = createDatasource(ds);
+    dsInstance.connect();
+
+    if (ds?.properties?.home) {
+      droneHomeDatasource.value = dsInstance;
+      console.log('[MissionBuilder] Drone Home datasource created:', droneDatasourceLLA.value);
+      let homeLLAResults = await getLatestObservation(ds);
+      homeLocation.value = {
+        lat: homeLLAResults.result.Home.lat,
+        lon: homeLLAResults.result.Home.lon,
+        alt: homeLLAResults.result.Home.alt
+      }
+    } else if (ds?.properties?.lla) {
+      droneDatasourceLLA.value = dsInstance;
+      console.log('[MissionBuilder] Drone LLA datasource created:', droneDatasourceLLA.value);
+
+      onLLAListener(dsInstance);
+    }
+
+    dsInstances.push(dsInstance);
+  }
 });
 
 onBeforeUnmount(() => {
-  if (isSelected) uiStore.clearSelectedFlightPath();
-  useDisconnectDatasources(ref(droneDatasource));
+  if (isSelected)
+    uiStore.clearSelectedFlightPath();
+  useDisconnectDatasources(droneDatasourceLLA);
+  useDisconnectDatasources(droneHomeDatasource);
 })
 
 </script>
@@ -537,47 +526,18 @@ onBeforeUnmount(() => {
           <v-expansion-panels class="mt-3">
             <v-expansion-panel title="Planned Home Position">
               <v-expansion-panel-text>
-                <v-row dense class="mb-2">
-                  <v-col cols="6">
-                    <v-btn
-                        block
-                        size="small"
-                        variant="outlined"
-                        @click="setHomeToCurrentLocation"
-                        prepend-icon="mdi-crosshairs-gps"
-                        :disabled="!hasReceivedFirstLLA"
-                    >
-                      Use Current Location
-                    </v-btn>
-                  </v-col>
-                </v-row>
                 <v-row dense>
-                  <v-col cols="12" md="4">
-                    <v-text-field
-                        v-model.number="homeLocation.lat"
-                        type="number"
-                        label="Latitude"
-                        density="compact"
-                        hide-details
-                    />
+                  <v-col cols="4">
+                    <v-card-subtitle>Latitude</v-card-subtitle>
+                    <v-card-title>{{ homeLocation.lat.toFixed(6) }}</v-card-title>
                   </v-col>
-                  <v-col cols="12" md="4">
-                    <v-text-field
-                        v-model.number="homeLocation.lon"
-                        type="number"
-                        label="Longitude"
-                        density="compact"
-                        hide-details
-                    />
+                  <v-col cols="4">
+                    <v-card-subtitle>Longitude</v-card-subtitle>
+                    <v-card-title>{{ homeLocation.lon.toFixed(6) }}</v-card-title>
                   </v-col>
-                  <v-col cols="12" md="4">
-                    <v-text-field
-                        v-model.number="homeLocation.alt"
-                        type="number"
-                        label="Altitude"
-                        density="compact"
-                        hide-details
-                    />
+                  <v-col cols="4">
+                    <v-card-subtitle>Altitude</v-card-subtitle>
+                    <v-card-title>{{ homeLocation.alt.toFixed(2) }}</v-card-title>
                   </v-col>
                 </v-row>
               </v-expansion-panel-text>
@@ -648,42 +608,44 @@ onBeforeUnmount(() => {
                   </v-col>
                 </v-row>
               </v-expansion-panel-text>
+              <v-expansion-panel-text>
+                <v-divider class="my-3"></v-divider>
+
+                <div  class="d-flex justify-space-between align-center mb-2">
+                  <span class="text-subtitle-2">Waypoints ({{ waypoints.length }})</span>
+                  <v-btn
+                      size="small"
+                      variant="text"
+                      color="error"
+                      @click="clearWaypoints"
+                      :disabled="waypoints.length === 0"
+                  >
+                    Clear All
+                  </v-btn>
+                </div>
+                <v-list density="compact" v-if="waypoints.length > 0" class="waypoints-list">
+                  <v-list-item v-for="(wp, index) in waypoints" :key="wp.id" class="pa-1">
+                    <template v-slot:prepend>
+                      <span class="text-caption mr-2">{{ index + 1 }}.</span>
+                    </template>
+                    <v-list-item-title class="text-body-2">
+                      {{ wp.lat.toFixed(5) }}, {{ wp.lon.toFixed(5) }}, {{ wp.alt.toFixed(1) }}
+                    </v-list-item-title>
+                    <template v-slot:append>
+                      <v-btn icon size="x-small" variant="text" @click="removeWaypoint(wp.id)">
+                        <v-icon size="small">mdi-close-circle</v-icon>
+                        <v-tooltip activator="parent" location="top">Remove waypoint</v-tooltip>
+                      </v-btn>
+                    </template>
+                  </v-list-item>
+                </v-list>
+                <div v-else class="text-caption text-grey text-center pa-4">
+                  No waypoints added. Click on the map or use the form above.
+                </div>
+              </v-expansion-panel-text>
             </v-expansion-panel>
           </v-expansion-panels>
 
-          <v-divider class="my-3"></v-divider>
-
-          <div  class="d-flex justify-space-between align-center mb-2">
-            <span class="text-subtitle-2">Waypoints ({{ waypoints.length }})</span>
-            <v-btn
-                size="small"
-                variant="text"
-                color="error"
-                @click="clearWaypoints"
-                :disabled="waypoints.length === 0"
-            >
-              Clear All
-            </v-btn>
-          </div>
-          <v-list density="compact" v-if="waypoints.length > 0" class="waypoints-list">
-            <v-list-item v-for="(wp, index) in waypoints" :key="wp.id" class="pa-1">
-              <template v-slot:prepend>
-                <span class="text-caption mr-2">{{ index + 1 }}.</span>
-              </template>
-              <v-list-item-title class="text-body-2">
-                {{ wp.lat.toFixed(5) }}, {{ wp.lon.toFixed(5) }}, {{ wp.alt.toFixed(1) }}
-              </v-list-item-title>
-              <template v-slot:append>
-                <v-btn icon size="x-small" variant="text" @click="removeWaypoint(wp.id)">
-                  <v-icon size="small">mdi-close-circle</v-icon>
-                  <v-tooltip activator="parent" location="top">Remove waypoint</v-tooltip>
-                </v-btn>
-              </template>
-            </v-list-item>
-          </v-list>
-          <div v-else class="text-caption text-grey text-center pa-4">
-            No waypoints added. Click on the map or use the form above.
-          </div>
         </v-window-item>
 
         <v-window-item value="file">

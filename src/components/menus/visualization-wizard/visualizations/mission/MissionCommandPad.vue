@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, ref} from 'vue';
+import {ref} from 'vue';
 import {sendCommand} from '@/lib/ControlstreamUtils';
 
 const props = defineProps({
@@ -50,21 +50,34 @@ function sendCommandToRole(role: string, payload: any) {
 }
 
 function pauseMission() {
-  const payload = {
-    parameters: {
-      Land: true
-    }
-  };
-  sendCommandToRole('pause', payload);
+  // resume = true , pause = false
+  if (isPaused.value) {
+    const payload = {
+      parameters: {
+        Resume: true
+      }
+    };
+
+    sendCommandToRole('pause', payload);
+
+  } else {
+    const payload = {
+      parameters: {
+        Resume: false
+      }
+    };
+
+    sendCommandToRole('pause', payload);
+  }
 }
 
 function returnToLaunch() {
   const payload = {
-    parameters: {}
+    parameters: {
+      rtl: true
+    }
   };
-  // sendCommandToRole('rtl',  payload);
-
-  console.log("RTL CONTROL: NOT IMPLEMENTED")
+  sendCommandToRole('rtl',  payload);
 }
 
 function land() {
@@ -81,14 +94,6 @@ function cancel() {
     parameters: {}
   };
     sendCommandToRole('cancel',  payload);
-}
-
-function resumeMission() {
-  const payload = {
-    parameters: {}
-  };
-  // sendCommandToRole('resume',  payload);
-  console.log("RESUME CONTROL: NOT IMPLEMENTED")
 }
 
 function offboard() {
@@ -120,11 +125,7 @@ const isPaused = ref(false);
 
 function toggle() {
   console.log('[MissionCommandPad] toggle called, isPaused:', isPaused.value);
-  if (isPaused.value) {
-    resumeMission();
-  } else {
-    pauseMission();
-  }
+  pauseMission();
   isPaused.value = !isPaused.value;
   console.log('[MissionCommandPad] isPaused now:', isPaused.value);
 }
