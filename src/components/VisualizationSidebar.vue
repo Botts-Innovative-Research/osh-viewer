@@ -12,7 +12,6 @@ import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vu
 // Each visualization can be represented by an object with a unique id
 const visualizationStore = useVisualizationStore();
 const { visualizations } = storeToRefs(visualizationStore);
-const mapPanelOpen = ref(true);
 
 // Separate visualizations into panel and map types
 const panelVisualizations = computed<OSHVisualization[]>(() => visualizations.value.filter(viz =>
@@ -25,15 +24,21 @@ const geoPtzVisualizations = computed<OSHVisualization[]>(() => visualizations.v
 	viz.type === 'geoPtz'
 ))
 
-// Check that type is a map layer
-function isMapLayer(
-  layer: VisualizationLayerProperties | null
-): layer is IPointMarkerLayerProperties | ILineOfBearingLayerProperties {
-  return !!layer && 'iconName' in layer;
+// GeoPTZ Helpers
+const selectedGeoPtzControllers = ref<OSHVisualization[]>([])
+const removeGeoPTZ = (controller: OSHVisualization) => {
+	visualizationStore.removeVisualization(controller);	// Remove from visualization store
+	selectedGeoPtzControllers.value = selectedGeoPtzControllers.value.filter((item: OSHVisualization) => item.id !== controller.id)	// Remove from selected list
 }
 
-// GeoPTZ variables
-const selectedGeoPtzControllers = ref<OSHVisualization[]>([])
+
+
+// Check that type is a map layer
+const isMapLayer = (
+	layer: VisualizationLayerProperties | null
+): layer is IPointMarkerLayerProperties | ILineOfBearingLayerProperties => {
+	return !!layer && 'iconName' in layer;
+}
 
 const toggleSelectedMapItem = (item: any) => {
 	const uiStore = useUIStore();
@@ -43,12 +48,6 @@ const toggleSelectedMapItem = (item: any) => {
 		uiStore.setSelectedMapItem(item);
 	}
 };
-
-onMounted(() => {
-	if (mapVisualizations.value.length > 0) {
-		mapPanelOpen.value = true;
-	}
-});
 
 </script>
 
@@ -68,7 +67,7 @@ onMounted(() => {
 		<v-sheet class="visualization-list overflow-y-auto">
 			<!-- MAP VISUALIZATIONS -->
 			<v-expansion-panels multiple eager>
-				<v-expansion-panel :disabled="mapVisualizations.length == 0" :value="mapVisualizations.length > 0" static>
+				<v-expansion-panel :disabled="mapVisualizations.length == 0" :value="mapVisualizations.length === 0" static>
 					<template #title>
 						<div class="panel-header">
 							Map Visualizations
@@ -78,7 +77,9 @@ onMounted(() => {
 						<v-list activatable density="compact" select-strategy="leaf">
 							<v-list-item v-for="viz in mapVisualizations" :key="viz.id" @click="toggleSelectedMapItem(viz)">
 								<template #prepend>
-									<v-icon :icon="`mdi-${isMapLayer(viz.visualizationComponents.dataLayer) ? viz.visualizationComponents.dataLayer.iconName : ''}`" size="16"></v-icon>
+									<v-icon
+										:icon="`mdi-${isMapLayer(viz.visualizationComponents.dataLayer) ? viz.visualizationComponents.dataLayer.iconName : ''}`"
+										size="16"></v-icon>
 								</template>
 								<template #title>{{ viz.name }}</template>
 								<template #append>
@@ -92,7 +93,8 @@ onMounted(() => {
 			</v-expansion-panels>
 			<!-- GEOPTZ VISUALIZATIONS -->
 			<v-expansion-panels multiple eager>
-				<v-expansion-panel :disabled="geoPtzVisualizations.length == 0" static>
+				<v-expansion-panel :disabled="geoPtzVisualizations.length == 0" :value="geoPtzVisualizations.length === 0"
+					static>
 					<template #title>
 						<div class="panel-header">
 							GeoPTZ Controllers
@@ -100,21 +102,24 @@ onMounted(() => {
 					</template>
 					<v-expansion-panel-text>
 						<v-sheet>
-							<GeoPTZ
-								v-if="selectedGeoPtzControllers"
-								:visualizations="selectedGeoPtzControllers"
-							>
+							<GeoPTZ v-if="selectedGeoPtzControllers" :visualizations="selectedGeoPtzControllers">
 								<template #controllers>
-									<v-select
-										label="Process"
-										v-model="selectedGeoPtzControllers"
-										:items="geoPtzVisualizations"
-										item-title="name"
-										:item-value="(item: OSHVisualization) => item"
-										chips
-										multiple
-										hide-details
-									></v-select>
+									<v-select label="Process" v-model="selectedGeoPtzControllers" :items="geoPtzVisualizations"
+										item-title="name" :item-value="(item: OSHVisualization) => item" chips multiple hide-details
+										clearable>
+										<template v-slot:item="{ props, item }">
+											<v-list-item v-bind="props">
+												<template v-slot:prepend="{ isSelected }">
+													<v-checkbox-btn :model-value="isSelected"></v-checkbox-btn>
+												</template>
+												<v-list-item-title>{{ item.name }}</v-list-item-title>
+												<template v-slot:append>
+													<v-btn aria-label="Remove" class="ml-2 mr-2 close-btn" icon="mdi-close" size="x-small"
+														variant="plain" @click.stop="removeGeoPTZ(item.raw)"></v-btn>
+												</template>
+											</v-list-item>
+										</template>
+									</v-select>
 								</template>
 							</GeoPTZ>
 						</v-sheet>
@@ -134,9 +139,6 @@ onMounted(() => {
 					</template>
 					<v-expansion-panel-text>
 						<VisualizationWrapper :viz="viz">
-							<template #overlay>
-
-							</template>
 						</VisualizationWrapper>
 					</v-expansion-panel-text>
 				</v-expansion-panel>
