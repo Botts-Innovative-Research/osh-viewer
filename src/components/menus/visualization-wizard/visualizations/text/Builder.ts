@@ -1,10 +1,20 @@
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
-import { ISweApiDataSourceProperties, VisualizationComponents } from '@/lib/VisualizationHelpers';
+import {
+	DataLayerProperties,
+	ISweApiDataSourceProperties,
+	VisualizationComponents,
+} from '@/lib/VisualizationHelpers';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+//@ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+//@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
-import { AggregateDatastreams, BuildRoleProperty } from '../../shared/helpers';
+import {
+	AggregateDatastreams,
+	BuildRoleProperty,
+	getUsedDatastreams,
+} from '../../shared/helpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 
 export function build() {
@@ -26,11 +36,9 @@ export function build() {
 
 	const newViz = new OSHVisualization(
 		`visualization-${randomUUID()}`,
-		`${visualizationComponents.dataLayer?.name || 'Text Visualization'}`,
+		vizwizStore.visualizationCustomizationOptions.name,
 		'text',
-		null,
-        datastreams,
-        null
+		getUsedDatastreams(),
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
 	visualizationStore.addVisualization(newViz);
@@ -40,13 +48,13 @@ export function build() {
 export function CreateTextViewProps(datastreams: { [key: string]: any }, visOptions: any) {
 	const datastreamStore = useDataStreamStore();
 
-  const vizDatasources: ISweApiDataSourceProperties[] = [];
-  let dataLayer: any = {};
+	const vizDatasources: ISweApiDataSourceProperties[] = [];
+	let dataLayer: DataLayerProperties = {
+		name: visOptions.name
+	};
 
 	// Iterate through each unique datastream ID
 	for (const [dsId, entry] of Object.entries(datastreams)) {
-		console.log('Processing datastream ID:', dsId, 'with entry:', entry);
-
 		// Get selected properties for each role of the datastream
 		const properties = BuildRoleProperty(entry);
 
@@ -64,16 +72,19 @@ export function CreateTextViewProps(datastreams: { [key: string]: any }, visOpti
 			id: randomUUID(),
 			properties: properties,
 			connectorOpts: {
-				username: currentOSHDatastream[0].datastream.networkProperties.connectorOpts.username,
-				password: currentOSHDatastream[0].datastream.networkProperties.connectorOpts.password,
+				username:
+					currentOSHDatastream[0].datastream.networkProperties.connectorOpts.username,
+				password:
+					currentOSHDatastream[0].datastream.networkProperties.connectorOpts.password,
 			},
 		};
 		vizDatasources.push(currentDataSource);
-    dataLayer.name = currentOSHDatastream[0]?.name || 'Text Data Layer';
 	}
 
+	console.log('Created Text View Props:', {vizDatasources, dataLayer});
+
 	return {
-        vizDatasources,
-        dataLayer
-    };
+		vizDatasources,
+		dataLayer,
+	};
 }

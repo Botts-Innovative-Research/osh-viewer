@@ -1,18 +1,19 @@
 <script setup xmlns="http://www.w3.org/1999/html" lang="ts">
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
-import {Ion} from 'cesium';
+import { Ion } from 'cesium';
 import LeafletView from 'osh-js/source/core/ui/view/map/LeafletView';
 import L from 'leaflet';
-import {computed, onMounted, ref, watch} from 'vue';
-import {useVisualizationStore} from '../stores/visualizationstore';
-import {useUIStore} from '@/stores/uistore';
-import {OSHVisualization} from '@/lib/OSHConnectDataStructs';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useVisualizationStore } from '../stores/visualizationstore';
+import { useUIStore } from '@/stores/uistore';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
-import {randomUUID} from 'osh-js/source/core/utils/Utils.js';
-import {sendCommand} from '@/lib/ControlstreamUtils';
+import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
-import {RoleDatastream} from '@/types/types';
+import { RoleDatastream } from '@/types/types';
+import { createDatasource } from './menus/visualization-wizard/shared/helpers';
+import { ILineOfBearingLayerProperties, IPointMarkerLayerProperties, ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
 import * as Cesium from "cesium";
 
 // First token isn't working for some reason?
@@ -26,18 +27,16 @@ const visualizationStore = useVisualizationStore();
 const mapLayerType = ref('cesium');
 const mapView = ref<any>(null);
 const currentVisualizations = ref<OSHVisualization[]>([]);
-const pmLayers: PointMarkerLayer = ref([]);
+const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer>>(new Map())
+const listDatasourceInstances = ref<SweApi[]>([]);
 
+const uiStore = useUIStore();
 const geoPtzTargetPM = ref<any>(null);
 const flightPathTargetPM = ref<any[]>([]);
 const flightPathPolyline = ref<any>(null);
 
-const mapVisualizations = computed(() => {
-  return visualizationStore.visualizations.filter(
-      (viz) => viz.type === 'pointmarker' || viz.type === 'pmorientation'
-  );
-});
 
+// TODO: Update feature visualization code
 const featureVisualizations = computed(() => {
   return visualizationStore.getVisualizationsByType('pointmarker-feature');
 });
@@ -45,10 +44,6 @@ const featureVisualizations = computed(() => {
 const lobVisualizations = computed(() => {
   return visualizationStore.getVisualizationsByType('lob');
 });
-
-// Fetch UI store for GeoPTZ tool
-const uiStore = useUIStore();
-
 
 onMounted(() => {
   if (mapLayerType.value === 'leaflet') {
@@ -60,30 +55,26 @@ onMounted(() => {
 
     mapView.value = leafletMapView;
 
-    // GEOPTZ - Add listener for point clicks
-    leafletMapView.map.on('click', (event: any) => {
+    // Add listener for point clicks
+    mapView.value.map.on('click', (event: any) => {
       console.log('[MapView] Point clicked:', event);
       const geoPtzIcon = L.icon({
-        iconUrl: '/icons/map/map-marker.svg',
-        iconSize: [32,32],
-        iconAnchor: [16,16]
+        iconUrl: '/icons/map/geoPtz-pin.svg',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
       })
 
-      // Fetch selected GeoPTZ in UI store
-      const selectedGeoPTZ = uiStore.selectedGeoPTZ;
-      if (selectedGeoPTZ) {
+      // GEO PTZ
+      const isGeoPTZSelected = uiStore.isGeoPTZSelected;
+      if (isGeoPTZSelected) {
         var lat = event.latlng.lat;
         var lon = event.latlng.lng;
 
         // Send GeoPTZ command to selected GeoPTZ visualization
-        const commandBaseUrl = selectedGeoPTZ.commandBaseUrl;
-        const controlStreamId = selectedGeoPTZ.controlStreamId;
-        const auth = selectedGeoPTZ.auth
-
         if (geoPtzTargetPM.value) {
-          leafletMapView.map.removeLayer(geoPtzTargetPM.value);
+          mapView.value.map.removeLayer(geoPtzTargetPM.value);
         }
-        geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon }).addTo(leafletMapView.map)
+        geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon, label: 'test' }).addTo(mapView.value.map)
 
         const command = {
           parameters: {
@@ -93,31 +84,45 @@ onMounted(() => {
           },
         };
 
-        sendCommand(commandBaseUrl, controlStreamId, command, auth);
-
+        uiStore.sendGeoPTZCommand(command);
         uiStore.setCurrentLLA(lat, lon, 120.0);
       }
 
-
+      // FLIGHT PATH
       const selectedFlightPath = uiStore.selectedFlightPath;
       if (selectedFlightPath) {
         const lat = event.latlng.lat;
         const lon = event.latlng.lng;
         const alt = 100.0;
 
-        flightPathTargetPM.value.push(L.marker([lat, lon], { icon: geoPtzIcon }).addTo(leafletMapView.map));
+        flightPathTargetPM.value.push(L.marker([lat, lon], { icon: geoPtzIcon, title: "GeoPTZ" }).addTo(mapView.value.map));
 
         uiStore.setCurrentLLA(lat, lon, alt);
       }
     });
   } else {
-    const cesiumMapView = new CesiumView({
+    /*const customViewer = new Cesium.Viewer('cesiumContainer', {
+      terrain: Cesium.Terrain.fromWorldTerrain(),
+      baseLayer: Cesium.ImageryLayer.fromProviderAsync(
+        Cesium.IonImageryProvider.fromAssetId(3), {}
+      ),
+      timeline: false,
+      homeButton: false,
+      navigationInstructionsInitiallyVisible: false,
+      navigationHelpButton: true,
+      geocoder: true,
+      animation: false,
+      fullscreenButton: false,
+      baseLayerPicker: true
+    })*/
+
+    const cesiumView = new CesiumView({
       container: 'cesiumContainer',
       autoZoomOnFirstMarker: true,
       layers: [],
     });
 
-    mapView.value = cesiumMapView;
+    mapView.value = cesiumView;
 
     // const customViewer = new CesiumView.Viewer('cesiumContainer', {
     //   terrain: CesiumView.Terrain.fromWorldTerrain(),
@@ -159,129 +164,88 @@ onMounted(() => {
   }
 });
 
-watch(() => uiStore.selectedGeoPTZ,
-    (newVal) => {
-      const map = mapView.value.map;
-      const container = map.getContainer();
+/**
+ * Watch for changes to mapVisualizations to handle deletion/creation of new viz
+ */
+watch(
+  () => visualizationStore.mapVisualizations.map(v => v.id),
+  (newIds, oldIds) => {
+    // Handle removed visualizations
+    const removedVizIds = oldIds?.filter(
+      (oldId) => !newIds.some((id) => id === oldId)
+    );
+    if (removedVizIds) deleteVisualizations(removedVizIds);
 
-      // Clear cursor styles
-      container.style.cursor = '';
+    // Handle added visualizations
+    const addedVizIds = newIds?.filter(
+      (newId) => !oldIds?.some((id) => id === newId)
+    )
+    if (addedVizIds) createVisualizations(addedVizIds);
 
-      if (newVal) {
-        // Change cursor to crosshair when a GeoPTZ is selected
-        container.style.cursor = 'crosshair';
-      }
-    }
+  },
+  { immediate: true, deep: true }
 );
 
-watch(() => uiStore.selectedFlightPath,
-    (newVal) => {
-      const map = mapView.value.map;
-      const container = map.getContainer();
-      container.style.cursor = newVal ? 'crosshair' : ''
+/**
+ * Delete mapItemLayers and disconnect datasources for removed visualizations
+ * 
+ * @param removedVizIds - OSHVisualization IDs of visualizations to delete
+ */
+function deleteVisualizations(removedVizIds: string[]) {
+  const removedDsIds: string[] = []
+
+  for (const vizId of removedVizIds) {
+    const layer = mapItemLayers.value.get(vizId);
+    if (!layer) continue;
+
+    // Collect datasource IDs
+    removedDsIds.push(...layer.dataSourceIds);
+
+    console.log(mapView.value)
+
+     // Remove layer from the actual map safely
+    try {
+      if (mapView.value) {
+        mapView.value.removeAllFromLayer(layer);
+      }
+    } catch (err) {
+      console.warn(`[MapView] Failed to remove Leaflet layer ${vizId}:`, err);
     }
-);
 
-watch(() => uiStore.clearFlightPathMarkersSignal, (newVal) => {
-      if (newVal && mapView.value?.map) {
-        for (const marker of flightPathTargetPM.value) {
-          mapView.value.map.removeLayer(marker);
-        }
-        flightPathTargetPM.value = [];
-        if (flightPathPolyline.value) {
-          mapView.value.map.removeLayer(flightPathPolyline.value);
-          flightPathPolyline.value = null;
-        }
-        uiStore.resetClearFlightPathMarkersSignal();
-      }
-    }
-);
-watch(() => uiStore.flightPathWaypoints,
-    (waypoints) => {
-      if (!mapView.value?.map || mapLayerType.value !== 'leaflet') return;
-
-      if (flightPathPolyline.value) {
-        mapView.value.map.removeLayer(flightPathPolyline.value);
-        flightPathPolyline.value = null;
-      }
-
-      if (waypoints.length >= 2) {
-        const latLngs = waypoints.map(wp => [wp.lat, wp.lon]);
-        flightPathPolyline.value = L.polyline(latLngs, {
-          color: 'red',
-          weight: 3,
-          opacity: 0.8,
-        }).addTo(mapView.value.map);
-      }
-    },
-    {deep: true}
-);
-
-watch(mapVisualizations, (updated) => {
-  // Remove visualizations that are no longer present
-  const removed = currentVisualizations.value.filter((val) => !updated.includes(val));
-  for (const viz of removed) {
-    // Remove corresponding layer from pmLayers and map
-    const idx = currentVisualizations.value.indexOf(viz);
-    if (idx !== -1) {
-      currentVisualizations.value.splice(idx, 1);
-      // Remove layer from pmLayers and mapView
-      const pmLayer = pmLayers.value[idx];
-      if (pmLayer && mapView.value) {
-        mapView.value.removeLayer?.(pmLayer);
-      }
-      pmLayers.value.splice(idx, 1);
-    }
+    // Remove layer from list of map layers
+    mapItemLayers.value.delete(vizId);
   }
 
-  // Add new visualizations
-  const newFiltered = updated.filter(val => !currentVisualizations.value.includes(val))
-  console.log('New visualizations:', newFiltered)
-  for (const viz of newFiltered) {
-    currentVisualizations.value.push(viz)
-
-    // Handle PM only
-    if (viz.type === 'pointmarker') {
-      let datasource = null;
-      if (Array.isArray(viz.visualizationComponents.dataSource)) {
-        datasource = viz.visualizationComponents.dataSource[0];
-      } else {
-        datasource = viz.visualizationComponents.dataSource;
+  // Disconnect and remove datasources
+  listDatasourceInstances.value = listDatasourceInstances.value.filter(
+    (dsInstance: SweApi) => {
+      // Find matching datasource IDs
+      if (removedDsIds.includes(dsInstance.id)) {
+        console.log("Disconnecting datasource:", dsInstance.id)
+        dsInstance.disconnect();
+        return false;
       }
+      else return true;
+    }
+  )
+}
 
-      let dsInstance = new SweApi('pm-datasource-' + randomUUID(), {
-        endpointUrl: datasource.endpointUrl,
-        resource: datasource.resource,
-        tls: datasource.tls,
-        protocol: datasource.protocol,
-        startTime: datasource.startTime,
-        endTime: datasource.endTime,
-        mode: datasource.mode,
-        connectorOpts: {
-          username: datasource?.connectorOpts.username,
-          password: datasource?.connectorOpts.password
-        }
-      });
-      console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstance);
-      const layerOpts = viz.visualizationComponents.dataLayer;
-      const pmLayer = new PointMarkerLayer({
-        name: viz.name,
-        dataSourceIds: [dsInstance.id],
-        getLocation: layerOpts.getLocation,
-        label: viz.visualizationComponents.dataLayer.name,
-        icon: '/icons/map/map-marker.svg',
-        iconSize: [32, 32],
-        labelOffset: [-16, -32],
-      });
-      pmLayers.value.push(pmLayer);
-      mapView.value.addLayer(pmLayer);
-      console.log('[MapView] Creating PointMarkerLayer:', pmLayer);
-      dsInstance.connect();
-    } else if (viz.type === 'pmorientation') {
+/**
+ * Create new visualizations based on viz type
+ * 
+ * @param addedVizIds - OSHVisualization IDs of visualizations to be added
+ */
+function createVisualizations(addedVizIds: string[]) {
+  const newOSHVisualizations: OSHVisualization[] = addedVizIds
+    .map(id => visualizationStore.getVisualizationById(id))
+    .filter(Boolean) as OSHVisualization[];
+
+  console.log(newOSHVisualizations);
+
+  for (const viz of newOSHVisualizations) {
+    if (viz.type === 'pmorientation') {
       // Array of datasources
-      const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
-          ? viz.visualizationComponents.dataSource
-          : [viz.visualizationComponents.dataSource];
+      const dsArray: ISweApiDataSourceProperties[] = viz.visualizationComponents.dataSource
 
       // Array of SweApi instances for datasources
       const dsInstances: SweApi[] = [];
@@ -292,20 +256,7 @@ watch(mapVisualizations, (updated) => {
       let getMarkerId: any;
 
       for (const dsProps of dsArray) {
-        const dsInstance = new SweApi(dsProps.id, {
-          endpointUrl: dsProps.endpointUrl,
-          resource: dsProps.resource,
-          tls: dsProps.tls,
-          protocol: dsProps.protocol,
-          startTime: dsProps.startTime,
-          endTime: dsProps.endTime,
-          mode: dsProps.mode,
-          responseFormat: dsProps.responseFormat,
-          connectorOpts: {
-            username: dsProps?.connectorOpts.username,
-            password: dsProps?.connectorOpts.password
-          }
-        });
+        const dsInstance = createDatasource(dsProps);
 
         // Check for location property
         if (dsProps.properties.location) {
@@ -343,223 +294,483 @@ watch(mapVisualizations, (updated) => {
 
         dsInstance.connect();
         dsInstances.push(dsInstance);
+        listDatasourceInstances.value.push(dsInstance); // Push to list of active datasources
       }
 
       console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstances)
-      const layerOpts = viz.visualizationComponents.dataLayer
+      const layerOpts = viz.visualizationComponents.dataLayer as IPointMarkerLayerProperties
       const pmLayer = new PointMarkerLayer({
         ...layerOpts,
         name: viz.name,
+        id: viz.id,
         dataSourceIds: dsInstances.map(ds => ds.id),
-        ...(getLocation ? {getLocation} : {}),
-        ...(getOrientation ? {getOrientation} : {}),
-        ...(getMarkerId ? {getMarkerId} : {}),
+        ...(getLocation ? { getLocation } : {}),
+        ...(getOrientation ? { getOrientation } : {}),
+        ...(getMarkerId ? { getMarkerId } : {}),
       })
-      pmLayers.value.push(pmLayer)
+      mapItemLayers.value.set(viz.id, pmLayer)
       mapView.value.addLayer(pmLayer)
       console.log('[MapView] Creating PointMarkerLayer:', pmLayer)
     }
-  }
-}, {deep: true})
+    else if (viz.type === 'lob') {
+      console.log('[MapView] Adding new LoB visualization:', viz);
+      currentVisualizations.value.push(viz);
 
-watch(featureVisualizations, (updated) => {
-      // Remove feature visualizations that are no longer present
-      const removed = currentVisualizations.value.filter(val => !updated.includes(val))
-      for (const viz of removed) {
-        const idx = currentVisualizations.value.indexOf(viz)
-        if (idx !== -1) {
-          currentVisualizations.value.splice(idx, 1)
-          // Optionally remove marker from mapView if needed
+      // Array of datasources
+      const dsArray: ISweApiDataSourceProperties[] = viz.visualizationComponents.dataSource
+
+      //  Array of SweApi instances for datasources
+      const dsInstances: SweApi[] = [];
+
+      let getOrigin: RoleDatastream | null = null;
+      let getBearing: RoleDatastream | null = null;
+
+      for (const dsProps of dsArray) {
+        const dsInstance = createDatasource(dsProps);
+
+        if (dsProps.properties.origin) {
+          getOrigin = {
+            id: dsInstance.id,
+            property: dsProps.properties.origin.property
+          };
         }
+        if (dsProps.properties.bearing) {
+          getBearing = {
+            id: dsInstance.id,
+            property: dsProps.properties.bearing.property
+          };
+        }
+
+        dsInstance.connect();
+        dsInstances.push(dsInstance);
+        listDatasourceInstances.value.push(dsInstance); // Push to list of active datasources
       }
 
-      // Add new feature visualizations
-      const newFiltered = updated.filter((val) => !currentVisualizations.value.includes(val));
-
-      if (mapLayerType.value === 'cesium') {
-        for (const viz of newFiltered) {
-          addCesiumMarker(viz);
-        }
-      } else {
-        for (const viz of newFiltered) {
-          currentVisualizations.value.push(viz);
-          mapView.value.addMarker({
-            location: {
-              x: viz.geometry.coordinates[0],
-              y: viz.geometry.coordinates[1],
-              z: viz.geometry.coordinates[2] || 0,
-            },
-            label: viz.name,
-            labelOffset: [0, 0],
-            icon: '/icons/map/map-marker.svg',
-            iconSize: [32, 32],
-            iconAnchor: [16, 32],
-            id: viz.id,
-            markerId: viz.id + '-feature' + randomUUID(),
-          });
-        }
+      if (!getOrigin || !getBearing) {
+        console.log('[MapView] LoB datasource missing origin or bearing property');
       }
-    },
-    {deep: true}
-);
 
-watch(lobVisualizations, (updated) => {
-      checkAndRemove(updated);
+      console.log('[MapView] Creating datasource for LoBLayer:', dsInstances)
+      const layerOpts = viz.visualizationComponents.dataLayer as ILineOfBearingLayerProperties;
+      let lobLayerOpts: LoBLayer = {
+        ...layerOpts,
+        name: viz.name,
+        dataSourceIds: dsInstances.map(ds => ds.id),
+        id: viz.id,
+        length: (layerOpts.distanceKm || 10) * 1000,
+      };
 
-      const newFiltered = updated.filter((val) => !currentVisualizations.value.includes(val));
-      for (const viz of newFiltered) {
-        console.log('[MapView] Adding new LoB visualization:', viz);
-        currentVisualizations.value.push(viz);
-
-        // Array of datasources
-        const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
-            ? viz.visualizationComponents.dataSource
-            : [viz.visualizationComponents.dataSource];
-
-        //  Array of SweApi instances for datasources
-        const dsInstances: SweApi[] = [];
-
-        let getOrigin: RoleDatastream | null = null;
-        let getBearing: RoleDatastream | null = null;
-
-        for (const dsProps of dsArray) {
-          const dsInstance = new SweApi(dsProps.id, {
-            endpointUrl: dsProps.endpointUrl,
-            resource: dsProps.resource,
-            tls: dsProps.tls,
-            protocol: dsProps.protocol,
-            startTime: dsProps.startTime,
-            endTime: dsProps.endTime,
-            mode: dsProps.mode,
-            responseFormat: dsProps.responseFormat,
-            connectorOpts: {
-              username: dsProps?.connectorOpts.username,
-              password: dsProps?.connectorOpts.password
-            }
-          });
-
-          if (dsProps.properties.origin) {
-            getOrigin = {
-              id: dsInstance.id,
-              property: dsProps.properties.origin.property
+      if (getOrigin && getBearing) {
+        lobLayerOpts.getOrigin = {
+          dataSourceIds: [getOrigin.id],
+          handler: (rec: any) => {
+            const originData = rec[getOrigin?.property];
+            if (!originData) return null;
+            return {
+              x: originData.lon,
+              y: originData.lat,
+              z: originData.alt || 0,
             };
-          }
-          if (dsProps.properties.bearing) {
-            getBearing = {
-              id: dsInstance.id,
-              property: dsProps.properties.bearing.property
-            };
-          }
-
-          dsInstance.connect();
-          dsInstances.push(dsInstance);
-        }
-
-        if (!getOrigin || !getBearing) {
-          console.log('[MapView] LoB datasource missing origin or bearing property');
-        }
-
-        console.log('[MapView] Creating datasource for LoBLayer:', dsInstances)
-        const layerOpts = viz.visualizationComponents.dataLayer;
-        console.log('Icon size:', layerOpts.iconSize);
-        let lobLayerOpts: LoBLayer = {
-          ...layerOpts,
-          name: viz.name,
-          dataSourceIds: dsInstances.map(ds => ds.id),
-          id: viz.id,
-          length: (layerOpts.distanceKm || 10) * 1000,
+          },
         };
-
-        if (getOrigin && getBearing) {
-          lobLayerOpts.getOrigin = {
-            dataSourceIds: [getOrigin.id],
-            handler: (rec: any) => {
-              const originData = rec[getOrigin?.property];
-              if (!originData) return null;
-              return {
-                x: originData.lon,
-                y: originData.lat,
-                z: originData.alt || 0,
-              };
-            },
-          };
-          lobLayerOpts.getBearing = {
-            dataSourceIds: [getBearing.id],
-            handler: (rec: any) => {
-              const bearingData = rec[getBearing?.property];
-              if (!bearingData) return null;
-              return bearingData.heading != null ? bearingData.heading : bearingData;
-            },
-          };
-        }
-
-        const lobLayer = new LoBLayer(lobLayerOpts)
-        mapView.value.addLayer(lobLayer);
-        console.log('[MapView] Created LoBLayer:', lobLayer)
+        lobLayerOpts.getBearing = {
+          dataSourceIds: [getBearing.id],
+          handler: (rec: any) => {
+            const bearingData = rec[getBearing?.property];
+            if (!bearingData) return null;
+            return bearingData.heading != null ? bearingData.heading : bearingData;
+          },
+        };
       }
-    },
-    {deep: true}
-);
 
-function checkAndRemove(updated: OSHVisualization[]) {
-  const removed = currentVisualizations.value.filter((val) => !updated.includes(val));
-  for (const viz of removed) {
-    const idx = currentVisualizations.value.indexOf(viz);
-    if (idx !== -1) {
-      currentVisualizations.value.splice(idx, 1);
-
-      if (viz.type === 'pointmarker') {
-        // Remove corresponding layer from pmLayers and map
-        const pmLayer = pmLayers.value[idx];
-        if (pmLayer && mapView.value) {
-          mapView.value.removeLayer?.(pmLayer);
-        }
-        pmLayers.value.splice(idx, 1);
-      } else if (viz.type === 'pointmarker-feature') {
-        mapView.value.removeLayer?.(viz.id);
-      } else if (viz.type === 'lob') {
-        mapView.value.removeLayer?.(viz.id);
-      }
+      const lobLayer = new LoBLayer(lobLayerOpts)
+      mapItemLayers.value.set(viz.id, lobLayer)
+      mapView.value.addLayer(lobLayer);
+      console.log('[MapView] Created LoBLayer:', lobLayer)
     }
   }
 }
 
-function addCesiumMarker(viz: any) {
-  console.log('[MapView] TEST Adding Cesium marker');
-  const viewer = mapView.value.viewer;
-  const location = {
-    x: viz.geometry.coordinates[0],
-    y: viz.geometry.coordinates[1],
-    z: viz.geometry.coordinates[2] || 10,
-  };
+/**
+ * Fly to pointmarker when selected in visualizations panel
+ */
+watch(() => uiStore.selectedMapItem,
+  (newVal) => {
+    if (!newVal) return; // Only fly when a map item is selected
+    const map = mapView.value.map;
 
-  /*viewer.entities.add({
-    // position: Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883),
-    position: Cesium.Cartesian3.fromDegrees(location.x, location.y, location.z),
-    billboard: {
-      image: '/icons/map/map-marker.svg'
+    const layer = mapItemLayers.value.get(newVal.id);
+    if (!layer) return;
+
+    const location = layer.getCurrentProps().location;
+
+    console.log('Found marker for selected map item:', location);
+
+    // Fly to lat/lon
+    if (location) {
+      map.flyTo([
+        location.y,
+        location.x,
+      ]);
     }
-  })*/
+  }
+);
 
-  const markerProps = {
-    location: {
-      x: viz.geometry.coordinates[0],
-      y: viz.geometry.coordinates[1],
-      z: viz.geometry.coordinates[2] || 0,
-    },
-    label: viz.name,
-    labelOffset: [0, 0],
-    icon: '/icons/map/map-marker.svg',
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    id: viz.id,
-    markerId: viz.id + '-feature' + randomUUID(),
-  };
+/**
+ * Handle change in GeoPTZ selection
+ */
+watch(() => uiStore.isGeoPTZSelected, (geoPtz) => {
+  const map = mapView.value.map;
+  const container = map.getContainer();
+  container.style.cursor = geoPtz ? 'crosshair' : ''
 
-  let markerEnt = mapView.value.addMarker(markerProps, undefined);
+  // If a geoPtz marker exists geoPTZ is not selected
+  if (geoPtzTargetPM.value && !geoPtz) {
+    console.log('Removing GeoPTZ marker');
+    mapView.value.map.removeLayer(geoPtzTargetPM.value);
+    geoPtzTargetPM.value = null;
+  }
+})
 
-  mapView.value.addMarkerToLayer(markerEnt, markerProps);
+/**
+ * Handle FlightPath cursor style
+ */
+watch(() => uiStore.selectedFlightPath, (flight) => {
+  const map = mapView.value.map;
+  const container = map.getContainer();
+  container.style.cursor = flight ? 'crosshair' : ''
+})
+
+/**
+ * FlightPath watchers
+ */
+watch(() => uiStore.clearFlightPathMarkersSignal, (newVal) => {
+  if (newVal && mapView.value?.map) {
+    for (const marker of flightPathTargetPM.value) {
+      mapView.value.map.removeLayer(marker);
+    }
+    flightPathTargetPM.value = [];
+    if (flightPathPolyline.value) {
+      mapView.value.map.removeLayer(flightPathPolyline.value);
+      flightPathPolyline.value = null;
+    }
+    uiStore.resetClearFlightPathMarkersSignal();
+  }
 }
+);
+watch(() => uiStore.flightPathWaypoints,
+  (waypoints) => {
+    if (!mapView.value?.map || mapLayerType.value !== 'leaflet') return;
+
+    if (flightPathPolyline.value) {
+      mapView.value.map.removeLayer(flightPathPolyline.value);
+      flightPathPolyline.value = null;
+    }
+
+    if (waypoints.length >= 2) {
+      const latLngs = waypoints.map(wp => [wp.lat, wp.lon]);
+      flightPathPolyline.value = L.polyline(latLngs, {
+        color: 'red',
+        weight: 3,
+        opacity: 0.8,
+      }).addTo(mapView.value.map);
+    }
+  },
+  { deep: true }
+);
+
+// TODO: Remove deprecated "new viz" code
+// watch(mapVisualizations, (updated) => {
+
+//   // Add new visualizations
+//   const newFiltered = updated.filter(val => !currentVisualizations.value.includes(val))
+//   console.log('New visualizations:', newFiltered)
+//   for (const viz of newFiltered) {
+//     currentVisualizations.value.push(viz)
+
+//     // Handle PM only
+//     if (viz.type === 'pointmarker') {
+//       let datasource = null;
+//       if (Array.isArray(viz.visualizationComponents.dataSource)) {
+//         datasource = viz.visualizationComponents.dataSource[0];
+//       } else {
+//         datasource = viz.visualizationComponents.dataSource;
+//       }
+
+//       let dsInstance = new SweApi('pm-datasource-' + randomUUID(), {
+//         endpointUrl: datasource.endpointUrl,
+//         resource: datasource.resource,
+//         tls: datasource.tls,
+//         protocol: datasource.protocol,
+//         startTime: datasource.startTime,
+//         endTime: datasource.endTime,
+//         mode: datasource.mode,
+//         connectorOpts: {
+//           username: datasource?.connectorOpts.username,
+//           password: datasource?.connectorOpts.password
+//         }
+//       });
+//       console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstance);
+//       const layerOpts = viz.visualizationComponents.dataLayer;
+//       const pmLayer = new PointMarkerLayer({
+//         name: viz.name,
+//         dataSourceIds: [dsInstance.id],
+//         getLocation: layerOpts.getLocation,
+//         label: viz.visualizationComponents.dataLayer.name,
+//         icon: '/icons/map/map-marker.svg',
+//         iconSize: [32, 32],
+//         labelOffset: [-16, -32],
+//       });
+//       mapItemLayers.value.push(pmLayer);
+//       mapView.value.addLayer(pmLayer);
+//       console.log('[MapView] Creating PointMarkerLayer:', pmLayer);
+//       dsInstance.connect();
+//     } else if (viz.type === 'pmorientation') {
+//       // Array of datasources
+//       const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
+//         ? viz.visualizationComponents.dataSource
+//         : [viz.visualizationComponents.dataSource];
+
+//       // Array of SweApi instances for datasources
+//       const dsInstances: SweApi[] = [];
+
+//       // Undefined initially
+//       let getLocation: any;
+//       let getOrientation: any;
+//       let getMarkerId: any;
+
+//       for (const dsProps of dsArray) {
+//         const dsInstance = new SweApi(dsProps.id, {
+//           endpointUrl: dsProps.endpointUrl,
+//           resource: dsProps.resource,
+//           tls: dsProps.tls,
+//           protocol: dsProps.protocol,
+//           startTime: dsProps.startTime,
+//           endTime: dsProps.endTime,
+//           mode: dsProps.mode,
+//           responseFormat: dsProps.responseFormat,
+//           connectorOpts: {
+//             username: dsProps?.connectorOpts.username,
+//             password: dsProps?.connectorOpts.password
+//           }
+//         });
+//         //const dsInstance = createDatasource(dsProps);
+
+//         // Check for location property
+//         if (dsProps.properties.location) {
+//           getLocation = {
+//             dataSourceIds: [dsInstance.id],
+//             handler: (rec: any) => {
+//               return {
+//                 x: rec[dsProps.properties.location.property].lon,
+//                 y: rec[dsProps.properties.location.property].lat,
+//                 z: rec[dsProps.properties.location.property].alt || 0, // Default to 0 if altitude is not provided
+//               }
+//             },
+//           }
+//         }
+//         // Check for orientation property
+//         if (dsProps.properties.orientation) {
+//           getOrientation = {
+//             dataSourceIds: [dsInstance.id],
+//             handler: (rec: any) => {
+//               return {
+//                 heading: rec[dsProps.properties.orientation.property].heading,
+//               }
+//             },
+//           }
+//         }
+//         // Check for markerId property
+//         if (dsProps.properties.markerId) {
+//           getMarkerId = {
+//             dataSourceIds: [dsInstance.id],
+//             handler: (rec: any) => {
+//               return rec[dsProps.properties.markerId.property];
+//             },
+//           }
+//         }
+
+//         dsInstance.connect();
+//         dsInstances.push(dsInstance);
+//         listDatasourceInstances.value.push(dsInstance); // Push to list of active datasources
+//       }
+
+//       console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstances)
+//       const layerOpts = viz.visualizationComponents.dataLayer
+//       const pmLayer = new PointMarkerLayer({
+//         ...layerOpts,
+//         name: viz.name,
+//         id: viz.id,
+//         dataSourceIds: dsInstances.map(ds => ds.id),
+//         ...(getLocation ? { getLocation } : {}),
+//         ...(getOrientation ? { getOrientation } : {}),
+//         ...(getMarkerId ? { getMarkerId } : {}),
+//       })
+//       mapItemLayers.value.push(pmLayer)
+//       mapView.value.addLayer(pmLayer)
+//       console.log('[MapView] Creating PointMarkerLayer:', pmLayer)
+//     }
+//   }
+// }, { deep: true })
+// watch(lobVisualizations, (updated) => {
+//   checkAndRemove(updated);
+
+//   const newFiltered = updated.filter((val) => !currentVisualizations.value.includes(val));
+//   for (const viz of newFiltered) {
+//     console.log('[MapView] Adding new LoB visualization:', viz);
+//     currentVisualizations.value.push(viz);
+
+//     // Array of datasources
+//     const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
+//       ? viz.visualizationComponents.dataSource
+//       : [viz.visualizationComponents.dataSource];
+
+//     //  Array of SweApi instances for datasources
+//     const dsInstances: SweApi[] = [];
+
+//     let getOrigin: RoleDatastream | null = null;
+//     let getBearing: RoleDatastream | null = null;
+
+//     for (const dsProps of dsArray) {
+//       const dsInstance = new SweApi(dsProps.id, {
+//         endpointUrl: dsProps.endpointUrl,
+//         resource: dsProps.resource,
+//         tls: dsProps.tls,
+//         protocol: dsProps.protocol,
+//         startTime: dsProps.startTime,
+//         endTime: dsProps.endTime,
+//         mode: dsProps.mode,
+//         responseFormat: dsProps.responseFormat,
+//         connectorOpts: {
+//           username: dsProps?.connectorOpts.username,
+//           password: dsProps?.connectorOpts.password
+//         }
+//       });
+
+//       if (dsProps.properties.origin) {
+//         getOrigin = {
+//           id: dsInstance.id,
+//           property: dsProps.properties.origin.property
+//         };
+//       }
+//       if (dsProps.properties.bearing) {
+//         getBearing = {
+//           id: dsInstance.id,
+//           property: dsProps.properties.bearing.property
+//         };
+//       }
+
+//       dsInstance.connect();
+//       dsInstances.push(dsInstance);
+//       listDatasourceInstances.value.push(dsInstance); // Push to list of active datasources
+//     }
+
+//     if (!getOrigin || !getBearing) {
+//       console.log('[MapView] LoB datasource missing origin or bearing property');
+//     }
+
+//     console.log('[MapView] Creating datasource for LoBLayer:', dsInstances)
+//     const layerOpts = viz.visualizationComponents.dataLayer;
+//     console.log('Icon size:', layerOpts.iconSize);
+//     let lobLayerOpts: LoBLayer = {
+//       ...layerOpts,
+//       name: viz.name,
+//       dataSourceIds: dsInstances.map(ds => ds.id),
+//       id: viz.id,
+//       length: (layerOpts.distanceKm || 10) * 1000,
+//     };
+
+//     if (getOrigin && getBearing) {
+//       lobLayerOpts.getOrigin = {
+//         dataSourceIds: [getOrigin.id],
+//         handler: (rec: any) => {
+//           const originData = rec[getOrigin?.property];
+//           if (!originData) return null;
+//           return {
+//             x: originData.lon,
+//             y: originData.lat,
+//             z: originData.alt || 0,
+//           };
+//         },
+//       };
+//       lobLayerOpts.getBearing = {
+//         dataSourceIds: [getBearing.id],
+//         handler: (rec: any) => {
+//           const bearingData = rec[getBearing?.property];
+//           if (!bearingData) return null;
+//           return bearingData.heading != null ? bearingData.heading : bearingData;
+//         },
+//       };
+//     }
+
+//     const lobLayer = new LoBLayer(lobLayerOpts)
+//     mapItemLayers.value.push(lobLayer)
+//     mapView.value.addLayer(lobLayer);
+//     console.log('[MapView] Created LoBLayer:', lobLayer)
+//   }
+// }, { deep: true } );
+
+// function checkAndRemove(updated: OSHVisualization[]) {
+//   const removed = currentVisualizations.value.filter((val) => !updated.includes(val));
+//   for (const viz of removed) {
+//     const idx = currentVisualizations.value.indexOf(viz);
+//     if (idx !== -1) {
+//       currentVisualizations.value.splice(idx, 1);
+
+//       if (viz.type === 'pointmarker') {
+//         // Remove corresponding layer from mapItemLayers and map
+//         const pmLayer = mapItemLayers.value[idx];
+//         if (pmLayer && mapView.value) {
+//           mapView.value.removeLayer?.(pmLayer);
+//         }
+//         mapItemLayers.value.splice(idx, 1);
+//       } else if (viz.type === 'pointmarker-feature') {
+//         mapView.value.removeLayer?.(viz.id);
+//       } else if (viz.type === 'lob') {
+//         mapView.value.removeLayer?.(viz.id);
+//       }
+//     }
+//   }
+// }
+
+// TODO: Handle Cesium marker code
+// function addCesiumMarker(viz: any) {
+//   console.log('[MapView] TEST Adding Cesium marker');
+//   const viewer = mapView.value.viewer;
+//   const location = {
+//     x: viz.geometry.coordinates[0],
+//     y: viz.geometry.coordinates[1],
+//     z: viz.geometry.coordinates[2] || 10,
+//   };
+
+//   /*viewer.entities.add({
+//     // position: Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883),
+//     position: Cesium.Cartesian3.fromDegrees(location.x, location.y, location.z),
+//     billboard: {
+//       image: '/icons/map/map-marker.svg'
+//     }
+//   })*/
+
+//   const markerProps = {
+//     location: {
+//       x: viz.geometry.coordinates[0],
+//       y: viz.geometry.coordinates[1],
+//       z: viz.geometry.coordinates[2] || 0,
+//     },
+//     label: viz.name,
+//     labelOffset: [0, 0],
+//     icon: '/icons/map/map-marker.svg',
+//     iconSize: [32, 32],
+//     iconAnchor: [16, 32],
+//     id: viz.id,
+//     markerId: viz.id + '-feature' + randomUUID(),
+//   };
+
+//   let markerEnt = mapView.value.addMarker(markerProps, undefined);
+
+//   mapView.value.addMarkerToLayer(markerEnt, markerProps);
+// }
+
 </script>
 
 <template>

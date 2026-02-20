@@ -1,10 +1,12 @@
-import { OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { ISweApiDataSourceProperties, VisualizationComponents } from '@/lib/VisualizationHelpers';
+import { OSHControlStream, OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { ISweApiControlStreamProperties, ISweApiDataSourceProperties, VisualizationComponents } from '@/lib/VisualizationHelpers';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
+//@ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+//@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
-import { AggregateControlstreams, BuildRoleProperty } from '../../shared/helpers';
+import { AggregateControlstreams, BuildRoleProperty, getUsedControlstreams } from '../../shared/helpers';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 
 export function build() {
@@ -25,16 +27,15 @@ export function build() {
 		dataSource: geoPtzResult.vizDatasources,
 		dataLayer: null,
 		dataView: null,
-		controlstream: geoPtzResult.vizControlstreams[0]
+		controlstream: geoPtzResult.vizControlstreams
 	};
 
 	const newViz: OSHVisualization = new OSHVisualization(
 		`visualization-${randomUUID()}`,
-		`GeoPTZ`,
+		vizwizStore.visualizationCustomizationOptions.name,
 		'geoPtz',
-		null,
-		geoPtzResult.vizDatasources,
-		geoPtzResult.vizControlstreams[0]
+		datastreams,
+		getUsedControlstreams()
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
 	visualizationStore.addVisualization(newViz);
@@ -44,7 +45,7 @@ export function build() {
 export function CreateGeoPtzViewProps(datastream: OSHDatastream, controlstreams: { [key: string]: any }, visOptions: any) {
 	const controlstreamStore = useControlStreamStore();
 
-	const vizControlstreams: any[] = [];
+	const vizControlstreams: ISweApiControlStreamProperties[] = [];
 
 	// Push new ISweApiDataSourceProperties
 	const currentDataSource: ISweApiDataSourceProperties = {
@@ -57,24 +58,22 @@ export function CreateGeoPtzViewProps(datastream: OSHDatastream, controlstreams:
 		mode: Mode.REAL_TIME,
 		responseFormat: 'application/swe+json',
 		id: randomUUID(),
+		properties: {},
 		connectorOpts: {
 			username: datastream.datastream.networkProperties.connectorOpts.username,
 			password: datastream.datastream.networkProperties.connectorOpts.password
-		}
+		},
 	};
 
 	// Iterate through each unique controlstream ID
 	for (const [csId, entry] of Object.entries(controlstreams)) {
-		console.log('Processing controlstream ID:', csId, 'with entry:', entry);
-
 		// Get selected properties for each role of the controlstream
 		const properties = BuildRoleProperty(entry);
 
 		// Push new ISweApiDataSourceProperties
-		const currentOSHControlstream = controlstreamStore.getControlStreamsById([csId])[0];
-		const currentControlstream: any = {
+		const currentOSHControlstream: OSHControlStream = controlstreamStore.getControlStreamsById([csId])[0];
+		const currentControlstream: ISweApiControlStreamProperties = {
 			endpointUrl: currentOSHControlstream.controlstream.networkProperties.endpointUrl,
-			// resource: `/datastreams/${csId}/observations`,
 			tls: currentOSHControlstream.controlstream.networkProperties.tls,
 			protocol: 'ws',
 			startTime: 'now',
@@ -92,7 +91,7 @@ export function CreateGeoPtzViewProps(datastream: OSHDatastream, controlstreams:
 	}
 	
 	return {
-		vizDatasources: currentDataSource,
+		vizDatasources: [currentDataSource],
 		vizControlstreams: vizControlstreams
 	};
 }

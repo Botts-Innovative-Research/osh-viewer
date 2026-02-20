@@ -45,7 +45,7 @@ watch(() => vizwizStore.dsConfig, (newVal) => {
   <!-- PTZ -->
   <v-container>
     <v-checkbox label="PTZ Control" v-model="checkedRoles.ptz"></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.ptz" role="ptz" />
+    <ControlStreamPicker v-if="checkedRoles.ptz" role="ptz" :show-property-selector="false" />
   </v-container>
 </template>
 

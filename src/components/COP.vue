@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import MapView from '@/components/MapView.vue';
-import SystemBrowser from '@/components/oshconnect/SystemBrowser.vue';
+import SystemBrowser from '@/components/SystemBrowser.vue';
 import VisualizationSidebar from '@/components/VisualizationSidebar.vue';
 import { Splitpanes, Pane } from 'splitpanes'
 import 'splitpanes/dist/splitpanes.css'

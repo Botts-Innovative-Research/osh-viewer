@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
-import { ref, Ref } from 'vue';
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { computed, ref, Ref } from 'vue';
+import { OSHControlStream, OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {useDataStreamStore} from "@/stores/datastreamstore";
 import {useControlStreamStore} from "@/stores/controlstreamstore";
 
@@ -18,8 +18,13 @@ export const PANEL_VISUALIZATIONS = [
     'chart',
     'video',
     'text',
-    'geoPtz',
-    'flightPath'
+    'flightPath',
+]
+
+export const MAP_VISUALIZATIONS = [
+    'pointmarker',  // TODO: Delete this type
+    'pmorientation',
+    'lob',
 ]
 
 export const useVisualizationStore = defineStore('visualizations',
@@ -29,12 +34,26 @@ export const useVisualizationStore = defineStore('visualizations',
 	const currentVisDataStreamOptions: Ref<any> = ref({});
 	const currentVisualizationCustomizationOptions: Ref<any> = ref({});
 
+    // Filter only PANEL visualizations
+    const panelVisualizations = computed(() => {
+        return visualizations.value.filter((v: OSHVisualization) =>
+            PANEL_VISUALIZATIONS.includes(v.type)
+        )
+    })
+
+    // Filter only MAP visualizations
+    const mapVisualizations = computed(() => {
+        return visualizations.value.filter((v: OSHVisualization) =>
+            MAP_VISUALIZATIONS.includes(v.type)
+        )
+    })
+
 	const addVisualization = (visualization: OSHVisualization): void => {
 		console.log('[VisualizationStore] Adding visualization:', visualization);
 		visualizations.value.push(visualization);
 
-        const getIds = (stream: any): string[] => {
-            return stream != null ? Object.keys(stream) : [];
+        const getIds = (streams: OSHDatastream[] | OSHControlStream[] | null): string[] => {
+            return streams != null ? streams.map((item: OSHDatastream | OSHControlStream) => item.id) : [];
         }
 
         if (visualization.type === 'pointmarker-feature') {
@@ -45,9 +64,9 @@ export const useVisualizationStore = defineStore('visualizations',
             id: visualization.id,
             name: visualization.name,
             type: visualization.type,
-            parentId: visualization.parentId,
-            datastreamIds: getIds(visualization.parentDatastream),
-            controlstreamIds: getIds(visualization.controlstream),
+            parentId: visualization.parentId ?? null,
+            datastreamIds: getIds(visualization.datastream),
+            controlstreamIds: visualization.controlstream ? getIds(visualization.controlstream) : [],
             visualizationComponents: visualization.visualizationComponents
         });
 	};
@@ -111,26 +130,16 @@ export const useVisualizationStore = defineStore('visualizations',
                 return;
             }
 
-            // Convert arrays to dictionaries keyed by ID (matching builder pattern)
-            const datastreamArray = datastreamStore.getDataStreamsById(serialized.datastreamIds);
-            const datastreams: { [key: string]: any } = {};
-            for (const ds of datastreamArray) {
-                datastreams[ds.id] = ds;
-            }
-
-            const controlstreamArray = controlstreamStore.getControlStreamsById(serialized.controlstreamIds);
-            const controlstreams: { [key: string]: any } = {};
-            for (const cs of controlstreamArray) {
-                controlstreams[cs.id] = cs;
-            }
+            const datastreams = datastreamStore.getDataStreamsById(serialized.datastreamIds);
+            const controlstreams = controlstreamStore.getControlStreamsById(serialized.controlstreamIds);
 
             const visualization = new OSHVisualization(
                 serialized.id,
                 serialized.name,
                 serialized.type,
-                serialized.parentId,
                 datastreams,
-                controlstreams
+                controlstreams,
+                serialized.parentId,
             )
 
             visualization.setVisualizationComponents(serialized.visualizationComponents);
@@ -138,9 +147,12 @@ export const useVisualizationStore = defineStore('visualizations',
         }
         console.log('[VizStore] Rehydrated visualizations:', visualizations.value.length);
     }
+
 	return {
 		visualizations,
         serializedVisualizations,
+        panelVisualizations,
+        mapVisualizations,
 		addVisualization,
 		removeVisualization,
 		getVisualizationById,
@@ -151,6 +163,6 @@ export const useVisualizationStore = defineStore('visualizations',
 		currentVisualizationCustomizationOptions,
 		updateCurrentVisualizationCustomizationOptions,
 		clearCurrentVisualizationCustomizationOptions,
-        rehydrateVisualizations
+        rehydrateVisualizations,
 	};
 }, { persist: { pick: ['serializedVisualizations'] } });

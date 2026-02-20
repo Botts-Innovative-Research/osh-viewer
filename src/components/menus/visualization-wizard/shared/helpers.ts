@@ -1,4 +1,9 @@
 import { useVizWizStore } from "@/stores/vizwizstore"
+import { onBeforeUnmount, Ref } from "vue"
+//@ts-ignore
+import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
+import { OSHControlStream, OSHDatastream } from "@/lib/OSHConnectDataStructs";
+import { DataSourceProperties, ISweApiDataSourceProperties } from "@/lib/VisualizationHelpers";
 
 /**
  * Aggregates datastreams from vizwizStore.dsConfig based on selected roles.
@@ -93,4 +98,109 @@ export function BuildRoleProperty(entry: any[]) {
         return [role, { property: roleEntry.property, outputName: roleEntry.outputName }]
     }),
   )
+}
+
+/**
+ * Returns an array of OSHDatastream objects that are actually being used (associated with a selected role)
+ * @returns 
+ */
+export function getUsedDatastreams(): OSHDatastream[] {
+  const vizwizStore = useVizWizStore()
+
+  // Get all dsIds that are actually selected for a role
+  const selectedDsIds = Object.values(vizwizStore.dsConfig)
+    .filter(entry => entry.selected && entry.dsId)
+    .map(entry => entry.dsId)
+
+  // Return OSHDatastream objects
+  return vizwizStore.datastreams.filter(ds => selectedDsIds.includes(ds.id))
+}
+
+/**
+ * Returns an array of OSHControlStream objects that are actually being used (associated with a selected role)
+ * @returns 
+ */
+export function getUsedControlstreams(): OSHControlStream[] {
+  const vizwizStore = useVizWizStore()
+
+  // Get all csIds that are actually selected for a role
+  const selectedCsIds = Object.values(vizwizStore.csConfig)
+    .filter(entry => entry.selected && entry.csId)
+    .map(entry => entry.csId)
+
+  // Return OSHControlStream objects
+  return vizwizStore.controlstreams.filter(cs => selectedCsIds.includes(cs.id))
+}
+
+/**
+ * Create a SweApi datasource from given datasource properties
+ * 
+ * @param dsProps - Array of datasource properties to create SweApi object
+ * @returns Generated SweApi datasource instance
+ */
+export function createDatasource(dsProps: ISweApiDataSourceProperties) {
+  const dsInstance = new SweApi(dsProps.id, {
+    endpointUrl: dsProps.endpointUrl,
+    resource: dsProps.resource,
+    tls: dsProps.tls,
+    protocol: dsProps.protocol,
+    startTime: dsProps.startTime,
+    endTime: dsProps.endTime,
+    mode: dsProps.mode,
+    responseFormat: dsProps.responseFormat,
+    connectorOpts: {
+      username: dsProps?.connectorOpts.username ?? '',
+      password: dsProps?.connectorOpts.password ?? '',
+    }
+  });
+  return dsInstance;
+}
+
+/**
+ * Disconnects datasources on component UNMOUNT
+ * 
+ * @param dsInstances 
+ */
+export function useVisualizationCleanup(dsInstances: Ref<SweApi[]>) {
+  onBeforeUnmount(() => {
+    useDisconnectDatasources(dsInstances)
+  })
+}
+
+/**
+ * Disconnects SweApi datasources
+ * 
+ * @param dsInstances 
+ */
+export function useDisconnectDatasources(dsInstances: Ref<SweApi[]>) {
+  const raw = dsInstances.value;
+
+  const dsList = Array.isArray(raw)
+    ? raw
+    : raw
+      ? [raw]
+      : [];
+  for (const ds of dsList) {
+    console.log('[Disconnect Datasources] Disconnecting datasource:', ds)
+    ds.disconnect()
+  }
+}
+
+/**
+ * Generates a default visualization name based on selected viz type and a given role's datastream name
+ * 
+ * @param role
+ * @returns 
+ */
+export function generateVizName(role: string) {
+  const vizwizStore = useVizWizStore()
+
+  // Find datastream ID of desired role
+  const dsId = vizwizStore.dsConfig[role].dsId
+
+  for (const ds of vizwizStore.datastreams) {
+    if (ds.id === dsId) return `${vizwizStore.visualizationType}: ${ds.name}`
+  }
+
+  return `New ${vizwizStore.visualizationType}`
 }

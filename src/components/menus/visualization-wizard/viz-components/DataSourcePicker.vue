@@ -6,10 +6,14 @@ import {
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { computed, onMounted, ref, watch } from 'vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   role: string, // Property role to be used as key in vizwiz store
   multiple?: boolean, // Whether multiple properties can be selected
-}>()
+  showPropertySelector?: boolean
+}>(), {
+    showPropertySelector: true
+})
+
 
 // Get datastreams from vizwiz store
 const vizwizStore = useVizWizStore()
@@ -86,13 +90,13 @@ watch(selectedDatastream, async (newVal) => {
 
 <template>
   <!-- Select for datastreams -->
-  <v-select v-model="selectedDatastream" :items="listDatastreams" label="Select datastream" persistent-hint
-    item-title="name" item-value="id"></v-select>
+  <v-autocomplete v-model="selectedDatastream" :items="listDatastreams" label="Select datastream" persistent-hint
+    item-title="name" item-value="id"></v-autocomplete>
 
   <!-- Select for property -->
-  <v-select v-if="dsSchema && dsSchema.recordSchema" v-model="selectedProperty" :items="dsSchema.recordSchema.fields"
+  <v-autocomplete v-if="showPropertySelector && dsSchema && dsSchema.recordSchema" v-model="selectedProperty" :items="dsSchema.recordSchema.fields"
     label="Select property" :item-title="(item: any) => item.label ?? item.name" persistent-hint
-    :item-value="(item: any) => item.label ?? item.name" :multiple="props.multiple"></v-select>
+    :item-value="(item: any) => item.label ?? item.name" :multiple="props.multiple"></v-autocomplete>
 </template>
 
 <style scoped></style>
