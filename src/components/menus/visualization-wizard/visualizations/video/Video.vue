@@ -21,22 +21,6 @@ const videoView = ref<any>(null);
 const videoLayer = ref<VideoDataLayer | null>(null);
 const dsInstances: SweApi[] = [];
 
-function normalizeCodec(codec: string | null | undefined) {
-  if (!codec) return '';
-  return codec.toString().trim().toLowerCase();
-}
-
-function isH264Codec(codec: string | null | undefined) {
-  const normalized = normalizeCodec(codec);
-  if (!normalized) return false;
-  if (normalized === 'h264') return true;
-  if (normalized.startsWith('avc1')) return true;
-  if (normalized.includes('h.264')) return true;
-  if (normalized.includes('h264')) return true;
-  return false;
-}
-
-// function createVideoView(codec: string, viewOptions: any) {
 function createVideoView(viewConfig: any) {
   if (videoView.value) {
     videoView.value.destroy?.();
@@ -80,14 +64,6 @@ const ptzControl = computed(() => {
 function initializeVideo() {
   const viz = props.visualization;
   if (!viz || viz.type !== 'video') return;
-
-  const viewOptions = viz.visualizationComponents?.dataView || {};
-  if (viewOptions?.width) {
-    videoWidth.value = viewOptions.width;
-  }
-  if (viewOptions?.height) {
-    videoHeight.value = viewOptions.height;
-  }
 
   const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
       ? viz.visualizationComponents.dataSource
