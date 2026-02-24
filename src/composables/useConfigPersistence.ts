@@ -280,25 +280,16 @@ export function useConfigPersistence() {
                     let visualizationsAdded = 0;
                     for (const serializedViz of loadedVisualizations) {
                         if (!visualizationStore.getVisualizationById(serializedViz.id)) {
-                            const datastreamArray = datastreamStore.getDataStreamsById(serializedViz.datastreamIds);
-                            const datastreams: { [key: string]: any } = {};
-                            for (const ds of datastreamArray) {
-                                datastreams[ds.id] = ds;
-                            }
-
-                            const controlstreamArray = controlstreamStore.getControlStreamsById(serializedViz.controlstreamIds);
-                            const controlstreams: { [key: string]: any } = {};
-                            for (const cs of controlstreamArray) {
-                                controlstreams[cs.id] = cs;
-                            }
+                            const datastreams = datastreamStore.getDataStreamsById(serializedViz.datastreamIds);
+                            const controlstreams = controlstreamStore.getControlStreamsById(serializedViz.controlstreamIds);
 
                             const visualization = new OSHVisualization(
                                 serializedViz.id,
                                 serializedViz.name,
                                 serializedViz.type,
-                                serializedViz.parentId,
                                 datastreams,
-                                controlstreams
+                                controlstreams,
+                                serializedViz.parentId,
                             );
 
                             visualization.setVisualizationComponents(serializedViz.visualizationComponents);

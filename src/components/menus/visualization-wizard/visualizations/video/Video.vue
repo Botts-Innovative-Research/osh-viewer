@@ -65,9 +65,8 @@ function initializeVideo() {
   const viz = props.visualization;
   if (!viz || viz.type !== 'video') return;
 
-  const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
-      ? viz.visualizationComponents.dataSource
-      : [viz.visualizationComponents.dataSource];
+
+  const dsArray: ISweApiDataSourceProperties[] = props.datasource
 
 
   let getFrameData: any;

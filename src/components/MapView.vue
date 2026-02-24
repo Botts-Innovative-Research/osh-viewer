@@ -10,10 +10,10 @@ import { useUIStore } from '@/stores/uistore';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import { sendCommand } from '@/lib/ControlstreamUtils';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import { RoleDatastream } from '@/types/types';
 import { createDatasource } from './menus/visualization-wizard/shared/helpers';
+import { ILineOfBearingLayerProperties, IPointMarkerLayerProperties, ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
 
 // Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3ZWYzYjhiMy0wMzcwLTQxMTktOGY1OS0wYzM1NzNlOTI3NDMiLCJpZCI6Mzk4MzMsImlhdCI6MTc0ODIwNDA4OX0.HBox4N50pESMU1yJs33-0cNd22sTvIv0KetnMAJMdXU'
 
@@ -93,28 +93,22 @@ onMounted(() => {
     mapView.value.map.on('click', (event: any) => {
       console.log('[MapView] Point clicked:', event);
       const geoPtzIcon = L.icon({
-        iconUrl: '/icons/map/map-marker.svg',
+        iconUrl: '/icons/map/geoPtz-pin.svg',
         iconSize: [32, 32],
         iconAnchor: [16, 16]
       })
 
       // GEO PTZ
-      const selectedGeoPTZ = uiStore.selectedGeoPTZ;
-      if (selectedGeoPTZ) {
+      const isGeoPTZSelected = uiStore.isGeoPTZSelected;
+      if (isGeoPTZSelected) {
         var lat = event.latlng.lat;
         var lon = event.latlng.lng;
 
         // Send GeoPTZ command to selected GeoPTZ visualization
-        const commandBaseUrl = selectedGeoPTZ.commandBaseUrl;
-        const controlStreamId = selectedGeoPTZ.controlStreamId;
-        const auth = selectedGeoPTZ.auth
-
-        console.log(geoPtzTargetPM.value)
-
         if (geoPtzTargetPM.value) {
           mapView.value.map.removeLayer(geoPtzTargetPM.value);
         }
-        geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon }).addTo(mapView.value.map)
+        geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon, label: 'test' }).addTo(mapView.value.map)
 
         const command = {
           parameters: {
@@ -124,8 +118,7 @@ onMounted(() => {
           },
         };
 
-        sendCommand(commandBaseUrl, controlStreamId, command, auth);
-
+        uiStore.sendGeoPTZCommand(command);
         uiStore.setCurrentLLA(lat, lon, 120.0);
       }
 
@@ -136,7 +129,7 @@ onMounted(() => {
         const lon = event.latlng.lng;
         const alt = 100.0;
 
-        flightPathTargetPM.value.push(L.marker([lat, lon], { icon: geoPtzIcon }).addTo(mapView.value.map));
+        flightPathTargetPM.value.push(L.marker([lat, lon], { icon: geoPtzIcon, title: "GeoPTZ" }).addTo(mapView.value.map));
 
         uiStore.setCurrentLLA(lat, lon, alt);
       }
@@ -202,7 +195,7 @@ watch(
       (newId) => !oldIds?.some((id) => id === newId)
     )
     if (addedVizIds) createVisualizations(addedVizIds);
-    
+
   },
   { immediate: true, deep: true }
 );
@@ -224,8 +217,14 @@ function deleteVisualizations(removedVizIds: string[]) {
 
     console.log(mapView.value)
 
-    // Remove layer from the actual map
-    mapView.value.removeAllFromLayer(layer);
+     // Remove layer from the actual map safely
+    try {
+      if (mapView.value) {
+        mapView.value.removeAllFromLayer(layer);
+      }
+    } catch (err) {
+      console.warn(`[MapView] Failed to remove Leaflet layer ${vizId}:`, err);
+    }
 
     // Remove layer from list of map layers
     mapItemLayers.value.delete(vizId);
@@ -260,9 +259,7 @@ function createVisualizations(addedVizIds: string[]) {
   for (const viz of newOSHVisualizations) {
     if (viz.type === 'pmorientation') {
       // Array of datasources
-      const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
-        ? viz.visualizationComponents.dataSource
-        : [viz.visualizationComponents.dataSource];
+      const dsArray: ISweApiDataSourceProperties[] = viz.visualizationComponents.dataSource
 
       // Array of SweApi instances for datasources
       const dsInstances: SweApi[] = [];
@@ -315,7 +312,7 @@ function createVisualizations(addedVizIds: string[]) {
       }
 
       console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstances)
-      const layerOpts = viz.visualizationComponents.dataLayer
+      const layerOpts = viz.visualizationComponents.dataLayer as IPointMarkerLayerProperties
       const pmLayer = new PointMarkerLayer({
         ...layerOpts,
         name: viz.name,
@@ -334,9 +331,7 @@ function createVisualizations(addedVizIds: string[]) {
       currentVisualizations.value.push(viz);
 
       // Array of datasources
-      const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
-        ? viz.visualizationComponents.dataSource
-        : [viz.visualizationComponents.dataSource];
+      const dsArray: ISweApiDataSourceProperties[] = viz.visualizationComponents.dataSource
 
       //  Array of SweApi instances for datasources
       const dsInstances: SweApi[] = [];
@@ -370,8 +365,7 @@ function createVisualizations(addedVizIds: string[]) {
       }
 
       console.log('[MapView] Creating datasource for LoBLayer:', dsInstances)
-      const layerOpts = viz.visualizationComponents.dataLayer;
-      console.log('Icon size:', layerOpts.iconSize);
+      const layerOpts = viz.visualizationComponents.dataLayer as ILineOfBearingLayerProperties;
       let lobLayerOpts: LoBLayer = {
         ...layerOpts,
         name: viz.name,
@@ -437,13 +431,28 @@ watch(() => uiStore.selectedMapItem,
 );
 
 /**
- * Handle cursor styling - GeoPTZ, FlightPath
+ * Handle change in GeoPTZ selection
  */
-watch(() => [uiStore.selectedGeoPTZ, uiStore.selectedFlightPath], ([geoPtz, flight]) => {
+watch(() => uiStore.isGeoPTZSelected, (geoPtz) => {
   const map = mapView.value.map;
   const container = map.getContainer();
+  container.style.cursor = geoPtz ? 'crosshair' : ''
 
-  container.style.cursor = geoPtz || flight ? 'crosshair' : '' 
+  // If a geoPtz marker exists geoPTZ is not selected
+  if (geoPtzTargetPM.value && !geoPtz) {
+    console.log('Removing GeoPTZ marker');
+    mapView.value.map.removeLayer(geoPtzTargetPM.value);
+    geoPtzTargetPM.value = null;
+  }
+})
+
+/**
+ * Handle FlightPath cursor style
+ */
+watch(() => uiStore.selectedFlightPath, (flight) => {
+  const map = mapView.value.map;
+  const container = map.getContainer();
+  container.style.cursor = flight ? 'crosshair' : ''
 })
 
 /**

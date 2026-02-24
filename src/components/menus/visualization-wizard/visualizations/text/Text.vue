@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { onMounted, ref } from 'vue';
+import { onMounted, PropType, ref } from 'vue';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { createDatasource, useVisualizationCleanup } from '../../shared/helpers';
+import { ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers'
 
 
 // Generate a random ID when the component is created
@@ -13,18 +14,10 @@ const textboxDatasource = ref<any>(null);
 // Received data to output
 const receivedData = ref({});
 
-const props = defineProps({
-  visualization: {
-    type: OSHVisualization,
-    required: false,
-    default: null,
-  },
-  datasource: {
-    type: Object,
-    required: true,
-    default: null,
-  }
-});
+const props = defineProps<{
+  visualization: OSHVisualization,
+  datasource: ISweApiDataSourceProperties
+}>()
 
 
 // Create SweApi datasource for Text visualization

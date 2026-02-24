@@ -65,6 +65,7 @@ export class OSHConnect {
 		await Promise.all(promises);
 	}
 
+	// TODO: Not used in project
 	fetchDataStreamsOfSystem(system: OSHSystem): void {
 		const datastreamStore = getSharedStores().datastreamStore;
 		system
@@ -79,6 +80,7 @@ export class OSHConnect {
 			});
 	}
 
+	// TODO: Not used in project
 	fetchControlStreamsOfSystem(system: OSHSystem): void {
 		const controlStreamStore = getSharedStores().controlstreamStore;
 		system
@@ -97,8 +99,6 @@ export class OSHConnect {
 export class OSHNode {
 	uuid: string;
 	name: string;
-	children: OSHSystem[] = [];
-	link: string = '';
 	host: string = '';
 	port: string | number = '';
 	username: string = '';
@@ -126,7 +126,7 @@ export class OSHNode {
 		this.username = username;
 		this.password = password;
 		this.tls = tls;
-		this.children = [];
+		this.systems = [];
 		this.oshConnect = oshConnect;
 	}
 
@@ -175,23 +175,27 @@ export class OSHNode {
 		return `${this.host}:${this.port}/${this.apiRoot}`;
 	}
 
+	/**
+	 * Filters systems to exclude the "config" system used for persistence
+	 * @returns Array of OSHSystems, excluding "config" system
+	 */
 	getFilteredSystems(): OSHSystem[] {
 		return this.systems.filter(system => system.system.properties.properties.uid !== CONFIG_UID);
 	}
 }
 
 export class OSHSystem {
-	uuid: string;
-	id: string;
-	name: string;
-	type: string;
-	parentId: string | null;
-	system: System;
-	parentNode: OSHNode;
-	children: string[];
+	uuid: string;	// Random unique ID
+	id: string;	// OSH ID
+	name: string;	// Name of system
+	type: string;	// Type of system
+	parentId: string | null;	// Parent ID, if applicable
+	system: System;	// osh-js System object
+	parentNode: OSHNode;	// OSHNode parent node
+	children: string[];	// IDs of system's children (datastreams and controlstreams)
 	datastreams: OSHDatastream[] = []; // Datastreams associated with this system
 	controlstreams: OSHControlStream[] = []; // Control streams associated with this system
-	subsystems: string[] = [];
+	subsystems: string[] = [];	// TODO: Not implemented
 	samplingFeatures: any[] = [];
 
 	constructor(system: any, parentNode: OSHNode) {
@@ -204,6 +208,7 @@ export class OSHSystem {
 		this.parentNode = parentNode;
 		this.children = [];
 		this.datastreams = [];
+		this.controlstreams = [];
 
 		console.log(`[OSHConnect-System] Created system: ${this.name} (ID: ${this.id})`);
 	}
@@ -218,14 +223,13 @@ export class OSHSystem {
 			const items: any[] = await result.nextPage();
 
 			console.log('items - datastreams', items);
-			// dataStreams.push(...items);
 
 			// create new OSHDatastream objects for each item
 			items.forEach((item: any) => {
 				console.log(`result data:`, item);
 				const newStream = new OSHDatastream(item.properties.name, item, this.id);
 				datastreamStore?.addDataStream?.(newStream);
-				this.children.push(newStream.uuid);
+				this.children.push(newStream.uuid);	// Push to children
 				this.datastreams.push(newStream); // Push OSHDatastream object
 			});
 		}
@@ -241,14 +245,13 @@ export class OSHSystem {
 		while (result.hasNext()) {
 			const items: any[] = await result.nextPage();
 			console.log('items - control streams', items);
-			// controlStreams.push(...items);
 
 			// create new OSHControlStream objects for each item
 			items.forEach((item: any) => {
 				console.log(`result data:`, item);
-				const newStream = new OSHControlStream(item.properties.name, this.id, item);
+				const newStream = new OSHControlStream(item.properties.name, item, this.id);
 				controlstreamStore?.addControlStream?.(newStream);
-				this.children.push(newStream.id);
+				this.children.push(newStream.id);	// Push to children
 				this.controlstreams.push(newStream); // Push OSHControlStream object
 			});
 		}
@@ -322,37 +325,42 @@ export class OSHControlStream {
 	children: string[] = [];
 	controlstream: any;
 
-	constructor(name: string, parentId: string | null, controlstream: any) {
+	constructor(name: string, controlstream: any, parentId: string | null) {
 		this.id = controlstream.properties.id;
 		this.name = name;
 		this.parentId = parentId;
 		this.controlstream = controlstream;
 	}
+
+	getParentSystem(): OSHSystem {
+		const systemStore = getSharedStores().systemStore;
+		return systemStore.getSystemById(this.parentId);
+	}
 }
 
 export class OSHVisualization {
-	id: string;
+	id: string;	// Random ID following the format `visualization-${randomUUID()}`
 	name: string;
 	type: string;
-	parentId: string | null;
-	parentDatastream: OSHDatastream | OSHDatastream[] | null;
+	parentId?: string | null;
+	datastream: OSHDatastream[] | null;	// TODO: null handles "All PMS"
+	controlstream?: OSHControlStream[]; // Optional control stream
 	visualizationComponents!: VisualizationComponents;
-	controlstream: OSHControlStream | OSHControlStream[] | null;
 
 	constructor(
 		id: string,
 		name: string,
 		type: string,
-		parentId: string | null,
-		parentDatastream: OSHDatastream | OSHDatastream[] | any,
-		controlstream: OSHControlStream | OSHControlStream[] | any = null
+		datastream: OSHDatastream[] | null,
+		controlstream?: OSHControlStream[],
+		parentId?: string | null,
 	) {
 		this.id = id;
 		this.name = name;
 		this.type = type;
+		this.datastream = datastream;
+		this.controlstream = controlstream;
 		this.parentId = parentId;
-		this.parentDatastream = parentDatastream;
-		this.controlstream = controlstream; // Optional control stream associated with the visualization, default null
 	}
 
 	setVisualizationComponents(components: VisualizationComponents): void {
