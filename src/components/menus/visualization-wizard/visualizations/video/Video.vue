@@ -1,18 +1,24 @@
 <script setup lang="ts">
-import {computed, onMounted, ref, toRaw} from 'vue';
-import {randomUUID} from 'osh-js/source/core/utils/Utils.js';
+import { computed, onMounted, ref, toRaw } from 'vue';
+import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import VideoDataLayer from 'osh-js/source/core/ui/layer/VideoDataLayer.js';
-import {OSHVisualization} from '@/lib/OSHConnectDataStructs';
+import { OSHControlStream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import MJPEGView from 'osh-js/source/core/ui/view/video/MjpegView.js';
 import VideoView from 'osh-js/source/core/ui/view/video/VideoView.js';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import PTZControl from './PTZControl.vue'
-import {useControlStreamStore} from "@/stores/controlstreamstore";
-import {fetchControlStreamSchema} from "@/lib/ControlstreamUtils";
+import { useControlStreamStore } from "@/stores/controlstreamstore";
+import { fetchControlStreamSchema } from "@/lib/ControlstreamUtils";
 import { createDatasource, useVisualizationCleanup } from '../../shared/helpers';
+import { ISweApiDataSourceProperties, IVideoLayerProperties, IVideoViewProperties } from '@/lib/VisualizationHelpers';
 
 const props = defineProps<{
-  visualization: OSHVisualization;
-}>();
+  visualization: OSHVisualization,
+  datasource: ISweApiDataSourceProperties[],
+  videoLayer: IVideoLayerProperties,
+  videoView: IVideoViewProperties,
+  controlstream?: OSHControlStream
+}>()
 
 const videoDivId = ref('video-' + randomUUID());
 
@@ -35,13 +41,15 @@ function createVideoView(viewConfig: any) {
 }
 
 const ptzControl = computed(() => {
-  const viz = props.visualization;
-  if (viz.controlstream && Object.keys(viz.controlstream).length > 0) {
-    const csId = Object.keys(viz.controlstream)[0];
-    if (!csId) return {hasControl: false, commandBaseUrl: '', id: '', auth: ''};
+  console.log('TEST TEST TEST')
+  console.log(props.controlstream)
+  if (props.controlstream && Object.keys(props.controlstream).length > 0) {
+    console.log('YES YES YES')
+    const csId = props.controlstream.id;
+    if (!csId) return { hasControl: false, commandBaseUrl: '', id: '', auth: '' };
 
     const controlStreams = controlstreamStore.getControlStreamsById([csId]);
-    if (!controlStreams || controlStreams.length === 0) return {hasControl: false, commandBaseUrl: '', id: '', auth: ''};
+    if (!controlStreams || controlStreams.length === 0) return { hasControl: false, commandBaseUrl: '', id: '', auth: '' };
 
     const cs = controlStreams[0];
     const networkProps = cs.controlstream.networkProperties;
@@ -58,7 +66,7 @@ const ptzControl = computed(() => {
       auth: auth
     }
   }
-  return {hasControl: false, commandBaseUrl: '', id: '', auth: ''};
+  return { hasControl: false, commandBaseUrl: '', id: '', auth: '' };
 })
 
 function initializeVideo() {
@@ -99,24 +107,23 @@ function initializeVideo() {
   }
 
   console.log('[Video.vue] Creating datasource for VideoDataLayer:', dsInstances);
-  const layerOpts = viz.visualizationComponents.dataLayer;
+  const layerOpts = props.videoLayer;
   videoLayer.value = new VideoDataLayer({
     ...layerOpts,
     name: viz.name,
     dataSourceIds: dsInstances.map(ds => ds.id),
-    ...(getFrameData ? {getFrameData} : {}),
-    ...(getTimestamp ? {getTimestamp} : {}),
+    ...(getFrameData ? { getFrameData } : {}),
+    ...(getTimestamp ? { getTimestamp } : {}),
   });
   videoView.value.addLayer(videoLayer.value);
   console.log('[VideoView] Creating VideoDataLayer:', videoLayer.value);
 }
 
 async function initializePtz() {
-  const viz = props.visualization;
-  if (!viz.controlstream || Object.keys(viz.controlstream).length === 0)
+  if (!props.controlstream || Object.keys(props.controlstream).length === 0)
     return;
 
-  const csId = Object.keys(viz.controlstream)[0];
+  const csId = props.controlstream.id;
   if (!csId)
     return;
 
@@ -128,7 +135,7 @@ async function initializePtz() {
 
   await fetchControlStreamSchema(cs.controlstream.properties, cs.controlstream.networkProperties);
 }
-onMounted(async() => {
+onMounted(async () => {
   initializeVideo();
   await initializePtz();
 });
@@ -137,17 +144,10 @@ useVisualizationCleanup(ref(dsInstances));
 </script>
 
 <template>
-  <v-card
-      :id="videoDivId"
-      class="video-mjpeg video-h264"
-  >
+  <v-card :id="videoDivId" class="video-mjpeg video-h264">
   </v-card>
-  <PTZControl
-      v-if="ptzControl.hasControl"
-      :command-base-url="ptzControl.commandBaseUrl"
-      :id="ptzControl.id"
-      :auth="ptzControl.auth"
-  />
+  <PTZControl v-if="ptzControl.hasControl" :command-base-url="ptzControl.commandBaseUrl" :id="ptzControl.id"
+    :auth="ptzControl.auth" />
 </template>
 
 <style>
