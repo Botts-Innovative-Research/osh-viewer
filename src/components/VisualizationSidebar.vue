@@ -49,6 +49,10 @@ const toggleSelectedMapItem = (item: any) => {
 	}
 };
 
+const toggleMapLayerVisibility = (item: any) => {
+	visualizationStore.toggleMapLayerVisibility(item.id);
+};
+
 </script>
 
 <template>
@@ -81,8 +85,13 @@ const toggleSelectedMapItem = (item: any) => {
 										:icon="`mdi-${isMapLayer(viz.visualizationComponents.dataLayer) ? viz.visualizationComponents.dataLayer.iconName : ''}`"
 										size="16"></v-icon>
 								</template>
-								<template #title>{{ viz.name }}</template>
+								<template #title><span
+										:style="`text-decoration: ${visualizationStore.isMapLayerVisible(viz.id) ? '' : 'line-through'}`">{{
+											viz.name }}</span></template>
 								<template #append>
+									<v-btn aria-label="Map Layer Toggle Visibility" size="x-small" variant="plain"
+										:icon="visualizationStore.isMapLayerVisible(viz.id) ? 'mdi-eye' : 'mdi-eye-off'"
+										@click.stop="toggleMapLayerVisibility(viz)"></v-btn>
 									<v-btn aria-label="Remove" class="close-btn" icon="mdi-window-close" size="x-small" variant="plain"
 										@click.stop="visualizationStore.removeVisualization(viz)"></v-btn>
 								</template>

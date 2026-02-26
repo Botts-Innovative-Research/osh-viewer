@@ -221,7 +221,7 @@ function deleteVisualizations(removedVizIds: string[]) {
         mapView.value.removeAllFromLayer(layer);
       }
     } catch (err) {
-      console.warn(`[MapView] Failed to remove Leaflet layer ${vizId}:`, err);
+      console.warn(`[MapView] Failed to remove layer ${vizId}:`, err);
     }
 
     // Remove layer from list of map layers
@@ -425,8 +425,50 @@ watch(() => uiStore.selectedMapItem,
         location.x,
       ]);
     }
+
   }
 );
+
+const layerTypes = [
+  'layerIdToPolylines',
+    //these are not implemented yet, so u can comment them out tbh but i wouldnt remove them
+  'layerIdToEllipsoids',
+  'layerIdToPolygon',
+  'layerIdToFrustum',
+  'layerIdToDrapedImage'
+]
+watch(() => visualizationStore.layerVisibility.entries(),
+    (entries) => {
+
+  for (const [layerId, isVisible] of entries) {
+    const layer = mapItemLayers.value.get(layerId);
+
+    if (!layer) continue;
+
+    const ids: string[] = layer.getIds();
+
+    for (const id of ids) {
+      const marker = mapView.value.layerIdToMarkers?.[id];
+      if (marker) {
+        // when adding layer back for marker it makes the icon styling different so just adjust the opacity
+        // if (isVisible) {
+        //   mapView.value.map.addLayer(marker);
+        // } else {
+        //   mapView.value.map.removeLayer(marker);
+        // }
+        marker.setOpacity(isVisible ? 1 : 0);
+      }
+      for (const type of layerTypes) {
+        const layerEl = mapView.value[type]?.[id];
+        if (layerEl) {
+          isVisible ? mapView.value.map.addLayer(layerEl) : mapView.value.map.removeLayer(layerEl);
+        }
+      }
+    }
+    console.log('[MapView] Layer visibility changed:', layerId, isVisible);
+  }
+}, { deep: true })
+
 
 /**
  * Handle change in GeoPTZ selection
