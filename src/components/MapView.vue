@@ -24,14 +24,14 @@ Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0N
 
 
 const visualizationStore = useVisualizationStore();
-const mapLayerType = ref('cesium');
+const mapLayerType = ref('leaflet');
 const mapView = ref<any>(null);
 const currentVisualizations = ref<OSHVisualization[]>([]);
 const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer>>(new Map())
 const listDatasourceInstances = ref<SweApi[]>([]);
 
 const uiStore = useUIStore();
-const geoPtzTargetPM = ref<any>(null);
+const geoPtzTargetPM = ref<PointMarkerLayer>(null);
 const flightPathTargetPM = ref<any[]>([]);
 const flightPathPolyline = ref<any>(null);
 
@@ -56,50 +56,50 @@ onMounted(() => {
     mapView.value = leafletMapView;
 
     // Add listener for point clicks
-    mapView.value.map.on('click', (event: any) => {
-      console.log('[MapView] Point clicked:', event);
-      const geoPtzIcon = L.icon({
-        iconUrl: '/icons/map/geoPtz-pin.svg',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16]
-      })
+    // mapView.value.map.on('click', (event: any) => {
+    //   console.log('[MapView] Point clicked:', event);
+    //   const geoPtzIcon = L.icon({
+    //     iconUrl: '/icons/map/geoPtz-pin.svg',
+    //     iconSize: [32, 32],
+    //     iconAnchor: [16, 16]
+    //   })
 
-      // GEO PTZ
-      const isGeoPTZSelected = uiStore.isGeoPTZSelected;
-      if (isGeoPTZSelected) {
-        var lat = event.latlng.lat;
-        var lon = event.latlng.lng;
+    //   // GEO PTZ
+    //   const isGeoPTZSelected = uiStore.isGeoPTZSelected;
+    //   if (isGeoPTZSelected) {
+    //     var lat = event.latlng.lat;
+    //     var lon = event.latlng.lng;
 
-        // Send GeoPTZ command to selected GeoPTZ visualization
-        if (geoPtzTargetPM.value) {
-          mapView.value.map.removeLayer(geoPtzTargetPM.value);
-        }
-        geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon, label: 'test' }).addTo(mapView.value.map)
+    //     // Send GeoPTZ command to selected GeoPTZ visualization
+    //     if (geoPtzTargetPM.value) {
+    //       mapView.value.map.removeLayer(geoPtzTargetPM.value);
+    //     }
+    //     geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon, label: 'test' }).addTo(mapView.value.map)
 
-        const command = {
-          parameters: {
-            lat: lat,
-            lon: lon,
-            alt: 120.0,
-          },
-        };
+    //     const command = {
+    //       parameters: {
+    //         lat: lat,
+    //         lon: lon,
+    //         alt: 120.0,
+    //       },
+    //     };
 
-        uiStore.sendGeoPTZCommand(command);
-        uiStore.setCurrentLLA(lat, lon, 120.0);
-      }
+    //     uiStore.sendGeoPTZCommand(command);
+    //     uiStore.setCurrentLLA(lat, lon, 120.0);
+    //   }
 
-      // FLIGHT PATH
-      const selectedFlightPath = uiStore.selectedFlightPath;
-      if (selectedFlightPath) {
-        const lat = event.latlng.lat;
-        const lon = event.latlng.lng;
-        const alt = 100.0;
+    //   // FLIGHT PATH
+    //   const selectedFlightPath = uiStore.selectedFlightPath;
+    //   if (selectedFlightPath) {
+    //     const lat = event.latlng.lat;
+    //     const lon = event.latlng.lng;
+    //     const alt = 100.0;
 
-        flightPathTargetPM.value.push(L.marker([lat, lon], { icon: geoPtzIcon, title: "GeoPTZ" }).addTo(mapView.value.map));
+    //     flightPathTargetPM.value.push(L.marker([lat, lon], { icon: geoPtzIcon, title: "GeoPTZ" }).addTo(mapView.value.map));
 
-        uiStore.setCurrentLLA(lat, lon, alt);
-      }
-    });
+    //     uiStore.setCurrentLLA(lat, lon, alt);
+    //   }
+    // });
   } else {
     /*const customViewer = new Cesium.Viewer('cesiumContainer', {
       terrain: Cesium.Terrain.fromWorldTerrain(),
@@ -163,6 +163,43 @@ onMounted(() => {
     //addCesiumMarker()
   }
 });
+
+/**
+ * Map click listener
+ */
+watch(
+  mapView,
+  (map) => {
+    if (!map) return;
+
+    // Handle leaflet map click
+    if (mapLayerType.value === 'leaflet') {
+      mapView.value.map.on('click', (event: any) => {
+        const lat = event.latlng.lat;
+        const lon = event.latlng.lng;
+        taskGeoPtz(lat, lon, 120.0);
+      })
+    }
+    // Handle cesium map click
+    else if (mapLayerType.value === 'cesium') {
+      const viewer = map.viewer;
+      const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+      handler.setInputAction((click: any) => {
+        const cartesian = viewer.camera.pickEllipsoid(
+          click.position,
+          viewer.scene.globe.ellipsoid
+        );
+        if (!cartesian) return;
+
+        const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+        const lat = Cesium.Math.toDegrees(cartographic.latitude);
+        const lon = Cesium.Math.toDegrees(cartographic.longitude);
+        taskGeoPtz(lat, lon, 120.0);
+      }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+    }
+
+  }
+)
 
 /**
  * Watch for changes to mapVisualizations to handle deletion/creation of new viz
@@ -386,6 +423,71 @@ function createVisualizations(addedVizIds: string[]) {
       mapView.value.addLayer(lobLayer);
       console.log('[MapView] Created LoBLayer:', lobLayer)
     }
+    else if (viz.type === 'geoPtz') {
+      console.log("Reached")
+      // Array of datasources
+      const dsArray: ISweApiDataSourceProperties[] = viz.visualizationComponents.dataSource
+
+      // Array of SweApi instances for datasources
+      const dsInstances: SweApi[] = [];
+
+      // Undefined initially
+      let getLocation: any;
+
+      for (const dsProps of dsArray) {
+        const dsInstance = createDatasource(dsProps);
+
+        getLocation = {
+          dataSourceIds: [dsInstance.id],
+          handler: (rec: any) => {
+            return {
+              x: uiStore.currentLLA?.longitude,
+              y: uiStore.currentLLA?.latitude,
+              z: uiStore.currentLLA?.altitude,
+            }
+          },
+        }
+
+        dsInstance.connect();
+        dsInstances.push(dsInstance);
+        listDatasourceInstances.value.push(dsInstance); // Push to list of active datasources
+      }
+
+      console.log('[MapView] Creating datasource for GEOPTZ PointMarkerLayer:', dsInstances)
+      const pmLayer = new PointMarkerLayer({
+        name: 'GeoPTZ',
+        label: 'GeoPTZ',
+        id: viz.id,
+        icon: '/icons/map/geoPtz-pin.svg',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        dataSourceIds: dsInstances.map(ds => ds.id),
+        ...(getLocation ? { getLocation } : {}),
+      })
+      mapItemLayers.value.set(viz.id, pmLayer)
+      mapView.value.addLayer(pmLayer)
+      console.log('[MapView] Creating GEOPTZ PointMarkerLayer:', pmLayer)
+    }
+  }
+}
+
+function taskGeoPtz(lat: number, lon: number, alt: number) {
+  uiStore.setCurrentLLA(lat, lon, alt);
+
+  const isGeoPTZSelected = uiStore.isGeoPTZSelected;
+  const selectedGeoPTZ = uiStore.selectedGeoPTZ;
+
+  if (isGeoPTZSelected && selectedGeoPTZ) {
+    deleteVisualizations(selectedGeoPTZ.map((viz: OSHVisualization) => viz.id)) // Remove existing pointmarker
+    createVisualizations(selectedGeoPTZ.map((viz: OSHVisualization) => viz.id)) // Create new pointmarker
+    const command = {
+      parameters: {
+        lat: lat,
+        lon: lon,
+        alt: 120.0,
+      },
+    };
+    uiStore.sendGeoPTZCommand(command); // Send command
   }
 }
 
@@ -419,8 +521,8 @@ watch(() => uiStore.selectedMapItem,
  */
 watch(() => uiStore.isGeoPTZSelected, (geoPtz) => {
   const map = mapView.value.map;
-  const container = map.getContainer();
-  container.style.cursor = geoPtz ? 'crosshair' : ''
+  // const container = map.getContainer();
+  // container.style.cursor = geoPtz ? 'crosshair' : ''
 
   // If a geoPtz marker exists geoPTZ is not selected
   if (geoPtzTargetPM.value && !geoPtz) {
