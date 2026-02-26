@@ -45,6 +45,9 @@ const lobVisualizations = computed(() => {
   return visualizationStore.getVisualizationsByType('lob');
 });
 
+/**
+ * Set map type on mount
+ */
 onMounted(() => {
   if (mapLayerType.value === 'leaflet') {
     const leafletMapView = new LeafletView({
@@ -52,115 +55,14 @@ onMounted(() => {
       layers: [],
       autoZoomOnFirstMarker: true,
     });
-
     mapView.value = leafletMapView;
-
-    // Add listener for point clicks
-    // mapView.value.map.on('click', (event: any) => {
-    //   console.log('[MapView] Point clicked:', event);
-    //   const geoPtzIcon = L.icon({
-    //     iconUrl: '/icons/map/geoPtz-pin.svg',
-    //     iconSize: [32, 32],
-    //     iconAnchor: [16, 16]
-    //   })
-
-    //   // GEO PTZ
-    //   const isGeoPTZSelected = uiStore.isGeoPTZSelected;
-    //   if (isGeoPTZSelected) {
-    //     var lat = event.latlng.lat;
-    //     var lon = event.latlng.lng;
-
-    //     // Send GeoPTZ command to selected GeoPTZ visualization
-    //     if (geoPtzTargetPM.value) {
-    //       mapView.value.map.removeLayer(geoPtzTargetPM.value);
-    //     }
-    //     geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon, label: 'test' }).addTo(mapView.value.map)
-
-    //     const command = {
-    //       parameters: {
-    //         lat: lat,
-    //         lon: lon,
-    //         alt: 120.0,
-    //       },
-    //     };
-
-    //     uiStore.sendGeoPTZCommand(command);
-    //     uiStore.setCurrentLLA(lat, lon, 120.0);
-    //   }
-
-    //   // FLIGHT PATH
-    //   const selectedFlightPath = uiStore.selectedFlightPath;
-    //   if (selectedFlightPath) {
-    //     const lat = event.latlng.lat;
-    //     const lon = event.latlng.lng;
-    //     const alt = 100.0;
-
-    //     flightPathTargetPM.value.push(L.marker([lat, lon], { icon: geoPtzIcon, title: "GeoPTZ" }).addTo(mapView.value.map));
-
-    //     uiStore.setCurrentLLA(lat, lon, alt);
-    //   }
-    // });
   } else {
-    /*const customViewer = new Cesium.Viewer('cesiumContainer', {
-      terrain: Cesium.Terrain.fromWorldTerrain(),
-      baseLayer: Cesium.ImageryLayer.fromProviderAsync(
-        Cesium.IonImageryProvider.fromAssetId(3), {}
-      ),
-      timeline: false,
-      homeButton: false,
-      navigationInstructionsInitiallyVisible: false,
-      navigationHelpButton: true,
-      geocoder: true,
-      animation: false,
-      fullscreenButton: false,
-      baseLayerPicker: true
-    })*/
-
     const cesiumView = new CesiumView({
       container: 'cesiumContainer',
       autoZoomOnFirstMarker: true,
       layers: [],
     });
-
     mapView.value = cesiumView;
-
-    // const customViewer = new CesiumView.Viewer('cesiumContainer', {
-    //   terrain: CesiumView.Terrain.fromWorldTerrain(),
-    //   baseLayer: CesiumView.ImageryLayer.fromProviderAsync(
-    //     CesiumView.IonImageryProvider.fromAssetId(3), {}
-    //   ),
-    //   timeline: false,
-    //   homeButton: false,
-    //   navigationInstructionsInitiallyVisible: false,
-    //   navigationHelpButton: true,
-    //   geocoder: true,
-    //   animation: false,
-    //   fullscreenButton: false,
-    //   baseLayerPicker: true
-    // })
-
-    // const cesiumView = new CesiumView({
-    //   container: 'cesiumContainer',
-    //   viewer: customViewer,
-    // });
-    // mapView.value = cesiumView;
-
-    // mapView.value.addMarker({
-    //   location: {
-    //     x: 0,
-    //     y: 0,
-    //     z: 0
-    //   },
-    //   label: 'TEST',
-    //   labelOffset: [0, 0],
-    //   icon: '/icons/map/map-marker.svg',
-    //   iconSize: [32, 32],
-    //   iconAnchor: [16, 32],
-    //   id: 'test-marker',
-    //   markerId: 'test-marker' + '-feature' + randomUUID()
-    // })
-
-    //addCesiumMarker()
   }
 });
 
@@ -448,7 +350,7 @@ function createVisualizations(addedVizIds: string[]) {
           },
         }
 
-        dsInstance.connect();
+        // dsInstance.connect();
         dsInstances.push(dsInstance);
         listDatasourceInstances.value.push(dsInstance); // Push to list of active datasources
       }
@@ -467,6 +369,9 @@ function createVisualizations(addedVizIds: string[]) {
       mapItemLayers.value.set(viz.id, pmLayer)
       mapView.value.addLayer(pmLayer)
       console.log('[MapView] Creating GEOPTZ PointMarkerLayer:', pmLayer)
+      dsInstances.map((item: any) => {
+        item.connect();
+      })
     }
   }
 }
