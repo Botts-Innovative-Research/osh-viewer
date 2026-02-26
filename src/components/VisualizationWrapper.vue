@@ -32,12 +32,6 @@ const { viz, customClass = '' } = defineProps<{
 			:controlstream="(viz.controlstream ? viz.controlstream[0] : undefined)"
 			v-if="viz.type === 'video'"
 		></Video>
-		<GeoPTZ
-			:visualization="viz"
-			:datasource="viz.visualizationComponents.dataSource[0]"
-			:controlstream="viz.visualizationComponents.controlstream[0]"
-			v-if="viz.type === 'geoPtz' && viz.visualizationComponents.controlstream"
-		></GeoPTZ>
 		<Text
 			:visualization="viz"
 			:datasource="viz.visualizationComponents.dataSource[0]"

@@ -73,7 +73,7 @@ export function CreateVideoViewProps(datastreams: { [key: string]: any }, contro
         layers: [videoLayer],
         width: 640,
         height: 480,
-        useWebCodecApi: visOptions?.webCodec,
+        useWebCodecApi: true,
         showTime: visOptions?.time,
         showStats: visOptions?.stats,
     }
