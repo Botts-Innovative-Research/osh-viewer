@@ -193,6 +193,13 @@ const constraints = computed(() => {
 	return { minPan, maxPan, minTilt, maxTilt, minZoom, maxZoom }
 })
 
+const constraintTooltip = computed(() => {
+    if (selectedCommand.value === 'pan') return `Min: ${constraints.value.minPan}, Max: ${constraints.value.maxPan}`
+    	else if (selectedCommand.value === 'tilt') return `Min: ${constraints.value.minTilt}, Max: ${constraints.value.maxTilt}`
+    	else if (selectedCommand.value === 'zoom') return `Min: ${constraints.value.minZoom}, Max: ${constraints.value.maxZoom}`
+    	else return ``
+})
+
 </script>
 
 <template>
@@ -217,11 +224,13 @@ const constraints = computed(() => {
 				></v-btn>
 				<v-btn icon="mdi-home-circle" alt="home" @click="handleMove('home')" class="homeButton" variant="text" :style="{zIndex: 1000, fontSize: '35px'}"></v-btn>
 			</v-container>
-			<v-text-field
-				v-model.number="increment"
-				type="number"
-				label="Increment"
-			/>
+                <v-text-field
+                  v-model.number="increment"
+                  type="number"
+                  label="Increment"
+                />
+
+
 		</v-sheet>
 		<v-sheet class="wrapper">
 			<v-select
@@ -231,33 +240,48 @@ const constraints = computed(() => {
 				class="w-100"
 			/>
 			<div v-if="isDataRecord">
-				<v-text-field
-					v-model.number="absPan"
-					type="number"
-					label="Pan"
-					placeholder="0.0"
-					class="w-100"
-					:min="constraints.minPan"
-					:max="constraints.maxPan"
-				/>
-				<v-text-field
-					v-model.number="absTilt"
-					type="number"
-					label="Tilt"
-					placeholder="0.0"
-					class="w-100"
-					:min="constraints.minTilt"
-					:max="constraints.maxTilt"
-				/>
-				<v-text-field
-					v-model.number="absZoom"
-					type="number"
-					label="Zoom"
-					placeholder="0.0"
-					class="w-100"
-					:min="constraints.minZoom"
-					:max="constraints.maxZoom"
-				/>
+			<v-tooltip :text="`min: ${constraints.minPan}, max: ${constraints.maxPan}`">
+                <template #activator="{ props }">
+                    <v-text-field
+                        v-model.number="absPan"
+                        type="number"
+                        label="Pan"
+                        placeholder="0.0"
+                        class="w-100"
+                        :min="constraints.minPan"
+                        :max="constraints.maxPan"
+                        v-bind="props"
+                    />
+                </template>
+            </v-tooltip>
+            <v-tooltip :text="`min: ${constraints.minTilt}, max: ${constraints.maxTilt}`">
+                <template #activator="{ props }">
+                    <v-text-field
+                        v-model.number="absTilt"
+                        type="number"
+                        label="Tilt"
+                        placeholder="0.0"
+                        class="w-100"
+                        :min="constraints.minTilt"
+                        :max="constraints.maxTilt"
+                        v-bind="props"
+                    />
+                </template>
+            </v-tooltip>
+            <v-tooltip :text="`min: ${constraints.minZoom}, max: ${constraints.maxZoom}`">
+                <template #activator="{ props }">
+                    <v-text-field
+                        v-model.number="absZoom"
+                        type="number"
+                        label="Zoom"
+                        placeholder="0.0"
+                        class="w-100"
+                        :min="constraints.minZoom"
+                        :max="constraints.maxZoom"
+                        v-bind="props"
+                    />
+                </template>
+            </v-tooltip>
 			</div>
 
 			<div v-else-if="isPreset">
@@ -272,15 +296,20 @@ const constraints = computed(() => {
 			</div>
 
 			<div v-else>
-				<v-text-field
-					v-model="singleValue"
-					type="number"
-					:label="selectedCommand"
-					placeholder="Enter value"
-					class="w-100"
-					:min="selectedCommand === 'pan' ? constraints.minPan : selectedCommand === 'tilt' ? constraints.minTilt : constraints.minZoom"
-					:max="selectedCommand === 'pan' ? constraints.maxPan : selectedCommand === 'tilt' ? constraints.maxTilt : constraints.maxZoom"
-				/>
+			<v-tooltip :text="constraintTooltip" :disabled="!constraintTooltip">
+                <template #activator="{ props }">
+                    <v-text-field
+                        v-model="singleValue"
+                        type="number"
+                        :label="selectedCommand"
+                        placeholder="Enter value"
+                        class="w-100"
+                        :min="selectedCommand === 'pan' ? constraints.minPan : selectedCommand === 'tilt' ? constraints.minTilt : constraints.minZoom"
+                        :max="selectedCommand === 'pan' ? constraints.maxPan : selectedCommand === 'tilt' ? constraints.maxTilt : constraints.maxZoom"
+                        v-bind="props"
+                    />
+                </template>
+            </v-tooltip>
 			</div>
 			<v-btn color="primary" @click="onSend" block>Send</v-btn>
 		</v-sheet>
