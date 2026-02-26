@@ -201,9 +201,7 @@ function deleteVisualizations(removedVizIds: string[]) {
     // Collect datasource IDs
     removedDsIds.push(...layer.dataSourceIds);
 
-    console.log(mapView.value)
-
-     // Remove layer from the actual map safely
+    // Remove layer from the actual map safely
     try {
       if (mapView.value) {
         mapView.value.removeAllFromLayer(layer);
