@@ -426,40 +426,49 @@ watch(() => uiStore.selectedMapItem,
       ]);
     }
 
-    // TESTING: Attempt to remove viz from map but not delete
-    // Note: layer is pulled from mapItemLayers, where it stays until the visualization is deleted
-    console.log(layer.props.id)
-
-    // If visible, toggle off
-    if (mapView.value.getLayer(layer.props.id)) {
-      console.log(mapView.value.layers)
-      mapView.value.removeAllFromLayer(layer); // THIS WORKS TO REMOVE FROM MAP - wrongggggg
-      // mapView.value.layers.filter((item: any) => {
-      //   item.props.id !== layer.props.id
-      // })
-      // mapView.value.layers.map((item: any) => {
-      //   console.log(item.props.id)
-      // })
-      console.log(mapView.value.layers)
-    }
-    // Else not visible, toggle on
-    else {
-      // mapView.value.addLayer(layer)
-    }
-
-    // mapView.value.removeAllFromLayer(layer); // THIS WORKS TO REMOVE FROM MAP
-    // mapView.value.addLayer(layer); // To add to map again... ?
-
-    // console.log("Getting layer from mapview...", layer.props.id)
-    // let mapLayer = mapView.value.getLayer(layer.props.id);
-    // console.log("Found layer:", mapLayer)
-
-    // console.log("Initial map view value", mapView.value.layers)
-    // mapView.value.removeAllFromLayer(layer); // THIS WORKS TO REMOVE FROM MAP
-    // console.log("NEW map view value", mapView.value.layers)
-    
   }
 );
+
+const layerTypes = [
+  'layerIdToPolylines',
+    //these are not implemented yet, so u can comment them out tbh but i wouldnt remove them
+  'layerIdToEllipsoids',
+  'layerIdToPolygon',
+  'layerIdToFrustum',
+  'layerIdToDrapedImage'
+]
+watch(() => visualizationStore.layerVisibility.entries(),
+    (entries) => {
+
+  for (const [layerId, isVisible] of entries) {
+    const layer = mapItemLayers.value.get(layerId);
+
+    if (!layer) continue;
+
+    const ids: string[] = layer.getIds();
+
+    for (const id of ids) {
+      const marker = mapView.value.layerIdToMarkers?.[id];
+      if (marker) {
+        // when adding layer back for marker it makes the icon styling different so just adjust the opacity
+        // if (isVisible) {
+        //   mapView.value.map.addLayer(marker);
+        // } else {
+        //   mapView.value.map.removeLayer(marker);
+        // }
+        marker.setOpacity(isVisible ? 1 : 0);
+      }
+      for (const type of layerTypes) {
+        const layerEl = mapView.value[type]?.[id];
+        if (layerEl) {
+          isVisible ? mapView.value.map.addLayer(layerEl) : mapView.value.map.removeLayer(layerEl);
+        }
+      }
+    }
+    console.log('[MapView] Layer visibility changed:', layerId, isVisible);
+  }
+}, { deep: true })
+
 
 /**
  * Handle change in GeoPTZ selection
