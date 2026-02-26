@@ -221,7 +221,7 @@ function deleteVisualizations(removedVizIds: string[]) {
         mapView.value.removeAllFromLayer(layer);
       }
     } catch (err) {
-      console.warn(`[MapView] Failed to remove Leaflet layer ${vizId}:`, err);
+      console.warn(`[MapView] Failed to remove layer ${vizId}:`, err);
     }
 
     // Remove layer from list of map layers
@@ -425,6 +425,39 @@ watch(() => uiStore.selectedMapItem,
         location.x,
       ]);
     }
+
+    // TESTING: Attempt to remove viz from map but not delete
+    // Note: layer is pulled from mapItemLayers, where it stays until the visualization is deleted
+    console.log(layer.props.id)
+
+    // If visible, toggle off
+    if (mapView.value.getLayer(layer.props.id)) {
+      console.log(mapView.value.layers)
+      mapView.value.removeAllFromLayer(layer); // THIS WORKS TO REMOVE FROM MAP - wrongggggg
+      // mapView.value.layers.filter((item: any) => {
+      //   item.props.id !== layer.props.id
+      // })
+      // mapView.value.layers.map((item: any) => {
+      //   console.log(item.props.id)
+      // })
+      console.log(mapView.value.layers)
+    }
+    // Else not visible, toggle on
+    else {
+      // mapView.value.addLayer(layer)
+    }
+
+    // mapView.value.removeAllFromLayer(layer); // THIS WORKS TO REMOVE FROM MAP
+    // mapView.value.addLayer(layer); // To add to map again... ?
+
+    // console.log("Getting layer from mapview...", layer.props.id)
+    // let mapLayer = mapView.value.getLayer(layer.props.id);
+    // console.log("Found layer:", mapLayer)
+
+    // console.log("Initial map view value", mapView.value.layers)
+    // mapView.value.removeAllFromLayer(layer); // THIS WORKS TO REMOVE FROM MAP
+    // console.log("NEW map view value", mapView.value.layers)
+    
   }
 );
 

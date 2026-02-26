@@ -41,10 +41,8 @@ function createVideoView(viewConfig: any) {
 }
 
 const ptzControl = computed(() => {
-  console.log('TEST TEST TEST')
   console.log(props.controlstream)
   if (props.controlstream && Object.keys(props.controlstream).length > 0) {
-    console.log('YES YES YES')
     const csId = props.controlstream.id;
     if (!csId) return { hasControl: false, commandBaseUrl: '', id: '', auth: '' };
 
