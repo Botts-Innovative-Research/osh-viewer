@@ -33,6 +33,7 @@ export const useVisualizationStore = defineStore('visualizations',
 	const serializedVisualizations: Ref<SerializeVisualization[]> = ref([]);
 	const currentVisDataStreamOptions: Ref<any> = ref({});
 	const currentVisualizationCustomizationOptions: Ref<any> = ref({});
+    const layerVisibility: Ref<Map<string, boolean>> = ref(new Map());
 
     // Filter only PANEL visualizations
     const panelVisualizations = computed(() => {
@@ -117,6 +118,16 @@ export const useVisualizationStore = defineStore('visualizations',
 		currentVisualizationCustomizationOptions.value = {};
 	};
 
+    const toggleMapLayerVisibility = (layerId: string): boolean => {
+        const currentVisibility = layerVisibility.value.get(layerId) ?? true;
+        layerVisibility.value.set(layerId, !currentVisibility);
+        return !currentVisibility;
+    };
+
+    const isMapLayerVisible = (layerId: string): boolean => {
+        return layerVisibility.value.get(layerId) ?? true;
+    };
+
     const rehydrateVisualizations = (): void => {
         if (serializedVisualizations.value.length === 0 || visualizations.value.length > 0) return;
 
@@ -163,6 +174,9 @@ export const useVisualizationStore = defineStore('visualizations',
 		currentVisualizationCustomizationOptions,
 		updateCurrentVisualizationCustomizationOptions,
 		clearCurrentVisualizationCustomizationOptions,
+		toggleMapLayerVisibility,
+        isMapLayerVisible,
+        layerVisibility,
         rehydrateVisualizations,
 	};
 }, { persist: { pick: ['serializedVisualizations'] } });
