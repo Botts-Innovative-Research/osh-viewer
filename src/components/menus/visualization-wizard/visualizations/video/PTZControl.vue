@@ -296,7 +296,7 @@ const constraintTooltip = computed(() => {
 			</div>
 
 			<div v-else>
-			<v-tooltip :text="constraintTooltip">
+			<v-tooltip :text="constraintTooltip" :disabled="!constraintTooltip">
                 <template #activator="{ props }">
                     <v-text-field
                         v-model="singleValue"
