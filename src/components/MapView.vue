@@ -4,7 +4,7 @@ import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
 import { Ion } from 'cesium';
 import LeafletView from 'osh-js/source/core/ui/view/map/LeafletView';
 import L from 'leaflet';
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useVisualizationStore } from '../stores/visualizationstore';
 import { useUIStore } from '@/stores/uistore';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
@@ -24,14 +24,13 @@ Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0N
 
 
 const visualizationStore = useVisualizationStore();
-const mapLayerType = ref('cesium');
+const mapLayerType = ref('leaflet');
 const mapView = ref<any>(null);
 const currentVisualizations = ref<OSHVisualization[]>([]);
 const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer>>(new Map())
 const listDatasourceInstances = ref<SweApi[]>([]);
 
 const uiStore = useUIStore();
-const geoPtzTargetPM = ref<OSHVisualization>();
 const flightPathTargetPM = ref<any[]>([]);
 const flightPathPolyline = ref<any>(null);
 
@@ -51,14 +50,14 @@ const lobVisualizations = computed(() => {
 onMounted(() => {
   if (mapLayerType.value === 'leaflet') {
     const leafletMapView = new LeafletView({
-      container: 'cesiumContainer',
+      container: 'mapContainer',
       layers: [],
       autoZoomOnFirstMarker: true,
     });
     mapView.value = leafletMapView;
   } else {
     const cesiumView = new CesiumView({
-      container: 'cesiumContainer',
+      container: 'mapContainer',
       autoZoomOnFirstMarker: true,
       layers: [],
     });
@@ -79,7 +78,7 @@ watch(
       mapView.value.map.on('click', (event: any) => {
         const lat = event.latlng.lat;
         const lon = event.latlng.lng;
-        taskGeoPtz(lat, lon, 120.0);
+        taskGeoPtz(lat, lon, 100);
       })
     }
     // Handle cesium map click
@@ -103,7 +102,7 @@ watch(
         const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
         const lat = Cesium.Math.toDegrees(cartographic.latitude);
         const lon = Cesium.Math.toDegrees(cartographic.longitude);
-        taskGeoPtz(lat, lon, 120.0);
+        taskGeoPtz(lat, lon, 100);
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
     }
 
@@ -371,7 +370,9 @@ function createVisualizations(addedVizIds: string[]) {
           dataSourceIds: [dsInstances.map(ds => ds.id)],
           handler: (rec: any) => {
             return (`
-              <div>Test</div>
+              <div>${uiStore.selectedGeoPTZ?.map((viz: OSHVisualization) => {
+                return `${viz.name}`
+              }).join(', ')}</div>
             `)
           }
         }
@@ -420,24 +421,32 @@ watch(() => uiStore.selectedGeoPTZ, (geoPtz, oldGeoPtz) => {
  * Fly to pointmarker when selected in visualizations panel
  */
 watch(() => uiStore.selectedMapItem,
-  (newVal) => {
+  (newVal) => {    
     if (!newVal) return; // Only fly when a map item is selected
-    const map = mapView.value.map;
 
     const layer = mapItemLayers.value.get(newVal.id);
     if (!layer) return;
-
     const location = layer.getCurrentProps().location;
+    if (!location) return;
 
-    console.log('Found marker for selected map item:', location);
-
-    // Fly to lat/lon
-    if (location) {
-      map.flyTo([
+    // Leaflet
+    if (mapLayerType.value === 'leaflet') {
+      mapView.value.map.flyTo([
         location.y,
         location.x,
       ]);
     }
+    // Cesium
+    else if (mapLayerType.value === 'cesium') {
+      // mapView.value.panToLayer(layer); // panToLayer isn't working :(
+      mapView.value.viewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(location.x, location.y - 0.001, location.z + 100), // Offset to see the marker itself
+        orientation: {
+          pitch: Cesium.Math.toRadians(-35)
+        }
+      })
+    }
+    
 
   }
 );
@@ -483,21 +492,19 @@ watch(() => visualizationStore.layerVisibility.entries(),
 }, { deep: true })
 
 
-// /**
-//  * Handle change in GeoPTZ selection
-//  */
-// watch(() => uiStore.isGeoPTZSelected, (geoPtz) => {
-//   const map = mapView.value.map;
-//   // const container = map.getContainer();
-//   // container.style.cursor = geoPtz ? 'crosshair' : ''
-
-//   // If a geoPtz marker exists geoPTZ is not selected
-//   if (geoPtzTargetPM.value && !geoPtz) {
-//     console.log('Removing GeoPTZ marker');
-//     mapView.value.map.removeLayer(geoPtzTargetPM.value);
-//     geoPtzTargetPM.value = null;
-//   }
-// })
+/**
+ * Handle cursor style for GeoPTZ selection
+ */
+watch(() => uiStore.isGeoPTZSelected, (geoPtz) => {
+  // Leaflet
+  if (mapLayerType.value === 'leaflet') {
+    mapView.value.map.getContainer().style.cursor = geoPtz ? 'crosshair' : '';
+  }
+  // Cesium
+  else if (mapLayerType.value === 'cesium') {
+    mapView.value.viewer.canvas.style.cursor = geoPtz ? 'crosshair' : '';
+  }
+})
 
 /**
  * Handle FlightPath cursor style
@@ -842,8 +849,7 @@ watch(() => uiStore.flightPathWaypoints,
 
 <template>
   <div class="maphero">
-    <!--    <v-btn @click="addCesiumMarker" position="absolute">Add Cesium Marker</v-btn>-->
-    <div class="cesium-container maphero" id="cesiumContainer"></div>
+    <div class="cesium-container maphero" id="mapContainer"></div>
   </div>
 </template>
 
