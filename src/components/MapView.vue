@@ -4,7 +4,7 @@ import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
 import { Ion } from 'cesium';
 import LeafletView from 'osh-js/source/core/ui/view/map/LeafletView';
 import L from 'leaflet';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useVisualizationStore } from '../stores/visualizationstore';
 import { useUIStore } from '@/stores/uistore';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
@@ -24,14 +24,14 @@ Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0N
 
 
 const visualizationStore = useVisualizationStore();
-const mapLayerType = ref('leaflet');
+const mapLayerType = ref('cesium');
 const mapView = ref<any>(null);
 const currentVisualizations = ref<OSHVisualization[]>([]);
 const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer>>(new Map())
 const listDatasourceInstances = ref<SweApi[]>([]);
 
 const uiStore = useUIStore();
-const geoPtzTargetPM = ref<PointMarkerLayer>(null);
+const geoPtzTargetPM = ref<OSHVisualization>();
 const flightPathTargetPM = ref<any[]>([]);
 const flightPathPolyline = ref<any>(null);
 
@@ -85,6 +85,13 @@ watch(
     // Handle cesium map click
     else if (mapLayerType.value === 'cesium') {
       const viewer = map.viewer;
+      // Description box styling
+      viewer.infoBox.frame.onload = function () {
+        const doc = viewer.infoBox.frame.contentDocument;
+        doc.body.style.backgroundColor = '#242424';
+        doc.body.style.color = '#ffffff';
+      };
+
       const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
       handler.setInputAction((click: any) => {
         const cartesian = viewer.camera.pickEllipsoid(
@@ -135,7 +142,7 @@ function deleteVisualizations(removedVizIds: string[]) {
 
   for (const vizId of removedVizIds) {
     const layer = mapItemLayers.value.get(vizId);
-    if (!layer) continue;
+    if (!layer) {console.log("Didn't find layer"); continue};
 
     // Collect datasource IDs
     removedDsIds.push(...layer.dataSourceIds);
@@ -333,24 +340,9 @@ function createVisualizations(addedVizIds: string[]) {
       // Array of SweApi instances for datasources
       const dsInstances: SweApi[] = [];
 
-      // Undefined initially
-      let getLocation: any;
-
       for (const dsProps of dsArray) {
         const dsInstance = createDatasource(dsProps);
-
-        getLocation = {
-          dataSourceIds: [dsInstance.id],
-          handler: (rec: any) => {
-            return {
-              x: uiStore.currentLLA?.longitude,
-              y: uiStore.currentLLA?.latitude,
-              z: uiStore.currentLLA?.altitude,
-            }
-          },
-        }
-
-        // dsInstance.connect();
+        dsInstance.connect();
         dsInstances.push(dsInstance);
         listDatasourceInstances.value.push(dsInstance); // Push to list of active datasources
       }
@@ -363,38 +355,66 @@ function createVisualizations(addedVizIds: string[]) {
         icon: '/icons/map/geoPtz-pin.svg',
         iconSize: [32, 32],
         iconAnchor: [16, 16],
+        labelOffset: [-16, -32],
         dataSourceIds: dsInstances.map(ds => ds.id),
-        ...(getLocation ? { getLocation } : {}),
+        getLocation: {
+          dataSourceIds: [dsInstances.map(ds => ds.id)],
+          handler: (rec: any) => {
+            return {
+              x: uiStore.currentLLA?.longitude,
+              y: uiStore.currentLLA?.latitude,
+              z: uiStore.currentLLA?.altitude,
+            }
+          },
+        },
+        getDescription: {
+          dataSourceIds: [dsInstances.map(ds => ds.id)],
+          handler: (rec: any) => {
+            return (`
+              <div>Test</div>
+            `)
+          }
+        }
       })
       mapItemLayers.value.set(viz.id, pmLayer)
       mapView.value.addLayer(pmLayer)
       console.log('[MapView] Creating GEOPTZ PointMarkerLayer:', pmLayer)
-      dsInstances.map((item: any) => {
-        item.connect();
-      })
     }
   }
 }
 
+/**
+ * Based on given LLA, send GeoPTZ task
+ * 
+ * @param lat 
+ * @param lon 
+ * @param alt 
+ */
 function taskGeoPtz(lat: number, lon: number, alt: number) {
   uiStore.setCurrentLLA(lat, lon, alt);
+  console.log(uiStore.currentLLA)
 
-  const isGeoPTZSelected = uiStore.isGeoPTZSelected;
-  const selectedGeoPTZ = uiStore.selectedGeoPTZ;
+  if (!uiStore.isGeoPTZSelected || !uiStore.selectedGeoPTZ) return;
 
-  if (isGeoPTZSelected && selectedGeoPTZ) {
-    deleteVisualizations(selectedGeoPTZ.map((viz: OSHVisualization) => viz.id)) // Remove existing pointmarker
-    createVisualizations(selectedGeoPTZ.map((viz: OSHVisualization) => viz.id)) // Create new pointmarker
-    const command = {
-      parameters: {
-        lat: lat,
-        lon: lon,
-        alt: 120.0,
-      },
-    };
-    uiStore.sendGeoPTZCommand(command); // Send command
-  }
+  const command = {
+    parameters: {
+      lat: lat,
+      lon: lon,
+      alt: 120.0,
+    },
+  };
+  uiStore.sendGeoPTZCommand(command); // Send command
 }
+
+/**
+ * Create/delete GeoPTZ marker as selected GeoPTZ value changes
+ */
+watch(() => uiStore.selectedGeoPTZ, (geoPtz, oldGeoPtz) => {
+  // If had a value, delete
+  if (oldGeoPtz?.length) deleteVisualizations([oldGeoPtz[0].id]);
+  // If has a new value, create new
+  if (geoPtz?.length) createVisualizations([geoPtz[0].id]);
+}, { deep: true })
 
 /**
  * Fly to pointmarker when selected in visualizations panel
@@ -463,21 +483,21 @@ watch(() => visualizationStore.layerVisibility.entries(),
 }, { deep: true })
 
 
-/**
- * Handle change in GeoPTZ selection
- */
-watch(() => uiStore.isGeoPTZSelected, (geoPtz) => {
-  const map = mapView.value.map;
-  // const container = map.getContainer();
-  // container.style.cursor = geoPtz ? 'crosshair' : ''
+// /**
+//  * Handle change in GeoPTZ selection
+//  */
+// watch(() => uiStore.isGeoPTZSelected, (geoPtz) => {
+//   const map = mapView.value.map;
+//   // const container = map.getContainer();
+//   // container.style.cursor = geoPtz ? 'crosshair' : ''
 
-  // If a geoPtz marker exists geoPTZ is not selected
-  if (geoPtzTargetPM.value && !geoPtz) {
-    console.log('Removing GeoPTZ marker');
-    mapView.value.map.removeLayer(geoPtzTargetPM.value);
-    geoPtzTargetPM.value = null;
-  }
-})
+//   // If a geoPtz marker exists geoPTZ is not selected
+//   if (geoPtzTargetPM.value && !geoPtz) {
+//     console.log('Removing GeoPTZ marker');
+//     mapView.value.map.removeLayer(geoPtzTargetPM.value);
+//     geoPtzTargetPM.value = null;
+//   }
+// })
 
 /**
  * Handle FlightPath cursor style
@@ -827,7 +847,7 @@ watch(() => uiStore.flightPathWaypoints,
   </div>
 </template>
 
-<style scoped>
+<style>
 .maphero {
   height: 100%;
 }
