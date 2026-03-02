@@ -42,7 +42,9 @@ async function fetchProps() {
   if (csSchema.value?.parametersSchema) {
     const schemaItems = csSchema.value.parametersSchema.items
       ? csSchema.value.parametersSchema.items
-      : csSchema.value.parametersSchema;
+      : csSchema.value.parametersSchema.fields
+        ? csSchema.value.parametersSchema.fields
+        : csSchema.value.parametersSchema;
     getCommandType(schemaItems, selectedControlstream.value);
 
     if (Array.isArray(schemaItems)) {

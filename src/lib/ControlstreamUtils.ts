@@ -76,7 +76,9 @@ export async function fetchControlStreamSchema(controlstream: any, networkProper
 				// Add to store and fetch beautified command schema
 				const schemaItems = schema.parametersSchema.items
 					? schema.parametersSchema.items
-					: schema.parametersSchema;
+					: schema.parametersSchema.fields
+						? schema.parametersSchema.fields
+						: schema.parametersSchema;
 				const prettySchema = getCommandType(schemaItems, controlstream.id);
 				return prettySchema;
 			}
