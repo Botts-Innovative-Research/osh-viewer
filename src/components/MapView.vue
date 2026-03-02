@@ -22,9 +22,7 @@ import * as Cesium from "cesium";
 // THIS token is working, taken from showcase examples :P
 Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0NTkzNS02NzI0LTQwNDktODk4Zi0zZDJjOWI2NTdmYTMiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI1ODJ9.IbAajOLYnsoyKy1BOd7fY1p6GH-wwNVMdMduA2IzGjA';
 
-
 const visualizationStore = useVisualizationStore();
-const mapLayerType = ref('leaflet');
 const mapView = ref<any>(null);
 const currentVisualizations = ref<OSHVisualization[]>([]);
 const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer>>(new Map())
@@ -34,6 +32,9 @@ const uiStore = useUIStore();
 const flightPathTargetPM = ref<any[]>([]);
 const flightPathPolyline = ref<any>(null);
 
+const mapLayerType = computed(() => {
+  return uiStore.focusedMap
+})
 
 // TODO: Update feature visualization code
 const featureVisualizations = computed(() => {
@@ -45,9 +46,9 @@ const lobVisualizations = computed(() => {
 });
 
 /**
- * Set map type on mount
+ * Toggle map type
  */
-onMounted(() => {
+async function toggleMapType() {
   if (mapLayerType.value === 'leaflet') {
     const leafletMapView = new LeafletView({
       container: 'mapContainer',
@@ -55,6 +56,7 @@ onMounted(() => {
       autoZoomOnFirstMarker: true,
     });
     mapView.value = leafletMapView;
+    console.log("Now leaflet")
   } else {
     const cesiumView = new CesiumView({
       container: 'mapContainer',
@@ -62,8 +64,53 @@ onMounted(() => {
       layers: [],
     });
     mapView.value = cesiumView;
+    console.log("Now cesium")
   }
+}
+
+onMounted(async () => {
+  toggleMapType()
 });
+
+watch(() => mapLayerType.value, async (mapLayerType) => {
+  if (mapView.value) {
+    
+    // Remove all layers from mapView
+    mapView.value.removeAllFromLayers();
+    mapView.value.destroy();
+
+    // Toggle new map view
+    await toggleMapType();
+
+    // Add layers to new map
+    mapItemLayers.value.forEach((layer: any) => {
+      console.log(layer.type)
+      let newLayer: any;
+      if (layer.type === 'marker') {
+        newLayer = new PointMarkerLayer({ ...layer });
+      } else if (layer.type === 'lob') {
+        newLayer = new LoBLayer({ ...layer });
+      }
+      mapView.value.addLayer(newLayer)
+    })
+
+
+
+    // listDatasourceInstances.value.forEach((ds: any) => ds.disconnect())
+    // mapView.value.destroy();
+    // mapView.value = null;
+    // toggleMapType();
+    // mapItemLayers.value.forEach((layer) => {
+    //   console.log(layer)
+    //   mapView.value.addLayer(layer);
+    // })
+    // listDatasourceInstances.value.forEach((ds: any) => ds.connect())
+
+    // mapItemLayers.value.forEach(layer => {
+    //   console.log(layer.propsById);
+    // });
+  }  
+})
 
 /**
  * Map click listener
@@ -75,10 +122,10 @@ watch(
 
     // Handle leaflet map click
     if (mapLayerType.value === 'leaflet') {
-      mapView.value.map.on('click', (event: any) => {
+      map.map.on('click', (event: any) => {
         const lat = event.latlng.lat;
         const lon = event.latlng.lng;
-        taskGeoPtz(lat, lon, 100);
+        if (uiStore.isGeoPTZSelected) taskGeoPtz(lat, lon, 100);
       })
     }
     // Handle cesium map click
@@ -102,7 +149,7 @@ watch(
         const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
         const lat = Cesium.Math.toDegrees(cartographic.latitude);
         const lon = Cesium.Math.toDegrees(cartographic.longitude);
-        taskGeoPtz(lat, lon, 100);
+        if (uiStore.isGeoPTZSelected) taskGeoPtz(lat, lon, 100);
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
     }
 
@@ -332,7 +379,6 @@ function createVisualizations(addedVizIds: string[]) {
       console.log('[MapView] Created LoBLayer:', lobLayer)
     }
     else if (viz.type === 'geoPtz') {
-      console.log("Reached")
       // Array of datasources
       const dsArray: ISweApiDataSourceProperties[] = viz.visualizationComponents.dataSource
 
@@ -393,7 +439,7 @@ function createVisualizations(addedVizIds: string[]) {
  */
 function taskGeoPtz(lat: number, lon: number, alt: number) {
   uiStore.setCurrentLLA(lat, lon, alt);
-  console.log(uiStore.currentLLA)
+  console.log('LLA:', uiStore.currentLLA)
 
   if (!uiStore.isGeoPTZSelected || !uiStore.selectedGeoPTZ) return;
 
@@ -425,8 +471,10 @@ watch(() => uiStore.selectedMapItem,
     if (!newVal) return; // Only fly when a map item is selected
 
     const layer = mapItemLayers.value.get(newVal.id);
+    console.log("layer?", layer)
     if (!layer) return;
     const location = layer.getCurrentProps().location;
+    console.log("location?", location)
     if (!location) return;
 
     // Leaflet
@@ -439,6 +487,7 @@ watch(() => uiStore.selectedMapItem,
     // Cesium
     else if (mapLayerType.value === 'cesium') {
       // mapView.value.panToLayer(layer); // panToLayer isn't working :(
+      console.log("Test?")
       mapView.value.viewer.camera.flyTo({
         destination: Cesium.Cartesian3.fromDegrees(location.x, location.y - 0.001, location.z + 100), // Offset to see the marker itself
         orientation: {
@@ -856,5 +905,6 @@ watch(() => uiStore.flightPathWaypoints,
 <style>
 .maphero {
   height: 100%;
+  width: auto;
 }
 </style>
