@@ -14,7 +14,7 @@ export const useUIStore = defineStore('ui', () => {
 	const vizWizOpen = ref(false); // VizWiz = new version
 
 	// Focused map corresponds to map type
-	const focusedMap = ref<'cesium' | 'leaflet'>('leaflet');
+	const focusedMap = ref<'cesium' | 'leaflet'>('cesium');
 
 	// Active window items (array of IDs or names)
 	const activeWindows = ref<string[]>([]);

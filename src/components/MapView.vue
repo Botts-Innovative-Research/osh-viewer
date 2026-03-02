@@ -75,40 +75,42 @@ onMounted(async () => {
 watch(() => mapLayerType.value, async (mapLayerType) => {
   if (mapView.value) {
     
-    // Remove all layers from mapView
-    mapView.value.removeAllFromLayers();
-    mapView.value.destroy();
-
-    // Toggle new map view
-    await toggleMapType();
-
-    // Add layers to new map
-    mapItemLayers.value.forEach((layer: any) => {
-      console.log(layer.type)
-      let newLayer: any;
-      if (layer.type === 'marker') {
-        newLayer = new PointMarkerLayer({ ...layer });
-      } else if (layer.type === 'lob') {
-        newLayer = new LoBLayer({ ...layer });
-      }
-      mapView.value.addLayer(newLayer)
-    })
-
-
-
-    // listDatasourceInstances.value.forEach((ds: any) => ds.disconnect())
+    // // Remove all layers from mapView
+    // mapView.value.removeAllFromLayers();
     // mapView.value.destroy();
-    // mapView.value = null;
-    // toggleMapType();
-    // mapItemLayers.value.forEach((layer) => {
-    //   console.log(layer)
-    //   mapView.value.addLayer(layer);
-    // })
-    // listDatasourceInstances.value.forEach((ds: any) => ds.connect())
 
-    // mapItemLayers.value.forEach(layer => {
-    //   console.log(layer.propsById);
-    // });
+    // // Toggle new map view
+    // await toggleMapType();
+
+    // // Add layers to new map
+    // mapItemLayers.value.forEach((layer: any) => {
+    //   console.log(layer.type)
+    //   let newLayer: any;
+    //   if (layer.type === 'marker') {
+    //     newLayer = new PointMarkerLayer({ ...layer });
+    //   } else if (layer.type === 'lob') {
+    //     newLayer = new LoBLayer({ ...layer });
+    //   }
+    //   mapView.value.addLayer(newLayer)
+    // })
+
+
+
+
+
+    listDatasourceInstances.value.forEach((ds: any) => ds.disconnect())
+    mapView.value.destroy();
+    mapView.value = null;
+    toggleMapType();
+    mapItemLayers.value.forEach((layer) => {
+      console.log(layer)
+      mapView.value.addLayer(layer);
+    })
+    listDatasourceInstances.value.forEach((ds: any) => ds.connect())
+
+    mapItemLayers.value.forEach(layer => {
+      console.log(layer.propsById);
+    });
   }  
 })
 
@@ -289,7 +291,7 @@ function createVisualizations(addedVizIds: string[]) {
 
       console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstances)
       const layerOpts = viz.visualizationComponents.dataLayer as IPointMarkerLayerProperties
-      const pmLayer = new PointMarkerLayer({
+      const testPmLayer = {
         ...layerOpts,
         name: viz.name,
         id: viz.id,
@@ -297,6 +299,9 @@ function createVisualizations(addedVizIds: string[]) {
         ...(getLocation ? { getLocation } : {}),
         ...(getOrientation ? { getOrientation } : {}),
         ...(getMarkerId ? { getMarkerId } : {}),
+      }
+      const pmLayer = new PointMarkerLayer({
+        ...testPmLayer,
       })
       mapItemLayers.value.set(viz.id, pmLayer)
       mapView.value.addLayer(pmLayer)
@@ -520,25 +525,39 @@ watch(() => visualizationStore.layerVisibility.entries(),
 
     for (const id of ids) {
       const marker = mapView.value.layerIdToMarkers?.[id];
-      if (marker) {
-        // when adding layer back for marker it makes the icon styling different so just adjust the opacity
-        // if (isVisible) {
-        //   mapView.value.map.addLayer(marker);
-        // } else {
-        //   mapView.value.map.removeLayer(marker);
-        // }
-        marker.setOpacity(isVisible ? 1 : 0);
-      }
-      for (const type of layerTypes) {
-        const layerEl = mapView.value[type]?.[id];
-        if (layerEl) {
-          isVisible ? mapView.value.map.addLayer(layerEl) : mapView.value.map.removeLayer(layerEl);
+      const polyline = mapView.value.layerIdToPolylines?.[id];
+
+      if (mapLayerType.value === 'leaflet') {
+        // Handle PM and LoB
+        if (marker) {
+          marker.setOpacity(isVisible ? 1 : 0);
         }
+        // Handle polyline
+        if (polyline) {
+          polyline.setStyle({ opacity: isVisible ? 0.8 : 0 });
+        }
+        
+      }
+      else if (mapLayerType.value === 'cesium') {
+        // Handle LoB
+        if (marker && polyline) {
+          marker.show = isVisible;
+          polyline.show = isVisible;
+        }
+        // Handle PM
+        else if (marker) {
+          marker.show = isVisible;
+        }
+        // Handle polyline
+        else if (polyline) {
+          polyline.show = isVisible;
+        }
+        mapView.value.viewer.scene.requestRender();
       }
     }
     console.log('[MapView] Layer visibility changed:', layerId, isVisible);
   }
-}, { deep: true })
+}, { deep: true, immediate: true })
 
 
 /**
