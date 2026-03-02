@@ -40,14 +40,10 @@ const featureVisualizations = computed(() => {
   return visualizationStore.getVisualizationsByType('pointmarker-feature');
 });
 
-const lobVisualizations = computed(() => {
-  return visualizationStore.getVisualizationsByType('lob');
-});
-
 /**
  * Toggle map type
  */
-async function toggleMapType() {
+function toggleMapType() {
   if (mapLayerType.value === 'leaflet') {
     const leafletMapView = new LeafletView({
       container: 'mapContainer',
@@ -67,11 +63,11 @@ async function toggleMapType() {
   }
 }
 
-onMounted(async () => {
+onMounted(() => {
   toggleMapType()
 });
 
-watch(() => mapLayerType.value, async (mapLayerType) => {
+watch(() => mapLayerType.value, (mapLayerType) => {
   if (mapView.value) {
     
     // Temporarily disconnect datasources
@@ -237,13 +233,10 @@ function createVisualizations(addedVizIds: string[]) {
   console.log(newOSHVisualizations);
 
   for (const viz of newOSHVisualizations) {
-    if (viz.type === 'pmorientation') {
-      // Array of datasources
-      const dsArray: ISweApiDataSourceProperties[] = viz.visualizationComponents.dataSource
+    const dsArray: ISweApiDataSourceProperties[] = viz.visualizationComponents.dataSource // Array of datasources
+    const dsInstances: SweApi[] = []; // Array of SweApi instances for datasources
 
-      // Array of SweApi instances for datasources
-      const dsInstances: SweApi[] = [];
-
+    if (viz.type === 'pointmarker') {
       // Undefined initially
       let getLocation: any;
       let getOrientation: any;
@@ -307,14 +300,6 @@ function createVisualizations(addedVizIds: string[]) {
       console.log('[MapView] Creating PointMarkerLayer:', pmLayer)
     }
     else if (viz.type === 'lob') {
-      console.log('[MapView] Adding new LoB visualization:', viz);
-
-      // Array of datasources
-      const dsArray: ISweApiDataSourceProperties[] = viz.visualizationComponents.dataSource
-
-      //  Array of SweApi instances for datasources
-      const dsInstances: SweApi[] = [];
-
       let getOrigin: RoleDatastream | null = null;
       let getBearing: RoleDatastream | null = null;
 
@@ -383,12 +368,6 @@ function createVisualizations(addedVizIds: string[]) {
       console.log('[MapView] Created LoBLayer:', lobLayer)
     }
     else if (viz.type === 'geoPtz') {
-      // Array of datasources
-      const dsArray: ISweApiDataSourceProperties[] = viz.visualizationComponents.dataSource
-
-      // Array of SweApi instances for datasources
-      const dsInstances: SweApi[] = [];
-
       for (const dsProps of dsArray) {
         const dsInstance = createDatasource(dsProps);
         dsInstance.connect();
@@ -396,7 +375,7 @@ function createVisualizations(addedVizIds: string[]) {
         listDatasourceInstances.value.push(dsInstance); // Push to list of active datasources
       }
 
-      console.log('[MapView] Creating datasource for GEOPTZ PointMarkerLayer:', dsInstances)
+      console.log('[MapView] Creating datasource for GeoPTZ PointMarkerLayer:', dsInstances)
       const pmLayer = new PointMarkerLayer({
         name: 'GeoPTZ',
         label: 'GeoPTZ',
@@ -429,7 +408,7 @@ function createVisualizations(addedVizIds: string[]) {
       })
       mapItemLayers.value.set(viz.id, pmLayer)
       mapView.value.addLayer(pmLayer)
-      console.log('[MapView] Creating GEOPTZ PointMarkerLayer:', pmLayer)
+      console.log('[MapView] Creating GeoPTZ PointMarkerLayer:', pmLayer)
     }
   }
 }
@@ -475,10 +454,8 @@ watch(() => uiStore.selectedMapItem,
     if (!newVal) return; // Only fly when a map item is selected
 
     const layer = mapItemLayers.value.get(newVal.id);
-    console.log("layer?", layer)
     if (!layer) return;
     const location = layer.getCurrentProps().location;
-    console.log("location?", location)
     if (!location) return;
 
     // Leaflet
@@ -490,8 +467,6 @@ watch(() => uiStore.selectedMapItem,
     }
     // Cesium
     else if (mapLayerType.value === 'cesium') {
-      // mapView.value.panToLayer(layer); // panToLayer isn't working :(
-      console.log("Test?")
       mapView.value.viewer.camera.flyTo({
         destination: Cesium.Cartesian3.fromDegrees(location.x, location.y - 0.001, location.z + 100), // Offset to see the marker itself
         orientation: {
