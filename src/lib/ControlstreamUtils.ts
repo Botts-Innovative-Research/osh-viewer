@@ -74,12 +74,7 @@ export async function fetchControlStreamSchema(controlstream: any, networkProper
 			if (schema) {
 				console.log('[ControlstreamUtils] Schema fetched:', schema);
 				// Add to store and fetch beautified command schema
-				const schemaItems = schema.parametersSchema.items
-					? schema.parametersSchema.items
-					: schema.parametersSchema.fields
-						? schema.parametersSchema.fields
-						: schema.parametersSchema;
-				const prettySchema = getCommandType(schemaItems, controlstream.id);
+				const prettySchema = getCommandType(schema, controlstream.id);
 				return prettySchema;
 			}
 		})
@@ -96,8 +91,15 @@ export async function fetchControlStreamSchema(controlstream: any, networkProper
  * @param id
  * @returns
  */
-export function getCommandType(schema: any, id: string) {
+export function getCommandType(rawSchema: any, id: string) {
 	const controlStreamStore = useControlStreamStore();
+
+	const schema = rawSchema.parametersSchema.items
+		? rawSchema.parametersSchema.items
+		: rawSchema.parametersSchema.fields
+			? rawSchema.parametersSchema.fields
+			: rawSchema.parametersSchema;
+	const schemaLabel = rawSchema.parametersSchema.label?.toLowerCase()
 
 	// Start with empty command schema
 	let commandType: CommandType | undefined;
@@ -171,6 +173,29 @@ export function getCommandType(schema: any, id: string) {
 				tilt: { type: 'number', constraint: commandSchema.tilt.constraint },
 				zoom: { type: 'number', constraint: commandSchema.zoom.constraint },
 			};
+		}
+	}
+	// Check for PTZ preset command schema (without pan/tilt/zoom parameters)
+	// Supports Anpviz control schema
+	else if (
+		Array.isArray(schema) &&
+		schemaLabel.includes('preset') &&
+		schemaLabel.includes('camera')
+	) {
+		commandType = {
+			type: 'PTZCam',
+			details: {
+				hasRelative: false,
+				hasPreset: true,
+				hasDataRecord: false,
+			},
+		};
+
+		commandSchema.preset = {
+			type: 'string',
+			values: schema.map((item: any) => {
+				return { command: item.name, type: item.type, value: item.constraint.values ?? item.constraint.intervals[0] };
+			}),
 		}
 	}
 	// Check for LLA command schema
