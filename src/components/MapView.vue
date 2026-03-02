@@ -24,7 +24,6 @@ Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0N
 
 const visualizationStore = useVisualizationStore();
 const mapView = ref<any>(null);
-const currentVisualizations = ref<OSHVisualization[]>([]);
 const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer>>(new Map())
 const listDatasourceInstances = ref<SweApi[]>([]);
 
@@ -75,42 +74,45 @@ onMounted(async () => {
 watch(() => mapLayerType.value, async (mapLayerType) => {
   if (mapView.value) {
     
-    // // Remove all layers from mapView
-    // mapView.value.removeAllFromLayers();
-    // mapView.value.destroy();
-
-    // // Toggle new map view
-    // await toggleMapType();
-
-    // // Add layers to new map
-    // mapItemLayers.value.forEach((layer: any) => {
-    //   console.log(layer.type)
-    //   let newLayer: any;
-    //   if (layer.type === 'marker') {
-    //     newLayer = new PointMarkerLayer({ ...layer });
-    //   } else if (layer.type === 'lob') {
-    //     newLayer = new LoBLayer({ ...layer });
-    //   }
-    //   mapView.value.addLayer(newLayer)
-    // })
-
-
-
-
-
+    // Temporarily disconnect datasources
     listDatasourceInstances.value.forEach((ds: any) => ds.disconnect())
+
+    // Destroy map and layers
     mapView.value.destroy();
     mapView.value = null;
-    toggleMapType();
-    mapItemLayers.value.forEach((layer) => {
-      console.log(layer)
-      mapView.value.addLayer(layer);
-    })
-    listDatasourceInstances.value.forEach((ds: any) => ds.connect())
 
-    mapItemLayers.value.forEach(layer => {
-      console.log(layer.propsById);
-    });
+    // Switch map type
+    toggleMapType();
+
+    // Hold new layers for mapItemLayers
+    const newLayers = new Map();
+
+    // Create new layers
+    mapItemLayers.value.forEach((layer) => {
+      // Add new PM Layers
+      if (layer instanceof PointMarkerLayer) {
+        console.log(layer)
+        const pmLayer = new PointMarkerLayer({
+          ...layer.properties,
+        })
+        mapView.value.addLayer(pmLayer)
+        newLayers.set(layer.properties.id, pmLayer)
+      }
+      // Add new LoB Layers
+      else if (layer instanceof LoBLayer) {
+        const lobLayer = new LoBLayer({
+          ...layer.properties,
+        })
+        mapView.value.addLayer(lobLayer)
+        newLayers.set(layer.properties.id, lobLayer)
+      }
+    })
+
+    // Reset mapItemLayers to new layers
+    mapItemLayers.value = newLayers;
+
+    // Reconnect datasources
+    listDatasourceInstances.value.forEach((ds: any) => ds.connect())
   }  
 })
 
@@ -291,7 +293,7 @@ function createVisualizations(addedVizIds: string[]) {
 
       console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstances)
       const layerOpts = viz.visualizationComponents.dataLayer as IPointMarkerLayerProperties
-      const testPmLayer = {
+      const pmLayer = new PointMarkerLayer({
         ...layerOpts,
         name: viz.name,
         id: viz.id,
@@ -299,9 +301,6 @@ function createVisualizations(addedVizIds: string[]) {
         ...(getLocation ? { getLocation } : {}),
         ...(getOrientation ? { getOrientation } : {}),
         ...(getMarkerId ? { getMarkerId } : {}),
-      }
-      const pmLayer = new PointMarkerLayer({
-        ...testPmLayer,
       })
       mapItemLayers.value.set(viz.id, pmLayer)
       mapView.value.addLayer(pmLayer)
@@ -309,7 +308,6 @@ function createVisualizations(addedVizIds: string[]) {
     }
     else if (viz.type === 'lob') {
       console.log('[MapView] Adding new LoB visualization:', viz);
-      currentVisualizations.value.push(viz);
 
       // Array of datasources
       const dsArray: ISweApiDataSourceProperties[] = viz.visualizationComponents.dataSource
@@ -347,6 +345,7 @@ function createVisualizations(addedVizIds: string[]) {
 
       console.log('[MapView] Creating datasource for LoBLayer:', dsInstances)
       const layerOpts = viz.visualizationComponents.dataLayer as ILineOfBearingLayerProperties;
+
       let lobLayerOpts: LoBLayer = {
         ...layerOpts,
         name: viz.name,
