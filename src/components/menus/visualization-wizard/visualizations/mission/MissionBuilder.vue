@@ -9,7 +9,11 @@ import {sendCommand} from '@/lib/ControlstreamUtils';
 import {showToast} from "@/composables/useToast";
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
-import {createDatasource, useDisconnectDatasources, getLatestObservation} from "@/components/menus/visualization-wizard/shared/helpers";
+import {
+  createDatasource,
+  getLatestObservation,
+  useDisconnectDatasources
+} from "@/components/menus/visualization-wizard/shared/helpers";
 import {DATASOURCE_DATA_TOPIC} from 'osh-js/source/core/Constants.js';
 import {useDataStreamStore} from "@/stores/datastreamstore";
 

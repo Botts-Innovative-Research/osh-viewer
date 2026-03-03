@@ -2,6 +2,8 @@ import { useVizWizStore } from "@/stores/vizwizstore"
 import { onBeforeUnmount, Ref } from "vue"
 //@ts-ignore
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
+import DataStream from 'osh-js/source/core/sweapi/datastream/DataStream.js';
+import ObservationFilter from 'osh-js/source/core/sweapi/observation/ObservationFilter.js';
 import { OSHControlStream, OSHDatastream } from "@/lib/OSHConnectDataStructs";
 import { DataSourceProperties, ISweApiDataSourceProperties } from "@/lib/VisualizationHelpers";
 
@@ -203,4 +205,34 @@ export function generateVizName(role: string) {
   }
 
   return `New ${vizwizStore.visualizationType}`
+}
+
+
+/**
+ * Fetches the latest observation from a datasource
+ *
+ * @param dsProps - Datasource properties containing endpoint, id, and auth info
+ * @returns Promise resolving to the latest observation data, or null if not found
+ */
+export const getLatestObservation = async (dsProps: {
+    id: string
+    endpointUrl: string
+    tls: boolean
+    connectorOpts?: { username: string; password: string }
+}): Promise<any | null> => {
+    const networkProperties = {
+        endpointUrl: dsProps.endpointUrl,
+        tls: dsProps.tls,
+        connectorOpts: dsProps.connectorOpts ?? { username: '', password: '' }
+    }
+
+    const datastream = new DataStream({ id: dsProps.id }, networkProperties)
+
+    const results = await datastream.searchObservations(
+        new ObservationFilter({ resultTime: 'latest' }),
+        1
+    )
+
+    const obsResult = await results.nextPage()
+    return obsResult[0];
 }
