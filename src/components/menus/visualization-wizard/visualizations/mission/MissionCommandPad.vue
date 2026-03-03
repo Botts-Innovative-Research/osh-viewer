@@ -199,7 +199,7 @@ function toggle() {
 
     <!--takeoff control-->
     <div v-if="getControlstreamByRole('takeoff')">
-      <v-divider class="mb-4"></v-divider>
+      <v-divider class="mt-2 mb-4"></v-divider>
       <v-card-title class="text-subtitle-1 pa-0 mb-3">
         Takeoff Control
       </v-card-title>
@@ -230,7 +230,7 @@ function toggle() {
 
     <!--offboard control-->
     <div v-if="getControlstreamByRole('offboard')">
-      <v-divider class="mb-4"></v-divider>
+      <v-divider class="mt-2 mb-4"></v-divider>
       <v-card-title class="text-subtitle-1 pa-0 mb-3">
         Offboard Control
       </v-card-title>
