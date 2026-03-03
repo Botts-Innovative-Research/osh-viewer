@@ -1,10 +1,19 @@
-import {OSHControlStream, OSHVisualization} from '@/lib/OSHConnectDataStructs';
-import {ISweApiDataSourceProperties, VisualizationComponents} from '@/lib/VisualizationHelpers';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import {
+    ISweApiControlStreamProperties,
+    ISweApiDataSourceProperties,
+    VisualizationComponents
+} from '@/lib/VisualizationHelpers';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { Mode } from 'osh-js/source/core/datasource/Mode';
-import {AggregateControlstreams, AggregateDatastreams, BuildRoleProperty} from '../../shared/helpers';
+import {
+    AggregateControlstreams,
+    AggregateDatastreams,
+    BuildRoleProperty,
+    getUsedControlstreams
+} from '../../shared/helpers';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import {useDataStreamStore} from "@/stores/datastreamstore";
 
@@ -34,9 +43,8 @@ export function build() {
         `visualization-${randomUUID()}`,
         `Mission Planner`,
         'mission',
-        null,
-        missionResult.vizDatasources,
-        missionResult.vizControlstreams
+        datastreams,
+        getUsedControlstreams()
     );
     newViz.setVisualizationComponents(visualizationComponents);
     visualizationStore.addVisualization(newViz);
@@ -47,13 +55,14 @@ export function CreateMissionViewProps(datastreams:  { [key: string]: any }, con
     const controlstreamStore = useControlStreamStore();
     const datastreamStore = useDataStreamStore();
 
-    const vizControlstreams: OSHControlStream[] = [];
+    const vizControlstreams: ISweApiControlStreamProperties[] = [];
     const vizDatastreams: ISweApiDataSourceProperties[] = [];
 
     for (const [dsId, entry] of Object.entries(datastreams)) {
         const properties = BuildRoleProperty(entry);
 
         const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
+
         const currentDatastream: ISweApiDataSourceProperties = {
             endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
             resource: `/datastreams/${dsId}/observations`,
@@ -74,7 +83,7 @@ export function CreateMissionViewProps(datastreams:  { [key: string]: any }, con
         const properties = BuildRoleProperty(entry);
 
         const currentOSHControlstream = controlstreamStore.getControlStreamsById([csId])[0];
-        const currentControlstream: any = {
+        const currentControlstream: ISweApiControlStreamProperties = {
             endpointUrl: currentOSHControlstream.controlstream.networkProperties.endpointUrl,
             tls: currentOSHControlstream.controlstream.networkProperties.tls,
             protocol: 'ws',
