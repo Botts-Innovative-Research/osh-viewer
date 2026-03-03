@@ -122,7 +122,29 @@ const addAllSamplingFeaturePMs = () => {
 };
 
 const deleteNode = (node: OSHNode) => {
+	// Delete node from store
 	nodeStore.removeNode(node);
+
+	// Delete visualizations associated with this node
+	visualizationStore.visualizations.forEach((viz) => {
+		// Check datastreams for this node
+		viz.datastream?.forEach((ds) => {
+			if (ds.getParentNode() === node) {
+				visualizationStore.removeVisualization(viz);
+				console.log("Removing viz:", viz, "because of datastream:", ds);
+				return;
+			}
+		});
+		// Check controlstreams for this node
+		viz.controlstream?.forEach((cs) => {
+			if (cs.getParentNode() === node) {
+				visualizationStore.removeVisualization(viz);
+				console.log("Removing viz:", viz, "because of controlstream:", cs);
+				return;
+			}
+		});
+	});
+
 	console.log('Deleted node:', node);
 }
 
