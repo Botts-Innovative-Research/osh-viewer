@@ -22,8 +22,7 @@ export const PANEL_VISUALIZATIONS = [
 ]
 
 export const MAP_VISUALIZATIONS = [
-    'pointmarker',  // TODO: Delete this type
-    'pmorientation',
+    'pointmarker',  // NEW value for old pmorientation
     'lob',
 ]
 
