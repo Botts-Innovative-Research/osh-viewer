@@ -14,169 +14,147 @@ import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import { RoleDatastream } from '@/types/types';
 import { createDatasource } from './menus/visualization-wizard/shared/helpers';
 import { ILineOfBearingLayerProperties, IPointMarkerLayerProperties, ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
+import * as Cesium from "cesium";
 
-// Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3ZWYzYjhiMy0wMzcwLTQxMTktOGY1OS0wYzM1NzNlOTI3NDMiLCJpZCI6Mzk4MzMsImlhdCI6MTc0ODIwNDA4OX0.HBox4N50pESMU1yJs33-0cNd22sTvIv0KetnMAJMdXU'
+// First token isn't working for some reason?
+//Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3ZWYzYjhiMy0wMzcwLTQxMTktOGY1OS0wYzM1NzNlOTI3NDMiLCJpZCI6Mzk4MzMsImlhdCI6MTc0ODIwNDA4OX0.HBox4N50pESMU1yJs33-0cNd22sTvIv0KetnMAJMdXU'
+
+// THIS token is working, taken from showcase examples :P
+Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0NTkzNS02NzI0LTQwNDktODk4Zi0zZDJjOWI2NTdmYTMiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI1ODJ9.IbAajOLYnsoyKy1BOd7fY1p6GH-wwNVMdMduA2IzGjA';
 
 const visualizationStore = useVisualizationStore();
-const mapLayerType = ref('leaflet');
 const mapView = ref<any>(null);
-const currentVisualizations = ref<OSHVisualization[]>([]);
 const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer>>(new Map())
 const listDatasourceInstances = ref<SweApi[]>([]);
 
 const uiStore = useUIStore();
-const geoPtzTargetPM = ref<any>(null);
 const flightPathTargetPM = ref<any[]>([]);
 const flightPathPolyline = ref<any>(null);
 
+const mapLayerType = computed(() => {
+  return uiStore.focusedMap
+})
 
 // TODO: Update feature visualization code
 const featureVisualizations = computed(() => {
   return visualizationStore.getVisualizationsByType('pointmarker-feature');
 });
-watch(featureVisualizations, (updated) => {
-  // Remove feature visualizations that are no longer present
-  const removed = currentVisualizations.value.filter(val => !updated.includes(val))
-  for (const viz of removed) {
-    const idx = currentVisualizations.value.indexOf(viz)
-    if (idx !== -1) {
-      currentVisualizations.value.splice(idx, 1)
-      // Optionally remove marker from mapView if needed
-    }
-  }
-
-  // Add new feature visualizations
-  const newFiltered = updated.filter((val) => !currentVisualizations.value.includes(val));
-
-  if (mapLayerType.value === 'cesium') {
-    for (const viz of newFiltered) {
-      addCesiumMarker(viz);
-    }
-  } else {
-    for (const viz of newFiltered) {
-      currentVisualizations.value.push(viz);
-      mapView.value.addMarker({
-        location: {
-          x: viz.geometry.coordinates[0],
-          y: viz.geometry.coordinates[1],
-          z: viz.geometry.coordinates[2] || 0,
-        },
-        label: viz.name,
-        labelOffset: [0, 0],
-        icon: '/icons/map/map-marker.svg',
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
-        id: viz.id,
-        markerId: viz.id + '-feature' + randomUUID(),
-      });
-    }
-  }
-},
-  { deep: true }
-);
 
 /**
- * Determine mapLayerType
- * Handle click listener - GeoPTZ, FlightPath
+ * Toggle map type
  */
-onMounted(() => {
+function toggleMapType() {
   if (mapLayerType.value === 'leaflet') {
     const leafletMapView = new LeafletView({
-      container: 'cesiumContainer',
+      container: 'mapContainer',
       layers: [],
       autoZoomOnFirstMarker: true,
     });
-
     mapView.value = leafletMapView;
-
-    // Add listener for point clicks
-    mapView.value.map.on('click', (event: any) => {
-      console.log('[MapView] Point clicked:', event);
-      const geoPtzIcon = L.icon({
-        iconUrl: '/icons/map/geoPtz-pin.svg',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16]
-      })
-
-      // GEO PTZ
-      const isGeoPTZSelected = uiStore.isGeoPTZSelected;
-      if (isGeoPTZSelected) {
-        var lat = event.latlng.lat;
-        var lon = event.latlng.lng;
-
-        // Send GeoPTZ command to selected GeoPTZ visualization
-        if (geoPtzTargetPM.value) {
-          mapView.value.map.removeLayer(geoPtzTargetPM.value);
-        }
-        geoPtzTargetPM.value = L.marker([lat, lon], { icon: geoPtzIcon, label: 'test' }).addTo(mapView.value.map)
-
-        const command = {
-          parameters: {
-            lat: lat,
-            lon: lon,
-            alt: 120.0,
-          },
-        };
-
-        uiStore.sendGeoPTZCommand(command);
-        uiStore.setCurrentLLA(lat, lon, 120.0);
-      }
-
-      // FLIGHT PATH
-      const selectedFlightPath = uiStore.selectedFlightPath;
-      if (selectedFlightPath) {
-        const lat = event.latlng.lat;
-        const lon = event.latlng.lng;
-        const alt = 100.0;
-
-        flightPathTargetPM.value.push(L.marker([lat, lon], { icon: geoPtzIcon, title: "GeoPTZ" }).addTo(mapView.value.map));
-
-        uiStore.setCurrentLLA(lat, lon, alt);
-      }
-    });
+    console.log("Now leaflet")
   } else {
-    /*const customViewer = new Cesium.Viewer('cesiumContainer', {
-      terrain: Cesium.Terrain.fromWorldTerrain(),
-      baseLayer: Cesium.ImageryLayer.fromProviderAsync(
-        Cesium.IonImageryProvider.fromAssetId(3), {}
-      ),
-      timeline: false,
-      homeButton: false,
-      navigationInstructionsInitiallyVisible: false,
-      navigationHelpButton: true,
-      geocoder: true,
-      animation: false,
-      fullscreenButton: false,
-      baseLayerPicker: true
-    })*/
-
-    Ion.defaultAccessToken =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzZDlhZDVkOC0yMWZmLTQyMzYtYTU5Zi0yNTQ3MjAxYzFiM2YiLCJpZCI6Mzk4MzMsImlhdCI6MTc1MTk1MTk0OH0.0eS77LohXhxKTRDy9yhLo-wmYGTn9mz31-f4xer7eT0';
-
     const cesiumView = new CesiumView({
-      container: 'cesiumContainer',
-      // viewer: customViewer,
+      container: 'mapContainer',
+      autoZoomOnFirstMarker: true,
+      layers: [],
     });
     mapView.value = cesiumView;
-
-    /*mapView.value.addMarker({
-      location: {
-        x: 0,
-        y: 0,
-        z: 0
-      },
-      label: 'TEST',
-      labelOffset: [0, 0],
-      icon: '/icons/map/map-marker.svg',
-      iconSize: [32, 32],
-      iconAnchor: [16, 32],
-      id: 'test-marker',
-      markerId: 'test-marker' + '-feature' + randomUUID()
-    })*/
-
-    // addCesiumMarker()
+    console.log("Now cesium")
   }
+}
+
+onMounted(() => {
+  toggleMapType()
 });
+
+watch(() => mapLayerType.value, (mapLayerType) => {
+  if (mapView.value) {
+    
+    // Temporarily disconnect datasources
+    listDatasourceInstances.value.forEach((ds: any) => ds.disconnect())
+
+    // Destroy map and layers
+    mapView.value.destroy();
+    mapView.value = null;
+
+    // Switch map type
+    toggleMapType();
+
+    // Hold new layers for mapItemLayers
+    const newLayers = new Map();
+
+    // Create new layers
+    mapItemLayers.value.forEach((layer) => {
+      // Add new PM Layers
+      if (layer instanceof PointMarkerLayer) {
+        console.log(layer)
+        const pmLayer = new PointMarkerLayer({
+          ...layer.properties,
+        })
+        mapView.value.addLayer(pmLayer)
+        newLayers.set(layer.properties.id, pmLayer)
+      }
+      // Add new LoB Layers
+      else if (layer instanceof LoBLayer) {
+        const lobLayer = new LoBLayer({
+          ...layer.properties,
+        })
+        mapView.value.addLayer(lobLayer)
+        newLayers.set(layer.properties.id, lobLayer)
+      }
+    })
+
+    // Reset mapItemLayers to new layers
+    mapItemLayers.value = newLayers;
+
+    // Reconnect datasources
+    listDatasourceInstances.value.forEach((ds: any) => ds.connect())
+  }  
+})
+
+/**
+ * Map click listener
+ */
+watch(
+  mapView,
+  (map) => {
+    if (!map) return;
+
+    // Handle leaflet map click
+    if (mapLayerType.value === 'leaflet') {
+      map.map.on('click', (event: any) => {
+        const lat = event.latlng.lat;
+        const lon = event.latlng.lng;
+        if (uiStore.isGeoPTZSelected) taskGeoPtz(lat, lon, 100);
+      })
+    }
+    // Handle cesium map click
+    else if (mapLayerType.value === 'cesium') {
+      const viewer = map.viewer;
+      // Description box styling
+      viewer.infoBox.frame.onload = function () {
+        const doc = viewer.infoBox.frame.contentDocument;
+        doc.body.style.backgroundColor = '#242424';
+        doc.body.style.color = '#ffffff';
+      };
+
+      const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+      handler.setInputAction((click: any) => {
+        const cartesian = viewer.camera.pickEllipsoid(
+          click.position,
+          viewer.scene.globe.ellipsoid
+        );
+        if (!cartesian) return;
+
+        const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+        const lat = Cesium.Math.toDegrees(cartographic.latitude);
+        const lon = Cesium.Math.toDegrees(cartographic.longitude);
+        if (uiStore.isGeoPTZSelected) taskGeoPtz(lat, lon, 100);
+      }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+    }
+
+  }
+)
 
 /**
  * Watch for changes to mapVisualizations to handle deletion/creation of new viz
@@ -210,7 +188,7 @@ function deleteVisualizations(removedVizIds: string[]) {
 
   for (const vizId of removedVizIds) {
     const layer = mapItemLayers.value.get(vizId);
-    if (!layer) continue;
+    if (!layer) {console.log("Didn't find layer"); continue};
 
     // Collect datasource IDs
     removedDsIds.push(...layer.dataSourceIds);
@@ -255,13 +233,10 @@ function createVisualizations(addedVizIds: string[]) {
   console.log(newOSHVisualizations);
 
   for (const viz of newOSHVisualizations) {
-    if (viz.type === 'pmorientation') {
-      // Array of datasources
-      const dsArray: ISweApiDataSourceProperties[] = viz.visualizationComponents.dataSource
+    const dsArray: ISweApiDataSourceProperties[] = viz.visualizationComponents.dataSource // Array of datasources
+    const dsInstances: SweApi[] = []; // Array of SweApi instances for datasources
 
-      // Array of SweApi instances for datasources
-      const dsInstances: SweApi[] = [];
-
+    if (viz.type === 'pointmarker') {
       // Undefined initially
       let getLocation: any;
       let getOrientation: any;
@@ -325,15 +300,6 @@ function createVisualizations(addedVizIds: string[]) {
       console.log('[MapView] Creating PointMarkerLayer:', pmLayer)
     }
     else if (viz.type === 'lob') {
-      console.log('[MapView] Adding new LoB visualization:', viz);
-      currentVisualizations.value.push(viz);
-
-      // Array of datasources
-      const dsArray: ISweApiDataSourceProperties[] = viz.visualizationComponents.dataSource
-
-      //  Array of SweApi instances for datasources
-      const dsInstances: SweApi[] = [];
-
       let getOrigin: RoleDatastream | null = null;
       let getBearing: RoleDatastream | null = null;
 
@@ -364,6 +330,7 @@ function createVisualizations(addedVizIds: string[]) {
 
       console.log('[MapView] Creating datasource for LoBLayer:', dsInstances)
       const layerOpts = viz.visualizationComponents.dataLayer as ILineOfBearingLayerProperties;
+
       let lobLayerOpts: LoBLayer = {
         ...layerOpts,
         name: viz.name,
@@ -400,31 +367,114 @@ function createVisualizations(addedVizIds: string[]) {
       mapView.value.addLayer(lobLayer);
       console.log('[MapView] Created LoBLayer:', lobLayer)
     }
+    else if (viz.type === 'geoPtz') {
+      for (const dsProps of dsArray) {
+        const dsInstance = createDatasource(dsProps);
+        dsInstance.connect();
+        dsInstances.push(dsInstance);
+        listDatasourceInstances.value.push(dsInstance); // Push to list of active datasources
+      }
+
+      console.log('[MapView] Creating datasource for GeoPTZ PointMarkerLayer:', dsInstances)
+      const pmLayer = new PointMarkerLayer({
+        name: 'GeoPTZ',
+        label: 'GeoPTZ',
+        id: viz.id,
+        icon: '/icons/map/geoPtz-pin.svg',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        labelOffset: [-16, -32],
+        dataSourceIds: dsInstances.map(ds => ds.id),
+        getLocation: {
+          dataSourceIds: [dsInstances.map(ds => ds.id)],
+          handler: (rec: any) => {
+            return {
+              x: uiStore.currentLLA?.longitude,
+              y: uiStore.currentLLA?.latitude,
+              z: uiStore.currentLLA?.altitude,
+            }
+          },
+        },
+        getDescription: {
+          dataSourceIds: [dsInstances.map(ds => ds.id)],
+          handler: (rec: any) => {
+            return (`
+              <div>${uiStore.selectedGeoPTZ?.map((viz: OSHVisualization) => {
+                return `${viz.name}`
+              }).join(', ')}</div>
+            `)
+          }
+        }
+      })
+      mapItemLayers.value.set(viz.id, pmLayer)
+      mapView.value.addLayer(pmLayer)
+      console.log('[MapView] Creating GeoPTZ PointMarkerLayer:', pmLayer)
+    }
   }
 }
+
+/**
+ * Based on given LLA, send GeoPTZ task
+ * 
+ * @param lat 
+ * @param lon 
+ * @param alt 
+ */
+function taskGeoPtz(lat: number, lon: number, alt: number) {
+  uiStore.setCurrentLLA(lat, lon, alt);
+  console.log('LLA:', uiStore.currentLLA)
+
+  if (!uiStore.isGeoPTZSelected || !uiStore.selectedGeoPTZ) return;
+
+  const command = {
+    parameters: {
+      lat: lat,
+      lon: lon,
+      alt: 120.0,
+    },
+  };
+  uiStore.sendGeoPTZCommand(command); // Send command
+}
+
+/**
+ * Create/delete GeoPTZ marker as selected GeoPTZ value changes
+ */
+watch(() => uiStore.selectedGeoPTZ, (geoPtz, oldGeoPtz) => {
+  // If had a value, delete
+  if (oldGeoPtz?.length) deleteVisualizations([oldGeoPtz[0].id]);
+  // If has a new value, create new
+  if (geoPtz?.length) createVisualizations([geoPtz[0].id]);
+}, { deep: true })
 
 /**
  * Fly to pointmarker when selected in visualizations panel
  */
 watch(() => uiStore.selectedMapItem,
-  (newVal) => {
+  (newVal) => {    
     if (!newVal) return; // Only fly when a map item is selected
-    const map = mapView.value.map;
 
     const layer = mapItemLayers.value.get(newVal.id);
     if (!layer) return;
-
     const location = layer.getCurrentProps().location;
+    if (!location) return;
 
-    console.log('Found marker for selected map item:', location);
-
-    // Fly to lat/lon
-    if (location) {
-      map.flyTo([
+    // Leaflet
+    if (mapLayerType.value === 'leaflet') {
+      mapView.value.map.flyTo([
         location.y,
         location.x,
       ]);
     }
+    // Cesium
+    else if (mapLayerType.value === 'cesium') {
+      mapView.value.viewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(location.x, location.y - 0.001, location.z + 100), // Offset to see the marker itself
+        orientation: {
+          pitch: Cesium.Math.toRadians(-35)
+        }
+      })
+    }
+    
 
   }
 );
@@ -449,40 +499,52 @@ watch(() => visualizationStore.layerVisibility.entries(),
 
     for (const id of ids) {
       const marker = mapView.value.layerIdToMarkers?.[id];
-      if (marker) {
-        // when adding layer back for marker it makes the icon styling different so just adjust the opacity
-        // if (isVisible) {
-        //   mapView.value.map.addLayer(marker);
-        // } else {
-        //   mapView.value.map.removeLayer(marker);
-        // }
-        marker.setOpacity(isVisible ? 1 : 0);
-      }
-      for (const type of layerTypes) {
-        const layerEl = mapView.value[type]?.[id];
-        if (layerEl) {
-          isVisible ? mapView.value.map.addLayer(layerEl) : mapView.value.map.removeLayer(layerEl);
+      const polyline = mapView.value.layerIdToPolylines?.[id];
+
+      if (mapLayerType.value === 'leaflet') {
+        // Handle PM and LoB
+        if (marker) {
+          marker.setOpacity(isVisible ? 1 : 0);
         }
+        // Handle polyline
+        if (polyline) {
+          polyline.setStyle({ opacity: isVisible ? 0.8 : 0 });
+        }
+        
+      }
+      else if (mapLayerType.value === 'cesium') {
+        // Handle LoB
+        if (marker && polyline) {
+          marker.show = isVisible;
+          polyline.show = isVisible;
+        }
+        // Handle PM
+        else if (marker) {
+          marker.show = isVisible;
+        }
+        // Handle polyline
+        else if (polyline) {
+          polyline.show = isVisible;
+        }
+        mapView.value.viewer.scene.requestRender();
       }
     }
     console.log('[MapView] Layer visibility changed:', layerId, isVisible);
   }
-}, { deep: true })
+}, { deep: true, immediate: true })
 
 
 /**
- * Handle change in GeoPTZ selection
+ * Handle cursor style for GeoPTZ selection
  */
 watch(() => uiStore.isGeoPTZSelected, (geoPtz) => {
-  const map = mapView.value.map;
-  const container = map.getContainer();
-  container.style.cursor = geoPtz ? 'crosshair' : ''
-
-  // If a geoPtz marker exists geoPTZ is not selected
-  if (geoPtzTargetPM.value && !geoPtz) {
-    console.log('Removing GeoPTZ marker');
-    mapView.value.map.removeLayer(geoPtzTargetPM.value);
-    geoPtzTargetPM.value = null;
+  // Leaflet
+  if (mapLayerType.value === 'leaflet') {
+    mapView.value.map.getContainer().style.cursor = geoPtz ? 'crosshair' : '';
+  }
+  // Cesium
+  else if (mapLayerType.value === 'cesium') {
+    mapView.value.viewer.canvas.style.cursor = geoPtz ? 'crosshair' : '';
   }
 })
 
@@ -829,13 +891,13 @@ watch(() => uiStore.flightPathWaypoints,
 
 <template>
   <div class="maphero">
-    <!--    <v-btn @click="addCesiumMarker" position="absolute">Add Cesium Marker</v-btn>-->
-    <div class="cesium-container maphero" id="cesiumContainer"></div>
+    <div class="cesium-container maphero" id="mapContainer"></div>
   </div>
 </template>
 
-<style scoped>
+<style>
 .maphero {
   height: 100%;
+  width: auto;
 }
 </style>

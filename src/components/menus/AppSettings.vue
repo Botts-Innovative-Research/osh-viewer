@@ -3,10 +3,14 @@ import { useUIStore } from '@/stores/uistore';
 import { storeToRefs } from 'pinia';
 
 const uiStore = useUIStore();
-const { theme } = storeToRefs(uiStore);
+const { theme, focusedMap } = storeToRefs(uiStore);
 
 function setTheme(newTheme: 'dark' | 'light') {
 	theme.value = newTheme;
+}
+
+function setFocusedMap(newMap: 'cesium' | 'leaflet') {
+	focusedMap.value = newMap;
 }
 </script>
 
@@ -22,6 +26,17 @@ function setTheme(newTheme: 'dark' | 'light') {
 				<v-btn value="dark" @click="setTheme('dark')">
 					<v-icon>mdi-weather-night</v-icon>
 					Dark
+				</v-btn>
+			</v-btn-toggle>
+		</v-list-item>
+		<v-list-item>
+			<v-list-item-title>Map Type</v-list-item-title>
+			<v-btn-toggle v-model="focusedMap" mandatory>
+				<v-btn value="leaflet" @click="setFocusedMap('leaflet')">
+					Leaflet
+				</v-btn>
+				<v-btn value="cesium" @click="setFocusedMap('cesium')">
+					Cesium
 				</v-btn>
 			</v-btn-toggle>
 		</v-list-item>

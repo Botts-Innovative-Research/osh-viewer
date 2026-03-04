@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { ref, computed, reactive, watch, ReactiveEffect, onMounted } from 'vue';
-import TimePickers from '../../viz-components/TimePickers.vue';
 import DataSourcePicker from '../../viz-components/DataSourcePicker.vue';
 
 
@@ -26,7 +25,7 @@ const checkedRoles = reactive({
 
 // Initialize dsConfig with location selected by default when mounted
 onMounted(() => {
-  console.log("Mounted PM Orientation Config")
+  console.log("Mounted Pointmarker Config")
   if (!vizwizStore.dsConfig.location) {
     vizwizStore.updateDsConfig("location", { selected: true })
   }
