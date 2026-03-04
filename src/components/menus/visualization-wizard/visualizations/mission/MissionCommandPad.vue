@@ -161,7 +161,7 @@ function toggle() {
           <v-btn
               block
               variant="tonal"
-              color="info"
+              color="primary"
               @click="returnToLaunch"
               class="command-btn"
           >
@@ -279,6 +279,7 @@ function toggle() {
                 @click="offboard"
                 class="command-btn"
             >
+              <v-icon start>mdi-controller</v-icon>
               Offboard
             </v-btn>
           </v-col>
