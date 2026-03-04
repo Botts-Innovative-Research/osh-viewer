@@ -16,9 +16,10 @@ const visualizationStore = useVisualizationStore();
 const listVizToDelete = computed(() => {
   if (!props.node) return [];
   
+  // Match endpoint URL to check if any datastreams or controlstreams belong to this node
   return visualizationStore.visualizations.filter(viz => 
-    viz.datastream?.some(ds => ds.getParentNode() === props.node) ||
-    viz.controlstream?.some(cs => cs.getParentNode() === props.node)
+    viz.datastream?.some(ds => ds.getParentNode().getEndpointUrl() === props.node?.getEndpointUrl()) ||
+    viz.controlstream?.some(cs => cs.getParentNode().getEndpointUrl() === props.node?.getEndpointUrl())
   );
 });
 
