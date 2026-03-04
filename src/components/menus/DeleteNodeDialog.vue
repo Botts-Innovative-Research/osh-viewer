@@ -60,7 +60,7 @@ const close = () => {
 </script>
 <template>
   <v-card class="pa-2 ma-2" width="100%" height="100%" elevation="2">
-    <v-card-title>Delete node?</v-card-title>
+    <v-card-title>Delete <b>{{ props.node?.name }}</b> node?</v-card-title>
     <v-card-text>
       <p>This will remove all associated visualizations and cannot be undone.</p>
       <v-divider class="my-2"></v-divider>
