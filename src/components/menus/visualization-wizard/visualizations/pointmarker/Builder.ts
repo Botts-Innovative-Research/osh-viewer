@@ -15,7 +15,7 @@ import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { AggregateDatastreams, BuildRoleProperty, getUsedDatastreams } from '../../shared/helpers';
 
 export function build() {
-	console.log('Building PM Orientation Visualization...');
+	console.log('Building Point Marker Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
 
@@ -32,12 +32,12 @@ export function build() {
 	const newViz: OSHVisualization = new OSHVisualization(
 		`visualization-${randomUUID()}`,
         vizwizStore.visualizationCustomizationOptions.name,
-		'pmorientation',
+		'pointmarker',
 		getUsedDatastreams(),
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
 	visualizationStore.addVisualization(newViz);
-	console.log('Created PM Orientation Visualization:', newViz);
+	console.log('Created Point Marker Visualization:', newViz);
 }
 
 /**

@@ -41,7 +41,7 @@ const isLastStep = computed(() => currentStep.value === steps.length)
 const visualizationTypes: VisualizationType[] = [
   { label: 'Chart', value: 'chart', icon: 'mdi-chart-line' },
   { label: 'Video', value: 'video', icon: 'mdi-video' },
-  { label: 'Point Marker', value: 'pmorientation', icon: 'mdi-map-marker' },
+  { label: 'Point Marker', value: 'pointmarker', icon: 'mdi-map-marker' },
   { label: 'Text', value: 'text', icon: 'mdi-format-text' },
   { label: 'GeoPTZ', value: 'geoPtz', icon: 'mdi-map' },
 	{ label: 'Line of Bearing', value: 'lob', icon: 'mdi-ray-start' },
@@ -49,21 +49,21 @@ const visualizationTypes: VisualizationType[] = [
 ]
 
 const vizComponents: any = {
-	pmorientation: {
+	pointmarker: {
 		Config: defineAsyncComponent(
 			() =>
 				import(
-					'@/components/menus/visualization-wizard/visualizations/pmorientation/Config.vue'
+					'@/components/menus/visualization-wizard/visualizations/pointmarker/Config.vue'
 				)
 		),
 		Customize: defineAsyncComponent(
 			() =>
 				import(
-					'@/components/menus/visualization-wizard/visualizations/pmorientation/Customize.vue'
+					'@/components/menus/visualization-wizard/visualizations/pointmarker/Customize.vue'
 				)
 		),
 		Builder: () =>
-			import('@/components/menus/visualization-wizard/visualizations/pmorientation/Builder'),
+			import('@/components/menus/visualization-wizard/visualizations/pointmarker/Builder'),
 	},
 	// add other types here
 	lob: {

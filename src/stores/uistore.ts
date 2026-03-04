@@ -14,8 +14,8 @@ export const useUIStore = defineStore('ui', () => {
 	const deleteNodeDialog = ref(false);
 	const vizWizOpen = ref(false); // VizWiz = new version
 
-	// Focused map (could be an ID or name)
-	const focusedMap = ref<string | null>(null);
+	// Focused map corresponds to map type
+	const focusedMap = ref<'cesium' | 'leaflet'>('cesium');
 
 	// Active window items (array of IDs or names)
 	const activeWindows = ref<string[]>([]);
@@ -61,8 +61,8 @@ export const useUIStore = defineStore('ui', () => {
 	function toggleRightSidebar() {
 		rightSidebarOpen.value = !rightSidebarOpen.value;
 	}
-	function setFocusedMap(mapId: string | null) {
-		focusedMap.value = mapId;
+	function setFocusedMap(value: ('cesium' | 'leaflet')) {
+		focusedMap.value = value;
 	}
 	function setActiveWindows(windows: string[]) {
 		activeWindows.value = windows;
