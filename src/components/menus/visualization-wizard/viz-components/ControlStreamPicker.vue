@@ -45,7 +45,9 @@ async function fetchProps() {
       : csSchema.value.parametersSchema.fields
         ? csSchema.value.parametersSchema.fields
         : csSchema.value.parametersSchema;
-    getCommandType(schemaItems, selectedControlstream.value);
+
+    // Use raw csSchema
+    getCommandType(csSchema.value, selectedControlstream.value);
 
     if (Array.isArray(schemaItems)) {
       const allPropNames = schemaItems.map((item: any) => item.name);

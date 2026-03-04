@@ -14,6 +14,8 @@ interface PTZControlProps {
 
 const props = defineProps<PTZControlProps>();
 
+const paramName = 'params' // TESTING: toggle with 'parameters'
+
 // Handle text input command sending
 function onSend() {
 	let command = null;
@@ -21,7 +23,7 @@ function onSend() {
 	// Handle DataRecord type command
 	if (isDataRecord.value) {
 		command = {
-			parameters: {
+			[paramName]: {
 				// Use selected command as key
 				// Use computed default values or fallback to 0.0
 				[selectedCommand.value]: {
@@ -39,7 +41,7 @@ function onSend() {
 				? String(singleValue.value)
 				: Number(singleValue.value);
 
-		command = { parameters: { [selectedCommand.value]: value } };
+		command = { [paramName]: { [selectedCommand.value]: value } };
 		console.log('COMMAND:', command);
 	}
 	// If successfully constructed command, send it
@@ -57,25 +59,25 @@ function handleMove(direction: Direction) {
 
 	switch (direction) {
 		case 'right':
-			command = { parameters: { rpan: increment.value } };
+			command = { [paramName]: { rpan: increment.value } };
 			break;
 		case 'left':
-			command = { parameters: { rpan: -increment.value } };
+			command = { [paramName]: { rpan: -increment.value } };
 			break;
 		case 'up':
-			command = { parameters: { rtilt: increment.value } };
+			command = { [paramName]: { rtilt: increment.value } };
 			break;
 		case 'down':
-			command = { parameters: { rtilt: -increment.value } };
+			command = { [paramName]: { rtilt: -increment.value } };
 			break;
 		case 'zoomIn':
-			command = { parameters: { rzoom: increment.value } };
+			command = { [paramName]: { rzoom: increment.value } };
 			break;
 		case 'zoomOut':
-			command = { parameters: { rzoom: -increment.value } };
+			command = { [paramName]: { rzoom: -increment.value } };
 			break;
 		case 'home':
-			if (presetOptions.value.includes('Home')) command = { parameters: { preset: 'Home' } };
+			if (presetOptions.value.includes('Home')) command = { [paramName]: { preset: 'Home' } };
 			else {
 				console.error('Home preset not available.');
 				showToast('Home preset is not available.', 'ERROR');
