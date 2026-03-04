@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useSystemStore } from '@/stores/systemstore'
 import { useNodeStore } from '@/stores/nodestore.js'
 import { useOSHConnectStore } from '@/stores/oshconnectstore.js'
@@ -7,19 +7,17 @@ import { useUIStore } from '@/stores/uistore'
 import { useVisualizationStore } from '@/stores/visualizationstore.js'
 import { OSHControlStream, OSHDatastream, OSHNode, OSHSystem, OSHVisualization } from '@/lib/OSHConnectDataStructs.js'
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js'
-import NodeConfigForm from './menus/NodeConfigForm.vue'
-import { storeToRefs } from 'pinia'
 import { Geometry } from '@/lib/OSHConnectDefinitions'
-import VisualizationWizard from './menus/visualization-wizard/VisualizationWizard.vue'
+import DeleteNodeDialog from './menus/DeleteNodeDialog.vue'
+import NodeConfigForm from './menus/NodeConfigForm.vue'
 
 const oshConnect = useOSHConnectStore().getInstance();
 const nodeStore = useNodeStore()
 const systems = useSystemStore().systems
 const visualizationStore = useVisualizationStore()
-const uiStore = storeToRefs(useUIStore())
-const nodeConfigFormOpen = uiStore.nodeConfigFormOpen
+const uiStore = useUIStore();
 const openNodeConfigForm = useUIStore().openNodeConfigForm
-const vizWizOpen = uiStore.vizWizOpen
+const nodeToDelete = ref<OSHNode | null>(null);
 
 const treeItems = computed(() => {
 	return nodeStore.nodes.map((node: OSHNode) => {
@@ -121,10 +119,10 @@ const addAllSamplingFeaturePMs = () => {
 	});
 };
 
-const deleteNode = (node: OSHNode) => {
-	nodeStore.removeNode(node);
-	console.log('Deleted node:', node);
-}
+const openDeleteNodeDialog = (node: OSHNode) => {
+	nodeToDelete.value = node;
+	uiStore.openDeleteNodeDialog();
+};
 
 </script>
 <template>
@@ -166,7 +164,7 @@ const deleteNode = (node: OSHNode) => {
 					<v-tooltip v-if="item.type === 'node'" text="Delete" location="bottom" open-delay="500">
 						<template #activator="{ props }">
 							<v-btn v-bind="props" icon="mdi-window-close" size="small" variant="plain" class="close-btn"
-								@click="deleteNode(item.raw)"></v-btn>
+								@click="openDeleteNodeDialog(item.raw)"></v-btn>
 						</template>
 					</v-tooltip>
 					<!-- DS/CS properties -->
@@ -180,14 +178,18 @@ const deleteNode = (node: OSHNode) => {
 				</template>
 			</v-treeview>
 		</v-sheet>
+
+		<!-- DIALOGS -->
+		<v-dialog v-model="uiStore.deleteNodeDialog" max-width="500">
+			<DeleteNodeDialog
+				:node="nodeToDelete"
+			 />
+		</v-dialog>
+		<v-dialog v-model="uiStore.nodeConfigFormOpen" max-width="540">
+			<NodeConfigForm />
+		</v-dialog>
 	</v-card>
 
-	<v-dialog v-model="nodeConfigFormOpen" max-width="540">
-		<NodeConfigForm />
-	</v-dialog>
-	<v-dialog v-model="vizWizOpen" max-width="540">
-		<VisualizationWizard />
-	</v-dialog>
 </template>
 
 <style scoped>

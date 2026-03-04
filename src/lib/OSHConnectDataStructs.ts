@@ -316,6 +316,11 @@ export class OSHDatastream {
 		const systemStore = getSharedStores().systemStore;
 		return systemStore.getSystemById(this.parentId);
 	}
+
+	getParentNode(): OSHNode {
+		const system = this.getParentSystem();
+		return system.parentNode;
+	}
 }
 
 export class OSHControlStream {
@@ -335,6 +340,11 @@ export class OSHControlStream {
 	getParentSystem(): OSHSystem {
 		const systemStore = getSharedStores().systemStore;
 		return systemStore.getSystemById(this.parentId);
+	}
+
+	getParentNode(): OSHNode {
+		const system = this.getParentSystem();
+		return system.parentNode;
 	}
 }
 

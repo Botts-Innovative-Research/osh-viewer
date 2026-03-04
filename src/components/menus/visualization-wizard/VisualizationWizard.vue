@@ -235,7 +235,7 @@ const changeStep = (direction: number) => {
 <style scoped>
 .vwizard-card {
 	width: 75vw;
-	max-width: 900px;
+	max-width: 100%;
 	min-width: 320px;
 	margin: 32px 0;
 	display: flex;

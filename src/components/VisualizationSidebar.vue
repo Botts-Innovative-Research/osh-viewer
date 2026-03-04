@@ -8,10 +8,12 @@ import { computed, onMounted, ref } from 'vue';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { ILineOfBearingLayerProperties, IPointMarkerLayerProperties, VisualizationLayerProperties } from '@/lib/VisualizationHelpers';
 import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
+import VisualizationWizard from './menus/visualization-wizard/VisualizationWizard.vue';
 
 // Each visualization can be represented by an object with a unique id
 const visualizationStore = useVisualizationStore();
 const { visualizations } = storeToRefs(visualizationStore);
+const uiStore = useUIStore();
 
 // Separate visualizations into panel and map types
 const panelVisualizations = computed<OSHVisualization[]>(() => visualizations.value.filter(viz =>
@@ -151,10 +153,12 @@ const toggleMapLayerVisibility = (item: any) => {
 						</VisualizationWrapper>
 					</v-expansion-panel-text>
 				</v-expansion-panel>
-
 			</v-expansion-panels>
 		</v-sheet>
 	</v-card>
+	<v-dialog v-model="uiStore.vizWizOpen" max-width="900">
+		<VisualizationWizard />
+	</v-dialog>
 </template>
 
 <style scoped>
