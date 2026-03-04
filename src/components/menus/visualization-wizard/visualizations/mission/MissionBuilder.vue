@@ -471,7 +471,7 @@ onBeforeUnmount(() => {
       </v-tabs>
 
       <v-window v-model="missionSource">
-        <v-window-item value="waypoints">
+        <v-window-item value="waypoints" class="mt-2">
           <v-row dense align="center">
             <v-col cols="12" sm="auto">
               <v-btn
