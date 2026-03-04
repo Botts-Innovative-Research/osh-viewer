@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {OSHVisualization} from '@/lib/OSHConnectDataStructs';
-import {SweApiDataSourceProperties} from '@/lib/VisualizationHelpers';
+import {ISweApiDataSourceProperties} from '@/lib/VisualizationHelpers';
 import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue';
 // @ts-ignore
 import {randomUUID} from 'osh-js/source/core/utils/Utils.js';
@@ -39,7 +39,7 @@ const props = defineProps({
     default: null,
   },
   datasource: {
-    type:  Array as () => SweApiDataSourceProperties[],
+    type:  Array as () => ISweApiDataSourceProperties[],
     required: true,
     default: () => [],
   },
@@ -75,14 +75,12 @@ interface LLAData {
 const missionSource = ref<'waypoints' | 'file'>('waypoints')
 
 const receivedLLA = ref<LLAData>({lat: 0, lon: 0, alt: 0});
-
-// const hasReceivedFirstLLA = ref(false)
-
 const waypoints = ref<Waypoint[]>([]);
 
 const latInput = ref<number>(0.0);
 const lonInput = ref<number>(0.0);
 const altInput = ref<number>(0.0);
+const waypointForm = ref<any>(null);
 
 const uiStore = useUIStore();
 const isSelected = ref<boolean>(false);
@@ -118,7 +116,7 @@ const csAuth = computed(() => {
   return {username: cs.connectorOpts.username, password: cs.connectorOpts.password};
 });
 
-watch(() => uiStore.selectedFlightPath, (newVal) => {
+watch(() => uiStore.selectedWaypoints, (newVal) => {
   const cs = missionControlStream.value;
   if (cs && newVal?.controlStreamId === cs.id) {
     isSelected.value = true;
@@ -131,7 +129,7 @@ watch(() => uiStore.currentLLA, (newVal) => {
   if (isSelected.value && newVal) {
     latInput.value = newVal.latitude;
     lonInput.value = newVal.longitude;
-    altInput.value = newVal.altitude;
+    altInput.value = newVal.altitude > 0 ? newVal.altitude : waypointAltitude.value;
     addWaypoint();
   }
 });
@@ -140,13 +138,16 @@ watch(() => uiStore.currentLLA, (newVal) => {
 function toggle() {
   const cs = missionControlStream.value;
   if (isSelected.value) {
-    uiStore.clearSelectedFlightPath();
+    uiStore.disableWaypointSelection();
   } else if (cs) {
-    uiStore.setSelectedFlightPath(cs.id, commandBaseUrl.value, `${csAuth.value.username}:${csAuth.value.password}`);
+    uiStore.setSelectedWaypoints(cs.id, commandBaseUrl.value, `${csAuth.value.username}:${csAuth.value.password}`);
   }
 }
 
-function addWaypoint() {
+async function addWaypoint() {
+  const { valid } = await waypointForm.value.validate();
+  if (!valid) return;
+
   missionSource.value = 'waypoints'
   const newWaypoint: Waypoint = {
     id: randomUUID(),
@@ -165,8 +166,8 @@ function removeWaypoint(id: string) {
 
 function clearWaypoints() {
   waypoints.value = [];
-  uiStore.clearFlightPathWaypoints();
-  uiStore.triggerClearFlightPathMarkers();
+  uiStore.clearMissionWaypoints();
+  uiStore.triggerClearWaypointMarkers();
   console.log('[MissionBuilder.vue] Cleared all waypoints');
 }
 
@@ -174,7 +175,7 @@ watch(waypoints, (newWaypoints) => {
   uiStore.setFlightPathWaypoints(newWaypoints.map(wp => ({
     lat: wp.lat,
     lon: wp.lon,
-    alt: wp.alt,
+    alt: wp.alt
   })));
 }, {deep: true});
 
@@ -426,8 +427,8 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  if (isSelected)
-    uiStore.clearSelectedFlightPath();
+  if (isSelected.value)
+    uiStore.disableWaypointSelection();
   useDisconnectDatasources(droneDatasourceLLA);
   useDisconnectDatasources(droneHomeDatasource);
 })
@@ -436,35 +437,36 @@ onBeforeUnmount(() => {
 
 <template>
   <v-card :id="missionPlannerId">
-    <v-card-title class="d-flex align-center pa-4">
-      {{ visualization.name }}
-    </v-card-title>
+    <v-container>
+      <v-card class="telemetry-card">
+        <v-card-text>Live Telemetry</v-card-text>
+        <v-row dense class="">
+          <v-col cols="12" md="4">
+            <v-card-subtitle>Latitude</v-card-subtitle>
+            <v-card-title>{{ receivedLLA.lat.toFixed(6) }}</v-card-title>
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-card-subtitle>Longitude</v-card-subtitle>
+            <v-card-title>{{ receivedLLA.lon.toFixed(6) }}</v-card-title>
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-card-subtitle>Altitude</v-card-subtitle>
+            <v-card-title>{{ receivedLLA.alt.toFixed(2) }}</v-card-title>
+          </v-col>
+        </v-row>
+      </v-card>
+    </v-container>
 
-    <v-card class="ma-2 telemetry-card">
-      <v-card-text>Live Telemetry</v-card-text>
-      <v-row dense class="">
-        <v-col cols="4">
-          <v-card-subtitle>Latitude</v-card-subtitle>
-          <v-card-title>{{ receivedLLA.lat.toFixed(6) }}</v-card-title>
-        </v-col>
-        <v-col cols="4">
-          <v-card-subtitle>Longitude</v-card-subtitle>
-          <v-card-title>{{ receivedLLA.lon.toFixed(6) }}</v-card-title>
-        </v-col>
-        <v-col cols="4">
-          <v-card-subtitle>Altitude</v-card-subtitle>
-          <v-card-title>{{ receivedLLA.alt.toFixed(2) }}</v-card-title>
-        </v-col>
-      </v-row>
-    </v-card>
 
-    <v-container class="pa-4">
+    <v-container class="pa-2">
       <v-tabs v-model="missionSource" grow color="primary" class="mb-2">
         <v-tab value="waypoints" prepend-icon="mdi-map-marker-path">
-          Manual Waypoints
+          <span class="d-none d-sm-inline">Build Mission</span>
+          <span class="d-sm-none">Waypoints</span>
         </v-tab>
         <v-tab value="file" prepend-icon="mdi-file-upload">
-          Upload Plan
+          <span class="d-none d-sm-inline">Upload Plan</span>
+          <span class="d-sm-none">Upload</span>
         </v-tab>
       </v-tabs>
 
@@ -484,137 +486,60 @@ onBeforeUnmount(() => {
               </v-btn>
             </v-col>
             <v-col cols="12" sm="">
-              <v-row dense>
-                <v-col cols="12" md="3">
-                  <v-text-field
-                      v-model.number="latInput"
-                      type="number"
-                      label="Latitude"
-                      density="compact"
-                      hide-details
-                  />
-                </v-col>
-                <v-col cols="12" md="3">
-                  <v-text-field
-                      v-model.number="lonInput"
-                      type="number"
-                      label="Longitude"
-                      density="compact"
-                      hide-details
-                  />
-                </v-col>
-                <v-col cols="12" md="3">
-                  <v-text-field
-                      v-model.number="altInput"
-                      type="number"
-                      label="Altitude"
-                      density="compact"
-                      hide-details
-                  />
-                </v-col>
-                <v-col cols="12" md="3">
-                  <v-btn
-                      block
-                      color="primary"
-                      @click="addWaypoint"
-                      prepend-icon="mdi-plus"
-                      variant="flat"
-                  >
-                    Add
-                  </v-btn>
-                </v-col>
-              </v-row>
+              <v-form ref="waypointForm">
+                <v-row dense>
+                  <v-col cols="12" md="3">
+                    <v-text-field
+                          v-model.number="latInput"
+                          type="number"
+                          label="Latitude"
+                          placeholder="0.0"
+                          density="compact"
+                          hint="-90 to 90"
+                          :rules="[v => (v >= -90 && v <= 90) || 'Must be -90 to 90']"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="3">
+                    <v-text-field
+                        v-model.number="lonInput"
+                        type="number"
+                        label="Longitude"
+                        placeholder="0.0"
+                        density="compact"
+                        hint="-180 to 180"
+                        :rules="[v => (v >= -180 && v <= 180) || 'Must be -180 to 180']"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="3">
+                    <v-text-field
+                        v-model.number="altInput"
+                        type="number"
+                        label="Altitude"
+                        placeholder="0.0"
+                        density="compact"
+                        hide-details
+                    />
+                  </v-col>
+                  <v-col cols="12" md="3">
+                    <v-btn
+                        block
+                        color="primary"
+                        @click="addWaypoint"
+                        prepend-icon="mdi-plus"
+                        variant="flat"
+                    >
+                      Add
+                    </v-btn>
+                  </v-col>
+                </v-row>
+              </v-form>
             </v-col>
           </v-row>
 
+
           <v-expansion-panels class="mt-3">
-            <v-expansion-panel title="Planned Home Position">
-              <v-expansion-panel-text>
-                <v-row dense>
-                  <v-col cols="4">
-                    <v-card-subtitle>Latitude</v-card-subtitle>
-                    <v-card-title>{{ homeLocation.lat.toFixed(6) }}</v-card-title>
-                  </v-col>
-                  <v-col cols="4">
-                    <v-card-subtitle>Longitude</v-card-subtitle>
-                    <v-card-title>{{ homeLocation.lon.toFixed(6) }}</v-card-title>
-                  </v-col>
-                  <v-col cols="4">
-                    <v-card-subtitle>Altitude</v-card-subtitle>
-                    <v-card-title>{{ homeLocation.alt.toFixed(2) }}</v-card-title>
-                  </v-col>
-                </v-row>
-              </v-expansion-panel-text>
-            </v-expansion-panel>
-            <v-expansion-panel title="Mission Settings">
-              <v-expansion-panel-text>
-                <v-row dense>
-                  <v-col cols="6" md="3">
-                    <v-text-field
-                        v-model.number="cruiseSpeed"
-                        type="number"
-                        label="Cruise Speed"
-                        density="compact"
-                        hide-details
-                    />
-                  </v-col>
-                  <v-col cols="6" md="3">
-                    <v-text-field
-                        v-model.number="hoverSpeed"
-                        type="number"
-                        label="Hover Speed"
-                        density="compact"
-                        hide-details
-                        clearable
-                    />
-                  </v-col>
-                </v-row>
-              </v-expansion-panel-text>
-            </v-expansion-panel>
             <v-expansion-panel title="Waypoint Settings">
               <v-expansion-panel-text>
-                <v-row dense>
-                  <v-col cols="6" md="3">
-                    <v-text-field
-                        v-model.number="waypointAltitude"
-                        type="number"
-                        label="Altitude (m)"
-                        density="compact"
-                        hide-details
-                    />
-                  </v-col>
-                  <v-col cols="6" md="3">
-                    <v-text-field
-                        v-model.number="amslAltAboveTerrain"
-                        type="number"
-                        label="AMSL Alt Above Terrain"
-                        density="compact"
-                        hide-details
-                        clearable
-                    />
-                  </v-col>
-                  <v-col cols="6" md="3">
-                    <v-select
-                        v-model="altitudeMode"
-                        :items="altitudeModeOptions"
-                        label="Altitude Mode"
-                        density="compact"
-                        hide-details
-                    />
-                  </v-col>
-                  <v-col cols="6" md="3">
-                    <v-checkbox
-                        v-model="autoContinue"
-                        label="Auto Continue"
-                        density="compact"
-                        hide-details
-                    />
-                  </v-col>
-                </v-row>
-              </v-expansion-panel-text>
-              <v-expansion-panel-text>
-                <v-divider class="my-3"></v-divider>
-
                 <div  class="d-flex justify-space-between align-center mb-2">
                   <span class="text-subtitle-2">Waypoints ({{ waypoints.length }})</span>
                   <v-btn
@@ -646,6 +571,90 @@ onBeforeUnmount(() => {
                 <div v-else class="text-caption text-grey text-center pa-4">
                   No waypoints added. Click on the map or use the form above.
                 </div>
+              </v-expansion-panel-text>
+              <v-expansion-panel-text>
+                <v-divider class="my-3"></v-divider>
+                <v-row dense>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                        v-model.number="waypointAltitude"
+                        type="number"
+                        label="Altitude (m)"
+                        density="compact"
+                        hide-details
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                        v-model.number="amslAltAboveTerrain"
+                        type="number"
+                        label="AMSL Alt Above Terrain"
+                        density="compact"
+                        hide-details
+                        clearable
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-select
+                        v-model="altitudeMode"
+                        :items="altitudeModeOptions"
+                        label="Altitude Mode"
+                        density="compact"
+                        hide-details
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-checkbox
+                        v-model="autoContinue"
+                        label="Auto Continue"
+                        density="compact"
+                        color="primary"
+                    />
+                  </v-col>
+                </v-row>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+            <v-expansion-panel title="Planned Home Position">
+              <v-expansion-panel-text>
+                <v-row dense>
+                  <v-col cols="12" md="4">
+                    <v-card-subtitle>Latitude</v-card-subtitle>
+                    <v-card-text>{{ homeLocation.lat.toFixed(6) }}</v-card-text>
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <v-card-subtitle>Longitude</v-card-subtitle>
+                    <v-card-text>{{ homeLocation.lon.toFixed(6) }}</v-card-text>
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <v-card-subtitle>Altitude</v-card-subtitle>
+                    <v-card-text>{{ homeLocation.alt.toFixed(2) }}</v-card-text>
+                  </v-col>
+                </v-row>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+            <v-expansion-panel title="Mission Settings">
+              <v-expansion-panel-text>
+                <v-row dense>
+                  <v-col cols="6" md="3">
+                    <v-text-field
+                        v-model.number="cruiseSpeed"
+                        type="number"
+                        label="Cruise Speed"
+                        density="compact"
+                        hide-details
+                    />
+                  </v-col>
+                  <v-col cols="6" md="3">
+                    <v-text-field
+                        v-model.number="hoverSpeed"
+                        type="number"
+                        label="Hover Speed"
+                        density="compact"
+                        hide-details
+                        clearable
+                    />
+                  </v-col>
+                </v-row>
               </v-expansion-panel-text>
             </v-expansion-panel>
           </v-expansion-panels>
@@ -729,5 +738,14 @@ onBeforeUnmount(() => {
 .waypoints-list {
   max-height: 125px;
   overflow-y: auto;
+}
+
+:deep(.v-btn) {
+  transition: all 0.2s ease;
+}
+
+:deep(.v-btn:hover) {
+  filter: brightness(1.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 </style>

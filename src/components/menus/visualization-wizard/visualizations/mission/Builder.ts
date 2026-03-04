@@ -12,7 +12,8 @@ import {
     AggregateControlstreams,
     AggregateDatastreams,
     BuildRoleProperty,
-    getUsedControlstreams
+    getUsedControlstreams,
+    getUsedDatastreams
 } from '../../shared/helpers';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import {useDataStreamStore} from "@/stores/datastreamstore";
@@ -43,7 +44,7 @@ export function build() {
         `visualization-${randomUUID()}`,
         `Mission Planner`,
         'mission',
-        datastreams,
+        getUsedDatastreams(),
         getUsedControlstreams()
     );
     newViz.setVisualizationComponents(visualizationComponents);

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { computed, ref, Ref } from 'vue';
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import {OSHControlStream, OSHDatastream, OSHVisualization} from '@/lib/OSHConnectDataStructs';
 import {useDataStreamStore} from "@/stores/datastreamstore";
 import {useControlStreamStore} from "@/stores/controlstreamstore";
 
@@ -147,7 +147,6 @@ export const useVisualizationStore = defineStore('visualizations',
                 serialized.id,
                 serialized.name,
                 serialized.type,
-                serialized.parentId,
                 datastreams,
                 controlstreams,
                 serialized.parentId,

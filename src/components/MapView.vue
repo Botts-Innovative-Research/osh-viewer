@@ -9,15 +9,11 @@ import { useVisualizationStore } from '../stores/visualizationstore';
 import { useUIStore } from '@/stores/uistore';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import { RoleDatastream } from '@/types/types';
 import { createDatasource } from './menus/visualization-wizard/shared/helpers';
 import { ILineOfBearingLayerProperties, IPointMarkerLayerProperties, ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
 import * as Cesium from "cesium";
-
-// First token isn't working for some reason?
-//Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3ZWYzYjhiMy0wMzcwLTQxMTktOGY1OS0wYzM1NzNlOTI3NDMiLCJpZCI6Mzk4MzMsImlhdCI6MTc0ODIwNDA4OX0.HBox4N50pESMU1yJs33-0cNd22sTvIv0KetnMAJMdXU'
 
 // THIS token is working, taken from showcase examples :P
 Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0NTkzNS02NzI0LTQwNDktODk4Zi0zZDJjOWI2NTdmYTMiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI1ODJ9.IbAajOLYnsoyKy1BOd7fY1p6GH-wwNVMdMduA2IzGjA';
@@ -28,7 +24,7 @@ const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer>>(new Map())
 const listDatasourceInstances = ref<SweApi[]>([]);
 
 const uiStore = useUIStore();
-const flightPathTargetPM = ref<any[]>([]);
+const waypointLayers = ref<PointMarkerLayer[]>([]);
 const flightPathPolyline = ref<any>(null);
 
 const mapLayerType = computed(() => {
@@ -126,6 +122,7 @@ watch(
         const lat = event.latlng.lat;
         const lon = event.latlng.lng;
         if (uiStore.isGeoPTZSelected) taskGeoPtz(lat, lon, 100);
+        if (uiStore.selectedWaypoints) uiStore.setCurrentLLA(lat, lon, 0);
       })
     }
     // Handle cesium map click
@@ -150,6 +147,7 @@ watch(
         const lat = Cesium.Math.toDegrees(cartographic.latitude);
         const lon = Cesium.Math.toDegrees(cartographic.longitude);
         if (uiStore.isGeoPTZSelected) taskGeoPtz(lat, lon, 100);
+        if (uiStore.selectedWaypoints) uiStore.setCurrentLLA(lat, lon, 0);
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
     }
 
@@ -549,343 +547,118 @@ watch(() => uiStore.isGeoPTZSelected, (geoPtz) => {
 })
 
 /**
- * Handle FlightPath cursor style
+ * Handle cursor style for Mission Planner selection
  */
-watch(() => uiStore.selectedFlightPath, (flight) => {
-  const map = mapView.value.map;
-  const container = map.getContainer();
-  container.style.cursor = flight ? 'crosshair' : ''
+watch(() => uiStore.selectedWaypoints, (waypoint) => {
+  // Leaflet
+  if (mapLayerType.value === 'leaflet') {
+    mapView.value.map.getContainer().style.cursor = waypoint ? 'crosshair' : '';
+  }
+  // Cesium
+  else if (mapLayerType.value === 'cesium') {
+    mapView.value.viewer.canvas.style.cursor = waypoint ? 'crosshair' : '';
+  }
 })
+
 
 /**
  * FlightPath watchers
  */
-watch(() => uiStore.clearFlightPathMarkersSignal, (newVal) => {
-  if (newVal && mapView.value?.map) {
-    for (const marker of flightPathTargetPM.value) {
-      mapView.value.map.removeLayer(marker);
-    }
-    flightPathTargetPM.value = [];
-    if (flightPathPolyline.value) {
-      mapView.value.map.removeLayer(flightPathPolyline.value);
-      flightPathPolyline.value = null;
-    }
-    uiStore.resetClearFlightPathMarkersSignal();
-  }
-}
-);
-watch(() => uiStore.flightPathWaypoints,
-  (waypoints) => {
-    if (!mapView.value?.map || mapLayerType.value !== 'leaflet') return;
+watch(() => uiStore.clearMissionWaypointsMarkers, (newVal) => {
+  if (!newVal) return;
 
-    if (flightPathPolyline.value) {
+  for (const layer of waypointLayers.value) {
+    mapView.value?.removeAllFromLayer(layer);
+  }
+  waypointLayers.value = [];
+
+  if (mapLayerType.value === 'leaflet' && mapView.value?.map && flightPathPolyline.value) {
+    mapView.value.map.removeLayer(flightPathPolyline.value);
+    flightPathPolyline.value = null;
+  } else if (mapLayerType.value === 'cesium' && mapView.value?.viewer && flightPathPolyline.value) {
+    mapView.value.viewer.entities.remove(flightPathPolyline.value);
+    flightPathPolyline.value = null;
+  }
+
+  uiStore.resetClearWaypointMarkersSignal();
+});
+
+
+watch(() => uiStore.missionWaypoints, (waypoints) => {
+    if (!mapView.value) return;
+
+    for (const layer of waypointLayers.value) {
+      mapView.value.removeAllFromLayer(layer);
+    }
+    waypointLayers.value = [];
+
+    if (mapLayerType.value === 'leaflet' && mapView.value?.map && flightPathPolyline.value) {
       mapView.value.map.removeLayer(flightPathPolyline.value);
       flightPathPolyline.value = null;
+    } else if (mapLayerType.value === 'cesium' && mapView.value?.viewer && flightPathPolyline.value) {
+      mapView.value.viewer.entities.remove(flightPathPolyline.value);
+      flightPathPolyline.value = null;
     }
+    waypoints.forEach(async (wp, index) => {
+      const waypointLayer = new PointMarkerLayer({
+        id: `waypoint-${index}`,
+        name: `Waypoint ${index + 1}`,
+        location: {
+          x: wp.lon,
+          y: wp.lat,
+          z: wp.alt || 0
+        },
+        icon: '/icons/map/geoPtz-pin.svg',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        label: `WP ${index + 1}`,
+        labelColor: '#FFFFFF',
+        labelOutlineColor: '#000000',
+        labelSize: 14,
+        labelOffset: [0, -36],
+        defaultToTerrainElevation: true,
+      });
+
+      mapView.value.addLayer(waypointLayer);
+      waypointLayers.value.push(waypointLayer);
+
+      await waypointLayer.setData('waypoint', [{ data: { timestamp: Date.now() } }]);
+      const props = waypointLayer.getProps();
+      if (props.values.length > 0) {
+        mapView.value.updateMarker(props.values[0]);
+      }
+    });
 
     if (waypoints.length >= 2) {
-      const latLngs = waypoints.map(wp => [wp.lat, wp.lon]);
-      flightPathPolyline.value = L.polyline(latLngs, {
-        color: 'red',
-        weight: 3,
-        opacity: 0.8,
-      }).addTo(mapView.value.map);
+      if (mapLayerType.value === 'leaflet' && mapView.value?.map) {
+        const latLngs = waypoints.map(wp => [wp.lat, wp.lon]);
+        flightPathPolyline.value = L.polyline(latLngs, {
+          color: 'red',
+          weight: 5,
+        }).addTo(mapView.value.map);
+      } else if (mapLayerType.value === 'cesium' && mapView.value?.viewer) {
+
+        const positions = waypoints.map(wp =>
+          Cesium.Cartesian3.fromDegrees(wp.lon, wp.lat, wp.alt || 0)
+        );
+        //https://sandcastle.cesium.com/index.html?id=polyline
+        flightPathPolyline.value = mapView.value.viewer.entities.add({
+          polyline: {
+            positions: positions,
+            width: 5,
+            material: new Cesium.PolylineOutlineMaterialProperty({
+              color: Cesium.Color.RED,
+              outlineWidth: 2,
+              outlineColor: Cesium.Color.BLACK,
+            }),
+            clampToGround: true,
+          }
+        });
+      }
     }
   },
   { deep: true }
 );
-
-// TODO: Remove deprecated "new viz" code
-// watch(mapVisualizations, (updated) => {
-
-//   // Add new visualizations
-//   const newFiltered = updated.filter(val => !currentVisualizations.value.includes(val))
-//   console.log('New visualizations:', newFiltered)
-//   for (const viz of newFiltered) {
-//     currentVisualizations.value.push(viz)
-
-//     // Handle PM only
-//     if (viz.type === 'pointmarker') {
-//       let datasource = null;
-//       if (Array.isArray(viz.visualizationComponents.dataSource)) {
-//         datasource = viz.visualizationComponents.dataSource[0];
-//       } else {
-//         datasource = viz.visualizationComponents.dataSource;
-//       }
-
-//       let dsInstance = new SweApi('pm-datasource-' + randomUUID(), {
-//         endpointUrl: datasource.endpointUrl,
-//         resource: datasource.resource,
-//         tls: datasource.tls,
-//         protocol: datasource.protocol,
-//         startTime: datasource.startTime,
-//         endTime: datasource.endTime,
-//         mode: datasource.mode,
-//         connectorOpts: {
-//           username: datasource?.connectorOpts.username,
-//           password: datasource?.connectorOpts.password
-//         }
-//       });
-//       console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstance);
-//       const layerOpts = viz.visualizationComponents.dataLayer;
-//       const pmLayer = new PointMarkerLayer({
-//         name: viz.name,
-//         dataSourceIds: [dsInstance.id],
-//         getLocation: layerOpts.getLocation,
-//         label: viz.visualizationComponents.dataLayer.name,
-//         icon: '/icons/map/map-marker.svg',
-//         iconSize: [32, 32],
-//         labelOffset: [-16, -32],
-//       });
-//       mapItemLayers.value.push(pmLayer);
-//       mapView.value.addLayer(pmLayer);
-//       console.log('[MapView] Creating PointMarkerLayer:', pmLayer);
-//       dsInstance.connect();
-//     } else if (viz.type === 'pmorientation') {
-//       // Array of datasources
-//       const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
-//         ? viz.visualizationComponents.dataSource
-//         : [viz.visualizationComponents.dataSource];
-
-//       // Array of SweApi instances for datasources
-//       const dsInstances: SweApi[] = [];
-
-//       // Undefined initially
-//       let getLocation: any;
-//       let getOrientation: any;
-//       let getMarkerId: any;
-
-//       for (const dsProps of dsArray) {
-//         const dsInstance = new SweApi(dsProps.id, {
-//           endpointUrl: dsProps.endpointUrl,
-//           resource: dsProps.resource,
-//           tls: dsProps.tls,
-//           protocol: dsProps.protocol,
-//           startTime: dsProps.startTime,
-//           endTime: dsProps.endTime,
-//           mode: dsProps.mode,
-//           responseFormat: dsProps.responseFormat,
-//           connectorOpts: {
-//             username: dsProps?.connectorOpts.username,
-//             password: dsProps?.connectorOpts.password
-//           }
-//         });
-//         //const dsInstance = createDatasource(dsProps);
-
-//         // Check for location property
-//         if (dsProps.properties.location) {
-//           getLocation = {
-//             dataSourceIds: [dsInstance.id],
-//             handler: (rec: any) => {
-//               return {
-//                 x: rec[dsProps.properties.location.property].lon,
-//                 y: rec[dsProps.properties.location.property].lat,
-//                 z: rec[dsProps.properties.location.property].alt || 0, // Default to 0 if altitude is not provided
-//               }
-//             },
-//           }
-//         }
-//         // Check for orientation property
-//         if (dsProps.properties.orientation) {
-//           getOrientation = {
-//             dataSourceIds: [dsInstance.id],
-//             handler: (rec: any) => {
-//               return {
-//                 heading: rec[dsProps.properties.orientation.property].heading,
-//               }
-//             },
-//           }
-//         }
-//         // Check for markerId property
-//         if (dsProps.properties.markerId) {
-//           getMarkerId = {
-//             dataSourceIds: [dsInstance.id],
-//             handler: (rec: any) => {
-//               return rec[dsProps.properties.markerId.property];
-//             },
-//           }
-//         }
-
-//         dsInstance.connect();
-//         dsInstances.push(dsInstance);
-//         listDatasourceInstances.value.push(dsInstance); // Push to list of active datasources
-//       }
-
-//       console.log('[MapView] Creating datasource for PointMarkerLayer:', dsInstances)
-//       const layerOpts = viz.visualizationComponents.dataLayer
-//       const pmLayer = new PointMarkerLayer({
-//         ...layerOpts,
-//         name: viz.name,
-//         id: viz.id,
-//         dataSourceIds: dsInstances.map(ds => ds.id),
-//         ...(getLocation ? { getLocation } : {}),
-//         ...(getOrientation ? { getOrientation } : {}),
-//         ...(getMarkerId ? { getMarkerId } : {}),
-//       })
-//       mapItemLayers.value.push(pmLayer)
-//       mapView.value.addLayer(pmLayer)
-//       console.log('[MapView] Creating PointMarkerLayer:', pmLayer)
-//     }
-//   }
-// }, { deep: true })
-// watch(lobVisualizations, (updated) => {
-//   checkAndRemove(updated);
-
-//   const newFiltered = updated.filter((val) => !currentVisualizations.value.includes(val));
-//   for (const viz of newFiltered) {
-//     console.log('[MapView] Adding new LoB visualization:', viz);
-//     currentVisualizations.value.push(viz);
-
-//     // Array of datasources
-//     const dsArray = Array.isArray(viz.visualizationComponents.dataSource)
-//       ? viz.visualizationComponents.dataSource
-//       : [viz.visualizationComponents.dataSource];
-
-//     //  Array of SweApi instances for datasources
-//     const dsInstances: SweApi[] = [];
-
-//     let getOrigin: RoleDatastream | null = null;
-//     let getBearing: RoleDatastream | null = null;
-
-//     for (const dsProps of dsArray) {
-//       const dsInstance = new SweApi(dsProps.id, {
-//         endpointUrl: dsProps.endpointUrl,
-//         resource: dsProps.resource,
-//         tls: dsProps.tls,
-//         protocol: dsProps.protocol,
-//         startTime: dsProps.startTime,
-//         endTime: dsProps.endTime,
-//         mode: dsProps.mode,
-//         responseFormat: dsProps.responseFormat,
-//         connectorOpts: {
-//           username: dsProps?.connectorOpts.username,
-//           password: dsProps?.connectorOpts.password
-//         }
-//       });
-
-//       if (dsProps.properties.origin) {
-//         getOrigin = {
-//           id: dsInstance.id,
-//           property: dsProps.properties.origin.property
-//         };
-//       }
-//       if (dsProps.properties.bearing) {
-//         getBearing = {
-//           id: dsInstance.id,
-//           property: dsProps.properties.bearing.property
-//         };
-//       }
-
-//       dsInstance.connect();
-//       dsInstances.push(dsInstance);
-//       listDatasourceInstances.value.push(dsInstance); // Push to list of active datasources
-//     }
-
-//     if (!getOrigin || !getBearing) {
-//       console.log('[MapView] LoB datasource missing origin or bearing property');
-//     }
-
-//     console.log('[MapView] Creating datasource for LoBLayer:', dsInstances)
-//     const layerOpts = viz.visualizationComponents.dataLayer;
-//     console.log('Icon size:', layerOpts.iconSize);
-//     let lobLayerOpts: LoBLayer = {
-//       ...layerOpts,
-//       name: viz.name,
-//       dataSourceIds: dsInstances.map(ds => ds.id),
-//       id: viz.id,
-//       length: (layerOpts.distanceKm || 10) * 1000,
-//     };
-
-//     if (getOrigin && getBearing) {
-//       lobLayerOpts.getOrigin = {
-//         dataSourceIds: [getOrigin.id],
-//         handler: (rec: any) => {
-//           const originData = rec[getOrigin?.property];
-//           if (!originData) return null;
-//           return {
-//             x: originData.lon,
-//             y: originData.lat,
-//             z: originData.alt || 0,
-//           };
-//         },
-//       };
-//       lobLayerOpts.getBearing = {
-//         dataSourceIds: [getBearing.id],
-//         handler: (rec: any) => {
-//           const bearingData = rec[getBearing?.property];
-//           if (!bearingData) return null;
-//           return bearingData.heading != null ? bearingData.heading : bearingData;
-//         },
-//       };
-//     }
-
-//     const lobLayer = new LoBLayer(lobLayerOpts)
-//     mapItemLayers.value.push(lobLayer)
-//     mapView.value.addLayer(lobLayer);
-//     console.log('[MapView] Created LoBLayer:', lobLayer)
-//   }
-// }, { deep: true } );
-
-// function checkAndRemove(updated: OSHVisualization[]) {
-//   const removed = currentVisualizations.value.filter((val) => !updated.includes(val));
-//   for (const viz of removed) {
-//     const idx = currentVisualizations.value.indexOf(viz);
-//     if (idx !== -1) {
-//       currentVisualizations.value.splice(idx, 1);
-
-//       if (viz.type === 'pointmarker') {
-//         // Remove corresponding layer from mapItemLayers and map
-//         const pmLayer = mapItemLayers.value[idx];
-//         if (pmLayer && mapView.value) {
-//           mapView.value.removeLayer?.(pmLayer);
-//         }
-//         mapItemLayers.value.splice(idx, 1);
-//       } else if (viz.type === 'pointmarker-feature') {
-//         mapView.value.removeLayer?.(viz.id);
-//       } else if (viz.type === 'lob') {
-//         mapView.value.removeLayer?.(viz.id);
-//       }
-//     }
-//   }
-// }
-
-// TODO: Handle Cesium marker code
-// function addCesiumMarker(viz: any) {
-//   console.log('[MapView] TEST Adding Cesium marker');
-//   const viewer = mapView.value.viewer;
-//   const location = {
-//     x: viz.geometry.coordinates[0],
-//     y: viz.geometry.coordinates[1],
-//     z: viz.geometry.coordinates[2] || 10,
-//   };
-
-//   /*viewer.entities.add({
-//     // position: Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883),
-//     position: Cesium.Cartesian3.fromDegrees(location.x, location.y, location.z),
-//     billboard: {
-//       image: '/icons/map/map-marker.svg'
-//     }
-//   })*/
-
-//   const markerProps = {
-//     location: {
-//       x: viz.geometry.coordinates[0],
-//       y: viz.geometry.coordinates[1],
-//       z: viz.geometry.coordinates[2] || 0,
-//     },
-//     label: viz.name,
-//     labelOffset: [0, 0],
-//     icon: '/icons/map/map-marker.svg',
-//     iconSize: [32, 32],
-//     iconAnchor: [16, 32],
-//     id: viz.id,
-//     markerId: viz.id + '-feature' + randomUUID(),
-//   };
-
-//   let markerEnt = mapView.value.addMarker(markerProps, undefined);
-
-//   mapView.value.addMarkerToLayer(markerEnt, markerProps);
-// }
 
 </script>
 

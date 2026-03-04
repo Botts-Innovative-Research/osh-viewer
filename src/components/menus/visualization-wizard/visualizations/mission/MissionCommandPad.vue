@@ -19,6 +19,7 @@ const yVelocity = ref<number>(0.0);
 const zVelocity = ref<number>(0.0);
 const yawRate = ref<number>(0.0);
 const takeOffAlt = ref<number>(0.0);
+const offboardForm = ref<any>(null);
 
 function getControlstreamConfig(cs: any) {
   if (!cs) return null;
@@ -96,19 +97,22 @@ function cancel() {
     sendCommandToRole('cancel',  payload);
 }
 
-function offboard() {
+async function offboard() {
+  const { valid } = await offboardForm.value.validate();
+  if (!valid) return;
+
   const payload = {
     parameters: {
       velocity: {
-        vx: 0,
-        vy: 0,
-        vz: 0
+        vx: xVelocity.value,
+        vy: yVelocity.value,
+        vz: zVelocity.value
       },
-      yawRate: 0
+      yawRate: yawRate.value
     }
   };
 
-  sendCommandToRole('offboard',  payload);
+  sendCommandToRole('offboard', payload);
 }
 
 function takeoffCommand() {
@@ -133,12 +137,7 @@ function toggle() {
 </script>
 
 <template>
-  <v-card class="pa-4 mission-control-card"
-  >
-<!--    <v-card-title class="text-subtitle-1 pa-0 mb-3">-->
-<!--      Mission Control-->
-<!--    </v-card-title>-->
-<!--    <v-divider class="mb-3"></v-divider>-->
+  <v-card class="pa-4 mission-control-card">
 
     <!--pause, rtl, land-->
     <div v-if="getControlstreamByRole('pause') || getControlstreamByRole('rtl') || getControlstreamByRole('land') || getControlstreamByRole('cancel')">
@@ -146,7 +145,7 @@ function toggle() {
         Commands
       </v-card-title>
       <v-row dense>
-        <v-col cols="6" sm="3" v-if="getControlstreamByRole('pause')">
+        <v-col cols="12" md="3" v-if="getControlstreamByRole('pause')">
           <v-btn
               block
               variant="tonal"
@@ -158,7 +157,7 @@ function toggle() {
             {{ isPaused ? 'Resume' : 'Pause' }}
           </v-btn>
         </v-col>
-        <v-col cols="6" sm="3" v-if="getControlstreamByRole('rtl')">
+        <v-col cols="12" md="3" v-if="getControlstreamByRole('rtl')">
           <v-btn
               block
               variant="tonal"
@@ -170,7 +169,7 @@ function toggle() {
             RTL
           </v-btn>
         </v-col>
-        <v-col cols="6" sm="3" v-if="getControlstreamByRole('cancel')">
+        <v-col cols="12" md="3" v-if="getControlstreamByRole('cancel')">
           <v-btn
               block
               variant="tonal"
@@ -182,7 +181,7 @@ function toggle() {
             Cancel
           </v-btn>
         </v-col>
-        <v-col cols="6" sm="3" v-if="getControlstreamByRole('land')">
+        <v-col cols="12" md="3" v-if="getControlstreamByRole('land')">
           <v-btn
               block
               variant="tonal"
@@ -204,7 +203,7 @@ function toggle() {
         Takeoff Control
       </v-card-title>
       <v-row dense>
-        <v-col cols="6" sm="4">
+        <v-col cols="12" md="4">
           <v-text-field
               v-model.number="takeOffAlt"
               type="number"
@@ -213,7 +212,7 @@ function toggle() {
               hide-details
           />
         </v-col>
-        <v-col cols="6" sm="4">
+        <v-col cols="12" md="4">
           <v-btn
               block
               variant="tonal"
@@ -234,59 +233,57 @@ function toggle() {
       <v-card-title class="text-subtitle-1 pa-0 mb-3">
         Offboard Control
       </v-card-title>
-      <v-row dense align="center">
-        <v-col cols="12" sm="">
-          <v-row dense>
-            <v-col cols="12" md="3">
-              <v-text-field
-                  v-model.number="xVelocity"
-                  type="number"
-                  label="X Velocity"
-                  density="compact"
-                  hide-details
-              />
-            </v-col>
-            <v-col cols="12" md="3">
-              <v-text-field
-                  v-model.number="yVelocity"
-                  type="number"
-                  label="Y Velocity"
-                  density="compact"
-                  hide-details
-              />
-            </v-col>
-            <v-col cols="12" md="3">
-              <v-text-field
-                  v-model.number="zVelocity"
-                  type="number"
-                  label="Z Velocity"
-                  density="compact"
-                  hide-details
-              />
-            </v-col>
-            <v-col cols="12" md="3">
-              <v-text-field
-                  v-model.number="yawRate"
-                  type="number"
-                  label="Yaw Rate"
-                  density="compact"
-                  hide-details
-              />
-            </v-col>
-          </v-row>
-        </v-col>
-        <v-col cols="12" sm="auto">
-          <v-btn
-              block
-              variant="tonal"
-              color="primary"
-              @click="offboard"
-              class="command-btn"
-          >
-            Offboard
-          </v-btn>
-        </v-col>
-      </v-row>
+      <v-form ref="offboardForm">
+        <v-row dense align="center">
+          <v-col cols="12" md="2">
+            <v-text-field
+                v-model.number="xVelocity"
+                type="number"
+                label="Vx"
+                density="compact"
+                hide-details
+            />
+          </v-col>
+          <v-col cols="12" md="2">
+            <v-text-field
+                v-model.number="yVelocity"
+                type="number"
+                label="Vy"
+                density="compact"
+                hide-details
+            />
+          </v-col>
+          <v-col cols="12" md="2">
+            <v-text-field
+                v-model.number="zVelocity"
+                type="number"
+                label="Vz"
+                density="compact"
+                hide-details
+            />
+          </v-col>
+          <v-col cols="12" md="2">
+            <v-text-field
+                v-model.number="yawRate"
+                type="number"
+                label="Yaw"
+                density="compact"
+                hide-details
+            />
+          </v-col>
+          <v-col cols="12" md="auto">
+            <v-btn
+                block
+                variant="tonal"
+                color="primary"
+                @click="offboard"
+                class="command-btn"
+            >
+              Offboard
+            </v-btn>
+          </v-col>
+        </v-row>
+      </v-form>
     </div>
 
   </v-card>
@@ -312,5 +309,12 @@ function toggle() {
 .command-btn {
   text-transform: none;
   font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.command-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 </style>
