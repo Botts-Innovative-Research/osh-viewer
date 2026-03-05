@@ -14,7 +14,7 @@ import { Mode } from 'osh-js/source/core/datasource/Mode';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { AggregateDatastreams, BuildRoleProperty, getUsedDatastreams } from '../../shared/helpers';
 
-export function build() {
+export default function build() {
 	console.log('Building Point Marker Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();

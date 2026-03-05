@@ -9,7 +9,7 @@ import {IChartViewProperties, ICurveLayerProperties, ISweApiDataSourceProperties
 import {Mode} from 'osh-js/source/core/datasource/Mode';
 import {OSHVisualization} from "@/lib/OSHConnectDataStructs";
 
-export function build() {
+export default function build() {
     console.log('Building Chart Visualization...');
     const vizwizStore = useVizWizStore();
     const visualizationStore = useVisualizationStore();

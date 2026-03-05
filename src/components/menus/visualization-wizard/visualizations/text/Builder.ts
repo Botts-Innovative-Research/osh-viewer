@@ -17,7 +17,7 @@ import {
 } from '../../shared/helpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 
-export function build() {
+export default function build() {
 	console.log('Building Text Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();

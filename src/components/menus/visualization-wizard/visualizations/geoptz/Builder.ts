@@ -9,7 +9,7 @@ import { Mode } from 'osh-js/source/core/datasource/Mode';
 import { AggregateControlstreams, BuildRoleProperty, getUsedControlstreams } from '../../shared/helpers';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 
-export function build() {
+export default function build() {
 	console.log('Building GeoPTZ Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();

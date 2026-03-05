@@ -13,7 +13,7 @@ import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { AggregateDatastreams, AggregateControlstreams, BuildRoleProperty, getUsedDatastreams, getUsedControlstreams } from '../../shared/helpers';
 
 
-export function build() {
+export default function build() {
 	console.log('Building Video Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();

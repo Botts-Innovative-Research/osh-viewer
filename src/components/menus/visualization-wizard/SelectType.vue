@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
-import { VisualizationType } from '@/types/types';
 import { ref, computed } from 'vue';
+import { VisualizationRegistry } from './VisualizationRegistry';
 
-const props = defineProps<{
-	visualizationTypes: VisualizationType[];
-}>();
 
 // Update visualizationType in vizwiz store
 const vizwizStore = useVizWizStore();
@@ -21,11 +18,11 @@ function selectType(type: string) {
 }
 </script>
 <template>
-	<v-row justify="center" align="center" class="mb-2" v-if="props.visualizationTypes">
-		<v-col v-for="type in props.visualizationTypes" :key="type.value" cols="12" sm="6" md="3"
+	<v-row justify="center" align="center" class="mb-2" v-if="VisualizationRegistry">
+		<v-col v-for="type in Object.values(VisualizationRegistry)" :key="type.id" cols="12" sm="6" md="3"
 			class="d-flex justify-center">
-			<v-card :elevation="selectedType === type.value ? 10 : 2" :color="selectedType === type.value ? 'primary' : ''"
-				class="d-flex flex-column align-center justify-center pa-4 type-card" @click="selectType(type.value)"
+			<v-card :elevation="selectedType === type.id ? 10 : 2" :color="selectedType === type.id ? 'primary' : ''"
+				class="d-flex flex-column align-center justify-center pa-4 type-card" @click="selectType(type.id)"
 				style="cursor: pointer; min-height: 120px; max-width: 220px; width: 100%">
 				<v-icon size="36" class="mb-2">{{ type.icon }}</v-icon>
 				<span>{{ type.label }}</span>
