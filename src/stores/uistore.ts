@@ -224,4 +224,4 @@ export const useUIStore = defineStore('ui', () => {
 		selectedMapItem,
 		setSelectedMapItem,
 	};
-});
+}, { persist: {pick: ['theme', 'focusedMap']}});
