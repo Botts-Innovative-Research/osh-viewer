@@ -16,8 +16,9 @@ import {
 	getUsedDatastreams,
 } from '../../shared/helpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
+import { TextDescriptor } from './Descriptor';
 
-export function build() {
+export default function build() {
 	console.log('Building Text Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
@@ -38,6 +39,7 @@ export function build() {
 		`visualization-${randomUUID()}`,
 		vizwizStore.visualizationCustomizationOptions.name,
 		'text',
+		TextDescriptor.viewLocation,
 		getUsedDatastreams(),
 	);
 	newViz.setVisualizationComponents(visualizationComponents);

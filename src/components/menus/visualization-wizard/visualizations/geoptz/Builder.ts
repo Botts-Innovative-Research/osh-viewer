@@ -8,8 +8,10 @@ import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { Mode } from 'osh-js/source/core/datasource/Mode';
 import { AggregateControlstreams, BuildRoleProperty, getUsedControlstreams } from '../../shared/helpers';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
+import { ChartDescriptor } from '../chart/Descriptor';
+import { GeoPtzDescriptor } from './Descriptor';
 
-export function build() {
+export default function build() {
 	console.log('Building GeoPTZ Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
@@ -34,6 +36,7 @@ export function build() {
 		`visualization-${randomUUID()}`,
 		vizwizStore.visualizationCustomizationOptions.name,
 		'geoPtz',
+		GeoPtzDescriptor.viewLocation,
 		datastreams,
 		getUsedControlstreams()
 	);

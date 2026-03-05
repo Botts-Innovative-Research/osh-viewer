@@ -3,6 +3,7 @@ import { computed, ref, Ref } from 'vue';
 import { OSHControlStream, OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {useDataStreamStore} from "@/stores/datastreamstore";
 import {useControlStreamStore} from "@/stores/controlstreamstore";
+import { ViewLocation } from '@/components/menus/visualization-wizard/VisualizationRegistry';
 
 export interface SerializeVisualization {
     id: string;
@@ -11,20 +12,9 @@ export interface SerializeVisualization {
     parentId: string | null;
     datastreamIds: string[],
     controlstreamIds: string[],
-    visualizationComponents: any
+    visualizationComponents: any,
+    viewLocation: ViewLocation
 }
-
-export const PANEL_VISUALIZATIONS = [
-    'chart',
-    'video',
-    'text',
-    'flightPath',
-]
-
-export const MAP_VISUALIZATIONS = [
-    'pointmarker',  // NEW value for old pmorientation
-    'lob',
-]
 
 export const useVisualizationStore = defineStore('visualizations',
     () => {
@@ -37,14 +27,14 @@ export const useVisualizationStore = defineStore('visualizations',
     // Filter only PANEL visualizations
     const panelVisualizations = computed(() => {
         return visualizations.value.filter((v: OSHVisualization) =>
-            PANEL_VISUALIZATIONS.includes(v.type)
+            v.viewLocation === 'panel'
         )
     })
 
     // Filter only MAP visualizations
     const mapVisualizations = computed(() => {
         return visualizations.value.filter((v: OSHVisualization) =>
-            MAP_VISUALIZATIONS.includes(v.type)
+            v.viewLocation === 'map'
         )
     })
 
@@ -67,7 +57,8 @@ export const useVisualizationStore = defineStore('visualizations',
             parentId: visualization.parentId ?? null,
             datastreamIds: getIds(visualization.datastream),
             controlstreamIds: visualization.controlstream ? getIds(visualization.controlstream) : [],
-            visualizationComponents: visualization.visualizationComponents
+            visualizationComponents: visualization.visualizationComponents,
+            viewLocation: visualization.viewLocation
         });
 	};
 
@@ -147,6 +138,7 @@ export const useVisualizationStore = defineStore('visualizations',
                 serialized.id,
                 serialized.name,
                 serialized.type,
+                serialized.viewLocation,
                 datastreams,
                 controlstreams,
                 serialized.parentId,

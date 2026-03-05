@@ -1,6 +1,7 @@
 /* VISUALIZATION COMPONENTS */
 
 export type VisualizationLayerProperties =
+	| DataLayerProperties
 	| ICurveLayerProperties
 	| IVideoLayerProperties
 	| IPointMarkerLayerProperties
