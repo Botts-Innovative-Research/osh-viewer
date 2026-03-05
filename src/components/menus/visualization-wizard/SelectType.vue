@@ -26,6 +26,7 @@ function selectType(type: string) {
 				style="cursor: pointer; min-height: 120px; max-width: 220px; width: 100%">
 				<v-icon size="36" class="mb-2">{{ type.icon }}</v-icon>
 				<span>{{ type.label }}</span>
+				<v-tooltip activator="parent" location="bottom">{{ type.description }}</v-tooltip>
 			</v-card>
 		</v-col>
 	</v-row>
