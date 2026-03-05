@@ -5,6 +5,7 @@ import { LobDescriptor } from "./visualizations/lob/Descriptor";
 import { PointMarkerDescriptor } from "./visualizations/pointmarker/Descriptor";
 import { TextDescriptor } from "./visualizations/text/Descriptor";
 import { VideoDescriptor } from "./visualizations/video/Descriptor";
+import { P } from "vue-router/dist/router-CWoNjPRp.mjs";
 
 /**
  * Central registry for all visualizations available in the Visualization Wizard.
@@ -33,12 +34,14 @@ export type ViewLocation = 'panel' | 'map' | 'multi';
  * - label: title of the form step (e.g. 'Configure Chart Properties', 'Customize Chart', etc.)
  * - short: short label for stepper header (e.g., Configure, Customize, etc.)
  * - component: the Vue component to render for this form step
+ * - validator: optional function to validate the form step before allowing the user to proceed to the next step (returns boolean or Promise<boolean>)
  */
 export interface VisualizationFormComponent {
   id: string; // Standard: kebab-case, starting with visualization type (___-config, ___-customize, etc.)
   label: string;  // Standard: Title Case, starting with verbal action (Configure ___ Properties, Customize ___, etc.)
   short: string;  // Standard: Title Case, concise, no verbal action (Configure, Customize, etc.)
   component: Component | null;  // Vue component to render for this form step
+  validator?: () => boolean | Promise<boolean>;
 }
 
 /**
