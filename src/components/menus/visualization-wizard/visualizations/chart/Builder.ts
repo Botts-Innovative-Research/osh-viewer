@@ -8,6 +8,8 @@ import {IChartViewProperties, ICurveLayerProperties, ISweApiDataSourceProperties
 //@ts-ignore
 import {Mode} from 'osh-js/source/core/datasource/Mode';
 import {OSHVisualization} from "@/lib/OSHConnectDataStructs";
+import { VisualizationRegistry } from "../../VisualizationRegistry";
+import { ChartDescriptor } from "./Descriptor";
 
 export default function build() {
     console.log('Building Chart Visualization...');
@@ -28,6 +30,7 @@ export default function build() {
         `visualization-${randomUUID()}`,
         vizwizStore.visualizationCustomizationOptions.name,
         'chart',
+        ChartDescriptor.viewLocation,
         getUsedDatastreams(),
     );
     newViz.setVisualizationComponents(visualizationComponents);

@@ -11,6 +11,7 @@ import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { VisualizationComponents } from '@/lib/VisualizationHelpers';
 import { CONFIG_UID } from '@/composables/useConfigPersistence';
+import { ViewLocation } from '@/components/menus/visualization-wizard/VisualizationRegistry';
 
 let sharedStores: any = null;
 
@@ -352,6 +353,7 @@ export class OSHVisualization {
 	id: string;	// Random ID following the format `visualization-${randomUUID()}`
 	name: string;
 	type: string;
+	viewLocation: ViewLocation;	// Defines where the visualization is displayed (e.g., 'panel', 'map', 'multi')
 	parentId?: string | null;
 	datastream: OSHDatastream[] | null;	// TODO: null handles "All PMS"
 	controlstream?: OSHControlStream[]; // Optional control stream
@@ -361,6 +363,7 @@ export class OSHVisualization {
 		id: string,
 		name: string,
 		type: string,
+		viewLocation: ViewLocation,
 		datastream: OSHDatastream[] | null,
 		controlstream?: OSHControlStream[],
 		parentId?: string | null,
@@ -368,6 +371,7 @@ export class OSHVisualization {
 		this.id = id;
 		this.name = name;
 		this.type = type;
+		this.viewLocation = viewLocation;
 		this.datastream = datastream;
 		this.controlstream = controlstream;
 		this.parentId = parentId;

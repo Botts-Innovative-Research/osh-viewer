@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, defineAsyncComponent, onMounted, Ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useUIStore } from '@/stores/uistore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import SelectType from './SelectType.vue';
@@ -22,7 +22,7 @@ const currentStep = ref(1)
 const completeSteps = computed(() => {
 	const baseSteps: VisualizationFormComponent[] = [
 		{ id: 'select-type', label: 'Select Visualization Type', short: 'Type', component: SelectType },
-		{ id: 'select-data', label: 'Select System & Datasource', short: 'Data', component: SelectData },
+		{ id: 'select-data', label: `Select System & Datasource - ${VisualizationRegistry[selectedType.value]?.label || 'Unknown'}`, short: 'Data', component: SelectData },
 	]
 
 	if (!selectedType.value) {
@@ -46,101 +46,6 @@ const stepStatus = (index: number) => {
 	return ""
 }
 const isLastStep = computed(() => currentStep.value === completeSteps.value.length)
-
-// Visualization Types
-// const visualizationTypes: VisualizationType[] = [
-//   { label: 'Chart', value: 'chart', icon: 'mdi-chart-line' },
-//   { label: 'Video', value: 'video', icon: 'mdi-video' },
-//   { label: 'Point Marker', value: 'pointmarker', icon: 'mdi-map-marker' },
-//   { label: 'Text', value: 'text', icon: 'mdi-format-text' },
-//   { label: 'GeoPTZ', value: 'geoPtz', icon: 'mdi-map' },
-// 	{ label: 'Line of Bearing', value: 'lob', icon: 'mdi-ray-start' },
-// 	{ label: 'Flight Path', value: 'flightPath', icon: 'mdi-quadcopter' },
-// ]
-
-// const vizComponents: any = {
-// 	pointmarker: {
-// 		Config: defineAsyncComponent(
-// 			() =>
-// 				import(
-// 					'@/components/menus/visualization-wizard/visualizations/pointmarker/Config.vue'
-// 				)
-// 		),
-// 		Customize: defineAsyncComponent(
-// 			() =>
-// 				import(
-// 					'@/components/menus/visualization-wizard/visualizations/pointmarker/Customize.vue'
-// 				)
-// 		),
-// 		Builder: () =>
-// 			import('@/components/menus/visualization-wizard/visualizations/pointmarker/Builder'),
-// 	},
-// 	// add other types here
-// 	lob: {
-// 		Config: defineAsyncComponent(
-// 			() => import('@/components/menus/visualization-wizard/visualizations/lob/Config.vue')
-// 		),
-// 		Customize: defineAsyncComponent(
-// 			() =>
-// 				import(
-// 					'@/components/menus/visualization-wizard/visualizations/lob/Customize.vue'
-// 				)
-// 		),
-// 		Builder: () => import('@/components/menus/visualization-wizard/visualizations/lob/Builder'),
-// 	},
-//   video: {
-//     Config: defineAsyncComponent(
-//         () => import('@/components/menus/visualization-wizard/visualizations/video/Config.vue')
-//     ),
-//     Customize: defineAsyncComponent(
-//         () => import('@/components/menus/visualization-wizard/visualizations/video/Customize.vue')
-//     ),
-//     Builder: () => import('@/components/menus/visualization-wizard/visualizations/video/Builder'),
-//   },
-//   geoPtz: {
-//     Config: defineAsyncComponent(
-//         () => import('@/components/menus/visualization-wizard/visualizations/geoptz/Config.vue')
-//     ),
-//     Customize: defineAsyncComponent(
-//         () => import('@/components/menus/visualization-wizard/visualizations/geoptz/Customize.vue')
-//     ),
-//     Builder: () => import('@/components/menus/visualization-wizard/visualizations/geoptz/Builder'),
-//   },
-// 	chart: {
-// 		Config: defineAsyncComponent(
-// 			() => import('@/components/menus/visualization-wizard/visualizations/chart/Config.vue')
-// 		),
-// 		Customize: defineAsyncComponent(
-// 			() =>
-// 				import(
-// 					'@/components/menus/visualization-wizard/visualizations/chart/Customize.vue'
-// 				)
-// 		),
-// 		Builder: () => import('@/components/menus/visualization-wizard/visualizations/chart/Builder'),
-// 	},
-// 	text: {
-// 		Config: defineAsyncComponent(
-// 			() =>
-// 				import(
-// 					'@/components/menus/visualization-wizard/visualizations/text/Config.vue'
-// 				)
-// 		),
-// 		Customize: defineAsyncComponent(
-// 			() =>
-// 				import(
-// 					'@/components/menus/visualization-wizard/visualizations/text/Customize.vue'
-// 				)
-// 		),
-// 		Builder: () =>
-// 			import('@/components/menus/visualization-wizard/visualizations/text/Builder'),
-// 	},
-// 	// add other types here
-//   flightPath: {
-//     Config: defineAsyncComponent(() => import('@/components/menus/visualization-wizard/visualizations/flightpath/Config.vue')),
-//     Customize: defineAsyncComponent(() => import('@/components/menus/visualization-wizard/visualizations/flightpath/Customize.vue')),
-//     Builder: () => import('@/components/menus/visualization-wizard/visualizations/flightpath/Builder'),
-//   },
-// };
 
 const handleSubmit = async () => {
 	const type = selectedType.value;

@@ -11,6 +11,7 @@ import { Mode } from 'osh-js/source/core/datasource/Mode';
 //@ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { AggregateDatastreams, AggregateControlstreams, BuildRoleProperty, getUsedDatastreams, getUsedControlstreams } from '../../shared/helpers';
+import { VideoDescriptor } from './Descriptor';
 
 
 export default function build() {
@@ -38,6 +39,7 @@ export default function build() {
 		`visualization-${randomUUID()}`,
         vizwizStore.visualizationCustomizationOptions.name,
 		'video',
+        VideoDescriptor.viewLocation,
 		getUsedDatastreams(),
 		getUsedControlstreams()
 	);

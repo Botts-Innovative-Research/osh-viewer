@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // @ts-ignore
 import { useUIStore } from '@/stores/uistore.ts';
-import { MAP_VISUALIZATIONS, PANEL_VISUALIZATIONS, useVisualizationStore } from '@/stores/visualizationstore';
+import { useVisualizationStore } from '@/stores/visualizationstore';
 import { storeToRefs } from 'pinia';
 import VisualizationWrapper from './VisualizationWrapper.vue';
 import { computed, onMounted, ref } from 'vue';
@@ -17,10 +17,10 @@ const uiStore = useUIStore();
 
 // Separate visualizations into panel and map types
 const panelVisualizations = computed<OSHVisualization[]>(() => visualizations.value.filter(viz =>
-	PANEL_VISUALIZATIONS.includes(viz.type)
+	viz.viewLocation === 'panel'
 ));
 const mapVisualizations = computed<OSHVisualization[]>(() => visualizations.value.filter(viz =>
-	MAP_VISUALIZATIONS.includes(viz.type)
+	viz.viewLocation === 'map'
 ));
 const geoPtzVisualizations = computed<OSHVisualization[]>(() => visualizations.value.filter(viz =>
 	viz.type === 'geoPtz'

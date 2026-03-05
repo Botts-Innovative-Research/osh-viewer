@@ -1,5 +1,5 @@
 import { defineAsyncComponent } from "vue";
-import { ViewLocation, VisualizationDescriptor, VisualizationFormComponent } from "../../VisualizationRegistry";
+import { VisualizationDescriptor, VisualizationFormComponent } from "../../VisualizationRegistry";
 
 export const ConfigComponent: VisualizationFormComponent = {
   id: 'geoPtz-config',

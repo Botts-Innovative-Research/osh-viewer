@@ -86,6 +86,7 @@ const addFeatureMarker = (item) => {
 			'featuremarker-' + randomUUID(),
 			foi.properties.properties.name,
 			'pointmarker-feature',
+			'map',
 			null,
 		);
 		newViz.geometry = geom;
@@ -110,6 +111,7 @@ const addAllSamplingFeaturePMs = () => {
 				'featuremarker-' + randomUUID(),
 				`${feature.properties.properties.name}`,
 				'pointmarker-feature',
+				'map',	
 				null,
 			);
 			newViz.geometry = geom;
