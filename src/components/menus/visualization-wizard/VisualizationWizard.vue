@@ -111,7 +111,7 @@ const componentValid = ref<boolean[]>([])
 					</template>
 
 					<template #next>
-						<v-btn :color="isLastStep ? 'success' : 'primary'" :disabled="isLastStep ? false : !componentValid[currentStep - 1]"
+						<v-btn :color="isLastStep ? 'success' : 'primary'" :disabled="!componentValid[currentStep - 1]"
 							@click="isLastStep ? handleSubmit() : changeStep(1)">
 							{{ isLastStep ? 'Submit' : 'Next' }}
 						</v-btn>
