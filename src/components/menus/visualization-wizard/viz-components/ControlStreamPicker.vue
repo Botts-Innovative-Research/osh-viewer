@@ -88,7 +88,9 @@ useComponentValidation(valid, emit)
       label="Select property"
       item-title="name"
       persistent-hint item-value="name"
-      multiple></v-autocomplete>
+      multiple
+      chips
+      ></v-autocomplete>
 </template>
 
 <style scoped></style>
