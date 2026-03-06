@@ -6,6 +6,7 @@ import {
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { computed, ref, watch } from 'vue'
 import { VisualizationComponentEmits } from '../VisualizationRegistry';
+import { useComponentValidation } from '../shared/helpers';
 
 const props = withDefaults(defineProps<{
   role: string, // Property role to be used as key in vizwiz store
@@ -98,7 +99,7 @@ const valid = computed(() => {
   }
   return true
 })
-watch(valid, v => emit('update:valid', v), { immediate: true })
+useComponentValidation(valid, emit)
 
 </script>
 
