@@ -2,6 +2,8 @@
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { ref, computed, reactive, watch, ReactiveEffect, onMounted } from 'vue';
 import DataSourcePicker from '../../viz-components/DataSourcePicker.vue';
+import { VisualizationComponentEmits } from '../../VisualizationRegistry';
+import { useComponentValidation } from '../../shared/helpers';
 
 
 // Retrieve datastreams
@@ -40,18 +42,30 @@ watch(() => vizwizStore.dsConfig, (newVal) => {
   }
 }, { deep: true })
 
+// Validation: at least origin and bearing must be selected and configured
+const emit = defineEmits<VisualizationComponentEmits>()
+const roleOriginValid = ref<boolean>(false)
+const roleBearingValid = ref<boolean>(false)
+const valid = computed(() => {
+  // If role is checked, must be valid. If not checked, ignore validity
+  const originValid = checkedRoles.origin ? roleOriginValid.value : true
+  const bearingValid = checkedRoles.bearing ? roleBearingValid.value : true
+  return originValid && bearingValid
+})
+useComponentValidation(valid, emit)
+
 </script>
 <template>
   <!-- Origin -->
   <v-container>
     <v-checkbox label="Origin" v-model="checkedRoles.origin" disabled></v-checkbox>
-    <DataSourcePicker v-if="checkedRoles.origin" role="origin" />
+    <DataSourcePicker v-if="checkedRoles.origin" role="origin" v-model:valid="roleOriginValid" />
   </v-container>
 
   <!-- Bearing -->
   <v-container>
     <v-checkbox label="Bearing" v-model="checkedRoles.bearing" disabled></v-checkbox>
-    <DataSourcePicker v-if="checkedRoles.bearing" role="bearing" />
+    <DataSourcePicker v-if="checkedRoles.bearing" role="bearing" v-model:valid="roleBearingValid" />
   </v-container>
 </template>
 

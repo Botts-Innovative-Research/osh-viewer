@@ -4,7 +4,9 @@ import {
   mineDatasourceObsPropsFromDS,
 } from '@/lib/DatasourceUtils';
 import { useVizWizStore } from '@/stores/vizwizstore';
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { VisualizationComponentEmits } from '../VisualizationRegistry';
+import { useComponentValidation } from '../shared/helpers';
 
 const props = withDefaults(defineProps<{
   role: string, // Property role to be used as key in vizwiz store
@@ -13,7 +15,6 @@ const props = withDefaults(defineProps<{
 }>(), {
     showPropertySelector: true
 })
-
 
 // Get datastreams from vizwiz store
 const vizwizStore = useVizWizStore()
@@ -61,7 +62,6 @@ const selectedProperty = computed({
   }
 })
 
-
 // Properties schema for selected datastream
 const dsSchema = ref<any>(null)
 
@@ -86,6 +86,21 @@ watch(selectedDatastream, async (newVal) => {
   await fetchProps()
 })
 
+// Validation: must have a datastream selected, and if property selector is shown, must have property(ies) selected
+const emit = defineEmits<VisualizationComponentEmits>()
+const valid = computed(() => {
+  // Check that a datastream is selected
+  if (!selectedDatastream.value) return false
+  // If property selector is shown, check that a property is selected
+  if (props.showPropertySelector) {
+    return props.multiple // Check if multiple properties are allowed
+      ? selectedProperty.value.length > 0
+      : !!selectedProperty.value
+  }
+  return true
+})
+useComponentValidation(valid, emit)
+
 </script>
 
 <template>
@@ -95,7 +110,7 @@ watch(selectedDatastream, async (newVal) => {
 
   <!-- Select for property -->
   <v-autocomplete v-if="showPropertySelector && dsSchema && dsSchema.recordSchema" v-model="selectedProperty" :items="dsSchema.recordSchema.fields"
-    label="Select property" :item-title="(item: any) => item.label ?? item.name" persistent-hint
+    label="Select property" :item-title="(item: any) => item.label ?? item.name" persistent-hint :chips="props.multiple"
     :item-value="(item: any) => item.label ?? item.name" :multiple="props.multiple"></v-autocomplete>
 </template>
 

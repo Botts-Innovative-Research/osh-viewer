@@ -5,6 +5,8 @@ import {
 import { getCommandType } from '@/lib/ControlstreamUtils';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { computed, ref, watch } from 'vue'
+import { VisualizationComponentEmits } from '../VisualizationRegistry';
+import { useComponentValidation } from '../shared/helpers';
 
 const props = withDefaults(defineProps<{
   role: string, // Property role to be used as key in vizwiz store
@@ -58,7 +60,18 @@ watch(selectedControlstream, async (newVal) => {
   await fetchProps()
 })
 
-
+// Validation: must have a controlstream selected, and if property selector is shown, must have property(ies) selected
+const emit = defineEmits<VisualizationComponentEmits>()
+const valid = computed(() => {
+  // Check that a controlstream is selected
+  if (!selectedControlstream.value) return false
+  // If property selector is shown, check that a property is selected
+  if (props.showPropertySelector) {
+    return !!selectedProperty.value
+  }
+  return true
+})
+useComponentValidation(valid, emit)
 
 </script>
 
@@ -75,7 +88,9 @@ watch(selectedControlstream, async (newVal) => {
       label="Select property"
       item-title="name"
       persistent-hint item-value="name"
-      multiple></v-autocomplete>
+      multiple
+      chips
+      ></v-autocomplete>
 </template>
 
 <style scoped></style>

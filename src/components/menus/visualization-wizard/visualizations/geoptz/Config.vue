@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
-import { computed, reactive, watch, onMounted } from 'vue';
+import { computed, reactive, watch, onMounted, ref } from 'vue';
 import ControlStreamPicker from "@/components/menus/visualization-wizard/viz-components/ControlStreamPicker.vue";
+import { VisualizationComponentEmits } from '../../VisualizationRegistry';
+import { useComponentValidation } from '../../shared/helpers';
 
 // Retrieve controlstreams
 const vizwizStore = useVizWizStore()
@@ -29,12 +31,20 @@ watch(() => vizwizStore.csConfig, (newVal) => {
   }
 }, { deep: true })
 
+// Validation: CS must be configured
+const emit = defineEmits<VisualizationComponentEmits>()
+const csValid = ref<boolean>(false)
+const valid = computed(() => {
+  return checkedRoles.lla ? csValid.value : true
+})
+useComponentValidation(valid, emit)
+
 </script>
 <template>
   <!-- GeoPTZ -->
   <v-container>
     <v-checkbox label="GeoPTZ Control" v-model="checkedRoles.lla" disabled></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.lla" role="lla" :show-property-selector="false" />
+    <ControlStreamPicker v-if="checkedRoles.lla" role="lla" :show-property-selector="false" v-model:valid="csValid" />
   </v-container>
 </template>
 
