@@ -30,4 +30,5 @@ export const GeoPtzDescriptor: VisualizationDescriptor = {
     CustomizeComponent,
   ],
   builder: () => import('@/components/menus/visualization-wizard/visualizations/geoptz/Builder'),
+  requireCs: true, // This visualization requires a controlstream to function
 }

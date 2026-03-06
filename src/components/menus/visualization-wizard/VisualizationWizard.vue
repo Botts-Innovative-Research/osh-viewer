@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useUIStore } from '@/stores/uistore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import SelectType from './SelectType.vue';
@@ -70,6 +70,9 @@ const changeStep = (direction: number) => {
 	currentStep.value = newStep
 }
 
+// Validation for steps
+const componentValid = ref<boolean[]>([])
+
 </script>
 
 <template>
@@ -95,7 +98,7 @@ const changeStep = (direction: number) => {
 					<!-- STEP CONTENT -->
 					<v-stepper-window-item v-for="(step, index) in completeSteps" :key="step.id" :value="index + 1">
 						<h2 class="pa-2">{{ step.label }}</h2>
-						<component :is="step.component" />
+						<component :is="step.component" v-model:valid="componentValid[index]" v-bind="index === 1 ? { requireCs: VisualizationRegistry[selectedType]?.requireCs } : {}" />
 					</v-stepper-window-item>
 				</v-stepper-window>
 				<!-- NAVIGATION BUTTONS -->
@@ -108,7 +111,7 @@ const changeStep = (direction: number) => {
 					</template>
 
 					<template #next>
-						<v-btn :color="isLastStep ? 'success' : 'primary'" :disabled="!selectedType"
+						<v-btn :color="isLastStep ? 'success' : 'primary'" :disabled="isLastStep ? false : !componentValid[currentStep - 1]"
 							@click="isLastStep ? handleSubmit() : changeStep(1)">
 							{{ isLastStep ? 'Submit' : 'Next' }}
 						</v-btn>

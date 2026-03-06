@@ -6,6 +6,12 @@ import { computed, watch } from 'vue';
 import {OSHControlStream, OSHDatastream} from '@/lib/OSHConnectDataStructs';
 import {useControlStreamStore} from "@/stores/controlstreamstore";
 import { CONFIG_UID } from '@/composables/useConfigPersistence';
+import { useComponentValidation } from './shared/helpers';
+import { VisualizationComponentEmits } from './VisualizationRegistry';
+
+const props = defineProps<{
+	requireCs?: boolean
+}>()
 
 // Stores
 const vizwizStore = useVizWizStore();
@@ -59,6 +65,16 @@ watch(selectedControlstreams, (newVal, oldVal) => {
     vizwizStore.resetCsCustomization()
   }
 })
+
+// Validation: Must have at least 1 system, 1 datastream, and 1 controlstream IF required
+const emit = defineEmits<VisualizationComponentEmits>()
+const valid = computed(() => {
+	const hasSystem = selectedSystems.value.length > 0
+	const hasDatastream = selectedDatastreams.value.length > 0
+	const hasControlstream = props.requireCs ? selectedControlstreams.value.length > 0 : true
+	return hasSystem && hasDatastream && hasControlstream
+})
+useComponentValidation(valid, emit)
 
 </script>
 <template>

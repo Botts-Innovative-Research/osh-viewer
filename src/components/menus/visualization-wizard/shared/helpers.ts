@@ -1,9 +1,9 @@
 import { useVizWizStore } from "@/stores/vizwizstore"
-import { onBeforeUnmount, Ref } from "vue"
+import { onBeforeUnmount, Ref, watch } from "vue"
 //@ts-ignore
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { OSHControlStream, OSHDatastream } from "@/lib/OSHConnectDataStructs";
-import { DataSourceProperties, ISweApiDataSourceProperties } from "@/lib/VisualizationHelpers";
+import { ISweApiDataSourceProperties } from "@/lib/VisualizationHelpers";
 
 /**
  * Aggregates datastreams from vizwizStore.dsConfig based on selected roles.
@@ -203,4 +203,16 @@ export function generateVizName(role: string) {
   }
 
   return `New ${vizwizStore.visualizationType}`
+}
+
+/**
+ * Defines validation logic for visualization form components and emits validation status to parent component
+ * @param valid 
+ * @param emit 
+ */
+export function useComponentValidation(valid: Ref<boolean>, emit: (event: "update:valid", value: boolean) => void) {
+  watch(
+    valid, v => emit('update:valid', v),
+    { immediate: true,}
+  )
 }
