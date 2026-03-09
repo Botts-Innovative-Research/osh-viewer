@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { watch, ref, onMounted } from 'vue';
+import { watch, ref, onMounted, computed } from 'vue';
 import { useVizWizStore } from '@/stores/vizwizstore';
-import { generateVizName } from '../../shared/helpers';
+import { generateVizName, useComponentValidation } from '../../shared/helpers';
+import { VisualizationComponentEmits } from '../../VisualizationRegistry';
 
 const props = defineProps<{
   role?: string;  // Role to use with generateVizName function
@@ -28,11 +29,18 @@ onMounted(() => {
   });
 });
 
+// Validation: Name cannot be empty
+const emit = defineEmits<VisualizationComponentEmits>()
+const valid = computed(() => {
+  return !!name.value
+})
+useComponentValidation(valid, emit)
+
 </script>
 <template>
   <v-card class="pa-4" elevation="2">
     <h3>Visualization Name</h3>
-    <v-text-field v-model="name" label="Name">
+    <v-text-field v-model="name" label="Name" :rules="[() => !!name || 'Visualization name is required']">
     </v-text-field>
   </v-card>
 </template>

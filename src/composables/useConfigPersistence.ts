@@ -287,6 +287,7 @@ export function useConfigPersistence() {
                                 serializedViz.id,
                                 serializedViz.name,
                                 serializedViz.type,
+                                serializedViz.viewLocation,
                                 datastreams,
                                 controlstreams,
                                 serializedViz.parentId,

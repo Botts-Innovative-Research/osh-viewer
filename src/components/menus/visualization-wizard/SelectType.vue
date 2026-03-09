@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { computed } from 'vue';
-import { VisualizationRegistry } from './VisualizationRegistry';
+import { VisualizationComponentEmits, VisualizationRegistry } from './VisualizationRegistry';
+import { useComponentValidation } from './shared/helpers';
 
 
 // Update visualizationType in vizwiz store
@@ -16,12 +17,17 @@ const visualizationTypes = computed(() => {
 	return Object.values(VisualizationRegistry).sort((a, b) => a.label.localeCompare(b.label));
 });
 
-
 // Uses store setType to update value
 function selectType(type: string) {
 	vizwizStore.reset() // Reset store when selecting new type
 	selectedType.value = type;
 }
+
+// Validation: a type must be selected
+const emit = defineEmits<VisualizationComponentEmits>()
+const valid = computed(() => { return !!selectedType.value })
+useComponentValidation(valid, emit)
+
 </script>
 <template>
 	<v-row justify="center" align="center" class="mb-2" v-if="visualizationTypes.length > 0">
