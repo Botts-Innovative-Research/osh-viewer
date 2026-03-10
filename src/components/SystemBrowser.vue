@@ -130,17 +130,16 @@ const openDeleteNodeDialog = (node: OSHNode) => {
 <template>
 	<v-card id="node-sidebar">
 		<v-sheet class="pa-4">
-		<v-tooltip text="Fetch Resources" location="bottom">
-                <template v-slot:activator="{ props }">
-                  <v-btn
-                    v-bind="props"
-                    aria-label="Fetch Resources"
-                    @click="fetchResources"
-                    icon="mdi-refresh"
-                    size="small"
-                ></v-btn>
-                </template>
-              </v-tooltip>
+			<v-tooltip text="Fetch Resources" location="bottom">
+				<template v-slot:activator="{ props }">
+					<IconButton
+						v-bind="props"
+						aria-label="Fetch Resources"
+						@click="fetchResources"
+						icon="mdi-refresh"
+					></IconButton>
+				</template>
+			</v-tooltip>
 			<v-btn @click="addAllSamplingFeaturePMs">All PMS</v-btn>
 
 			<!-- Add Node -->
@@ -165,8 +164,8 @@ const openDeleteNodeDialog = (node: OSHNode) => {
 					<!-- Remove node -->
 					<v-tooltip v-if="item.type === 'node'" text="Delete" location="bottom" open-delay="500">
 						<template #activator="{ props }">
-							<v-btn v-bind="props" icon="mdi-window-close" size="small" variant="plain" class="close-btn"
-								@click="openDeleteNodeDialog(item.raw)"></v-btn>
+							<IconButton v-bind="props" icon="mdi-window-close" variant="plain" class="close-btn" @click="openDeleteNodeDialog(item.raw)">
+							</IconButton>
 						</template>
 					</v-tooltip>
 					<!-- DS/CS properties -->
@@ -174,7 +173,7 @@ const openDeleteNodeDialog = (node: OSHNode) => {
 					<v-tooltip v-if="item.type === 'ds' || item.type === 'cs'" text="Properties" location="bottom"
 						open-delay="500">
 						<template #activator="{ props }">
-							<v-btn v-bind="props" icon="mdi-dots-vertical" size="small" variant="plain"></v-btn>
+							<IconButton v-bind="props" icon="mdi-dots-vertical" variant="plain"></IconButton>
 						</template>
 					</v-tooltip>
 				</template>

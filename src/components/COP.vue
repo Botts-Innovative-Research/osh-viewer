@@ -44,7 +44,7 @@ const getDataStreams = () => {
 		<pane key="system-browser" :size="paneSize1">
 			<v-sheet rounded-0 class="fill-height overflow-y-auto">
 
-				<v-tabs color="primary" align-tabs="center" v-model="tab">
+				<v-tabs color="primary" align-tabs="center" v-model="tab" grow class="equal-tabs">
 					<v-tab value="one">Nodes</v-tab>
 					<v-tab value="two">Visualizations</v-tab>
 				</v-tabs>
@@ -71,5 +71,8 @@ const getDataStreams = () => {
 .splitpanes--horizontal>.splitpanes__splitter {
 	min-height: 6px;
 	background: linear-gradient(0deg, #ccc, #111);
+}
+.equal-tabs .v-tab {
+	flex: 1;
 }
 </style>

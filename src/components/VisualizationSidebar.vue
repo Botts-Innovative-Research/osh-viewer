@@ -63,8 +63,8 @@ const toggleMapLayerVisibility = (item: any) => {
 			<span class="viz-title mr-4">Visualizations</span>
 			<v-tooltip text="Add Visualization" location="bottom">
 				<template v-slot:activator="{ props }">
-					<v-btn v-bind="props" icon="mdi-plus" aria-label="Add Visualization" @click="useUIStore().openVizWiz()"
-						size="small"></v-btn>
+					<IconButton v-bind="props" icon="mdi-plus" aria-label="Add Visualization" @click="useUIStore().openVizWiz()"
+					></IconButton>
 				</template>
 			</v-tooltip>
 		</v-card-title>
@@ -91,11 +91,11 @@ const toggleMapLayerVisibility = (item: any) => {
 										:style="`text-decoration: ${visualizationStore.isMapLayerVisible(viz.id) ? '' : 'line-through'}`">{{
 											viz.name }}</span></template>
 								<template #append>
-									<v-btn aria-label="Map Layer Toggle Visibility" size="x-small" variant="plain"
+									<IconButton aria-label="Map Layer Toggle Visibility" size="x-small" variant="plain"
 										:icon="visualizationStore.isMapLayerVisible(viz.id) ? 'mdi-eye' : 'mdi-eye-off'"
-										@click.stop="toggleMapLayerVisibility(viz)"></v-btn>
-									<v-btn aria-label="Remove" class="close-btn" icon="mdi-window-close" size="x-small" variant="plain"
-										@click.stop="visualizationStore.removeVisualization(viz)"></v-btn>
+										@click.stop="toggleMapLayerVisibility(viz)"></IconButton>
+									<IconButton aria-label="Remove" class="close-btn" icon="mdi-window-close" size="x-small" variant="plain"
+										@click.stop="visualizationStore.removeVisualization(viz)"></IconButton>
 								</template>
 							</v-list-item>
 						</v-list>
@@ -125,8 +125,8 @@ const toggleMapLayerVisibility = (item: any) => {
 												</template>
 												<v-list-item-title>{{ item.name }}</v-list-item-title>
 												<template v-slot:append>
-													<v-btn aria-label="Remove" class="ml-2 mr-2 close-btn" icon="mdi-close" size="x-small"
-														variant="plain" @click.stop="removeGeoPTZ(item.raw)"></v-btn>
+													<IconButton aria-label="Remove" class="ml-2 mr-2 close-btn" icon="mdi-close" size="x-small"
+														variant="plain" @click.stop="removeGeoPTZ(item.raw)"></IconButton>
 												</template>
 											</v-list-item>
 										</template>
@@ -144,8 +144,8 @@ const toggleMapLayerVisibility = (item: any) => {
 					<template #title>
 						<div class="panel-header">
 							<span>{{ viz.name }}</span>
-							<v-btn aria-label="Remove" class="ml-2 mr-2 close-btn" icon="mdi-close" size="x-small" variant="plain"
-								@click.stop="visualizationStore.removeVisualization(viz)"></v-btn>
+							<IconButton aria-label="Remove" class="ml-2 mr-2 close-btn" icon="mdi-close" size="x-small" variant="plain"
+								@click.stop="visualizationStore.removeVisualization(viz)"></IconButton>
 						</div>
 					</template>
 					<v-expansion-panel-text>

@@ -92,12 +92,12 @@ onBeforeUnmount(() => {
 				<v-tooltip :text="props.visualizations.length === 0 ? 'No GeoPTZ controllers selected' : 'Select map click-to-task'" location="top">
 					<template #activator="{ props: tooltipProps }">
 						<span v-bind="tooltipProps" style="display: inline-block;">
-							<v-btn icon :color="isSelected ? 'primary' : 'grey'" @click="toggle"
-								:disabled="props.visualizations.length === 0" class="pa-0">
+							<IconButton icon :color="isSelected ? 'primary' : 'grey'" @click="toggle"
+								:disabled="props.visualizations.length === 0" class="pa-0" size="default">
 								<v-icon>
 									{{ isSelected ? 'mdi-check-circle' : 'mdi-circle-outline' }}
 								</v-icon>
-							</v-btn>
+							</IconButton>
 						</span>
 					</template>
 				</v-tooltip>
