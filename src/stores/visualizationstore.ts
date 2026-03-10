@@ -3,6 +3,7 @@ import { computed, ref, Ref } from 'vue';
 import { OSHControlStream, OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {useDataStreamStore} from "@/stores/datastreamstore";
 import {useControlStreamStore} from "@/stores/controlstreamstore";
+import { ViewLocation } from '@/components/menus/visualization-wizard/VisualizationRegistry';
 
 export interface SerializeVisualization {
     id: string;
@@ -11,21 +12,9 @@ export interface SerializeVisualization {
     parentId: string | null;
     datastreamIds: string[],
     controlstreamIds: string[],
-    visualizationComponents: any
+    visualizationComponents: any,
+    viewLocation: ViewLocation
 }
-
-export const PANEL_VISUALIZATIONS = [
-    'chart',
-    'video',
-    'text',
-    'flightPath',
-]
-
-export const MAP_VISUALIZATIONS = [
-    'pointmarker',  // TODO: Delete this type
-    'pmorientation',
-    'lob',
-]
 
 export const useVisualizationStore = defineStore('visualizations',
     () => {
@@ -33,18 +22,19 @@ export const useVisualizationStore = defineStore('visualizations',
 	const serializedVisualizations: Ref<SerializeVisualization[]> = ref([]);
 	const currentVisDataStreamOptions: Ref<any> = ref({});
 	const currentVisualizationCustomizationOptions: Ref<any> = ref({});
+    const layerVisibility: Ref<Map<string, boolean>> = ref(new Map());
 
     // Filter only PANEL visualizations
     const panelVisualizations = computed(() => {
         return visualizations.value.filter((v: OSHVisualization) =>
-            PANEL_VISUALIZATIONS.includes(v.type)
+            v.viewLocation === 'panel'
         )
     })
 
     // Filter only MAP visualizations
     const mapVisualizations = computed(() => {
         return visualizations.value.filter((v: OSHVisualization) =>
-            MAP_VISUALIZATIONS.includes(v.type)
+            v.viewLocation === 'map'
         )
     })
 
@@ -67,7 +57,8 @@ export const useVisualizationStore = defineStore('visualizations',
             parentId: visualization.parentId ?? null,
             datastreamIds: getIds(visualization.datastream),
             controlstreamIds: visualization.controlstream ? getIds(visualization.controlstream) : [],
-            visualizationComponents: visualization.visualizationComponents
+            visualizationComponents: visualization.visualizationComponents,
+            viewLocation: visualization.viewLocation
         });
 	};
 
@@ -117,6 +108,16 @@ export const useVisualizationStore = defineStore('visualizations',
 		currentVisualizationCustomizationOptions.value = {};
 	};
 
+    const toggleMapLayerVisibility = (layerId: string): boolean => {
+        const currentVisibility = layerVisibility.value.get(layerId) ?? true;
+        layerVisibility.value.set(layerId, !currentVisibility);
+        return !currentVisibility;
+    };
+
+    const isMapLayerVisible = (layerId: string): boolean => {
+        return layerVisibility.value.get(layerId) ?? true;
+    };
+
     const rehydrateVisualizations = (): void => {
         if (serializedVisualizations.value.length === 0 || visualizations.value.length > 0) return;
 
@@ -137,6 +138,7 @@ export const useVisualizationStore = defineStore('visualizations',
                 serialized.id,
                 serialized.name,
                 serialized.type,
+                serialized.viewLocation,
                 datastreams,
                 controlstreams,
                 serialized.parentId,
@@ -163,6 +165,9 @@ export const useVisualizationStore = defineStore('visualizations',
 		currentVisualizationCustomizationOptions,
 		updateCurrentVisualizationCustomizationOptions,
 		clearCurrentVisualizationCustomizationOptions,
+		toggleMapLayerVisibility,
+        isMapLayerVisible,
+        layerVisibility,
         rehydrateVisualizations,
 	};
 }, { persist: { pick: ['serializedVisualizations'] } });

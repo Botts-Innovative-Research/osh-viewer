@@ -1,24 +1,26 @@
 <script setup lang="ts">
 // @ts-ignore
 import { useUIStore } from '@/stores/uistore.ts';
-import { MAP_VISUALIZATIONS, PANEL_VISUALIZATIONS, useVisualizationStore } from '@/stores/visualizationstore';
+import { useVisualizationStore } from '@/stores/visualizationstore';
 import { storeToRefs } from 'pinia';
 import VisualizationWrapper from './VisualizationWrapper.vue';
 import { computed, onMounted, ref } from 'vue';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { ILineOfBearingLayerProperties, IPointMarkerLayerProperties, VisualizationLayerProperties } from '@/lib/VisualizationHelpers';
 import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
+import VisualizationWizard from './menus/visualization-wizard/VisualizationWizard.vue';
 
 // Each visualization can be represented by an object with a unique id
 const visualizationStore = useVisualizationStore();
 const { visualizations } = storeToRefs(visualizationStore);
+const uiStore = useUIStore();
 
 // Separate visualizations into panel and map types
 const panelVisualizations = computed<OSHVisualization[]>(() => visualizations.value.filter(viz =>
-	PANEL_VISUALIZATIONS.includes(viz.type)
+	viz.viewLocation === 'panel'
 ));
 const mapVisualizations = computed<OSHVisualization[]>(() => visualizations.value.filter(viz =>
-	MAP_VISUALIZATIONS.includes(viz.type)
+	viz.viewLocation === 'map'
 ));
 const geoPtzVisualizations = computed<OSHVisualization[]>(() => visualizations.value.filter(viz =>
 	viz.type === 'geoPtz'
@@ -47,6 +49,10 @@ const toggleSelectedMapItem = (item: any) => {
 	} else {
 		uiStore.setSelectedMapItem(item);
 	}
+};
+
+const toggleMapLayerVisibility = (item: any) => {
+	visualizationStore.toggleMapLayerVisibility(item.id);
 };
 
 </script>
@@ -81,8 +87,13 @@ const toggleSelectedMapItem = (item: any) => {
 										:icon="`mdi-${isMapLayer(viz.visualizationComponents.dataLayer) ? viz.visualizationComponents.dataLayer.iconName : ''}`"
 										size="16"></v-icon>
 								</template>
-								<template #title>{{ viz.name }}</template>
+								<template #title><span
+										:style="`text-decoration: ${visualizationStore.isMapLayerVisible(viz.id) ? '' : 'line-through'}`">{{
+											viz.name }}</span></template>
 								<template #append>
+									<v-btn aria-label="Map Layer Toggle Visibility" size="x-small" variant="plain"
+										:icon="visualizationStore.isMapLayerVisible(viz.id) ? 'mdi-eye' : 'mdi-eye-off'"
+										@click.stop="toggleMapLayerVisibility(viz)"></v-btn>
 									<v-btn aria-label="Remove" class="close-btn" icon="mdi-window-close" size="x-small" variant="plain"
 										@click.stop="visualizationStore.removeVisualization(viz)"></v-btn>
 								</template>
@@ -142,10 +153,12 @@ const toggleSelectedMapItem = (item: any) => {
 						</VisualizationWrapper>
 					</v-expansion-panel-text>
 				</v-expansion-panel>
-
 			</v-expansion-panels>
 		</v-sheet>
 	</v-card>
+	<v-dialog v-model="uiStore.vizWizOpen" max-width="900">
+		<VisualizationWizard />
+	</v-dialog>
 </template>
 
 <style scoped>

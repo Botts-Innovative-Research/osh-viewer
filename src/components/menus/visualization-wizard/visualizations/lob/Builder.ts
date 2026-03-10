@@ -12,8 +12,9 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { AggregateDatastreams, BuildRoleProperty, getUsedDatastreams } from '../../shared/helpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
+import { LobDescriptor } from './Descriptor';
 
-export function build() {
+export default function build() {
 	console.log('Building LOB Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
@@ -34,6 +35,7 @@ export function build() {
 		`visualization-${randomUUID()}`,
 		vizwizStore.visualizationCustomizationOptions.name,
 		'lob',
+		LobDescriptor.viewLocation,
 		getUsedDatastreams(),
 	);
 	newViz.setVisualizationComponents(visualizationComponents);

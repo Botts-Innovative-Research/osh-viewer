@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { ref, computed, reactive, watch, ReactiveEffect, onMounted } from 'vue';
-import TimePickers from '../../viz-components/TimePickers.vue';
 import DataSourcePicker from '../../viz-components/DataSourcePicker.vue';
+import { VisualizationComponentEmits } from '../../VisualizationRegistry';
+import { useComponentValidation } from '../../shared/helpers';
 
 
 // Retrieve datastreams
@@ -16,17 +17,29 @@ const checkedRoles = reactive({
   }),
   orientation: computed({
     get: () => vizwizStore.dsConfig.orientation?.selected ?? false,
-    set: (val: boolean) => vizwizStore.updateDsConfig("orientation", { selected: val })
+    set: (val: boolean) => {
+      if (val) {
+        vizwizStore.updateDsConfig("orientation", { selected: val })
+      } else {
+        delete vizwizStore.dsConfig.orientation
+      }
+    }
   }),
   markerId: computed({
     get: () => vizwizStore.dsConfig.markerId?.selected ?? false,
-    set: (val: boolean) => vizwizStore.updateDsConfig("markerId", { selected: val })
+    set: (val: boolean) => {
+      if (val) {
+        vizwizStore.updateDsConfig("markerId", { selected: val })
+      } else {
+        delete vizwizStore.dsConfig.markerId
+      }
+    }
   }),
 })
 
 // Initialize dsConfig with location selected by default when mounted
 onMounted(() => {
-  console.log("Mounted PM Orientation Config")
+  console.log("Mounted Pointmarker Config")
   if (!vizwizStore.dsConfig.location) {
     vizwizStore.updateDsConfig("location", { selected: true })
   }
@@ -39,24 +52,38 @@ watch(() => vizwizStore.dsConfig, (newVal) => {
   }
 }, { deep: true })
 
+// Validation: at least location must be selected and other selected roles must be configured
+const emit = defineEmits<VisualizationComponentEmits>()
+const roleLocationValid = ref<boolean>(false)
+const roleOrientationValid = ref<boolean>(false)
+const roleMarkerIdValid = ref<boolean>(false)
+const valid = computed(() => {
+  // If role is checked, must be valid. If not checked, ignore validity
+  const locationValid = checkedRoles.location ? roleLocationValid.value : true
+  const orientationValid = checkedRoles.orientation ? roleOrientationValid.value : true
+  const markerIdValid = checkedRoles.markerId ? roleMarkerIdValid.value : true
+  return locationValid && orientationValid && markerIdValid
+})
+useComponentValidation(valid, emit)
+
 </script>
 <template>
   <!-- Location -->
   <v-container>
     <v-checkbox label="Location" v-model="checkedRoles.location" disabled></v-checkbox>
-    <DataSourcePicker v-if="checkedRoles.location" role="location" />
+    <DataSourcePicker v-if="checkedRoles.location" role="location" v-model:valid="roleLocationValid" />
   </v-container>
 
   <!-- Orientation -->
   <v-container>
     <v-checkbox label="Orientation" v-model="checkedRoles.orientation"></v-checkbox>
-    <DataSourcePicker v-if="checkedRoles.orientation" role="orientation" />
+    <DataSourcePicker v-if="checkedRoles.orientation" role="orientation" v-model:valid="roleOrientationValid" />
   </v-container>
 
   <!-- Marker ID -->
   <v-container>
     <v-checkbox label="Marker ID" v-model="checkedRoles.markerId"></v-checkbox>
-    <DataSourcePicker v-if="checkedRoles.markerId" role="markerId" />
+    <DataSourcePicker v-if="checkedRoles.markerId" role="markerId" v-model:valid="roleMarkerIdValid" />
   </v-container>
 </template>
 

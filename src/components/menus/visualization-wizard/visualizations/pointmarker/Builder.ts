@@ -13,9 +13,10 @@ import { Mode } from 'osh-js/source/core/datasource/Mode';
 //@ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { AggregateDatastreams, BuildRoleProperty, getUsedDatastreams } from '../../shared/helpers';
+import { PointMarkerDescriptor } from './Descriptor';
 
-export function build() {
-	console.log('Building PM Orientation Visualization...');
+export default function build() {
+	console.log('Building Point Marker Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
 
@@ -31,13 +32,14 @@ export function build() {
 
 	const newViz: OSHVisualization = new OSHVisualization(
 		`visualization-${randomUUID()}`,
-		vizwizStore.visualizationCustomizationOptions.name,
-		'pmorientation',
-		getUsedDatastreams()
+      vizwizStore.visualizationCustomizationOptions.name,
+		'pointmarker',
+    PointMarkerDescriptor.viewLocation,
+		getUsedDatastreams(),
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
 	visualizationStore.addVisualization(newViz);
-	console.log('Created PM Orientation Visualization:', newViz);
+	console.log('Created Point Marker Visualization:', newViz);
 }
 
 /**

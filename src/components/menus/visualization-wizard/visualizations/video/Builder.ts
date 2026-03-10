@@ -11,9 +11,10 @@ import { Mode } from 'osh-js/source/core/datasource/Mode';
 //@ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { AggregateDatastreams, AggregateControlstreams, BuildRoleProperty, getUsedDatastreams, getUsedControlstreams } from '../../shared/helpers';
+import { VideoDescriptor } from './Descriptor';
 
 
-export function build() {
+export default function build() {
 	console.log('Building Video Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
@@ -38,6 +39,7 @@ export function build() {
 		`visualization-${randomUUID()}`,
         vizwizStore.visualizationCustomizationOptions.name,
 		'video',
+        VideoDescriptor.viewLocation,
 		getUsedDatastreams(),
 		getUsedControlstreams()
 	);
@@ -73,7 +75,7 @@ export function CreateVideoViewProps(datastreams: { [key: string]: any }, contro
         layers: [videoLayer],
         width: 640,
         height: 480,
-        useWebCodecApi: visOptions?.webCodec,
+        useWebCodecApi: true,
         showTime: visOptions?.time,
         showStats: visOptions?.stats,
     }

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { VisualizationComponentEmits } from '../../VisualizationRegistry';
-import NameControl from '../../viz-components/customizations/NameControl.vue';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useComponentValidation } from '../../shared/helpers';
+import { VisualizationComponentEmits } from '../../VisualizationRegistry';
+import IconControl from '../../viz-components/customizations/IconControl.vue';
+import NameControl from '../../viz-components/customizations/NameControl.vue';
 
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>()
@@ -12,9 +12,9 @@ const valid = computed(() => {
   return nameValid.value
 })
 useComponentValidation(valid, emit)
-
 </script>
 
 <template>
-  <NameControl default-name="New GeoPTZ" v-model:valid="nameValid"></NameControl>
+  <NameControl role="location" v-model:valid="nameValid" />
+  <icon-control></icon-control>
 </template>

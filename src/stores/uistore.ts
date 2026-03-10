@@ -11,10 +11,11 @@ export const useUIStore = defineStore('ui', () => {
 	const leftSidebarOpen = ref(true);
 	const rightSidebarOpen = ref(false);
 	const nodeConfigFormOpen = ref(false);
+	const deleteNodeDialog = ref(false);
 	const vizWizOpen = ref(false); // VizWiz = new version
 
-	// Focused map (could be an ID or name)
-	const focusedMap = ref<string | null>(null);
+	// Focused map corresponds to map type
+	const focusedMap = ref<'cesium' | 'leaflet'>('cesium');
 
 	// Active window items (array of IDs or names)
 	const activeWindows = ref<string[]>([]);
@@ -60,8 +61,8 @@ export const useUIStore = defineStore('ui', () => {
 	function toggleRightSidebar() {
 		rightSidebarOpen.value = !rightSidebarOpen.value;
 	}
-	function setFocusedMap(mapId: string | null) {
-		focusedMap.value = mapId;
+	function setFocusedMap(value: ('cesium' | 'leaflet')) {
+		focusedMap.value = value;
 	}
 	function setActiveWindows(windows: string[]) {
 		activeWindows.value = windows;
@@ -86,6 +87,12 @@ export const useUIStore = defineStore('ui', () => {
 	}
 	function openNodeConfigForm() {
 		nodeConfigFormOpen.value = true;
+	}
+	function toggleDeleteNodeDialog() {
+		deleteNodeDialog.value = !deleteNodeDialog.value;
+	}
+	function openDeleteNodeDialog() {
+		deleteNodeDialog.value = true;
 	}
 
 	// Handle selection of map item
@@ -188,6 +195,9 @@ export const useUIStore = defineStore('ui', () => {
 		toggleTheme,
 		nodeConfigFormOpen,
 		toggleNodeConfigForm,
+		deleteNodeDialog,
+		toggleDeleteNodeDialog,
+		openDeleteNodeDialog,
 		openNodeConfigForm,
 		selectedGeoPTZ,
 		setSelectedGeoPTZ,
@@ -214,4 +224,4 @@ export const useUIStore = defineStore('ui', () => {
 		selectedMapItem,
 		setSelectedMapItem,
 	};
-});
+}, { persist: {pick: ['theme', 'focusedMap']}});

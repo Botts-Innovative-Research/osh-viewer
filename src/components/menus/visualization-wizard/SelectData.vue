@@ -6,6 +6,12 @@ import { computed, watch } from 'vue';
 import {OSHControlStream, OSHDatastream} from '@/lib/OSHConnectDataStructs';
 import {useControlStreamStore} from "@/stores/controlstreamstore";
 import { CONFIG_UID } from '@/composables/useConfigPersistence';
+import { useComponentValidation } from './shared/helpers';
+import { VisualizationComponentEmits } from './VisualizationRegistry';
+
+const props = defineProps<{
+	requireCs?: boolean
+}>()
 
 // Stores
 const vizwizStore = useVizWizStore();
@@ -60,6 +66,16 @@ watch(selectedControlstreams, (newVal, oldVal) => {
   }
 })
 
+// Validation: Must have at least 1 system, 1 datastream, and 1 controlstream IF required
+const emit = defineEmits<VisualizationComponentEmits>()
+const valid = computed(() => {
+	const hasSystem = selectedSystems.value.length > 0
+	const hasDatastream = selectedDatastreams.value.length > 0
+	const hasControlstream = props.requireCs ? selectedControlstreams.value.length > 0 : true
+	return hasSystem && hasDatastream && hasControlstream
+})
+useComponentValidation(valid, emit)
+
 </script>
 <template>
 	<!-- Select for systems -->
@@ -67,34 +83,46 @@ watch(selectedControlstreams, (newVal, oldVal) => {
 		v-model="selectedSystems"
 		:items="listSystems"
 		hint="Select one or more systems"
-		label="Select system(s)"
+		label="System(s)*"
 		multiple
 		persistent-hint
 		item-title="name"
 		item-value="id"
     class="mb-4"
+		chips
+		clearable
+		validate-on="blur"
+		:rules="[(v: any) => !!v.length || 'At least one system must be selected']"
 	></v-autocomplete>
 	<!-- Select for datastreams -->
 	<v-autocomplete
 		v-model="selectedDatastreams"
 		:items="listDatastreams"
 		hint="Select one or more datastreams"
-		label="Select datastream(s)"
+		label="Datastream(s)*"
 		multiple
 		persistent-hint
 		item-title="name"
 		:item-value="(item: OSHDatastream) => item"
     class="mb-4"
+		chips
+		clearable
+		validate-on="blur"
+		:rules="[(v: any) => !!v.length || 'At least one datastream must be selected']"
 	></v-autocomplete>
   <!-- Select for controlstreams -->
   <v-autocomplete
       v-model="selectedControlstreams"
       :items="listControlstreams"
       hint="Select one or more controlstreams"
-      label="Select controlstream(s)"
+      :label="'Controlstream(s)' + (props.requireCs ? '*' : '')"
       multiple
       persistent-hint
       item-title="name"
       :item-value="(item: OSHControlStream) => item"
+			chips
+			clearable
+			validate-on="blur"
+			:rules="props.requireCs? [(v: any) => !!v.length || 'At least one controlstream must be selected'] : []"
   ></v-autocomplete>
 </template>
