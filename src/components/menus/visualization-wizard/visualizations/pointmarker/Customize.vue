@@ -4,6 +4,7 @@ import { useComponentValidation } from '../../shared/helpers';
 import { VisualizationComponentEmits } from '../../VisualizationRegistry';
 import IconControl from '../../viz-components/customizations/IconControl.vue';
 import NameControl from '../../viz-components/customizations/NameControl.vue';
+import IconColorControl from '../../viz-components/customizations/IconColorControl.vue';
 
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>()
@@ -17,4 +18,5 @@ useComponentValidation(valid, emit)
 <template>
   <NameControl role="location" v-model:valid="nameValid" />
   <icon-control></icon-control>
+  <IconColorControl></IconColorControl>
 </template>
