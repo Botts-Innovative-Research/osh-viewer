@@ -102,21 +102,27 @@ export function getCommandType(schema: any, id: string) {
 	let commandSchema: any = {};
 
 	// Check for PTZ camera command schema
+	// Supports both standard (pan/rpan) and ONVIF continuous (ptzCont) schemas
+	const hasPtzCont = Array.isArray(schema) &&
+		schema.some((item: any) => item.name === 'ptzCont' && item.type === 'DataRecord');
 	if (
 		Array.isArray(schema) &&
-		schema.some((item: any) => item.name === 'pan' || item.name === 'rpan')
+		(schema.some((item: any) => item.name === 'pan' || item.name === 'rpan') || hasPtzCont)
 	) {
 		const type = 'PTZCam';
 		let isRelative = false;
 		let isPreset = false;
 		let isDataRecord = false;
+		let isContinuous = false;
 
 		// Check for relative commands
 		if (schema.some((item: any) => item.name === 'rpan')) isRelative = true;
+		// Check for ONVIF continuous PTZ (ptzCont DataRecord with cpan/ctilt/czoom)
+		if (hasPtzCont) { isRelative = true; isContinuous = true; }
 		// Check for preset commands
 		if (schema.some((item: any) => item.name === 'preset')) isPreset = true;
-		// Check for DataRecord commands
-		if (schema.some((item: any) => item.type === 'DataRecord')) isDataRecord = true;
+		// Check for DataRecord commands (only non-ptzCont DataRecords)
+		if (schema.some((item: any) => item.type === 'DataRecord' && item.name !== 'ptzCont')) isDataRecord = true;
 
 		commandType = {
 			type: type,
@@ -124,6 +130,7 @@ export function getCommandType(schema: any, id: string) {
 				hasRelative: isRelative,
 				hasPreset: isPreset,
 				hasDataRecord: isDataRecord,
+				hasContinuous: isContinuous,
 			},
 		};
 
@@ -154,14 +161,20 @@ export function getCommandType(schema: any, id: string) {
 				type: 'number',
 			};
 		}
+		if (hasPtzCont && !schema.some((item: any) => item.name === 'rpan')) {
+			// ONVIF continuous PTZ — expose as rpan/rtilt/rzoom for the UI
+			commandSchema.rpan = { type: 'number' };
+			commandSchema.rtilt = { type: 'number' };
+			commandSchema.rzoom = { type: 'number' };
+		}
 		if (schema.some((item: any) => item.name === 'preset')) {
 			// Add Preset PTZ command schema
 			const presetItem = schema.find((item: any) => item.name === 'preset');
 			// Add all possible preset values as an array
 			commandSchema.preset = { type: presetItem.type, values: presetItem.constraint.values };
 		}
-		if (schema.some((item: any) => item.type === 'DataRecord')) {
-			// Add DataRecord PTZ command schema
+		if (schema.some((item: any) => item.type === 'DataRecord') && commandSchema.pan) {
+			// Add DataRecord PTZ command schema (requires absolute pan/tilt/zoom constraints)
 			const dataRecItem = schema.find((item: any) => item.type === 'DataRecord');
 			commandSchema[dataRecItem.name] = {
 				type: dataRecItem.type,

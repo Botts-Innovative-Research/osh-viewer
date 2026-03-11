@@ -17,6 +17,7 @@ const props = defineProps<PTZControlProps>();
 // Handle text input command sending
 function onSend() {
 	let command = null;
+	const useContinuous = controlStreamType.value.details?.hasContinuous;
 
 	// Handle DataRecord type command
 	if (isDataRecord.value) {
@@ -28,6 +29,19 @@ function onSend() {
 					pan: absPan.value ?? 0.0,
 					tilt: absTilt.value ?? 0.0,
 					zoom: absZoom.value ?? 0.0,
+				},
+			},
+		};
+	}
+	// Handle continuous PTZ single-axis commands (rpan/rtilt/rzoom mapped to ptzCont)
+	else if (useContinuous && ['rpan', 'rtilt', 'rzoom'].includes(selectedCommand.value)) {
+		const val = Number(singleValue.value) || 0;
+		command = {
+			parameters: {
+				ptzCont: {
+					cpan: selectedCommand.value === 'rpan' ? val : 0,
+					ctilt: selectedCommand.value === 'rtilt' ? val : 0,
+					czoom: selectedCommand.value === 'rzoom' ? val : 0,
 				},
 			},
 		};
@@ -54,25 +68,40 @@ function onSend() {
 // Handle button-based movement commands for relative control
 function handleMove(direction: Direction) {
 	let command = null;
+	const useContinuous = controlStreamType.value.details?.hasContinuous;
+	// Scale factor for continuous PTZ (ONVIF expects -1.0 to 1.0 range)
+	const contScale = 0.1;
 
 	switch (direction) {
 		case 'right':
-			command = { parameters: { rpan: increment.value } };
+			command = useContinuous
+				? { parameters: { ptzCont: { cpan: increment.value * contScale, ctilt: 0, czoom: 0 } } }
+				: { parameters: { rpan: increment.value } };
 			break;
 		case 'left':
-			command = { parameters: { rpan: -increment.value } };
+			command = useContinuous
+				? { parameters: { ptzCont: { cpan: -increment.value * contScale, ctilt: 0, czoom: 0 } } }
+				: { parameters: { rpan: -increment.value } };
 			break;
 		case 'up':
-			command = { parameters: { rtilt: increment.value } };
+			command = useContinuous
+				? { parameters: { ptzCont: { cpan: 0, ctilt: increment.value * contScale, czoom: 0 } } }
+				: { parameters: { rtilt: increment.value } };
 			break;
 		case 'down':
-			command = { parameters: { rtilt: -increment.value } };
+			command = useContinuous
+				? { parameters: { ptzCont: { cpan: 0, ctilt: -increment.value * contScale, czoom: 0 } } }
+				: { parameters: { rtilt: -increment.value } };
 			break;
 		case 'zoomIn':
-			command = { parameters: { rzoom: increment.value } };
+			command = useContinuous
+				? { parameters: { ptzCont: { cpan: 0, ctilt: 0, czoom: increment.value * contScale } } }
+				: { parameters: { rzoom: increment.value } };
 			break;
 		case 'zoomOut':
-			command = { parameters: { rzoom: -increment.value } };
+			command = useContinuous
+				? { parameters: { ptzCont: { cpan: 0, ctilt: 0, czoom: -increment.value * contScale } } }
+				: { parameters: { rzoom: -increment.value } };
 			break;
 		case 'home':
 			if (presetOptions.value.includes('Home')) command = { parameters: { preset: 'Home' } };
@@ -89,6 +118,15 @@ function handleMove(direction: Direction) {
 		console.log('PanTiltControl: Sending command', command, props.auth);
 		sendCommand(props.commandBaseUrl, props.id, command, props.auth);
 	}
+}
+
+// Stop continuous PTZ movement (send zero velocity)
+function handleStop() {
+	const useContinuous = controlStreamType.value.details?.hasContinuous;
+	if (!useContinuous) return;
+	const command = { parameters: { ptzCont: { cpan: 0, ctilt: 0, czoom: 0 } } };
+	console.log('PanTiltControl: Sending stop command');
+	sendCommand(props.commandBaseUrl, props.id, command, props.auth);
 }
 
 // Used for positioning buttons in a circle
@@ -142,6 +180,10 @@ const hasPreset = computed(() => {
 // Check if schema has data record command
 const hasDataRecord = computed(() => {
 	return controlStreamType.value.details?.hasDataRecord;
+});
+// Check if schema uses ONVIF continuous PTZ (ptzCont format)
+const hasContinuous = computed(() => {
+	return controlStreamType.value.details?.hasContinuous;
 });
 
 // Check if selected command is data record or preset
@@ -212,6 +254,8 @@ const constraintTooltip = computed(() => {
 					v-for="({ dir, angle, scale }) in buttonConfig"
 					:key="dir"
 					@mousedown="handleMove(dir === 'minus' ? 'zoomOut' : dir === 'plus' ? 'zoomIn' : dir)"
+					@mouseup="handleStop"
+					@mouseleave="handleStop"
 					class="button"
 					:style="{
 						left: `${center - 25 + radius * Math.cos((angle * Math.PI) / 180)}px`,

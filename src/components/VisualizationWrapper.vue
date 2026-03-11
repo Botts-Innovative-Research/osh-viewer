@@ -5,6 +5,7 @@ import Video from './menus/visualization-wizard/visualizations/video/Video.vue';
 import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
 import Text from './menus/visualization-wizard/visualizations/text/Text.vue';
 import FlightPath from './menus/visualization-wizard/visualizations/flightpath/FlightPath.vue';
+import KerbyRf from './menus/visualization-wizard/visualizations/kerby-rf/KerbyRf.vue';
 import { IChartViewProperties, ICurveLayerProperties, IVideoLayerProperties, IVideoViewProperties } from '@/lib/VisualizationHelpers';
 
 const { viz, customClass = '' } = defineProps<{
@@ -43,6 +44,11 @@ const { viz, customClass = '' } = defineProps<{
         :controlstream="viz.visualizationComponents.controlstream"
         v-if="viz.type === 'flightPath'"
     ></FlightPath>
+    <KerbyRf
+        :visualization="viz"
+        :datasource="viz.visualizationComponents.dataSource[0]"
+        v-if="viz.type === 'kerby-rf'"
+    ></KerbyRf>
 		<slot name="after" />
 		<slot name="overlay" />
 	</div>

@@ -53,13 +53,18 @@ const handleSubmit = async () => {
 
 	if (!entry) return;
 
-	const builderModule = await entry.builder();
+	try {
+		const builderModule = await entry.builder();
 
-	// Call default "build" function from the builder module
-	builderModule.default();
+		// Call default "build" function from the builder module
+		builderModule.default();
 
-	// Close the wizard
-	uiStore.vizWizOpen = false
+		// Close the wizard
+		uiStore.vizWizOpen = false
+	} catch (err) {
+		console.error('[VizWizard] Build failed:', err);
+		alert(`Visualization build failed: ${err}`);
+	}
 }
 
 // Change step function

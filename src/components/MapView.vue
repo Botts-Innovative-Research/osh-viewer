@@ -250,11 +250,29 @@ function createVisualizations(addedVizIds: string[]) {
           getLocation = {
             dataSourceIds: [dsInstance.id],
             handler: (rec: any) => {
-              return {
-                x: rec[dsProps.properties.location.property].lon,
-                y: rec[dsProps.properties.location.property].lat,
-                z: rec[dsProps.properties.location.property].alt || 0, // Default to 0 if altitude is not provided
+              const prop = dsProps.properties.location.property;
+              const locData = prop ? rec[prop] : null;
+
+              // Nested object format: {lon, lat, alt}
+              if (locData && typeof locData === 'object') {
+                return {
+                  x: locData.lon ?? locData.longitude ?? 0,
+                  y: locData.lat ?? locData.latitude ?? 0,
+                  z: locData.alt ?? locData.altitude ?? 0,
+                };
               }
+
+              // Flat record: look for common location field names at top level
+              const lat = rec.latitude ?? rec.lat;
+              const lon = rec.longitude ?? rec.lon;
+              if (lat != null && lon != null) {
+                return {
+                  x: lon,
+                  y: lat,
+                  z: rec.altitude ?? rec.alt ?? 0,
+                };
+              }
+              return null;
             },
           }
         }
@@ -343,21 +361,47 @@ function createVisualizations(addedVizIds: string[]) {
         lobLayerOpts.getOrigin = {
           dataSourceIds: [getOrigin.id],
           handler: (rec: any) => {
-            const originData = rec[getOrigin?.property];
-            if (!originData) return null;
-            return {
-              x: originData.lon,
-              y: originData.lat,
-              z: originData.alt || 0,
-            };
+            const prop = getOrigin?.property;
+            const originData = prop ? rec[prop] : null;
+
+            // Nested object format: {lon, lat, alt} (e.g. Beast Kit location property)
+            if (originData && typeof originData === 'object') {
+              return {
+                x: originData.lon ?? originData.longitude ?? 0,
+                y: originData.lat ?? originData.latitude ?? 0,
+                z: originData.alt ?? originData.altitude ?? 0,
+              };
+            }
+
+            // Flat record: look for common location field names at top level
+            const lat = rec.latitude ?? rec.lat;
+            const lon = rec.longitude ?? rec.lon;
+            if (lat != null && lon != null) {
+              return {
+                x: lon,
+                y: lat,
+                z: rec.altitude ?? rec.alt ?? 0,
+              };
+            }
+            return null;
           },
         };
         lobLayerOpts.getBearing = {
           dataSourceIds: [getBearing.id],
           handler: (rec: any) => {
-            const bearingData = rec[getBearing?.property];
-            if (!bearingData) return null;
-            return bearingData.heading != null ? bearingData.heading : bearingData;
+            const prop = getBearing?.property;
+            const bearingData = prop ? rec[prop] : null;
+
+            // Direct number (e.g. Kerby aoa, Beast Kit raw-lob)
+            if (typeof bearingData === 'number') return bearingData;
+
+            // Nested object with heading property
+            if (bearingData && typeof bearingData === 'object') {
+              return bearingData.heading ?? bearingData.aoa ?? bearingData.bearing ?? null;
+            }
+
+            // Fallback: look for common bearing fields at top level
+            return rec.heading ?? rec.aoa ?? rec.bearing ?? rec['raw-lob'] ?? null;
           },
         };
       }

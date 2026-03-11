@@ -86,7 +86,7 @@ export function CreateLobViewProps(datastreams: { [key: string]: any }, visOptio
 			resource: `/datastreams/${dsId}/observations`,
 			tls: currentOSHDatastream[0].datastream.networkProperties.tls,
 			protocol: 'ws',
-			startTime: 'now',
+			startTime: '2020-01-01T00:00:00Z',
 			endTime: '2125-08-01T00:00:00Z',
 			mode: Mode.REAL_TIME,
 			responseFormat: 'application/swe+json',
