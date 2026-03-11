@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useSystemStore } from '@/stores/systemstore'
 import { useNodeStore } from '@/stores/nodestore.js'
 import { useOSHConnectStore } from '@/stores/oshconnectstore.js'
@@ -19,42 +19,44 @@ const uiStore = useUIStore();
 const openNodeConfigForm = useUIStore().openNodeConfigForm
 const nodeToDelete = ref<OSHNode | null>(null);
 
-const treeItems = computed(() => {
-	return nodeStore.nodes.map((node: OSHNode) => {
-		return {
+type TreeItem = {
+	id: string
+	title: string
+	type: string
+	raw: OSHNode | OSHSystem | OSHDatastream | OSHControlStream
+	children?: TreeItem[]
+}
+const treeItems = ref<TreeItem[]>([])
+watch(
+	() => nodeStore.nodes,
+	(nodes: OSHNode[]) => {
+		treeItems.value = nodes.map((node: OSHNode) => ({
 			id: node.uuid,
 			title: node.name,
 			type: 'node',
 			raw: node,
-			children: node.getFilteredSystems().map((system: OSHSystem) => {
-				return {
-					id: system.id,
-					title: system.name,
-					type: 'system',
-					raw: system,
-					children: [
-						...system.datastreams.map((ds: OSHDatastream) => {
-							return {
-								id: ds.id,
-								title: ds.name,
-								type: 'ds',
-								raw: ds,
-							};
-						}),
-						...system.controlstreams.map((cs: OSHControlStream) => {
-							return {
-								id: cs.id,
-								title: cs.name,
-								type: 'cs',
-								raw: cs,
-							};
-						}),
-					],
-				};
-			}),
-		};
-	});
-});
+			children: node.getFilteredSystems().map((system: OSHSystem) => ({
+				id: system.id,
+				title: system.name,
+				type: 'system',
+				raw: system,
+				children: [
+					...system.datastreams.map((ds: OSHDatastream) => ({
+						id: ds.id,
+						title: ds.name,
+						type: 'ds',
+						raw: ds,
+					})),
+					...system.controlstreams.map((cs: OSHControlStream) => ({
+						id: cs.id,
+						title: cs.name,
+						type: 'cs',
+						raw: cs,
+					})),
+				],
+			})),
+		}))
+}, {immediate: true, deep: true});
 
 const fetchResources = () => {
 	console.log('Fetch Resources button clicked', oshConnect);
@@ -121,7 +123,7 @@ const addAllSamplingFeaturePMs = () => {
 	});
 };
 
-const openDeleteNodeDialog = (node: OSHNode) => {
+const openDeleteNodeDialog = (node: any) => {
 	nodeToDelete.value = node;
 	uiStore.openDeleteNodeDialog();
 };
@@ -150,8 +152,7 @@ const openDeleteNodeDialog = (node: OSHNode) => {
 			<v-divider class="my-4"></v-divider>
 			
 			<!-- Tree view of nodes/systems/datastreams -->
-			<v-treeview :items="treeItems" item-value="id" item-children="children" density="compact" fluid
-				items-registration="props" open-all>
+			<v-treeview :items="treeItems" item-value="id" item-children="children" density="compact" fluid open-all>
 				<!-- Icons -->
 				<template v-slot:prepend="{ item }">
 					<v-icon v-if="item.type === 'node'" icon="mdi-server"></v-icon>
