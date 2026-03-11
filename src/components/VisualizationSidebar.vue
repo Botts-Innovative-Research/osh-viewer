@@ -9,6 +9,7 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { ILineOfBearingLayerProperties, IPointMarkerLayerProperties, VisualizationLayerProperties } from '@/lib/VisualizationHelpers';
 import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
 import VisualizationWizard from './menus/visualization-wizard/VisualizationWizard.vue';
+import DeleteButton from './ui/DeleteButton.vue';
 
 // Each visualization can be represented by an object with a unique id
 const visualizationStore = useVisualizationStore();
@@ -94,8 +95,7 @@ const toggleMapLayerVisibility = (item: any) => {
 									<IconButton aria-label="Map Layer Toggle Visibility" size="x-small" variant="plain"
 										:icon="visualizationStore.isMapLayerVisible(viz.id) ? 'mdi-eye' : 'mdi-eye-off'"
 										@click.stop="toggleMapLayerVisibility(viz)"></IconButton>
-									<IconButton aria-label="Remove" class="close-btn" icon="mdi-window-close" size="x-small" variant="plain"
-										@click.stop="visualizationStore.removeVisualization(viz)"></IconButton>
+									<DeleteButton label="Remove" @delete="visualizationStore.removeVisualization(viz)"></DeleteButton>
 								</template>
 							</v-list-item>
 						</v-list>
@@ -125,8 +125,7 @@ const toggleMapLayerVisibility = (item: any) => {
 												</template>
 												<v-list-item-title>{{ item.name }}</v-list-item-title>
 												<template v-slot:append>
-													<IconButton aria-label="Remove" class="ml-2 mr-2 close-btn" icon="mdi-close" size="x-small"
-														variant="plain" @click.stop="removeGeoPTZ(item.raw)"></IconButton>
+													<DeleteButton label="Remove" @delete="removeGeoPTZ(item.raw)"></DeleteButton>
 												</template>
 											</v-list-item>
 										</template>
@@ -144,8 +143,7 @@ const toggleMapLayerVisibility = (item: any) => {
 					<template #title>
 						<div class="panel-header">
 							<span>{{ viz.name }}</span>
-							<IconButton aria-label="Remove" class="ml-2 mr-2 close-btn" icon="mdi-close" size="x-small" variant="plain"
-								@click.stop="visualizationStore.removeVisualization(viz)"></IconButton>
+							<DeleteButton class="ml-2 mr-2" label="Remove" @delete="visualizationStore.removeVisualization(viz)"></DeleteButton>
 						</div>
 					</template>
 					<v-expansion-panel-text>
@@ -187,18 +185,5 @@ const toggleMapLayerVisibility = (item: any) => {
 	width: 100%;
 	align-items: center;
 	justify-content: space-between;
-}
-
-/* Color styling for delete button */
-.close-btn {
-	transition: color 0.2s ease-in-out;
-}
-
-.close-btn:hover {
-	color: red;
-}
-
-.close-btn:active {
-	color: red;
 }
 </style>

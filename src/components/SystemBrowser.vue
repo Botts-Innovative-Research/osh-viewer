@@ -10,6 +10,7 @@ import { randomUUID } from 'osh-js/source/core/utils/Utils.js'
 import { Geometry } from '@/lib/OSHConnectDefinitions'
 import DeleteNodeDialog from './menus/DeleteNodeDialog.vue'
 import NodeConfigForm from './menus/NodeConfigForm.vue'
+import DeleteButton from './ui/DeleteButton.vue'
 
 const oshConnect = useOSHConnectStore().getInstance();
 const nodeStore = useNodeStore()
@@ -165,8 +166,7 @@ const openDeleteNodeDialog = (node: any) => {
 					<!-- Remove node -->
 					<v-tooltip v-if="item.type === 'node'" text="Delete" location="bottom" open-delay="500">
 						<template #activator="{ props }">
-							<IconButton v-bind="props" icon="mdi-window-close" variant="plain" class="close-btn" @click="openDeleteNodeDialog(item.raw)">
-							</IconButton>
+							<DeleteButton v-bind="props" label="Remove" @delete="openDeleteNodeDialog(item.raw)"></DeleteButton>
 						</template>
 					</v-tooltip>
 					<!-- DS/CS properties -->
