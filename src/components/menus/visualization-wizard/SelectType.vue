@@ -19,9 +19,10 @@ const visualizationTypes = computed(() => {
 });
 
 // Uses store setType to update value
-function selectType(type: string) {
+function selectType(item: any) {
 	vizwizStore.reset() // Reset store when selecting new type
-	selectedType.value = type;
+	console.log(item)
+	selectedType.value = item.id;
 }
 
 // Validation: a type must be selected
@@ -31,5 +32,6 @@ useComponentValidation(valid, emit)
 
 </script>
 <template>
-	<radio-cards :items="visualizationTypes" :selected-item="selectedType" tooltip @update:value="selectType"></radio-cards>
+	<radio-cards :items="visualizationTypes" :selected-item="Object.values(VisualizationRegistry).find(item => item.id === selectedType)" tooltip
+		@update:value="selectType"></radio-cards>
 </template>

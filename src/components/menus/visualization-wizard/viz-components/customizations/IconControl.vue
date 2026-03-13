@@ -23,7 +23,6 @@ const iconOptions: IconItem[] = [
 const icon = ref(iconOptions[0]);
 
 // Icon Options
-
 function selectIcon(val: any) {
   icon.value = val;
   vwStore.updateVisualizationCustomizationOptions({ icon: `/icons/map/${val.icon}.svg`, iconName: val.icon });
@@ -41,18 +40,5 @@ onMounted(() => {
   <v-card class="pa-4" elevation="2">
     <h3>Icon</h3>
     <radio-cards :items="iconOptions" :selected-item="icon" :tooltip="false" @update:value="selectIcon"></radio-cards>
-
-<!-- 
-    <v-row justify="center" align="center" class="mb-2" v-if="iconOptions">
-      <v-col v-for="item in iconOptions" :key="item.icon" cols="12" sm="6" md="3" class="d-flex justify-center">
-        <v-card :elevation="icon === `/icons/map/${item.icon}.svg` ? 10 : 2" :color="icon === `/icons/map/${item.icon}.svg` ? 'primary' : ''"
-          class="d-flex flex-column align-center justify-center pa-4 type-card"
-          @click="selectIcon(item)"
-          style="cursor: pointer; min-height: 120px; max-width: 220px; width: 100%">
-          <v-icon size="36" class="mb-2">{{ 'mdi-' + item.icon }}</v-icon>
-          <span>{{ item.label }}</span>
-        </v-card>
-      </v-col>
-    </v-row> -->
   </v-card>
 </template>
