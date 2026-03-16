@@ -59,16 +59,17 @@ const toggleMapLayerVisibility = (item: any) => {
 </script>
 
 <template>
-	<v-card id="viz-sidebar">
-		<v-card-title class="viz-title ma-1">
-			<span class="viz-title mr-4">Visualizations</span>
+	<v-sheet id="viz-sidebar">
+		<v-sheet class="d-flex viz-title">
+			<h2 class="viz-title pa-4">Visualizations</h2>
 			<v-tooltip text="Add Visualization" location="bottom">
 				<template v-slot:activator="{ props }">
 					<IconButton v-bind="props" icon="mdi-plus" aria-label="Add Visualization" @click="useUIStore().openVizWiz()"
 					></IconButton>
 				</template>
 			</v-tooltip>
-		</v-card-title>
+		</v-sheet>
+
 		<v-divider></v-divider>
 
 		<v-sheet class="visualization-list overflow-y-auto">
@@ -102,6 +103,7 @@ const toggleMapLayerVisibility = (item: any) => {
 					</v-expansion-panel-text>
 				</v-expansion-panel>
 			</v-expansion-panels>
+			<v-divider></v-divider>
 			<!-- GEOPTZ VISUALIZATIONS -->
 			<v-expansion-panels multiple eager>
 				<v-expansion-panel :disabled="geoPtzVisualizations.length == 0" :value="geoPtzVisualizations.length === 0"
@@ -136,6 +138,7 @@ const toggleMapLayerVisibility = (item: any) => {
 					</v-expansion-panel-text>
 				</v-expansion-panel>
 			</v-expansion-panels>
+			<v-divider></v-divider>
 			<!-- PANEL VISUALIZATIONS -->
 			<v-expansion-panels :model-value="panelVisualizations.map(v => v.id)" variant="accordion" multiple eager>
 				<v-expansion-panel v-for="viz in panelVisualizations" :key="viz.id" class="visualization-item" :value="viz.id"
@@ -153,7 +156,7 @@ const toggleMapLayerVisibility = (item: any) => {
 				</v-expansion-panel>
 			</v-expansion-panels>
 		</v-sheet>
-	</v-card>
+	</v-sheet>
 	<v-dialog v-model="uiStore.vizWizOpen" max-width="900">
 		<VisualizationWizard />
 	</v-dialog>
@@ -167,17 +170,16 @@ const toggleMapLayerVisibility = (item: any) => {
 
 .viz-title {
 	text-align: center;
-	width: 100%;
 	font-size: 1.5rem;
 	font-weight: bold;
+	justify-content: center;
+	align-items: center;
 }
 
 .visualization-list {
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
 	overflow-y: scroll;
-	max-height: 90vh;
 }
 
 .panel-header {

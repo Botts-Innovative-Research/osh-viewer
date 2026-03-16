@@ -131,67 +131,67 @@ const openDeleteNodeDialog = (node: any) => {
 
 </script>
 <template>
-	<v-card id="node-sidebar">
-		<v-sheet class="pa-4">
-			<v-tooltip text="Fetch Resources" location="bottom">
-				<template v-slot:activator="{ props }">
-					<IconButton
-						v-bind="props"
-						aria-label="Fetch Resources"
-						@click="fetchResources"
-						icon="mdi-refresh"
-					></IconButton>
-				</template>
-			</v-tooltip>
-			<v-btn @click="addAllSamplingFeaturePMs">All PMS</v-btn>
-
+	<v-sheet id="node-sidebar" class="pa-4">
+		<v-sheet class="pb-4">
+			<div class="mb-2 pa-2">
+				<v-tooltip text="Fetch Resources" location="bottom">
+					<template v-slot:activator="{ props }">
+						<IconButton
+							v-bind="props"
+							aria-label="Fetch Resources"
+							@click="fetchResources"
+							icon="mdi-refresh"
+						></IconButton>
+					</template>
+				</v-tooltip>
+				<v-btn @click="addAllSamplingFeaturePMs">All PMS</v-btn>
+			</div>
 			<!-- Add Node -->
 			<v-btn block prepend-icon="mdi-plus-circle" variant="flat" color="success" @click="openNodeConfig">
 				Add Node
 			</v-btn>
-
-			<v-divider class="my-4"></v-divider>
-			
-			<!-- Tree view of nodes/systems/datastreams -->
-			<v-treeview :items="treeItems" item-value="id" item-children="children" density="compact" fluid open-all>
-				<!-- Icons -->
-				<template v-slot:prepend="{ item }">
-					<v-icon v-if="item.type === 'node'" icon="mdi-server"></v-icon>
-					<v-icon v-if="item.type === 'system'" icon="mdi-cogs"></v-icon>
-					<v-icon v-if="item.type === 'ds' || item.type === 'cs'" icon="mdi-cable-data"></v-icon>
-				</template>
-
-				<!-- Actions -->
-				<template v-slot:append="{ item }">
-					<!-- Remove node -->
-					<v-tooltip v-if="item.type === 'node'" text="Delete" location="bottom" open-delay="500">
-						<template #activator="{ props }">
-							<DeleteButton v-bind="props" label="Remove" @delete="openDeleteNodeDialog(item.raw)"></DeleteButton>
-						</template>
-					</v-tooltip>
-					<!-- DS/CS properties -->
-					<!-- TODO: Implement properties popup -->
-					<v-tooltip v-if="item.type === 'ds' || item.type === 'cs'" text="Properties" location="bottom"
-						open-delay="500">
-						<template #activator="{ props }">
-							<IconButton v-bind="props" icon="mdi-dots-vertical" variant="plain"></IconButton>
-						</template>
-					</v-tooltip>
-				</template>
-			</v-treeview>
 		</v-sheet>
 
-		<!-- DIALOGS -->
-		<v-dialog v-model="uiStore.deleteNodeDialog" max-width="500">
-			<DeleteNodeDialog
-				:node="nodeToDelete"
-			 />
-		</v-dialog>
-		<v-dialog v-model="uiStore.nodeConfigFormOpen" max-width="540">
-			<NodeConfigForm />
-		</v-dialog>
-	</v-card>
+		<v-divider></v-divider>
+		
+		<!-- Tree view of nodes/systems/datastreams -->
+		<v-treeview :items="treeItems" item-value="id" item-children="children" fluid open-all>
+			<!-- Icons -->
+			<template v-slot:prepend="{ item }">
+				<v-icon v-if="item.type === 'node'" icon="mdi-server"></v-icon>
+				<v-icon v-if="item.type === 'system'" icon="mdi-cogs"></v-icon>
+				<v-icon v-if="item.type === 'ds' || item.type === 'cs'" icon="mdi-cable-data"></v-icon>
+			</template>
 
+			<!-- Actions -->
+			<template v-slot:append="{ item }">
+				<!-- Remove node -->
+				<v-tooltip v-if="item.type === 'node'" text="Delete" location="bottom" open-delay="500">
+					<template #activator="{ props }">
+						<DeleteButton v-bind="props" label="Remove" @delete="openDeleteNodeDialog(item.raw)"></DeleteButton>
+					</template>
+				</v-tooltip>
+				<!-- DS/CS properties -->
+				<!-- TODO: Implement properties popup -->
+				<v-tooltip v-if="item.type === 'ds' || item.type === 'cs'" text="Properties" location="bottom"
+					open-delay="500">
+					<template #activator="{ props }">
+						<IconButton v-bind="props" icon="mdi-dots-vertical" variant="plain"></IconButton>
+					</template>
+				</v-tooltip>
+			</template>
+		</v-treeview>
+	</v-sheet>
+
+	<!-- DIALOGS -->
+	<v-dialog v-model="uiStore.deleteNodeDialog" max-width="500">
+		<DeleteNodeDialog
+			:node="nodeToDelete"
+			/>
+	</v-dialog>
+	<v-dialog v-model="uiStore.nodeConfigFormOpen" max-width="540">
+		<NodeConfigForm />
+	</v-dialog>
 </template>
 
 <style scoped>

@@ -53,5 +53,13 @@ export const vuetify = createVuetify({
         class: 'pa-2',
       }
     },
+    VExpansionPanels: {
+      rounded: 0,
+    },
+    VList: {
+      VListItem:{
+        rounded: 'lg',
+      }
+    }
   }
 });

@@ -15,7 +15,7 @@ const { viz, customClass = '' } = defineProps<{
 </script>
 
 <template>
-	<div :class="['visualization-wrapper', customClass]">
+	<div :class="[customClass]">
 		<slot name="before" />
 		<Chart
 			:visualization="viz"
@@ -49,14 +49,4 @@ const { viz, customClass = '' } = defineProps<{
 </template>
 
 <style scoped>
-.visualization-wrapper {
-	position: relative;
-	padding: 0.5rem;
-	border-radius: 8px;
-}
-
-.visualization-content {
-	width: 100%;
-	height: 100%;
-}
 </style>
