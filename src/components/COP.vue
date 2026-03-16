@@ -13,29 +13,7 @@ const storePaneSize = ({ panes }) => {
 	localStorage.paneSize2 = panes[1].size
 }
 
-
 const tab = ref('one')
-
-/*const connect = new OSHConnect()
-const node = connect.createNode('test', 'localhost', 8282, 'sensorhub/api/', 'admin', 'admin')
-const nodeStore = useNodeStore()
-
-const getSystems = () => {
-	// This function will be called when the button is clicked
-	console.log('Get Systems button clicked')
-
-	nodeStore.nodes.forEach((node) => {
-		console.log('Node:', node)
-		node.getAllSystems()
-	})
-	// node.getAllSystems()
-}
-
-const getDataStreams = () => {
-	console.log('Get Data Streams button clicked')
-	console.log('Node:', node)
-	node.getAllDataStreams()
-}*/
 
 </script>
 

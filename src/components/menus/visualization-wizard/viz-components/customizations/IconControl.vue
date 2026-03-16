@@ -37,8 +37,6 @@ onMounted(() => {
 
 </script>
 <template>
-  <v-card class="pa-4" elevation="2">
-    <h3>Icon</h3>
-    <radio-cards :items="iconOptions" :selected-item="icon" :tooltip="false" @update:value="selectIcon"></radio-cards>
-  </v-card>
+  <h3>Icon</h3>
+  <radio-cards :items="iconOptions" :selected-item="icon" :tooltip="false" @update:value="selectIcon"></radio-cards>
 </template>

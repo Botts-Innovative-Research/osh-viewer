@@ -20,12 +20,10 @@ useComponentValidation(valid, emit)
 </script>
 
 <template>
-	<v-card class="pa-4" elevation="2">
-		<name-control role="origin" v-model:valid="nameValid"></name-control>
-		<icon-control></icon-control>
-		<line-color-control></line-color-control>
-		<weight-control></weight-control>
-		<opacity-control></opacity-control>
-		<distance-km-control></distance-km-control>
-	</v-card>
+	<name-control role="origin" v-model:valid="nameValid"></name-control>
+	<icon-control></icon-control>
+	<line-color-control></line-color-control>
+	<weight-control></weight-control>
+	<opacity-control></opacity-control>
+	<distance-km-control></distance-km-control>
 </template>

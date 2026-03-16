@@ -41,5 +41,17 @@ export const vuetify = createVuetify({
       rounded: 'circle',
       size: 'small',
     },
+    VCard: {
+      rounded: 'lg',
+    },
+    VStepper: {
+      class: 'elevation-0',
+      VStepperHeader: {
+        class: 'elevation-0',
+      },
+      VStepperWindow: {
+        class: 'pa-2',
+      }
+    },
   }
 });
