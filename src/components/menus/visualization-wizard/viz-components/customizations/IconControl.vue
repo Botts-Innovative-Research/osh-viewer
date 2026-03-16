@@ -19,8 +19,10 @@ const iconOptions = [
   { label: 'Drone', icon: 'quadcopter' },
 ]
 
+const iconBase = import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.meta.env.VITE_VIEWER_ENDPOINT : "";
+
 function selectIcon(val: any) {
-  icon.value = `/icons/map/${val.icon}.svg`;
+  icon.value = `${iconBase}/icons/map/${val.icon}.svg`;
   iconName.value = val.icon;
   vwStore.updateVisualizationCustomizationOptions({ icon: icon.value, iconName: iconName.value });
 }
@@ -38,7 +40,7 @@ onMounted(() => {
     <h3>Icon</h3>
     <v-row justify="center" align="center" class="mb-2" v-if="iconOptions">
       <v-col v-for="item in iconOptions" :key="item.icon" cols="12" sm="6" md="3" class="d-flex justify-center">
-        <v-card :elevation="icon === `/icons/map/${item.icon}.svg` ? 10 : 2" :color="icon === `/icons/map/${item.icon}.svg` ? 'primary' : ''"
+        <v-card :elevation="icon === `${iconBase}/icons/map/${item.icon}.svg` ? 10 : 2" :color="icon === `${iconBase}/icons/map/${item.icon}.svg` ? 'primary' : ''"
           class="d-flex flex-column align-center justify-center pa-4 type-card"
           @click="selectIcon(item)"
           style="cursor: pointer; min-height: 120px; max-width: 220px; width: 100%">

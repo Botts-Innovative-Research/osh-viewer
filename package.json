@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:sensorlink": "vite --mode sensorlink",
     "build": "run-p \"build-only {@}\" --",
+    "build:sensorlink": "vite build --mode sensorlink",
     "preview": "vite preview",
     "build-only": "vite build",
     "format": "prettier --write src/",
