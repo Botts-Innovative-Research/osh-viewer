@@ -33,8 +33,6 @@ export default function build() {
 		dataView: videoResult.videoView,
 	};
 
-    console.log(getUsedControlstreams())
-
 	const newViz: OSHVisualization = new OSHVisualization(
 		`visualization-${randomUUID()}`,
         vizwizStore.visualizationCustomizationOptions.name,

@@ -19,7 +19,6 @@ const checkedRoles = reactive({
 
 // Initialize dsConfig with stream selected by default when mounted
 onMounted(() => {
-  console.log("Mounted Text Config")
   if (!vizwizStore.dsConfig.stream) {
     vizwizStore.updateDsConfig("stream", { selected: true })
   }

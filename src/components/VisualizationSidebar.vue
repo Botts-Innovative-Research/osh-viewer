@@ -9,6 +9,7 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { ILineOfBearingLayerProperties, IPointMarkerLayerProperties, VisualizationLayerProperties } from '@/lib/VisualizationHelpers';
 import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
 import VisualizationWizard from './menus/visualization-wizard/VisualizationWizard.vue';
+import DeleteButton from './ui/DeleteButton.vue';
 
 // Each visualization can be represented by an object with a unique id
 const visualizationStore = useVisualizationStore();
@@ -58,16 +59,17 @@ const toggleMapLayerVisibility = (item: any) => {
 </script>
 
 <template>
-	<v-card id="viz-sidebar">
-		<v-card-title class="viz-title ma-1">
-			<span class="viz-title mr-4">Visualizations</span>
+	<v-sheet id="viz-sidebar">
+		<v-sheet class="d-flex viz-title">
+			<h2 class="viz-title pa-4">Visualizations</h2>
 			<v-tooltip text="Add Visualization" location="bottom">
 				<template v-slot:activator="{ props }">
-					<v-btn v-bind="props" icon="mdi-plus" aria-label="Add Visualization" @click="useUIStore().openVizWiz()"
-						size="small"></v-btn>
+					<IconButton v-bind="props" icon="mdi-plus" aria-label="Add Visualization" @click="useUIStore().openVizWiz()"
+					></IconButton>
 				</template>
 			</v-tooltip>
-		</v-card-title>
+		</v-sheet>
+
 		<v-divider></v-divider>
 
 		<v-sheet class="visualization-list overflow-y-auto">
@@ -91,17 +93,21 @@ const toggleMapLayerVisibility = (item: any) => {
 										:style="`text-decoration: ${visualizationStore.isMapLayerVisible(viz.id) ? '' : 'line-through'}`">{{
 											viz.name }}</span></template>
 								<template #append>
-									<v-btn aria-label="Map Layer Toggle Visibility" size="x-small" variant="plain"
-										:icon="visualizationStore.isMapLayerVisible(viz.id) ? 'mdi-eye' : 'mdi-eye-off'"
-										@click.stop="toggleMapLayerVisibility(viz)"></v-btn>
-									<v-btn aria-label="Remove" class="close-btn" icon="mdi-window-close" size="x-small" variant="plain"
-										@click.stop="visualizationStore.removeVisualization(viz)"></v-btn>
+									<v-tooltip text="Toggle Visibility" location="bottom">
+										<template v-slot:activator="{ props }">
+											<IconButton v-bind="props" aria-label="Toggle Visibility" size="x-small" variant="plain"
+												:icon="visualizationStore.isMapLayerVisible(viz.id) ? 'mdi-eye' : 'mdi-eye-off'"
+												@click.stop="toggleMapLayerVisibility(viz)"></IconButton>
+										</template>
+									</v-tooltip>
+									<DeleteButton label="Remove" @delete="visualizationStore.removeVisualization(viz)"></DeleteButton>
 								</template>
 							</v-list-item>
 						</v-list>
 					</v-expansion-panel-text>
 				</v-expansion-panel>
 			</v-expansion-panels>
+			<v-divider></v-divider>
 			<!-- GEOPTZ VISUALIZATIONS -->
 			<v-expansion-panels multiple eager>
 				<v-expansion-panel :disabled="geoPtzVisualizations.length == 0" :value="geoPtzVisualizations.length === 0"
@@ -125,8 +131,7 @@ const toggleMapLayerVisibility = (item: any) => {
 												</template>
 												<v-list-item-title>{{ item.name }}</v-list-item-title>
 												<template v-slot:append>
-													<v-btn aria-label="Remove" class="ml-2 mr-2 close-btn" icon="mdi-close" size="x-small"
-														variant="plain" @click.stop="removeGeoPTZ(item.raw)"></v-btn>
+													<DeleteButton label="Remove" @delete="removeGeoPTZ(item.raw)"></DeleteButton>
 												</template>
 											</v-list-item>
 										</template>
@@ -137,6 +142,7 @@ const toggleMapLayerVisibility = (item: any) => {
 					</v-expansion-panel-text>
 				</v-expansion-panel>
 			</v-expansion-panels>
+			<v-divider></v-divider>
 			<!-- PANEL VISUALIZATIONS -->
 			<v-expansion-panels :model-value="panelVisualizations.map(v => v.id)" variant="accordion" multiple eager>
 				<v-expansion-panel v-for="viz in panelVisualizations" :key="viz.id" class="visualization-item" :value="viz.id"
@@ -144,8 +150,7 @@ const toggleMapLayerVisibility = (item: any) => {
 					<template #title>
 						<div class="panel-header">
 							<span>{{ viz.name }}</span>
-							<v-btn aria-label="Remove" class="ml-2 mr-2 close-btn" icon="mdi-close" size="x-small" variant="plain"
-								@click.stop="visualizationStore.removeVisualization(viz)"></v-btn>
+							<DeleteButton class="ml-2 mr-2" label="Remove" @delete="visualizationStore.removeVisualization(viz)"></DeleteButton>
 						</div>
 					</template>
 					<v-expansion-panel-text>
@@ -155,7 +160,7 @@ const toggleMapLayerVisibility = (item: any) => {
 				</v-expansion-panel>
 			</v-expansion-panels>
 		</v-sheet>
-	</v-card>
+	</v-sheet>
 	<v-dialog v-model="uiStore.vizWizOpen" max-width="900">
 		<VisualizationWizard />
 	</v-dialog>
@@ -169,17 +174,16 @@ const toggleMapLayerVisibility = (item: any) => {
 
 .viz-title {
 	text-align: center;
-	width: 100%;
 	font-size: 1.5rem;
 	font-weight: bold;
+	justify-content: center;
+	align-items: center;
 }
 
 .visualization-list {
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
 	overflow-y: scroll;
-	max-height: 90vh;
 }
 
 .panel-header {
@@ -187,18 +191,5 @@ const toggleMapLayerVisibility = (item: any) => {
 	width: 100%;
 	align-items: center;
 	justify-content: space-between;
-}
-
-/* Color styling for delete button */
-.close-btn {
-	transition: color 0.2s ease-in-out;
-}
-
-.close-btn:hover {
-	color: red;
-}
-
-.close-btn:active {
-	color: red;
 }
 </style>

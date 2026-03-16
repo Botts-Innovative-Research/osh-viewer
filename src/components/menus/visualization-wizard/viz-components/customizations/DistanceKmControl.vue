@@ -17,12 +17,10 @@ onMounted(() => {
 
 </script>
 <template>
-  <v-card class="pa-4" elevation="2">
-    <h3>Distance (Km)</h3>
-    <v-slider v-model="distanceKm" :min="0" :max="100" step="0.1">
-      <template v-slot:append>
-        <span>{{ distanceKm }} km</span>
-      </template>
-    </v-slider>
-  </v-card>
+  <h3>Distance (Km)</h3>
+  <v-slider v-model="distanceKm" :min="0" :max="100" step="0.1">
+    <template v-slot:append>
+      <span>{{ distanceKm }} km</span>
+    </template>
+  </v-slider>
 </template>

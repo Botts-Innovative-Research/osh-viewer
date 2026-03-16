@@ -38,9 +38,7 @@ useComponentValidation(valid, emit)
 
 </script>
 <template>
-  <v-card class="pa-4" elevation="2">
-    <h3>Visualization Name</h3>
-    <v-text-field v-model="name" label="Name" :rules="[() => !!name || 'Visualization name is required']">
-    </v-text-field>
-  </v-card>
+  <h3>Visualization Name</h3>
+  <v-text-field v-model="name" label="Name" :rules="[() => !!name || 'Visualization name is required']">
+  </v-text-field>
 </template>

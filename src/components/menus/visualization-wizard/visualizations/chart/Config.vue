@@ -22,7 +22,6 @@ const checkedRoles = reactive({
 
 // Initialize dsConfig with x and y selected by default when mounted
 onMounted(() => {
-  console.log("Mounted Chart Config")
   if (!vizwizStore.dsConfig.x) {
     vizwizStore.updateDsConfig("x", { selected: true })
   }

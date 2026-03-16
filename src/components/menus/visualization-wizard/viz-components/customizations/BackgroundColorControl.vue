@@ -17,8 +17,6 @@ onMounted(() => {
 
 </script>
 <template>
-  <v-card class="pa-4" elevation="2">
-    <h3>Background Color</h3>
-    <v-color-picker style="margin: auto" v-model="backgroundColor" mode="rgba"> </v-color-picker>
-  </v-card>
+  <h3>Background Color</h3>
+  <v-color-picker style="margin: auto" v-model="backgroundColor" mode="rgba"> </v-color-picker>
 </template>

@@ -31,22 +31,24 @@ const selectedNode = computed({
 </script>
 
 <template>
-	<v-list>
-		<v-list-item>
-      <v-select
+  <v-card class="pa-2">
+    <v-card-title>Save State</v-card-title>
+    <v-card-text>
+      <v-form @submit.prevent="handleSave">
+        <v-select
           v-model="selectedNode"
           :items="listNodes"
           label="Select node to save state to"
           persistent-hint
           item-title="name"
           item-value="id"
-      />
-		</v-list-item>
-
-    <v-list-item>
-      <v-btn block variant="flat" color="success" @click="handleSave"> Save State</v-btn>
-    </v-list-item>
-	</v-list>
+        />
+        <v-card-actions>
+          <v-btn block type="submit" color="success" variant="tonal">Save State</v-btn>
+        </v-card-actions>
+      </v-form>
+    </v-card-text>
+  </v-card>
 </template>
 
 <style scoped>

@@ -39,7 +39,6 @@ const checkedRoles = reactive({
 
 // Initialize dsConfig with location selected by default when mounted
 onMounted(() => {
-  console.log("Mounted Pointmarker Config")
   if (!vizwizStore.dsConfig.location) {
     vizwizStore.updateDsConfig("location", { selected: true })
   }

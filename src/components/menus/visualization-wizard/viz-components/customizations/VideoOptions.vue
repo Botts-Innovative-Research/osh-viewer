@@ -28,14 +28,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-card class="pa-4" elevation="2">
-    <v-checkbox
-        v-model="stats"
-        label="Show Video Stats"
-    />
-    <v-checkbox
-        v-model="time"
-        label="Show Video Time"
-    />
-  </v-card>
+  <v-checkbox
+      v-model="stats"
+      label="Show Video Stats"
+  />
+  <v-checkbox
+      v-model="time"
+      label="Show Video Time"
+  />
 </template>

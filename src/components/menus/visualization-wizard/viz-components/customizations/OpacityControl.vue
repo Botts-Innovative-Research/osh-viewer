@@ -17,12 +17,10 @@ onMounted(() => {
 
 </script>
 <template>
-  <v-card class="pa-4" elevation="2">
-			<h3>Opacity</h3>
-			<v-slider v-model="opacity" :min="0" :max="1" step="0.01">
-				<template v-slot:append>
-					<span>{{ (opacity * 100).toFixed(0) }}%</span>
-				</template>
-			</v-slider>
-		</v-card>
+	<h3>Opacity</h3>
+	<v-slider v-model="opacity" :min="0" :max="1" step="0.01">
+		<template v-slot:append>
+			<span>{{ (opacity * 100).toFixed(0) }}%</span>
+		</template>
+	</v-slider>
 </template>

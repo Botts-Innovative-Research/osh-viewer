@@ -223,11 +223,8 @@ export class OSHSystem {
 		while (result.hasNext()) {
 			const items: any[] = await result.nextPage();
 
-			console.log('items - datastreams', items);
-
 			// create new OSHDatastream objects for each item
 			items.forEach((item: any) => {
-				console.log(`result data:`, item);
 				const newStream = new OSHDatastream(item.properties.name, item, this.id);
 				datastreamStore?.addDataStream?.(newStream);
 				this.children.push(newStream.uuid);	// Push to children
@@ -245,11 +242,9 @@ export class OSHSystem {
 
 		while (result.hasNext()) {
 			const items: any[] = await result.nextPage();
-			console.log('items - control streams', items);
 
 			// create new OSHControlStream objects for each item
 			items.forEach((item: any) => {
-				console.log(`result data:`, item);
 				const newStream = new OSHControlStream(item.properties.name, item, this.id);
 				controlstreamStore?.addControlStream?.(newStream);
 				this.children.push(newStream.id);	// Push to children

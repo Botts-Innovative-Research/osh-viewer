@@ -22,7 +22,6 @@ const listDatastreams = computed(() => {
   return vizwizStore.datastreams
 })
 
-console.log("vizwizStore.dsConfig[props.role]", vizwizStore.dsConfig)
 // Update selected datastream for this role in vizwiz store
 const selectedDatastream = computed({
   get: () => vizwizStore.dsConfig[props.role]?.dsId,
