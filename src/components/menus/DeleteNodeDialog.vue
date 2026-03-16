@@ -35,7 +35,6 @@ const deleteNode = () => {
     viz.datastream?.forEach((ds) => {
       if (ds.getParentNode() === props.node) {
         visualizationStore.removeVisualization(viz);
-        console.log("Removing viz:", viz, "because of datastream:", ds);
         return;
       }
     });
@@ -43,7 +42,6 @@ const deleteNode = () => {
     viz.controlstream?.forEach((cs) => {
       if (cs.getParentNode() === props.node) {
         visualizationStore.removeVisualization(viz);
-        console.log("Removing viz:", viz, "because of controlstream:", cs);
         return;
       }
     });

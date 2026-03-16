@@ -93,9 +93,13 @@ const toggleMapLayerVisibility = (item: any) => {
 										:style="`text-decoration: ${visualizationStore.isMapLayerVisible(viz.id) ? '' : 'line-through'}`">{{
 											viz.name }}</span></template>
 								<template #append>
-									<IconButton aria-label="Map Layer Toggle Visibility" size="x-small" variant="plain"
-										:icon="visualizationStore.isMapLayerVisible(viz.id) ? 'mdi-eye' : 'mdi-eye-off'"
-										@click.stop="toggleMapLayerVisibility(viz)"></IconButton>
+									<v-tooltip text="Toggle Visibility" location="bottom">
+										<template v-slot:activator="{ props }">
+											<IconButton v-bind="props" aria-label="Toggle Visibility" size="x-small" variant="plain"
+												:icon="visualizationStore.isMapLayerVisible(viz.id) ? 'mdi-eye' : 'mdi-eye-off'"
+												@click.stop="toggleMapLayerVisibility(viz)"></IconButton>
+										</template>
+									</v-tooltip>
 									<DeleteButton label="Remove" @delete="visualizationStore.removeVisualization(viz)"></DeleteButton>
 								</template>
 							</v-list-item>

@@ -65,7 +65,6 @@ const fetchResources = () => {
 };
 
 const openNodeConfig = () => {
-	console.log('Opened node config form');
 	openNodeConfigForm();
 };
 

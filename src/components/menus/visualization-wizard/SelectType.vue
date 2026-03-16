@@ -21,7 +21,6 @@ const visualizationTypes = computed(() => {
 // Uses store setType to update value
 function selectType(item: any) {
 	vizwizStore.reset() // Reset store when selecting new type
-	console.log(item)
 	selectedType.value = item.id;
 }
 

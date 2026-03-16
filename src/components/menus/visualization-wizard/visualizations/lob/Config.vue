@@ -23,7 +23,6 @@ const checkedRoles = reactive({
 
 // Initialize dsConfig with origin and bearing selected by default when mounted
 onMounted(() => {
-  console.log("Mounted LoB Config")
   if (!vizwizStore.dsConfig.origin) {
     vizwizStore.updateDsConfig("origin", { selected: true })
   }

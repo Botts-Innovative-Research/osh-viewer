@@ -40,7 +40,6 @@ function onSend() {
 				: Number(singleValue.value);
 
 		command = { parameters: { [selectedCommand.value]: value } };
-		console.log('COMMAND:', command);
 	}
 	// If successfully constructed command, send it
 	if (command) {

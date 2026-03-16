@@ -18,7 +18,6 @@ const checkedRoles = reactive({
 
 // Initialize csConfig with geo ptz selected by default when mounted
 onMounted(() => {
-  console.log("Mounted GeoPTZ Config")
   if (!vizwizStore.csConfig.lla) {
     vizwizStore.updateCsConfig("lla", { selected: true })
   }

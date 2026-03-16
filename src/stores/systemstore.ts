@@ -12,7 +12,7 @@ export const useSystemStore = defineStore('systems', () => {
 			console.log('system already exists or id is undefined', system);
 			return;
 		}
-		console.log('adding system', system);
+		console.log('Adding system', system);
 		systems.value.push(system);
 	};
 

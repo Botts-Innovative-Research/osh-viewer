@@ -51,7 +51,6 @@ function toggleMapType() {
       autoZoomOnFirstMarker: true,
     });
     mapView.value = leafletMapView;
-    console.log("Now leaflet")
   } else {
     const cesiumView = new CesiumView({
       container: 'mapContainer',
@@ -59,7 +58,6 @@ function toggleMapType() {
       layers: [],
     });
     mapView.value = cesiumView;
-    console.log("Now cesium")
   }
 }
 
@@ -87,7 +85,6 @@ watch(() => mapLayerType.value, (mapLayerType) => {
     mapItemLayers.value.forEach((layer) => {
       // Add new PM Layers
       if (layer instanceof PointMarkerLayer) {
-        console.log(layer)
         const pmLayer = new PointMarkerLayer({
           ...layer.properties,
         })
@@ -229,8 +226,6 @@ function createVisualizations(addedVizIds: string[]) {
   const newOSHVisualizations: OSHVisualization[] = addedVizIds
     .map(id => visualizationStore.getVisualizationById(id))
     .filter(Boolean) as OSHVisualization[];
-
-  console.log(newOSHVisualizations);
 
   for (const viz of newOSHVisualizations) {
     const dsArray: ISweApiDataSourceProperties[] = viz.visualizationComponents.dataSource // Array of datasources
