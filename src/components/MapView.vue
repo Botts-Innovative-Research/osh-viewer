@@ -27,6 +27,8 @@ const mapView = ref<any>(null);
 const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer>>(new Map())
 const listDatasourceInstances = ref<SweApi[]>([]);
 
+const iconBase = import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.meta.env.VITE_VIEWER_ENDPOINT : "";
+
 const uiStore = useUIStore();
 const flightPathTargetPM = ref<any[]>([]);
 const flightPathPolyline = ref<any>(null);
@@ -375,7 +377,7 @@ function createVisualizations(addedVizIds: string[]) {
         name: 'GeoPTZ',
         label: 'GeoPTZ',
         id: viz.id,
-        icon: '/icons/map/geoPtz-pin.svg',
+        icon: `${iconBase}/icons/map/geoPtz-pin.svg`,
         iconSize: [32, 32],
         iconAnchor: [16, 16],
         labelOffset: [-16, -32],

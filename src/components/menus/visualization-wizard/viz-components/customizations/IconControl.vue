@@ -20,12 +20,13 @@ const iconOptions: IconItem[] = [
   { id: 7, label: 'Eye', icon: 'eye' },
   { id: 8, label: 'Drone', icon: 'quadcopter' },
 ]
+const iconBase = import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.meta.env.VITE_VIEWER_ENDPOINT : "";
 const icon = ref(iconOptions[0]);
 
-// Icon Options
 function selectIcon(val: any) {
   icon.value = val;
-  vwStore.updateVisualizationCustomizationOptions({ icon: `/icons/map/${val.icon}.svg`, iconName: val.icon });
+  vwStore.updateVisualizationCustomizationOptions({ icon: `${iconBase}/icons/map/${val.icon}.svg`, iconName: val.icon });
+
 }
 
 onMounted(() => {
