@@ -48,11 +48,11 @@ function sanitizeAPIRoot(path) {
 </script>
 
 <template>
-	<v-card class="pa-2 ma-2" width="100%" height="100%" elevation="2">
+	<v-card class="pa-2">
 		<v-card-title>Add a New Node</v-card-title>
 
 		<v-card-text>
-			<v-form ref="formRef" @submit.prevent="createNode">
+			<v-form @submit.prevent="createNode">
 				<v-text-field label="Node Name" v-model="nodeName" placeholder="Test" required />
 				<v-text-field
 					label="Node Host"
@@ -68,7 +68,7 @@ function sanitizeAPIRoot(path) {
 
 				<!-- Buttons inside the form -->
 				<v-card-actions>
-					<v-btn type="submit" color="success">Create Node</v-btn>
+					<v-btn type="submit" color="success" variant="tonal">Create Node</v-btn>
 					<v-btn text @click="cancelForm">Cancel</v-btn>
 				</v-card-actions>
 			</v-form>
