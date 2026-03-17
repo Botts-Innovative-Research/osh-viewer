@@ -42,16 +42,17 @@ export function mineDatasourceObsPropsFromDS(dsId: string): { ds: any; observedP
 }
 
 export function mineControlObsPropsFromCS(csID: string): { cs: any; controlledProperties: any } {
-    const controlStreamStore = useControlStreamStore()
-    const cs = controlStreamStore.getControlStreamsById([csID])[0]
+	const controlStreamStore = useControlStreamStore();
+	const cs = controlStreamStore.getControlStreamsById([csID])[0];
 
-    if (!cs) {
-        console.warn('No controlstream given')
-    }
+	if (!cs) {
+		console.warn('No controlstream given');
+	}
 
-    const controlledProperties = cs.controlstream.properties.controlledProperties;
+	const controlledProperties = cs.controlstream.properties.controlledProperties || [];
+	console.log('[DS-Utils] Controlled Properties:', cs.controlstream.properties);
 
-    return { cs, controlledProperties };
+	return { cs, controlledProperties };
 }
 
 export function checkDSForProp(propName: string, observedProps: any): any {

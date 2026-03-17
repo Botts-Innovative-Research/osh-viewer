@@ -12,6 +12,7 @@ export const useUIStore = defineStore('ui', () => {
 	const rightSidebarOpen = ref(false);
 	const nodeConfigFormOpen = ref(false);
 	const deleteNodeDialog = ref(false);
+	const propertiesDialog = ref(false);
 	const vizWizOpen = ref(false); // VizWiz = new version
 
 	// Focused map corresponds to map type
@@ -93,6 +94,12 @@ export const useUIStore = defineStore('ui', () => {
 	}
 	function openDeleteNodeDialog() {
 		deleteNodeDialog.value = true;
+	}
+	function togglePropertiesDialog() {
+		propertiesDialog.value = !propertiesDialog.value;
+	}
+	function openPropertiesDialog() {
+		propertiesDialog.value = true;
 	}
 
 	// Handle selection of map item
@@ -198,6 +205,9 @@ export const useUIStore = defineStore('ui', () => {
 		deleteNodeDialog,
 		toggleDeleteNodeDialog,
 		openDeleteNodeDialog,
+		propertiesDialog,
+		togglePropertiesDialog,
+		openPropertiesDialog,
 		openNodeConfigForm,
 		selectedGeoPTZ,
 		setSelectedGeoPTZ,
