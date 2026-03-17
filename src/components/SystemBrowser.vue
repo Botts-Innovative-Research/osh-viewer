@@ -11,14 +11,15 @@ import { Geometry } from '@/lib/OSHConnectDefinitions'
 import DeleteNodeDialog from './menus/DeleteNodeDialog.vue'
 import NodeConfigForm from './menus/NodeConfigForm.vue'
 import DeleteButton from './ui/DeleteButton.vue'
+import PropertiesDialog from './menus/PropertiesDialog.vue'
 
 const oshConnect = useOSHConnectStore().getInstance();
 const nodeStore = useNodeStore()
 const systems = useSystemStore().systems
 const visualizationStore = useVisualizationStore()
 const uiStore = useUIStore();
-const openNodeConfigForm = useUIStore().openNodeConfigForm
 const nodeToDelete = ref<OSHNode | null>(null);
+const propertiesRef = ref<OSHDatastream | OSHControlStream | null>(null);
 
 type TreeItem = {
 	id: string
@@ -65,7 +66,7 @@ const fetchResources = () => {
 };
 
 const openNodeConfig = () => {
-	openNodeConfigForm();
+	uiStore.openNodeConfigForm();
 };
 
 const addFeatureMarker = (item) => {
@@ -128,6 +129,11 @@ const openDeleteNodeDialog = (node: any) => {
 	uiStore.openDeleteNodeDialog();
 };
 
+const openPropertiesDialog = (item: any) => {
+	propertiesRef.value = item;
+	uiStore.openPropertiesDialog();
+}
+
 </script>
 <template>
 	<v-sheet id="node-sidebar" class="pa-4">
@@ -175,7 +181,8 @@ const openDeleteNodeDialog = (node: any) => {
 				<v-tooltip v-if="item.type === 'ds' || item.type === 'cs'" text="Properties" location="bottom"
 					open-delay="500">
 					<template #activator="{ props }">
-						<IconButton v-bind="props" icon="mdi-dots-vertical" variant="plain"></IconButton>
+						<IconButton v-bind="props" icon="mdi-dots-vertical" variant="plain" @click="openPropertiesDialog(item.raw)">
+						</IconButton>
 					</template>
 				</v-tooltip>
 			</template>
@@ -186,10 +193,13 @@ const openDeleteNodeDialog = (node: any) => {
 	<v-dialog v-model="uiStore.deleteNodeDialog" max-width="500">
 		<DeleteNodeDialog
 			:node="nodeToDelete"
-			/>
+/>
 	</v-dialog>
 	<v-dialog v-model="uiStore.nodeConfigFormOpen" max-width="540">
 		<NodeConfigForm />
+	</v-dialog>
+	<v-dialog v-model="uiStore.propertiesDialog" max-width="540">
+		<PropertiesDialog v-if="propertiesRef" :item="propertiesRef" />
 	</v-dialog>
 </template>
 
