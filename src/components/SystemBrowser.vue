@@ -177,11 +177,11 @@ const openPropertiesDialog = (item: any) => {
 					</template>
 				</v-tooltip>
 				<!-- DS/CS properties -->
-				<!-- TODO: Implement properties popup -->
 				<v-tooltip v-if="item.type === 'ds' || item.type === 'cs'" text="Properties" location="bottom"
 					open-delay="500">
 					<template #activator="{ props }">
-						<IconButton v-bind="props" icon="mdi-dots-vertical" variant="plain" @click="openPropertiesDialog(item.raw)">
+						<IconButton v-bind="props" icon="mdi-dots-vertical" variant="plain" @click="openPropertiesDialog(item.raw)"
+							class="properties-button">
 						</IconButton>
 					</template>
 				</v-tooltip>
@@ -216,16 +216,12 @@ const openPropertiesDialog = (item: any) => {
 	font-weight: bold;
 }
 
-/* Color styling for delete button */
-.close-btn {
-	transition: color 0.2s ease-in-out;
+.properties-button {
+	opacity: 0;
+	transition: opacity 0.1s ease-in-out;
 }
 
-.close-btn:hover {
-	color: red;
-}
-
-.close-btn:active {
-	color: red;
+.v-list-item:hover .properties-button {
+	opacity: 1;
 }
 </style>
