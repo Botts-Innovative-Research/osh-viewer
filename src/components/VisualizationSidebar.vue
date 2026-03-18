@@ -68,8 +68,8 @@ const handleEditViz = (viz: OSHVisualization) => {
 
 <template>
 	<v-sheet id="viz-sidebar">
-		<v-sheet class="d-flex viz-title">
-			<h2 class="viz-title pa-4">Visualizations</h2>
+		<v-sheet class="d-flex header-title">
+			<h2 class="header-title pa-4">Visualizations</h2>
 			<v-tooltip text="Add Visualization" location="bottom">
 				<template v-slot:activator="{ props }">
 					<IconButton v-bind="props" icon="mdi-plus" aria-label="Add Visualization" @click="useUIStore().openVizWiz()"
@@ -89,26 +89,37 @@ const handleEditViz = (viz: OSHVisualization) => {
 							Map Visualizations
 						</div>
 					</template>
-					<v-expansion-panel-text>
+					<v-expansion-panel-text class="panel-text">
 						<v-list activatable density="compact" select-strategy="leaf">
 							<v-list-item v-for="viz in mapVisualizations" :key="viz.id" @click="toggleSelectedMapItem(viz)">
+								<!-- Icon -->
 								<template #prepend>
 									<v-icon
 										:icon="`mdi-${isMapLayer(viz.visualizationComponents.dataLayer) ? viz.visualizationComponents.dataLayer.iconName : ''}`"
 										size="16"></v-icon>
 								</template>
+								<!-- Title -->
 								<template #title><span
 										:style="`text-decoration: ${visualizationStore.isMapLayerVisible(viz.id) ? '' : 'line-through'}`">{{
 											viz.name }}</span></template>
+								<!-- Actions -->
 								<template #append>
-									<v-tooltip text="Toggle Visibility" location="bottom">
-										<template v-slot:activator="{ props }">
-											<IconButton v-bind="props" aria-label="Toggle Visibility" size="x-small" variant="plain"
-												:icon="visualizationStore.isMapLayerVisible(viz.id) ? 'mdi-eye' : 'mdi-eye-off'"
-												@click.stop="toggleMapLayerVisibility(viz)"></IconButton>
-										</template>
-									</v-tooltip>
-									<DeleteButton label="Remove" @delete="visualizationStore.removeVisualization(viz)"></DeleteButton>
+									<div class="map-actions">
+										<v-tooltip text="Toggle Visibility" location="bottom">
+											<template v-slot:activator="{ props }">
+												<IconButton v-bind="props" aria-label="Toggle Visibility" size="x-small" variant="plain"
+													:icon="visualizationStore.isMapLayerVisible(viz.id) ? 'mdi-eye' : 'mdi-eye-off'"
+													@click.stop="toggleMapLayerVisibility(viz)"></IconButton>
+											</template>
+										</v-tooltip>
+										<v-tooltip text="Edit Visualization" location="bottom">
+											<template v-slot:activator="{ props }">
+												<IconButton v-bind="props" aria-label="Edit Visualization" size="x-small" variant="plain"
+													icon="mdi-pencil" @click.stop="handleEditViz(viz)"></IconButton>
+											</template>
+										</v-tooltip>
+										<DeleteButton label="Remove" @delete="visualizationStore.removeVisualization(viz)"></DeleteButton>
+									</div>
 								</template>
 							</v-list-item>
 						</v-list>
@@ -137,8 +148,16 @@ const handleEditViz = (viz: OSHVisualization) => {
 												<template v-slot:prepend="{ isSelected }">
 													<v-checkbox-btn :model-value="isSelected"></v-checkbox-btn>
 												</template>
-												<v-list-item-title>{{ item.name }}</v-list-item-title>
+												<!-- Actions -->
 												<template v-slot:append>
+													<v-tooltip text="Edit Visualization" location="bottom">
+														<template v-slot:activator="{ props }">
+															<IconButton v-bind="props" aria-label="Edit Visualization" size="x-small" variant="plain"
+																icon="mdi-pencil"
+																@click.stop="handleEditViz(visualizationStore.getVisualizationById(item.raw.id)!)">
+															</IconButton>
+														</template>
+													</v-tooltip>
 													<DeleteButton label="Remove" @delete="removeGeoPTZ(item.raw)"></DeleteButton>
 												</template>
 											</v-list-item>
@@ -157,14 +176,17 @@ const handleEditViz = (viz: OSHVisualization) => {
 					static>
 					<template #title>
 						<div class="panel-header">
-							<span>{{ viz.name }}</span>
-							<v-tooltip text="Edit Visualization" location="bottom">
-								<template v-slot:activator="{ props }">
-									<IconButton v-bind="props" aria-label="Edit Visualization" size="x-small" variant="plain"
-										icon="mdi-pencil" @click.stop="handleEditViz(viz)"></IconButton>
-								</template>
-							</v-tooltip>
-							<DeleteButton class="ml-2 mr-2" label="Remove" @delete="visualizationStore.removeVisualization(viz)"></DeleteButton>
+							<span class="viz-name">{{ viz.name }}</span>
+							<div class="panel-actions">
+								<v-tooltip text="Edit Visualization" location="bottom">
+									<template v-slot:activator="{ props }">
+										<IconButton v-bind="props" aria-label="Edit Visualization" size="x-small" variant="plain"
+											icon="mdi-pencil" @click.stop="handleEditViz(viz)"></IconButton>
+									</template>
+								</v-tooltip>
+								<DeleteButton class="ml-2 mr-2" label="Remove" @delete="visualizationStore.removeVisualization(viz)">
+								</DeleteButton>
+							</div>
 						</div>
 					</template>
 					<v-expansion-panel-text>
@@ -191,7 +213,7 @@ const handleEditViz = (viz: OSHVisualization) => {
 	height: 100%;
 }
 
-.viz-title {
+.header-title {
 	text-align: center;
 	font-size: 1.5rem;
 	font-weight: bold;
@@ -210,5 +232,49 @@ const handleEditViz = (viz: OSHVisualization) => {
 	width: 100%;
 	align-items: center;
 	justify-content: space-between;
+	min-width: 0;
+	}
+	
+	.panel-actions {
+		display: flex;
+		align-items: center;
+		flex-shrink: 0;
+		overflow: hidden;
+		max-width: 0;
+		opacity: 0;
+		transition: max-width 0.2s ease, opacity 0.15s ease;
+	}
+	
+	.map-actions {
+		display: flex;
+		align-items: center;
+		flex-shrink: 0;
+		overflow: hidden;
+		max-width: 0;
+		opacity: 0;
+		transition: max-width 0.2s ease, opacity 0.15s ease;
+	}
+	
+	.viz-name {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	
+	.v-expansion-panel:hover .panel-actions {
+		max-width: 120px;
+		opacity: 1;
+	}
+	
+	.v-list-item:hover .map-actions {
+		max-width: 120px;
+		opacity: 1;
+	}
+	
+	.panel-text :deep(.v-expansion-panel-text__wrapper) {
+		padding-left: 8px;
+		padding-right: 8px;
 }
 </style>

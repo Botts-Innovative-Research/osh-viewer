@@ -171,11 +171,8 @@ const openPropertiesDialog = (item: any) => {
 			<!-- Actions -->
 			<template v-slot:append="{ item }">
 				<!-- Remove node -->
-				<v-tooltip v-if="item.type === 'node'" text="Delete" location="bottom" open-delay="500">
-					<template #activator="{ props }">
-						<DeleteButton v-bind="props" label="Remove" @delete="openDeleteNodeDialog(item.raw)"></DeleteButton>
-					</template>
-				</v-tooltip>
+				<DeleteButton v-if="item.type === 'node'" text="Delete" location="bottom" label="Remove"
+					@delete="openDeleteNodeDialog(item.raw)"></DeleteButton>
 				<!-- DS/CS properties -->
 				<v-tooltip v-if="item.type === 'ds' || item.type === 'cs'" text="Properties" location="bottom"
 					open-delay="500">

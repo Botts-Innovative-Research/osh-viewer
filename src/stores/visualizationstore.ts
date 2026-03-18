@@ -43,15 +43,17 @@ export const useVisualizationStore = defineStore('visualizations',
 		console.log('[VisualizationStore] Adding visualization:', visualization);
 		visualizations.value.push(visualization);
 
-        const getIds = (streams: OSHDatastream[] | OSHControlStream[] | null): string[] => {
-            return streams != null ? streams.map((item: OSHDatastream | OSHControlStream) => item.id) : [];
-        }
+		const getIds = (streams: OSHDatastream[] | OSHControlStream[] | null): string[] => {
+			return streams != null
+				? streams.map((item: OSHDatastream | OSHControlStream) => item.id)
+				: [];
+		};
 
-        if (visualization.type === 'pointmarker-feature') {
-            console.log("skipping fois for serialization")
-            return;
-        }
-        serializedVisualizations.value.push({
+		if (visualization.type === 'pointmarker-feature') {
+			console.log('skipping fois for serialization');
+			return;
+		}
+		serializedVisualizations.value.push({
 			id: visualization.id,
 			name: visualization.name,
 			type: visualization.type,
@@ -68,8 +70,9 @@ export const useVisualizationStore = defineStore('visualizations',
 
 	const removeVisualization = (visualization: OSHVisualization): void => {
 		visualizations.value = visualizations.value.filter((v) => v !== visualization);
-
-        serializedVisualizations.value = serializedVisualizations.value.filter((viz) => viz.id !== visualization.id)
+		serializedVisualizations.value = serializedVisualizations.value.filter(
+			(viz) => viz.id !== visualization.id
+		);
 	};
 
 	const getVisualizationById = (id: string): OSHVisualization | undefined => {
@@ -107,36 +110,38 @@ export const useVisualizationStore = defineStore('visualizations',
     };
 
     const rehydrateVisualizations = (): void => {
-        if (serializedVisualizations.value.length === 0 || visualizations.value.length > 0) return;
+			if (serializedVisualizations.value.length === 0 || visualizations.value.length > 0)
+				return;
 
-        const datastreamStore = useDataStreamStore();
-        const controlstreamStore = useControlStreamStore();
+			const datastreamStore = useDataStreamStore();
+			const controlstreamStore = useControlStreamStore();
 
-        for (const serialized of serializedVisualizations.value) {
+			for (const serialized of serializedVisualizations.value) {
+				if (datastreamStore.dataStreams.length === 0) {
+					console.warn('[VizStore] Datastreams not ready, skipping rehydrate');
+					return;
+				}
 
-            if (datastreamStore.dataStreams.length === 0) {
-                console.warn('[VizStore] Datastreams not ready, skipping rehydrate');
-                return;
-            }
+				const datastreams = datastreamStore.getDataStreamsById(serialized.datastreamIds);
+				const controlstreams = controlstreamStore.getControlStreamsById(
+					serialized.controlstreamIds
+				);
 
-            const datastreams = datastreamStore.getDataStreamsById(serialized.datastreamIds);
-            const controlstreams = controlstreamStore.getControlStreamsById(serialized.controlstreamIds);
+				const visualization = new OSHVisualization(
+					serialized.id,
+					serialized.name,
+					serialized.type,
+					serialized.viewLocation,
+					datastreams,
+					controlstreams,
+					serialized.parentId
+				);
 
-            const visualization = new OSHVisualization(
-                serialized.id,
-                serialized.name,
-                serialized.type,
-                serialized.viewLocation,
-                datastreams,
-                controlstreams,
-                serialized.parentId,
-            )
-
-            visualization.setVisualizationComponents(serialized.visualizationComponents);
-            visualization.setWizardConfig(serialized.wizardConfig);
-            visualizations.value.push(visualization);
-        }
-        console.log('[VizStore] Rehydrated visualizations:', visualizations.value.length);
+				visualization.setVisualizationComponents(serialized.visualizationComponents);
+				visualization.setWizardConfig(serialized.wizardConfig);
+				visualizations.value.push(visualization);
+			}
+			console.log('[VizStore] Rehydrated visualizations:', visualizations.value.length);
     }
 
 	return {
