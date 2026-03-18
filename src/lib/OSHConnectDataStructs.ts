@@ -354,7 +354,7 @@ export class OSHVisualization {
 	datastream: OSHDatastream[] | null; // TODO: null handles "All PMS"
 	controlstream?: OSHControlStream[]; // Optional control stream
 	visualizationComponents!: VisualizationComponents;
-	wizardConfig?: WizardConfig; // Store state of wizard for editing visualization
+	wizardConfig!: WizardConfig; // Store state of wizard for editing visualization
 
 	constructor(
 		id: string,

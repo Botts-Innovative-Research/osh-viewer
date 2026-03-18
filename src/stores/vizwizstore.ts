@@ -2,13 +2,15 @@ import {OSHControlStream, OSHDatastream} from '@/lib/OSHConnectDataStructs';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { VisualizationCustomizationOptions } from '@/lib/VisualizationHelpers';
+import { useDataStreamStore } from './datastreamstore';
+import { useControlStreamStore } from './controlstreamstore';
 
 export interface WizardConfig {
 	id: string;
 	visualizationType: string;
 	systems: string[];
-	datastreams: OSHDatastream[];
-	controlstreams: OSHControlStream[];
+	datastreamIds: string[];
+	controlstreamIds: string[];
 	dsConfig: Record<string, Record<string, any>>;
 	csConfig: Record<string, Record<string, any>>;
 	visualizationCustomizationOptions: any;
@@ -127,12 +129,19 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 
 	// RETURN STORE STATE -> For saving in visualization
 	const getWizardConfig = (): WizardConfig => {
+		// Save only IDs for serialization purposes
+		const getIds = (streams: OSHDatastream[] | OSHControlStream[] | null): string[] => {
+			return streams != null
+				? streams.map((item: OSHDatastream | OSHControlStream) => item.id)
+				: [];
+		};
+
 		return {
 			id: id.value,
 			visualizationType: visualizationType.value,
 			systems: systems.value,
-			datastreams: datastreams.value,
-			controlstreams: controlstreams.value,
+			datastreamIds: getIds(datastreams.value),
+			controlstreamIds: getIds(controlstreams.value),
 			dsConfig: dsConfig.value,
 			csConfig: csConfig.value,
 			visualizationCustomizationOptions: visualizationCustomizationOptions.value,
@@ -141,11 +150,17 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 
 	// RESTORE STORE STATE -> For editing visualization
 	const setWizardConfig = (config: WizardConfig) => {
+		// Get OSHDatastream | OSHControlstream objects by ID
+		const datastreamObjs = useDataStreamStore().getDataStreamsById(config.datastreamIds);
+		const controlstreamObjs = useControlStreamStore().getControlStreamsById(
+			config.controlstreamIds
+		);
+
 		id.value = config.id;
 		visualizationType.value = config.visualizationType;
 		systems.value = config.systems;
-		datastreams.value = config.datastreams;
-		controlstreams.value = config.controlstreams;
+		datastreams.value = datastreamObjs;
+		controlstreams.value = controlstreamObjs;
 		dsConfig.value = config.dsConfig;
 		csConfig.value = config.csConfig;
 		visualizationCustomizationOptions.value = config.visualizationCustomizationOptions;

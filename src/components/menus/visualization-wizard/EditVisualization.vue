@@ -3,7 +3,7 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { useUIStore } from '@/stores/uistore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
-import { computed, onMounted, ref, toRaw } from 'vue';
+import { computed, nextTick, onMounted, ref, toRaw } from 'vue';
 import { VisualizationFormComponent, VisualizationRegistry } from './VisualizationRegistry';
 import SelectData from './SelectData.vue';
 
@@ -62,11 +62,12 @@ const handleSubmit = async () => {
 	const builderModule = await entry.builder();
 
   // If changes were made, delete old viz to make new one
-  if (toRaw(props.viz.wizardConfig) !== vizwizStore.getWizardConfig()) {
+  if (JSON.stringify(toRaw(props.viz.wizardConfig)) !== JSON.stringify(vizwizStore.getWizardConfig())) {
     console.log("props config", toRaw(props.viz.wizardConfig))
     console.log("store config", vizwizStore.getWizardConfig())
     visualizationStore.removeVisualization(props.viz) // Delete old visualization
-	  builderModule.default();  // Call default "build" function from the builder module
+    await nextTick(); // Let Vue unmount the viz component and disconnect datasources
+    builderModule.default();  // Call default "build" function from the builder module
   } else {
     console.log("No changes were made. Skipping rebuild.")
   }
