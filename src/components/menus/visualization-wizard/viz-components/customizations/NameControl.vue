@@ -23,7 +23,6 @@ watch(name, (val) => {
 
 onMounted(() => {
   if (!vwStore.visualizationCustomizationOptions.name) {
-    console.log("No name...?")
     vwStore.updateVisualizationCustomizationOptions({
       name: name.value,
     });

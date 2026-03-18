@@ -11,16 +11,19 @@ const props = defineProps<{
   viz: OSHVisualization;
 }>();
 
+const isLoading = ref(true);
 const uiStore = useUIStore();
 const vizwizStore = useVizWizStore();
 const visualizationStore = useVisualizationStore();
 const selectedType = ref<string>('');
 
 // Clear store and restore wizard state to edit visualization
-onMounted(() => {
+onMounted(async () => {
 	vizwizStore.reset();
   if (props.viz.wizardConfig) vizwizStore.setWizardConfig(props.viz.wizardConfig);
   selectedType.value = props.viz.type;
+	await nextTick();
+	isLoading.value = false;
 });
 
 // Stepper
@@ -88,9 +91,11 @@ const componentValid = ref<boolean[]>([])
 </script>
 
 <template>
-  <v-card class="pa-4">
+	<v-card class="pa-4" v-if="!isLoading">
 		<v-card-title class="text-h4 text-center">Edit Visualization</v-card-title>
-
+		<v-card class="text-center" color="info">
+			<v-card-title>{{ props.viz.name }}</v-card-title>
+		</v-card>
 		<v-stepper v-model="currentStep" class="wizard-content">
 			<template v-slot:default="{ }">
 				<v-stepper-header>
@@ -132,7 +137,6 @@ const componentValid = ref<boolean[]>([])
 
 			</template>
 		</v-stepper>
-
 	</v-card>
 </template>
 
