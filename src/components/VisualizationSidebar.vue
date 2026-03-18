@@ -10,6 +10,7 @@ import { ILineOfBearingLayerProperties, IPointMarkerLayerProperties, Visualizati
 import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
 import VisualizationWizard from './menus/visualization-wizard/VisualizationWizard.vue';
 import DeleteButton from './ui/DeleteButton.vue';
+import EditVisualization from './menus/visualization-wizard/EditVisualization.vue';
 
 // Each visualization can be represented by an object with a unique id
 const visualizationStore = useVisualizationStore();
@@ -55,6 +56,13 @@ const toggleSelectedMapItem = (item: any) => {
 const toggleMapLayerVisibility = (item: any) => {
 	visualizationStore.toggleMapLayerVisibility(item.id);
 };
+
+// Handle edit visualization
+const editViz = ref<OSHVisualization | null>(null);
+const handleEditViz = (viz: OSHVisualization) => {
+	useUIStore().openEditViz();	// Open edit wizard
+	editViz.value = viz;
+}
 
 </script>
 
@@ -150,6 +158,12 @@ const toggleMapLayerVisibility = (item: any) => {
 					<template #title>
 						<div class="panel-header">
 							<span>{{ viz.name }}</span>
+							<v-tooltip text="Edit Visualization" location="bottom">
+								<template v-slot:activator="{ props }">
+									<IconButton v-bind="props" aria-label="Edit Visualization" size="x-small" variant="plain"
+										icon="mdi-pencil" @click.stop="handleEditViz(viz)"></IconButton>
+								</template>
+							</v-tooltip>
 							<DeleteButton class="ml-2 mr-2" label="Remove" @delete="visualizationStore.removeVisualization(viz)"></DeleteButton>
 						</div>
 					</template>
@@ -161,8 +175,13 @@ const toggleMapLayerVisibility = (item: any) => {
 			</v-expansion-panels>
 		</v-sheet>
 	</v-sheet>
+	<!-- VISUALIZATION WIZARD -->
 	<v-dialog v-model="uiStore.vizWizOpen" max-width="900">
 		<VisualizationWizard />
+	</v-dialog>
+	<!-- EDIT VISUALIZATION -->
+	<v-dialog v-model="uiStore.editVizOpen" max-width="900" v-if="editViz">
+		<EditVisualization :viz="editViz" />
 	</v-dialog>
 </template>
 

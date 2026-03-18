@@ -12,6 +12,7 @@ import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { VisualizationComponents } from '@/lib/VisualizationHelpers';
 import { CONFIG_UID } from '@/composables/useConfigPersistence';
 import { ViewLocation } from '@/components/menus/visualization-wizard/VisualizationRegistry';
+import { WizardConfig } from '@/stores/vizwizstore';
 
 let sharedStores: any = null;
 
@@ -345,14 +346,15 @@ export class OSHControlStream {
 }
 
 export class OSHVisualization {
-	id: string;	// Random ID following the format `visualization-${randomUUID()}`
+	id: string; // Random ID following the format `visualization-${randomUUID()}`
 	name: string;
 	type: string;
-	viewLocation: ViewLocation;	// Defines where the visualization is displayed (e.g., 'panel', 'map', 'multi')
+	viewLocation: ViewLocation; // Defines where the visualization is displayed (e.g., 'panel', 'map', 'multi')
 	parentId?: string | null;
-	datastream: OSHDatastream[] | null;	// TODO: null handles "All PMS"
+	datastream: OSHDatastream[] | null; // TODO: null handles "All PMS"
 	controlstream?: OSHControlStream[]; // Optional control stream
 	visualizationComponents!: VisualizationComponents;
+	wizardConfig?: WizardConfig; // Store state of wizard for editing visualization
 
 	constructor(
 		id: string,
@@ -361,7 +363,7 @@ export class OSHVisualization {
 		viewLocation: ViewLocation,
 		datastream: OSHDatastream[] | null,
 		controlstream?: OSHControlStream[],
-		parentId?: string | null,
+		parentId?: string | null
 	) {
 		this.id = id;
 		this.name = name;
@@ -374,5 +376,9 @@ export class OSHVisualization {
 
 	setVisualizationComponents(components: VisualizationComponents): void {
 		this.visualizationComponents = components;
+	}
+
+	setWizardConfig(config: WizardConfig): void {
+		this.wizardConfig = config;
 	}
 }

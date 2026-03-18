@@ -1,30 +1,32 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { useUIStore } from '@/stores/uistore';
+import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
-import SelectType from './SelectType.vue';
-import SelectData from './SelectData.vue';
+import { computed, onMounted, ref, toRaw } from 'vue';
 import { VisualizationFormComponent, VisualizationRegistry } from './VisualizationRegistry';
-// @ts-ignore
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+import SelectData from './SelectData.vue';
+
+const props = defineProps<{
+  viz: OSHVisualization;
+}>();
 
 const uiStore = useUIStore();
 const vizwizStore = useVizWizStore();
-const selectedType = computed(() => {
-	return vizwizStore.visualizationType;
-});
+const visualizationStore = useVisualizationStore();
+const selectedType = ref<string>('');
 
-// Clear store every time the wizard opens, set new ID
+// Clear store and restore wizard state to edit visualization
 onMounted(() => {
 	vizwizStore.reset();
-	vizwizStore.setId(`visualization-${randomUUID()}`)
+  if (props.viz.wizardConfig) vizwizStore.setWizardConfig(props.viz.wizardConfig);
+  selectedType.value = props.viz.type;
 });
 
-// Stepper Variables
-const currentStep = ref(1)
+// Stepper
+const currentStep = ref(1);
 const completeSteps = computed(() => {
 	const baseSteps: VisualizationFormComponent[] = [
-		{ id: 'select-type', label: 'Select Visualization Type', short: 'Type', component: SelectType },
 		{ id: 'select-data', label: `Select System & Datasource - ${VisualizationRegistry[selectedType.value]?.label || 'Unknown'}`, short: 'Data', component: SelectData },
 	]
 
@@ -50,6 +52,7 @@ const stepStatus = (index: number) => {
 }
 const isLastStep = computed(() => currentStep.value === completeSteps.value.length)
 
+// Submit edits
 const handleSubmit = async () => {
 	const type = selectedType.value;
 	const entry = VisualizationRegistry[type];
@@ -58,11 +61,18 @@ const handleSubmit = async () => {
 
 	const builderModule = await entry.builder();
 
-	// Call default "build" function from the builder module
-	builderModule.default();
+  // If changes were made, delete old viz to make new one
+  if (toRaw(props.viz.wizardConfig) !== vizwizStore.getWizardConfig()) {
+    console.log("props config", toRaw(props.viz.wizardConfig))
+    console.log("store config", vizwizStore.getWizardConfig())
+    visualizationStore.removeVisualization(props.viz) // Delete old visualization
+	  builderModule.default();  // Call default "build" function from the builder module
+  } else {
+    console.log("No changes were made. Skipping rebuild.")
+  }
 
-	// Close the wizard
-	uiStore.vizWizOpen = false
+	// Close the edit wizard
+	uiStore.editVizOpen = false
 }
 
 // Change step function
@@ -79,8 +89,8 @@ const componentValid = ref<boolean[]>([])
 </script>
 
 <template>
-	<v-card class="pa-4">
-		<v-card-title class="text-h4 text-center">Visualization Wizard</v-card-title>
+  <v-card class="pa-4">
+		<v-card-title class="text-h4 text-center">Edit Visualization</v-card-title>
 
 		<v-stepper v-model="currentStep" class="wizard-content">
 			<template v-slot:default="{ }">

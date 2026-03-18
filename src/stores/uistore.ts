@@ -13,7 +13,8 @@ export const useUIStore = defineStore('ui', () => {
 	const nodeConfigFormOpen = ref(false);
 	const deleteNodeDialog = ref(false);
 	const propertiesDialog = ref(false);
-	const vizWizOpen = ref(false); // VizWiz = new version
+	const vizWizOpen = ref(false);
+	const editVizOpen = ref(false); // Edit visualization wizard
 
 	// Focused map corresponds to map type
 	const focusedMap = ref<'cesium' | 'leaflet'>('cesium');
@@ -62,7 +63,7 @@ export const useUIStore = defineStore('ui', () => {
 	function toggleRightSidebar() {
 		rightSidebarOpen.value = !rightSidebarOpen.value;
 	}
-	function setFocusedMap(value: ('cesium' | 'leaflet')) {
+	function setFocusedMap(value: 'cesium' | 'leaflet') {
 		focusedMap.value = value;
 	}
 	function setActiveWindows(windows: string[]) {
@@ -110,13 +111,13 @@ export const useUIStore = defineStore('ui', () => {
 	// Handle list of selected GeoPTZ controllers
 	function setSelectedGeoPTZ(vizList: OSHVisualization[]) {
 		selectedGeoPTZ.value = vizList;
-		if (vizList?.length === 0) setIsGeoPTZSelected(false);	// If list is empty, disselect geoptz
+		if (vizList?.length === 0) setIsGeoPTZSelected(false); // If list is empty, disselect geoptz
 	}
 	function clearSelectedGeoPTZ() {
 		selectedGeoPTZ.value = null;
 		setIsGeoPTZSelected(false);
 	}
-	
+
 	// Handle selection of GeoPTZ
 	function setIsGeoPTZSelected(val: boolean) {
 		isGeoPTZSelected.value = val;
@@ -159,6 +160,13 @@ export const useUIStore = defineStore('ui', () => {
 	}
 	function openVizWiz() {
 		vizWizOpen.value = true;
+	}
+
+	function toggleEditViz() {
+		editVizOpen.value = !editVizOpen.value;
+	}
+	function openEditViz() {
+		editVizOpen.value = true;
 	}
 
 	function setSelectedFlightPath(controlStreamId: string, commandBaseUrl: string, auth: string) {
@@ -221,6 +229,9 @@ export const useUIStore = defineStore('ui', () => {
 		vizWizOpen,
 		toggleVizWiz,
 		openVizWiz,
+		editVizOpen,
+		toggleEditViz,
+		openEditViz,
 
 		selectedFlightPath,
 		setSelectedFlightPath,
