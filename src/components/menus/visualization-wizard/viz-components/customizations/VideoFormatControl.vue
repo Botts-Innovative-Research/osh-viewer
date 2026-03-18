@@ -19,7 +19,11 @@ watch(videoFormat, (val) => {
 
 
 onMounted(() => {
-	vwStore.updateVisualizationCustomizationOptions({ videoFormat: videoFormat.value });
+  if (!vwStore.visualizationCustomizationOptions.videoFormat) {
+    vwStore.updateVisualizationCustomizationOptions({ videoFormat: videoFormat.value });
+  } else {
+    videoFormat.value = vwStore.visualizationCustomizationOptions.videoFormat
+  }
 });
 </script>
 

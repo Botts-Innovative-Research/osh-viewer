@@ -10,9 +10,13 @@ watch(maxPoints, (val) => {
 });
 
 onMounted(() => {
-  vwStore.updateVisualizationCustomizationOptions({
-    maxPoints: maxPoints.value,
-  });
+  if (!vwStore.visualizationCustomizationOptions.maxPoints) {
+    vwStore.updateVisualizationCustomizationOptions({
+      maxPoints: maxPoints.value,
+    });
+  } else {
+    maxPoints.value = vwStore.visualizationCustomizationOptions.maxPoints
+  }
 });
 
 </script>

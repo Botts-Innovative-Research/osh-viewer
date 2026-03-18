@@ -63,8 +63,6 @@ const handleSubmit = async () => {
 
   // If changes were made, delete old viz to make new one
   if (JSON.stringify(toRaw(props.viz.wizardConfig)) !== JSON.stringify(vizwizStore.getWizardConfig())) {
-    console.log("props config", toRaw(props.viz.wizardConfig))
-    console.log("store config", vizwizStore.getWizardConfig())
     visualizationStore.removeVisualization(props.viz) // Delete old visualization
     await nextTick(); // Let Vue unmount the viz component and disconnect datasources
     builderModule.default();  // Call default "build" function from the builder module

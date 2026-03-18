@@ -10,9 +10,13 @@ watch(weight, (val) => {
 });
 
 onMounted(() => {
-  vwStore.updateVisualizationCustomizationOptions({
-    weight: weight.value,
-  });
+  if (!vwStore.visualizationCustomizationOptions.weight) {
+    vwStore.updateVisualizationCustomizationOptions({
+      weight: weight.value,
+    });
+  } else {
+    weight.value = vwStore.visualizationCustomizationOptions.weight
+  }
 });
 
 </script>

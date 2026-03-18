@@ -10,9 +10,13 @@ watch(backgroundColor, (val) => {
 });
 
 onMounted(() => {
-  vwStore.updateVisualizationCustomizationOptions({
-    backgroundColor: backgroundColor.value,
-  });
+  if (!vwStore.visualizationCustomizationOptions.backgroundColor) {
+    vwStore.updateVisualizationCustomizationOptions({
+      backgroundColor: backgroundColor.value,
+    });
+  } else {
+    backgroundColor.value = vwStore.visualizationCustomizationOptions.backgroundColor
+  }
 });
 
 </script>

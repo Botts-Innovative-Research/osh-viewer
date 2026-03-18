@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch, ref, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import RadioCards from '@/components/ui/RadioCards.vue';
 
@@ -30,10 +30,18 @@ function selectIcon(val: any) {
 }
 
 onMounted(() => {
-  vwStore.updateVisualizationCustomizationOptions({
-    icon: `/icons/map/${icon.value.icon}.svg`,
-    iconName: icon.value.icon
-  });
+  if (!vwStore.visualizationCustomizationOptions.icon) {
+    vwStore.updateVisualizationCustomizationOptions({
+      icon: `/icons/map/${icon.value.icon}.svg`,
+      iconName: icon.value.icon
+    });
+  } else {
+    const savedIconName = vwStore.visualizationCustomizationOptions.iconName;
+    const matchedIcon = iconOptions.find(option => option.icon === savedIconName);
+    if (matchedIcon) {
+      icon.value = matchedIcon;
+    }
+  }
 });
 
 </script>
