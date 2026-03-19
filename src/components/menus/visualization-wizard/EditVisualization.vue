@@ -6,6 +6,7 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 import { computed, nextTick, onMounted, ref, toRaw } from 'vue';
 import { VisualizationFormComponent, VisualizationRegistry } from './VisualizationRegistry';
 import SelectData from './SelectData.vue';
+import { showToast } from '@/composables/useToast';
 
 const props = defineProps<{
   viz: OSHVisualization;
@@ -79,8 +80,10 @@ const handleSubmit = async () => {
     visualizationStore.removeVisualization(props.viz) // Delete old visualization
     await nextTick(); // Let Vue unmount the viz component and disconnect datasources
     builderModule.default();  // Call default "build" function from the builder module
+		showToast('Visualization updated', 'SUCCESS');
   } else {
     console.log("No changes were made. Skipping rebuild.")
+		showToast('No changes made to visualization', 'INFO');
   }
 
 	// Close the edit wizard
