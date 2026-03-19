@@ -77,13 +77,11 @@ const handleEditViz = (viz: OSHVisualization) => {
 				</template>
 			</v-tooltip>
 		</v-sheet>
-
 		<v-divider></v-divider>
-
 		<v-sheet class="visualization-list overflow-y-auto">
-			<!-- MAP VISUALIZATIONS -->
-			<v-expansion-panels multiple eager>
-				<v-expansion-panel :disabled="mapVisualizations.length == 0" :value="mapVisualizations.length === 0" static>
+			<v-expansion-panels multiple eager variant="accordion" elevation="0">
+				<!-- MAP VISUALIZATIONS -->
+				<v-expansion-panel :disabled="mapVisualizations.length == 0">
 					<template #title>
 						<div class="panel-header">
 							Map Visualizations
@@ -125,12 +123,8 @@ const handleEditViz = (viz: OSHVisualization) => {
 						</v-list>
 					</v-expansion-panel-text>
 				</v-expansion-panel>
-			</v-expansion-panels>
-			<v-divider></v-divider>
-			<!-- GEOPTZ VISUALIZATIONS -->
-			<v-expansion-panels multiple eager>
-				<v-expansion-panel :disabled="geoPtzVisualizations.length == 0" :value="geoPtzVisualizations.length === 0"
-					static>
+				<!-- GEOPTZ VISUALIZATIONS -->
+				<v-expansion-panel :disabled="geoPtzVisualizations.length == 0">
 					<template #title>
 						<div class="panel-header">
 							GeoPTZ Controllers
@@ -171,7 +165,8 @@ const handleEditViz = (viz: OSHVisualization) => {
 			</v-expansion-panels>
 			<v-divider></v-divider>
 			<!-- PANEL VISUALIZATIONS -->
-			<v-expansion-panels :model-value="panelVisualizations.map(v => v.id)" variant="accordion" multiple eager>
+			<v-expansion-panels :model-value="panelVisualizations.map(v => v.id)" variant="accordion" multiple eager
+				elevation="0">
 				<v-expansion-panel v-for="viz in panelVisualizations" :key="viz.id" class="visualization-item" :value="viz.id"
 					static>
 					<template #title>
