@@ -29,8 +29,6 @@ export default function build() {
 		dataView: chartResult.chartView,
 	};
 
-	console.log(vizwizStore.id);
-
 	const newViz: OSHVisualization = new OSHVisualization(
 		vizwizStore.id,
 		vizwizStore.visualizationCustomizationOptions.name,

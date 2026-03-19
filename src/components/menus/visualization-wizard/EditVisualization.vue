@@ -16,12 +16,19 @@ const uiStore = useUIStore();
 const vizwizStore = useVizWizStore();
 const visualizationStore = useVisualizationStore();
 const selectedType = ref<string>('');
+const initialConfig = ref();
 
 // Clear store and restore wizard state to edit visualization
 onMounted(async () => {
+	// Reset vizwiz store
 	vizwizStore.reset();
-  if (props.viz.wizardConfig) vizwizStore.setWizardConfig(props.viz.wizardConfig);
-  selectedType.value = props.viz.type;
+
+	// Setup initial config for comparison
+	initialConfig.value = JSON.parse(JSON.stringify(props.viz.wizardConfig));
+	vizwizStore.setWizardConfig(props.viz.wizardConfig);
+	selectedType.value = props.viz.type;
+
+	// Handle loading
 	await nextTick();
 	isLoading.value = false;
 });
@@ -64,8 +71,11 @@ const handleSubmit = async () => {
 
 	const builderModule = await entry.builder();
 
+	const initial = JSON.stringify(toRaw(initialConfig.value));
+	const updated = JSON.stringify(toRaw(vizwizStore.getWizardConfig()))
+
   // If changes were made, delete old viz to make new one
-  if (JSON.stringify(toRaw(props.viz.wizardConfig)) !== JSON.stringify(vizwizStore.getWizardConfig())) {
+	if (initial !== updated) {
     visualizationStore.removeVisualization(props.viz) // Delete old visualization
     await nextTick(); // Let Vue unmount the viz component and disconnect datasources
     builderModule.default();  // Call default "build" function from the builder module
