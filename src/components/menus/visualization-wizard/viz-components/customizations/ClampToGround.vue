@@ -10,9 +10,13 @@ watch(clampToGround, (val) => {
 });
 
 onMounted(() => {
-  vwStore.updateVisualizationCustomizationOptions({
-    clampToGround: clampToGround.value,
-  });
+  if (!vwStore.visualizationCustomizationOptions.clampToGround) {
+    vwStore.updateVisualizationCustomizationOptions({
+      clampToGround: clampToGround.value,
+    });
+  } else {
+    clampToGround.value = vwStore.visualizationCustomizationOptions.clampToGround
+  }
 });
 
 </script>

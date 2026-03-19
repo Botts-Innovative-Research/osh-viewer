@@ -10,9 +10,13 @@ watch(smoothFactor, (val) => {
 });
 
 onMounted(() => {
-  vwStore.updateVisualizationCustomizationOptions({
-    smoothFactor: smoothFactor.value,
-  });
+  if (!vwStore.visualizationCustomizationOptions.smoothFactor) {
+    vwStore.updateVisualizationCustomizationOptions({
+      smoothFactor: smoothFactor.value,
+    });
+  } else {
+    smoothFactor.value = vwStore.visualizationCustomizationOptions.smoothFactor
+  }
 });
 
 </script>

@@ -15,8 +15,12 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <IconButton v-bind="$attrs" :aria-label="props.label" class="close-btn" icon="mdi-window-close" size="x-small" variant="plain"
-    @click.stop="emit('delete')"></IconButton>
+  <v-tooltip v-bind="$attrs" text="Delete" location="bottom">
+    <template #activator="{ props: tooltipProps }">
+      <IconButton v-bind="tooltipProps" :aria-label="props.label" class="close-btn" icon="mdi-window-close"
+        size="x-small" variant="plain" @click.stop="emit('delete')"></IconButton>
+    </template>
+  </v-tooltip>
 </template>
 
 <style scoped>

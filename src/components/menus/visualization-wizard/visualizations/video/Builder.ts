@@ -8,7 +8,7 @@ import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 //@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
-//@ts-ignore
+// @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { AggregateDatastreams, AggregateControlstreams, BuildRoleProperty, getUsedDatastreams, getUsedControlstreams } from '../../shared/helpers';
 import { VideoDescriptor } from './Descriptor';
@@ -20,13 +20,13 @@ export default function build() {
 	const visualizationStore = useVisualizationStore();
 
 	const datastreams = AggregateDatastreams();
-    const controlstreams = AggregateControlstreams();
+	const controlstreams = AggregateControlstreams();
 
 	const videoResult = CreateVideoViewProps(
-        datastreams,
-        controlstreams,
-        vizwizStore.visualizationCustomizationOptions
-    );
+		datastreams,
+		controlstreams,
+		vizwizStore.visualizationCustomizationOptions
+	);
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: videoResult.vizDatasources,
 		dataLayer: videoResult.videoLayer,
@@ -34,14 +34,15 @@ export default function build() {
 	};
 
 	const newViz: OSHVisualization = new OSHVisualization(
-		`visualization-${randomUUID()}`,
-        vizwizStore.visualizationCustomizationOptions.name,
+		vizwizStore.id,
+		vizwizStore.visualizationCustomizationOptions.name,
 		'video',
-        VideoDescriptor.viewLocation,
+		VideoDescriptor.viewLocation,
 		getUsedDatastreams(),
 		getUsedControlstreams()
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
+	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization
 	visualizationStore.addVisualization(newViz);
 	console.log('Created Video Visualization:', newViz);
 }

@@ -5,9 +5,9 @@ import {
 	ISweApiDataSourceProperties,
 } from '@/lib/VisualizationHelpers';
 //@ts-ignore
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-//@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
+// @ts-ignore
+import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { AggregateDatastreams, BuildRoleProperty, getUsedDatastreams } from '../../shared/helpers';
@@ -32,13 +32,14 @@ export default function build() {
 	};
 
 	const newViz: OSHVisualization = new OSHVisualization(
-		`visualization-${randomUUID()}`,
+		vizwizStore.id,
 		vizwizStore.visualizationCustomizationOptions.name,
 		'lob',
 		LobDescriptor.viewLocation,
-		getUsedDatastreams(),
+		getUsedDatastreams()
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
+	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization
 	visualizationStore.addVisualization(newViz);
 	console.log('Created Line of Bearing Visualization:', newViz);
 }

@@ -294,6 +294,7 @@ export function useConfigPersistence() {
                             );
 
                             visualization.setVisualizationComponents(serializedViz.visualizationComponents);
+                            visualization.setWizardConfig(serializedViz.wizardConfig);
                             visualizationStore.addVisualization(visualization);
                             visualizationsAdded++;
                         }

@@ -10,9 +10,7 @@ const props = defineProps<{
 }>();
 
 const vwStore = useVizWizStore();
-const name = ref<string>(
-  props.role ? generateVizName(props.role) : props.defaultName ? props.defaultName : ''
-)
+const name = ref<string>(props.role ? generateVizName(props.role) : props.defaultName ? props.defaultName : '')
 
 watch(props, (val) => {
   if (val.role) name.value = generateVizName(val.role);
@@ -24,9 +22,13 @@ watch(name, (val) => {
 });
 
 onMounted(() => {
-  vwStore.updateVisualizationCustomizationOptions({
-    name: name.value,
-  });
+  if (!vwStore.visualizationCustomizationOptions.name) {
+    vwStore.updateVisualizationCustomizationOptions({
+      name: name.value,
+    });
+  } else {
+    name.value = vwStore.visualizationCustomizationOptions.name;
+  }
 });
 
 // Validation: Name cannot be empty

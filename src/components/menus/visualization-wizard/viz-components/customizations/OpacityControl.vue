@@ -10,9 +10,13 @@ watch(opacity, (val) => {
 });
 
 onMounted(() => {
-  vwStore.updateVisualizationCustomizationOptions({
-    opacity: opacity.value,
-  });
+	if (!vwStore.visualizationCustomizationOptions.opacity) {
+		vwStore.updateVisualizationCustomizationOptions({
+			opacity: opacity.value,
+		});
+	} else {
+		opacity.value = vwStore.visualizationCustomizationOptions.opacity
+	}
 });
 
 </script>

@@ -10,9 +10,13 @@ watch(lineColor, (val) => {
 });
 
 onMounted(() => {
-  vwStore.updateVisualizationCustomizationOptions({
-    lineColor: lineColor.value,
-  });
+  if (!vwStore.visualizationCustomizationOptions.lineColor) {
+    vwStore.updateVisualizationCustomizationOptions({
+      lineColor: lineColor.value,
+    });
+  } else {
+    lineColor.value = vwStore.visualizationCustomizationOptions.lineColor
+  }
 });
 
 </script>

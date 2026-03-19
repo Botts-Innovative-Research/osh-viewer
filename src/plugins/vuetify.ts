@@ -15,51 +15,54 @@ export const vuetify = createVuetify({
 	theme: {
 		defaultTheme: 'dark',
 	},
-  aliases: {
-    IconButton: VBtn,
-  },
-  defaults: {
-    VTab: {
-      rounded: 0,
-    },
-    VTreeview: {
-      VBtn: {
-        rounded: 'circle',
-      },
-    },
-    VToolbar: {
-      VBtn: {
-        rounded: 'circle',
-      }
-    },
-    VBtn: {
-      rounded: 'lg',
-    },
-    // Custom icon button
-    IconButton: {
-      icon: true,
-      rounded: 'circle',
-      size: 'small',
-    },
-    VCard: {
-      rounded: 'lg',
-    },
-    VStepper: {
-      class: 'elevation-0',
-      VStepperHeader: {
-        class: 'elevation-0',
-      },
-      VStepperWindow: {
-        class: 'pa-2',
-      }
-    },
-    VExpansionPanels: {
-      rounded: 0,
-    },
-    VList: {
-      VListItem:{
-        rounded: 'lg',
-      }
-    }
-  }
+	aliases: {
+		IconButton: VBtn,
+	},
+	defaults: {
+		VTab: {
+			rounded: 0,
+		},
+		VTreeview: {
+			VBtn: {
+				rounded: 'circle',
+			},
+		},
+		VToolbar: {
+			VBtn: {
+				rounded: 'circle',
+			},
+		},
+		VBtn: {
+			rounded: 'lg',
+		},
+		// Custom icon button
+		IconButton: {
+			icon: true,
+			rounded: 'circle',
+			size: 'small',
+		},
+		VCard: {
+			rounded: 'lg',
+		},
+		VStepper: {
+			class: 'elevation-0',
+			VStepperHeader: {
+				class: 'elevation-0',
+			},
+			VStepperWindow: {
+				class: 'pa-2',
+			},
+		},
+		VExpansionPanels: {
+			rounded: 0,
+		},
+		VList: {
+			VListItem: {
+				rounded: 'lg',
+			},
+		},
+		VTooltip: {
+			openDelay: 500,
+		},
+	},
 });

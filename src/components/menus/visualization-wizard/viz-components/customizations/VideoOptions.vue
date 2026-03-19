@@ -10,20 +10,29 @@ const time = ref<boolean>(false);
 
 watch(stats, (val) => {
   vwStore.updateVisualizationCustomizationOptions({ stats: val });
-  // emit('update:stats', true)
 });
 
 watch(time, (val) => {
   vwStore.updateVisualizationCustomizationOptions({ time: val });
-  // emit('update:time', true)
 });
 
 
 onMounted(() => {
-  vwStore.updateVisualizationCustomizationOptions({
-    stats: stats.value,
-    time: time.value
-  });
+  if (!vwStore.visualizationCustomizationOptions.stats) {
+    vwStore.updateVisualizationCustomizationOptions({
+      stats: stats.value,
+    });
+  } else {
+    stats.value = vwStore.visualizationCustomizationOptions.stats
+  }
+
+  if (!vwStore.visualizationCustomizationOptions.time) {
+    vwStore.updateVisualizationCustomizationOptions({
+      time: time.value
+    });
+  } else {
+    time.value = vwStore.visualizationCustomizationOptions.time
+  }
 });
 </script>
 

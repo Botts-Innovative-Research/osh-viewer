@@ -10,9 +10,13 @@ watch(distanceKm, (val) => {
 });
 
 onMounted(() => {
-  vwStore.updateVisualizationCustomizationOptions({
-    distanceKm: distanceKm.value,
-  });
+  if (!vwStore.visualizationCustomizationOptions.distanceKm) {
+    vwStore.updateVisualizationCustomizationOptions({
+      distanceKm: distanceKm.value,
+    });
+  } else {
+    distanceKm.value = vwStore.visualizationCustomizationOptions.distanceKm
+  }
 });
 
 </script>
