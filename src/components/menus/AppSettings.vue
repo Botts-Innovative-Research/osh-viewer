@@ -19,6 +19,9 @@ function setFocusedMap(newMap: 'cesium' | 'leaflet') {
 		<v-card-title>Settings</v-card-title>
 		<v-card-text class="d-flex flex-column ga-2">
 			<div>
+				<v-list-item-title>Version: 1.0.0</v-list-item-title>
+			</div>
+			<div>
 				<v-list-item-title>Theme</v-list-item-title>
 				<v-btn-toggle v-model="theme" mandatory class="ga-2">
 					<v-btn value="light" @click="setTheme('light')">
