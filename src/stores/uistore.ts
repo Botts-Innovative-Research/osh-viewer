@@ -1,16 +1,23 @@
 import { defineStore } from 'pinia';
 import { ref, Ref } from 'vue';
 import { SchemaFieldProperty } from '@/lib/DatasourceUtils';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { GeoPTZCommand } from '@/components/menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
+import { ISweApiControlStreamProperties } from '@/lib/VisualizationHelpers';
+import { sendCommand } from '@/lib/ControlstreamUtils';
 
 export const useUIStore = defineStore('ui', () => {
 	// Sidebar state (example: left and right sidebars)
 	const leftSidebarOpen = ref(true);
 	const rightSidebarOpen = ref(false);
-	const visualizationWizardOpen = ref(false);
 	const nodeConfigFormOpen = ref(false);
+	const deleteNodeDialog = ref(false);
+	const propertiesDialog = ref(false);
+	const vizWizOpen = ref(false);
+	const editVizOpen = ref(false); // Edit visualization wizard
 
-	// Focused map (could be an ID or name)
-	const focusedMap = ref<string | null>(null);
+	// Focused map corresponds to map type
+	const focusedMap = ref<'cesium' | 'leaflet'>('cesium');
 
 	// Active window items (array of IDs or names)
 	const activeWindows = ref<string[]>([]);
@@ -23,11 +30,28 @@ export const useUIStore = defineStore('ui', () => {
 
 	const selectedProperty = ref<SchemaFieldProperty | null>(null);
 
-	// Currently selected GeoPTZ instance (null or controlstream data)
-	const selectedGeoPTZ = ref<{
+	// Currently selected map item from list of map visualizations
+	const selectedMapItem = ref<any | null>(null);
+
+	// Currently selected GeoPTZ Visualization(s) or null if none selected
+	const selectedGeoPTZ = ref<OSHVisualization[] | null>(null);
+	const isGeoPTZSelected = ref<boolean>(false);
+
+	// Currently selected LLA coordinates
+	const currentLLA = ref<{
+		latitude: number;
+		longitude: number;
+		altitude: number;
+	} | null>(null);
+
+	const selectedFlightPath = ref<{
 		controlStreamId: string;
 		commandBaseUrl: string;
+		auth: string;
 	} | null>(null);
+
+	const flightPathWaypoints = ref<{ lat: number; lon: number; alt: number }[]>([]);
+	const clearFlightPathMarkersSignal = ref(false);
 
 	// Theme state
 	const theme = ref<'dark' | 'light'>('dark');
@@ -39,8 +63,8 @@ export const useUIStore = defineStore('ui', () => {
 	function toggleRightSidebar() {
 		rightSidebarOpen.value = !rightSidebarOpen.value;
 	}
-	function setFocusedMap(mapId: string | null) {
-		focusedMap.value = mapId;
+	function setFocusedMap(value: 'cesium' | 'leaflet') {
+		focusedMap.value = value;
 	}
 	function setActiveWindows(windows: string[]) {
 		activeWindows.value = windows;
@@ -60,27 +84,112 @@ export const useUIStore = defineStore('ui', () => {
 	function toggleTheme() {
 		theme.value = theme.value === 'dark' ? 'light' : 'dark';
 	}
-	function toggleVisualizationWizard() {
-		visualizationWizardOpen.value = !visualizationWizardOpen.value;
-	}
-	function openVisualizationWizard() {
-		visualizationWizardOpen.value = true;
-	}
 	function toggleNodeConfigForm() {
 		nodeConfigFormOpen.value = !nodeConfigFormOpen.value;
 	}
 	function openNodeConfigForm() {
 		nodeConfigFormOpen.value = true;
 	}
+	function toggleDeleteNodeDialog() {
+		deleteNodeDialog.value = !deleteNodeDialog.value;
+	}
+	function openDeleteNodeDialog() {
+		deleteNodeDialog.value = true;
+	}
+	function togglePropertiesDialog() {
+		propertiesDialog.value = !propertiesDialog.value;
+	}
+	function openPropertiesDialog() {
+		propertiesDialog.value = true;
+	}
 
-	// Handle selection of GeoPTZ instance
-	function setSelectedGeoPTZ(controlStreamId: string, commandBaseUrl: string) {
-		selectedGeoPTZ.value = { controlStreamId, commandBaseUrl };
+	// Handle selection of map item
+	function setSelectedMapItem(item: any | null) {
+		selectedMapItem.value = item;
+	}
+
+	// Handle list of selected GeoPTZ controllers
+	function setSelectedGeoPTZ(vizList: OSHVisualization[]) {
+		selectedGeoPTZ.value = vizList;
+		if (vizList?.length === 0) setIsGeoPTZSelected(false); // If list is empty, disselect geoptz
 	}
 	function clearSelectedGeoPTZ() {
 		selectedGeoPTZ.value = null;
+		setIsGeoPTZSelected(false);
 	}
 
+	// Handle selection of GeoPTZ
+	function setIsGeoPTZSelected(val: boolean) {
+		isGeoPTZSelected.value = val;
+	}
+
+	// Handle current LLA coordinates
+	function setCurrentLLA(latitude: number, longitude: number, altitude: number) {
+		currentLLA.value = { latitude, longitude, altitude };
+	}
+	function clearCurrentLLA() {
+		currentLLA.value = null;
+	}
+
+	// GeoPTZ Command Tasking
+	function sendGeoPTZCommand(command: GeoPTZCommand) {
+		// Iterate thru GeoPTZ instances
+		if (selectedGeoPTZ) {
+			selectedGeoPTZ.value?.map((viz: OSHVisualization) => {
+				const controlstream: ISweApiControlStreamProperties | null = viz
+					.visualizationComponents.controlstream
+					? viz.visualizationComponents.controlstream[0]
+					: null;
+				if (controlstream) {
+					const csId = controlstream.id;
+					const commandBaseUrl = `${controlstream.tls ? 'https' : 'http'}://${controlstream.endpointUrl}`;
+					const auth = {
+						username: controlstream.connectorOpts.username,
+						password: controlstream.connectorOpts.password,
+					};
+					sendCommand(commandBaseUrl, csId, command, `${auth.username}:${auth.password}`);
+				} else {
+					console.error('Could not send command. No controlstream found.');
+				}
+			});
+		}
+	}
+
+	function toggleVizWiz() {
+		vizWizOpen.value = !vizWizOpen.value;
+	}
+	function openVizWiz() {
+		vizWizOpen.value = true;
+	}
+
+	function toggleEditViz() {
+		editVizOpen.value = !editVizOpen.value;
+	}
+	function openEditViz() {
+		editVizOpen.value = true;
+	}
+
+	function setSelectedFlightPath(controlStreamId: string, commandBaseUrl: string, auth: string) {
+		selectedFlightPath.value = { controlStreamId, commandBaseUrl, auth };
+	}
+	function clearSelectedFlightPath() {
+		selectedFlightPath.value = null;
+		flightPathWaypoints.value = [];
+	}
+
+	function clearFlightPathWaypoints() {
+		flightPathWaypoints.value = [];
+	}
+	function setFlightPathWaypoints(waypoints: { lat: number; lon: number; alt: number }[]) {
+		flightPathWaypoints.value = waypoints;
+	}
+
+	function triggerClearFlightPathMarkers() {
+		clearFlightPathMarkersSignal.value = true;
+	}
+	function resetClearFlightPathMarkersSignal() {
+		clearFlightPathMarkersSignal.value = false;
+	}
 	return {
 		leftSidebarOpen,
 		rightSidebarOpen,
@@ -99,14 +208,41 @@ export const useUIStore = defineStore('ui', () => {
 		clearSelectedProperty,
 		theme,
 		toggleTheme,
-		visualizationWizardOpen,
-		toggleVisualizationWizard,
-		openVisualizationWizard,
 		nodeConfigFormOpen,
 		toggleNodeConfigForm,
+		deleteNodeDialog,
+		toggleDeleteNodeDialog,
+		openDeleteNodeDialog,
+		propertiesDialog,
+		togglePropertiesDialog,
+		openPropertiesDialog,
 		openNodeConfigForm,
 		selectedGeoPTZ,
 		setSelectedGeoPTZ,
 		clearSelectedGeoPTZ,
+		isGeoPTZSelected,
+		setIsGeoPTZSelected,
+		currentLLA,
+		setCurrentLLA,
+		clearCurrentLLA,
+		sendGeoPTZCommand,
+		vizWizOpen,
+		toggleVizWiz,
+		openVizWiz,
+		editVizOpen,
+		toggleEditViz,
+		openEditViz,
+
+		selectedFlightPath,
+		setSelectedFlightPath,
+		clearSelectedFlightPath,
+		flightPathWaypoints,
+		clearFlightPathWaypoints,
+		setFlightPathWaypoints,
+		clearFlightPathMarkersSignal,
+		triggerClearFlightPathMarkers,
+		resetClearFlightPathMarkersSignal,
+		selectedMapItem,
+		setSelectedMapItem,
 	};
-});
+}, { persist: {pick: ['theme', 'focusedMap']}});

@@ -1,0 +1,15 @@
+{
+  "entryPoints": ["src"],
+  "entryPointStrategy": "expand",
+  "tsconfig": "tsconfig.json",
+  "out": "docs",
+  "exclude": [
+    "**/*.vue",
+    "src/main.ts",
+    "src/shims-vue.d.ts",
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts"
+  ],
+  "excludeExternals": true,
+  "skipErrorChecking": true,
+}

@@ -10,6 +10,9 @@ import { useSystemStore } from '@/stores/systemstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { VisualizationComponents } from '@/lib/VisualizationHelpers';
+import { CONFIG_UID } from '@/composables/useConfigPersistence';
+import { ViewLocation } from '@/components/menus/visualization-wizard/VisualizationRegistry';
+import { WizardConfig } from '@/stores/vizwizstore';
 
 let sharedStores: any = null;
 
@@ -48,21 +51,23 @@ export class OSHConnect {
 	}
 
 	// Fetch all resources that are relatively static
-	fetchSlowResources(): void {
+	async fetchSlowResources(): Promise<void> {
 		console.log('Fetching slow resources...');
 		// fetch all systems of all nodes'
 		const nodes = this.nodeStore.nodes;
-		for (const node of nodes) {
+		const promises = nodes.map((node: OSHNode) =>
 			node.collectAndStoreSystems()
 				.then((systems: OSHSystem[]) => {
 					console.log(`Collected ${systems.length} systems for node ${node.name}`);
 				})
 				.catch((error: any) => {
 					console.error(`Error collecting systems for node ${node.name}:`, error);
-				});
-		}
+				})
+		);
+		await Promise.all(promises);
 	}
 
+	// TODO: Not used in project
 	fetchDataStreamsOfSystem(system: OSHSystem): void {
 		const datastreamStore = getSharedStores().datastreamStore;
 		system
@@ -77,6 +82,7 @@ export class OSHConnect {
 			});
 	}
 
+	// TODO: Not used in project
 	fetchControlStreamsOfSystem(system: OSHSystem): void {
 		const controlStreamStore = getSharedStores().controlstreamStore;
 		system
@@ -95,8 +101,6 @@ export class OSHConnect {
 export class OSHNode {
 	uuid: string;
 	name: string;
-	children: OSHSystem[] = [];
-	link: string = '';
 	host: string = '';
 	port: string | number = '';
 	username: string = '';
@@ -124,13 +128,17 @@ export class OSHNode {
 		this.username = username;
 		this.password = password;
 		this.tls = tls;
-		this.children = [];
+		this.systems = [];
 		this.oshConnect = oshConnect;
 	}
 
 	async collectAndStoreSystems(): Promise<OSHSystem[]> {
 		// make request
-		const systems: any = new Systems({ endpointUrl: this.getEndpointUrl(), tls: this.tls });
+		const systems: any = new Systems({
+			endpointUrl: this.getEndpointUrl(),
+			tls: this.tls,
+			connectorOpts: { username: this.username, password: this.password },
+		});
 		let retrievedSystems: any[] = [];
 		const results: System = await systems.searchSystems(new SystemFilter(), 100);
 
@@ -143,19 +151,23 @@ export class OSHNode {
 		const systemStore = getSharedStores().systemStore;
 
 		// transform results into OSHSystem objects for state management and keep OSH-JS references
-		const mappedSystems: OSHSystem[] = retrievedSystems
-			.map((sys: any) => {
+		const mappedSystems: OSHSystem[] = await Promise.all(
+			retrievedSystems.map(async (sys: any) => {
 				if (!systemStore?.checkIfSystemExists?.(sys.properties.id)) {
 					const newSys = new OSHSystem(sys, this);
-					newSys.getDataStreams();
-					newSys.getControlStreams();
-					newSys.getSamplingFeatures();
+
+					await Promise.all([
+						newSys.getDataStreams(),
+						newSys.getControlStreams(),
+						newSys.getSamplingFeatures(),
+					]);
+					
 					systemStore?.addSystem?.(newSys);
 					return newSys;
 				}
-				return undefined;
+				return systemStore.getSystemById(sys.properties.id);
 			})
-			.filter(Boolean) as OSHSystem[];
+		);
 
 		this.systems = mappedSystems;
 		return mappedSystems;
@@ -164,18 +176,28 @@ export class OSHNode {
 	getEndpointUrl(): string {
 		return `${this.host}:${this.port}/${this.apiRoot}`;
 	}
+
+	/**
+	 * Filters systems to exclude the "config" system used for persistence
+	 * @returns Array of OSHSystems, excluding "config" system
+	 */
+	getFilteredSystems(): OSHSystem[] {
+		return this.systems.filter(system => system.system.properties.properties.uid !== CONFIG_UID);
+	}
 }
 
 export class OSHSystem {
-	uuid: string;
-	id: string;
-	name: string;
-	type: string;
-	parentId: string | null;
-	system: System;
-	parentNode: OSHNode;
-	children: string[];
-	subsystems: string[] = [];
+	uuid: string;	// Random unique ID
+	id: string;	// OSH ID
+	name: string;	// Name of system
+	type: string;	// Type of system
+	parentId: string | null;	// Parent ID, if applicable
+	system: System;	// osh-js System object
+	parentNode: OSHNode;	// OSHNode parent node
+	children: string[];	// IDs of system's children (datastreams and controlstreams)
+	datastreams: OSHDatastream[] = []; // Datastreams associated with this system
+	controlstreams: OSHControlStream[] = []; // Control streams associated with this system
+	subsystems: string[] = [];	// TODO: Not implemented
 	samplingFeatures: any[] = [];
 
 	constructor(system: any, parentNode: OSHNode) {
@@ -187,6 +209,8 @@ export class OSHSystem {
 		this.system = system;
 		this.parentNode = parentNode;
 		this.children = [];
+		this.datastreams = [];
+		this.controlstreams = [];
 
 		console.log(`[OSHConnect-System] Created system: ${this.name} (ID: ${this.id})`);
 	}
@@ -199,14 +223,13 @@ export class OSHSystem {
 
 		while (result.hasNext()) {
 			const items: any[] = await result.nextPage();
-			// dataStreams.push(...items);
 
 			// create new OSHDatastream objects for each item
 			items.forEach((item: any) => {
-				console.log(`result data:`, item);
 				const newStream = new OSHDatastream(item.properties.name, item, this.id);
 				datastreamStore?.addDataStream?.(newStream);
-				this.children.push(newStream.uuid);
+				this.children.push(newStream.uuid);	// Push to children
+				this.datastreams.push(newStream); // Push OSHDatastream object
 			});
 		}
 		return dataStreams;
@@ -220,19 +243,13 @@ export class OSHSystem {
 
 		while (result.hasNext()) {
 			const items: any[] = await result.nextPage();
-			// controlStreams.push(...items);
 
 			// create new OSHControlStream objects for each item
 			items.forEach((item: any) => {
-				console.log(`result data:`, item);
-				const newStream = new OSHControlStream(
-					item.properties.name,
-					item.properties.inputName,
-					item.properties?.['system@id'],
-					item
-				);
+				const newStream = new OSHControlStream(item.properties.name, item, this.id);
 				controlstreamStore?.addControlStream?.(newStream);
-				this.children.push(newStream.id);
+				this.children.push(newStream.id);	// Push to children
+				this.controlstreams.push(newStream); // Push OSHControlStream object
 			});
 		}
 		return controlStreams;
@@ -265,6 +282,11 @@ export class OSHSystem {
 		const controlstreamStore = getSharedStores().controlstreamStore;
 		return controlstreamStore.getControlStreamsById(this.children);
 	}
+
+	// Get TLS value for parent node
+	getTls(): boolean {
+		return this.parentNode.tls;
+	}
 }
 
 export class OSHDatastream {
@@ -291,49 +313,72 @@ export class OSHDatastream {
 		const systemStore = getSharedStores().systemStore;
 		return systemStore.getSystemById(this.parentId);
 	}
+
+	getParentNode(): OSHNode {
+		const system = this.getParentSystem();
+		return system.parentNode;
+	}
 }
 
 export class OSHControlStream {
 	id: string;
 	name: string;
-	type: string;
 	parentId: string | null;
 	children: string[] = [];
+	controlstream: any;
 
-	constructor(name: string, type: string, parentId: string | null, data: any) {
-		this.id = data.properties.id;
+	constructor(name: string, controlstream: any, parentId: string | null) {
+		this.id = controlstream.properties.id;
 		this.name = name;
-		this.type = type;
 		this.parentId = parentId;
+		this.controlstream = controlstream;
+	}
+
+	getParentSystem(): OSHSystem {
+		const systemStore = getSharedStores().systemStore;
+		return systemStore.getSystemById(this.parentId);
+	}
+
+	getParentNode(): OSHNode {
+		const system = this.getParentSystem();
+		return system.parentNode;
 	}
 }
 
 export class OSHVisualization {
-	id: string;
+	id: string; // Random ID following the format `visualization-${randomUUID()}`
 	name: string;
 	type: string;
-	parentId: string | null;
-	parentDatastream: OSHDatastream;
+	viewLocation: ViewLocation; // Defines where the visualization is displayed (e.g., 'panel', 'map', 'multi')
+	parentId?: string | null;
+	datastream: OSHDatastream[] | null; // TODO: null handles "All PMS"
+	controlstream?: OSHControlStream[]; // Optional control stream
 	visualizationComponents!: VisualizationComponents;
-	controlstream: any | null;
+	wizardConfig!: WizardConfig; // Store state of wizard for editing visualization
 
 	constructor(
 		id: string,
 		name: string,
 		type: string,
-		parentId: string | null,
-		parentDatastream: OSHDatastream,
-		controlstream: OSHControlStream | any = null
+		viewLocation: ViewLocation,
+		datastream: OSHDatastream[] | null,
+		controlstream?: OSHControlStream[],
+		parentId?: string | null
 	) {
 		this.id = id;
 		this.name = name;
 		this.type = type;
+		this.viewLocation = viewLocation;
+		this.datastream = datastream;
+		this.controlstream = controlstream;
 		this.parentId = parentId;
-		this.parentDatastream = parentDatastream;
-		this.controlstream = controlstream; // Optional control stream associated with the visualization, default null
 	}
 
 	setVisualizationComponents(components: VisualizationComponents): void {
 		this.visualizationComponents = components;
+	}
+
+	setWizardConfig(config: WizardConfig): void {
+		this.wizardConfig = config;
 	}
 }

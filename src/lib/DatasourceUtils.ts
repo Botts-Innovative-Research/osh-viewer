@@ -1,27 +1,15 @@
 import { useUIStore } from '@/stores/uistore';
 import DataStreamFilter from 'osh-js/source/core/sweapi/datastream/DataStreamFilter';
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
-import { Mode } from 'osh-js/source/core/datasource/Mode';
-import ChartJsView from 'osh-js/source/core/ui/view/chart/ChartJsView.js';
-import CurveLayer from 'osh-js/source/core/ui/layer/CurveLayer.js';
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import { OSHControlStream, OSHDatastream } from '@/lib/OSHConnectDataStructs';
-import {
-	IChartViewProperties,
-	ICurveLayerProperties,
-	ISweApiDataSourceProperties,
-	IVideoLayerProperties,
-	IVideoViewProperties,
-	IMapLayerProperties,
-	IMapViewProperties,
-} from '@/lib/VisualizationHelpers';
+import ControlFilter from 'osh-js/source/core/sweapi/control/ControlFilter';
+import { useDataStreamStore } from '@/stores/datastreamstore'
+import {useControlStreamStore} from "@/stores/controlstreamstore";
 
 export function mineDatasourceObsProps(): { ds: any; observedProps: any } {
 	const uiStore = useUIStore();
 	const ds = uiStore.selectedDatastream;
 
 	if (!ds) {
-		console.warn('No datastream selected');
+		console.warn('[DS-Utils] No datastream selected');
 	}
 
 	const observedProps = ds.datastream.properties?.observedProperties || [];
@@ -30,6 +18,41 @@ export function mineDatasourceObsProps(): { ds: any; observedProps: any } {
 	// fetchSchema(ds.datastream);
 
 	return { ds, observedProps };
+}
+
+/**
+ * FOR NEW VISUALIZATION WIZARD
+ * Takes datasource ID as parameter
+ * @returns 
+ */
+export function mineDatasourceObsPropsFromDS(dsId: string): { ds: any; observedProps: any } {
+  const dataStreamStore = useDataStreamStore()
+  const ds = dataStreamStore.getDataStreamsById([dsId])[0]
+
+  if (!ds) {
+    console.warn('No datastream given')
+  }
+
+	const observedProps = ds.datastream.properties?.observedProperties || [];
+	console.log('[DS-Utils] Observed Properties:', ds.datastream.properties);
+
+	// fetchSchema(ds.datastream);
+
+	return { ds, observedProps };
+}
+
+export function mineControlObsPropsFromCS(csID: string): { cs: any; controlledProperties: any } {
+	const controlStreamStore = useControlStreamStore();
+	const cs = controlStreamStore.getControlStreamsById([csID])[0];
+
+	if (!cs) {
+		console.warn('No controlstream given');
+	}
+
+	const controlledProperties = cs.controlstream.properties.controlledProperties || [];
+	console.log('[DS-Utils] Controlled Properties:', cs.controlstream.properties);
+
+	return { cs, controlledProperties };
 }
 
 export function checkDSForProp(propName: string, observedProps: any): any {
@@ -60,7 +83,7 @@ export function checkDSForProps(propNames: string[], observedProps: any): any {
 	}
 }
 
-export async function fetchSchema(datastream: any) {
+export async function fetchSchema(datastream: any): Promise<any> {
 	console.log('[DatasourceUtils] Fetching schema for datastream:', datastream);
 
 	let checkedFormat = datastream.properties.formats.filter(
@@ -85,6 +108,33 @@ export async function fetchSchema(datastream: any) {
 			console.error('[DatasourceUtils] Error fetching schema:', error);
 			return null;
 		});
+}
+
+export async function fetchCsSchema(controlstream: any): Promise<any> {
+    console.log('[DatasourceUtils] Fetching schema for controlstream:', controlstream);
+
+    let checkedFormat = controlstream.properties.formats.filter(
+        (format: any) =>
+            format.includes('application/swe+json') || format.includes('application/swe+binary')
+    );
+
+    if (!checkedFormat) {
+        checkedFormat = ['application/om+json']; // Fallback to om+json which should be available always
+    }
+
+    let filter = new ControlFilter({ format: 'application/json' });
+    return controlstream
+        .getSchema(filter)
+        .then((schemaRes: any) => {
+            if (schemaRes) {
+                console.log('[DatasourceUtils] Schema fetched:', schemaRes);
+                return schemaRes;
+            }
+        })
+        .catch((error: any) => {
+            console.error('[DatasourceUtils] Error fetching schema:', error);
+            return null;
+        });
 }
 
 export function matchPropAndSchema(observedProp: any, schema: any[]): any {
@@ -118,295 +168,25 @@ export class VisualizationMetadata {
 	}
 }
 
+/**
+ * Used to show a partial representation of a json Schema representation of the available fields in a datastream
+ */
 export class SchemaFieldProperty {
-	definition: string;
-	name: string;
-	type: string;
-	referenceFrame?: string;
-	uom?: any;
+    definition: string;
+    name: string;
+    type: string;
+    referenceFrame?: string;
+    uom?: any;
+    fields?: SchemaFieldProperty[];
+    datastream_id?: string;
+    controlstream_id?: string;
+    label?: string;
 
-	constructor(definition: string, name: string, type: string, unitOfMeasure?: string) {
-		this.definition = definition;
-		this.name = name;
-		this.type = type;
-		this.uom = unitOfMeasure;
-	}
-}
-
-// deprecated
-export function CreateChartView(ds: OSHDatastream, selectedProperty: any, visOptions: any): any {
-	console.log('[DatasourceUtils] Creating Chart View for Datastream:', OSHDatastream);
-	// const ds = OSHDatastream.datastream;
-	console.log('[DatasourceUtils] Creating Chart View for Datastream:', ds);
-	// create a datastruct for DataSource props
-	const dataSource = new SweApi(ds.name, {
-		endpointUrl: ds.datastream.networkProperties.endpointUrl,
-		resource: `/datastreams/${ds.datastream.properties.id}/observations`,
-		tls: false,
-		protocol: 'ws',
-		startTime: 'now',
-		endTime: '2025-08-01T00:00:00Z',
-		mode: Mode.REAL_TIME,
-		responseFormat: 'application/swe+json',
-	});
-
-	// TODO: create datastruct for chart options
-	const chartLayer = new CurveLayer({
-		maxValues: 1000,
-		dataSourceId: dataSource.id,
-		getValues: (rec: any, timestamp: any) => {
-			console.log(`getValues called for record:`, rec);
-			return {
-				x: rec.timestamp,
-				y: rec[selectedProperty.name],
-			};
-		},
-		lineColor: 'rgba(0,220,204,0.5)',
-		backgroundColor: 'rgba(49,47,47,0.64)',
-		fill: true,
-		getCurveId: (rec: any, timestamp: any) => 2,
-		name: `${selectedProperty.label} (${selectedProperty.uom.code})`,
-	});
-
-	// TODO: make sure that Chart.vue is using this id
-	const chartView = new ChartJsView({
-		container: `chart-container-${randomUUID()}`,
-		layers: [chartLayer],
-		css: 'chart-view',
-		datasetOptions: {
-			tension: 0.2, // for 'line'
-		},
-		refreshRate: 1000,
-	});
-
-	console.log('[DatasourceUtils] Created Chart View with DataSource:', dataSource);
-	console.log('[DatasourceUtils] Chart Layer:', chartLayer);
-	console.log('[DatasourceUtils] Chart View:', chartView);
-
-	return {
-		dataSource: dataSource,
-		chartLayer: chartLayer,
-		chartView: chartView,
-	};
-}
-
-/**
- * Creates properties for a Chart View based on the provided datastream, selected property, and visualization options.
- * @param ds
- * @param selectedProperty
- * @param visOptions
- * @constructor
- */
-export function CreateChartViewProps(
-	ds: OSHDatastream,
-	selectedProperty: any,
-	visOptions: any
-): {
-	dataSource: ISweApiDataSourceProperties;
-	chartLayer: ICurveLayerProperties;
-	chartView: IChartViewProperties;
-} {
-	// Build SweApiDataSourceProperties
-	const dataSource: ISweApiDataSourceProperties = {
-		endpointUrl: ds.datastream.networkProperties.endpointUrl,
-		resource: `/datastreams/${ds.datastream.properties.id}/observations`,
-		tls: false,
-		protocol: 'ws',
-		startTime: visOptions.startTime || 'now',
-		endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
-		mode: visOptions.replayMode.value || Mode.REAL_TIME,
-		responseFormat: 'application/swe+json',
-	};
-
-	// Build CurveLayerProperties
-	const chartLayer: ICurveLayerProperties = {
-		maxValues: 1000,
-		dataSourceId: ds.datastream.properties.id,
-		getValues: (rec: any, timestamp: any) => {
-			return {
-				x: rec.timestamp,
-				y: rec[selectedProperty.name],
-			};
-		},
-		lineColor: 'rgba(0,220,204,0.5)',
-		backgroundColor: 'rgba(49,47,47,0.64)',
-		fill: true,
-		getCurveId: (rec: any, timestamp: any) => '2',
-		name: `${selectedProperty.label} (${selectedProperty.uom.code})`,
-	};
-
-	// Build ChartViewProperties
-	const chartView: IChartViewProperties = {
-		container: `chart-container-${randomUUID()}`,
-		layers: [chartLayer],
-		css: 'chart-view',
-		datasetOptions: {
-			tension: 0.2,
-		},
-		refreshRate: 1000,
-	};
-
-	return {
-		dataSource,
-		chartLayer,
-		chartView,
-	};
-}
-
-/**
- * Creates properties for a Video View based on the provided datastream, selected property, video format, and visualization options.
- * @param ds
- * @param selectedProperty
- * @param videoFormat
- * @param visOptions
- * @constructor
- */
-export function CreateVideoViewProps(
-	ds: OSHDatastream,
-	selectedProperty: any,
-	videoFormat: any,
-	visOptions: any
-): {
-	dataSource: ISweApiDataSourceProperties;
-	videoLayer: IVideoLayerProperties;
-	videoView: IVideoViewProperties;
-} {
-	console.log('[DatasourceUtils] Creating Video View for Datastream:', ds);
-
-	const dataSource: ISweApiDataSourceProperties = {
-		endpointUrl: ds.datastream.networkProperties.endpointUrl,
-		resource: `/datastreams/${ds.datastream.properties.id}/observations`,
-		tls: false,
-		protocol: 'ws',
-		startTime: visOptions.startTime || 'now',
-		endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
-		mode: visOptions.replayMode.value || Mode.REAL_TIME,
-		responseFormat: 'application/swe+binary',
-	};
-
-	const videoLayer: IVideoLayerProperties = {
-		dataSourceId: ds.datastream.properties.id,
-		getFrameData(rec, timestamp) {
-			return rec[selectedProperty.name];
-		},
-		getTimestamp(rec, timestamp) {
-			return rec.timestamp;
-		},
-	};
-
-	console.log('[DatasourceUtils] Video Format:', videoFormat);
-
-	const videoView: IVideoViewProperties = {
-		container: `video-container-${randomUUID()}`,
-		css: 'video-view',
-		name: `${selectedProperty.label}`,
-		layers: [videoLayer],
-		width: 640,
-		height: 480,
-		useWebCodecApi: videoFormat === 'MJPEG' ? false : true,
-		showTime: true,
-		showStats: true,
-		videoType: videoFormat,
-	};
-
-	return {
-		dataSource,
-		videoLayer,
-		videoView,
-	};
-}
-
-/**
- * Creates properties for a Map View based on the provided datastream, selected property, and visualization options.
- * @param ds
- * @param selectedProperty
- * @param visOptions
- * @constructor
- */
-export function CreateMapViewProps(
-	ds: OSHDatastream,
-	selectedProperty: any,
-	visOptions: any
-): {
-	dataSource: ISweApiDataSourceProperties;
-	mapLayer: IMapLayerProperties;
-	mapView: IMapViewProperties;
-} {
-	console.log('[DatasourceUtils] Creating Map View for Datastream:', ds);
-	const parentSystem = ds.getParentSystem();
-	// Build SweApiDataSourceProperties
-	const dataSource: ISweApiDataSourceProperties = {
-		endpointUrl: ds.datastream.networkProperties.endpointUrl,
-		resource: `/datastreams/${ds.datastream.properties.id}/observations`,
-		tls: false,
-		protocol: 'ws',
-		startTime: visOptions.startTime || 'now',
-		endTime: visOptions.endTime || '2125-08-01T00:00:00Z',
-		mode: visOptions.replayMode.value || Mode.REAL_TIME,
-		responseFormat: 'application/swe+json',
-	};
-
-	console.log('[DatasourceUtils] Creating PM Layer for property:', selectedProperty);
-	// Build MapLayerProperties
-	const mapLayer: IMapLayerProperties = {
-		dataSourceId: ds.datastream.properties.id,
-		getLocation: (rec: any) => {
-			// Assumes the selectedProperty is an object with lat/lon or similar
-			// You may need to adjust this logic based on your schema
-			return {
-				x: rec[selectedProperty.name].lon,
-				y: rec[selectedProperty.name].lat,
-				z: rec[selectedProperty.name].alt || 0, // Default to 0 if altitude is not provided
-			};
-		},
-		markerColor: visOptions.markerColor || 'red',
-		markerIcon: visOptions.markerIcon || undefined,
-		name: parentSystem.name,
-	};
-
-	// Build MapViewProperties
-	const mapView: IMapViewProperties = {
-		container: `map-container-${randomUUID()}`,
-		layers: [mapLayer],
-		css: 'map-view',
-		refreshRate: 1000,
-	};
-
-	return {
-		dataSource,
-		mapLayer,
-		mapView,
-	};
-}
-
-/**
- * Creates properties for a GeoPTZ View based on the provided controlstream and visualization options.
- * @param cs
- * @param selectedProperty
- * @param videoFormat
- * @param visOptions
- * @constructor
- */
-export function CreateGeoPtzViewProps(
-	ds: OSHDatastream,
-	visOptions: any
-): {
-	dataSource: ISweApiDataSourceProperties;
-} {
-	console.log('[DatasourceUtils] Creating GeoPTZ View for Datastream:', ds);
-
-	const dataSource: ISweApiDataSourceProperties = {
-		endpointUrl: ds.datastream.networkProperties.endpointUrl,
-		resource: `/datastreams/${ds.datastream.properties.id}/observations`,
-		tls: false,
-		protocol: 'ws',
-		startTime: 'now',
-		endTime: '2125-08-01T00:00:00Z',
-		mode: Mode.REAL_TIME,
-		responseFormat: 'application/swe+binary',
-	};
-
-	return {
-		dataSource,
-	};
+    constructor(definition: string, name: string, type: string, unitOfMeasure?: string) {
+        this.definition = definition;
+        this.name = name;
+        this.type = type;
+        this.uom = unitOfMeasure;
+        this.fields = [];
+    }
 }

@@ -15,19 +15,21 @@ type CommandType = {
  * @param commandBaseUrl
  * @param controlStreamId
  * @param command
+ * @param auth
  */
-export function sendCommand(commandBaseUrl: string, controlStreamId: string, command: any) {
-	console.log(
-		`Sending command to ${commandBaseUrl}/controlstreams/${controlStreamId}/commands: `,
-		command
-	);
+export function sendCommand(commandBaseUrl: string, controlStreamId: string, command: any, auth: string) {
+	console.log(`Sending command to ${commandBaseUrl}/controlstreams/${controlStreamId}/commands `, command);
+
+    let encoded = btoa(auth)
 
 	// Command sending logic
 	fetch(`${commandBaseUrl}/controlstreams/${controlStreamId}/commands`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
+            ...(auth && {'Authorization': `Basic ${encoded}`})
 		},
+        mode: 'cors',
 		body: JSON.stringify(command),
 	})
 		.then((response) => {
@@ -38,6 +40,7 @@ export function sendCommand(commandBaseUrl: string, controlStreamId: string, com
 		})
 		.then((data) => {
 			console.log('Command successful: ', data);
+			showToast(`Command successful!`, 'SUCCESS');
 		})
 		.catch((error) => {
 			console.error('Error sending command: ', error);
@@ -53,9 +56,9 @@ export function sendCommand(commandBaseUrl: string, controlStreamId: string, com
  * @returns
  */
 export async function fetchControlStreamSchema(controlstream: any, networkProperties: any) {
-	const props = {
+    const props = {
 		id: controlstream.id,
-		'system@id': controlstream.parentId,
+		'system@id': controlstream.parentId == null ? controlstream['system@id'] : controlstream.parentId,
 		name: controlstream.name,
 		type: controlstream.type,
 	};
@@ -71,9 +74,9 @@ export async function fetchControlStreamSchema(controlstream: any, networkProper
 			if (schema) {
 				console.log('[ControlstreamUtils] Schema fetched:', schema);
 				// Add to store and fetch beautified command schema
-				const schemaItems = schema.paramsSchema.items
-					? schema.paramsSchema.items
-					: schema.paramsSchema;
+				const schemaItems = schema.parametersSchema.items
+					? schema.parametersSchema.items
+					: schema.parametersSchema;
 				const prettySchema = getCommandType(schemaItems, controlstream.id);
 				return prettySchema;
 			}
@@ -128,15 +131,15 @@ export function getCommandType(schema: any, id: string) {
 			// Add absolute PTZ command schema
 			commandSchema.pan = {
 				type: 'number',
-				constraint: schema.find((item: any) => item.name === 'pan').constraint.intervals,
+				constraint: schema.find((item: any) => item.name === 'pan').constraint.intervals[0],
 			};
 			commandSchema.tilt = {
 				type: 'number',
-				constraint: schema.find((item: any) => item.name === 'tilt').constraint.intervals,
+				constraint: schema.find((item: any) => item.name === 'tilt').constraint.intervals[0],
 			};
 			commandSchema.zoom = {
 				type: 'number',
-				constraint: schema.find((item: any) => item.name === 'zoom').constraint.intervals,
+				constraint: schema.find((item: any) => item.name === 'zoom').constraint.intervals[0],
 			};
 		}
 		if (schema.some((item: any) => item.name === 'rpan')) {
@@ -178,8 +181,6 @@ export function getCommandType(schema: any, id: string) {
 
 	// Add to store
 	controlStreamStore.addCSSchema(id, commandType, commandSchema);
-
-	console.log(commandSchema);
 
 	return commandSchema;
 }

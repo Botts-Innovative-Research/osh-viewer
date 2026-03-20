@@ -30,6 +30,10 @@ export const useControlStreamStore = defineStore('controlstreams', () => {
 		return controlStreams.value.filter((controlStream) => ids.includes(controlStream.id));
 	};
 
+	const getControlStreamsBySystemId = (ids: string[]): OSHControlStream[] => {
+		return controlStreams.value.filter((controlStream) => ids.includes(controlStream.parentId ? controlStream.parentId : ''));
+	};
+
 	/* Schema management */
 	const addCSSchema = (id: string, type: any, schema: any): void => {
 		schemas.value[id] = { type, schema };
@@ -55,9 +59,10 @@ export const useControlStreamStore = defineStore('controlstreams', () => {
 		getControlStreamByName,
 		checkIfControlStreamExists,
 		getControlStreamsById,
+		getControlStreamsBySystemId,
 		schemas,
 		addCSSchema,
 		getCSSchemaById,
 		getCSTypeById,
 	};
-});
+}, { persist: { pick: ['controlStreams', 'schemas'] } });
