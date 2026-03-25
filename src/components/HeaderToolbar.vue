@@ -13,6 +13,8 @@ const viewerName = import.meta.env.VITE_VIEWER_NAME;
 <template>
 	<v-toolbar :title="viewerName" color="blue" density="comfortable">
 		<v-btn icon="mdi-home" to="/" />
+    <v-btn icon="mdi-help" to="/about" />
+ 
 		<v-btn icon @click="saveDialog = true">
       <v-icon>mdi-content-save</v-icon>
       <v-tooltip activator="parent" location="bottom"> Save State </v-tooltip>
