@@ -256,15 +256,20 @@ export function useConfigPersistence() {
 
 		// Find matching system ID or create new system
 		let systemId = await findConfigSystem(defaultNode, configName);
-		if (!systemId) {
-			await insertConfigSystem(defaultNode, configName);
-			systemId = await findConfigSystem(defaultNode, configName);
+		if (systemId == null) {
+			systemId = await insertConfigSystem(defaultNode, configName);
 		}
+		if (systemId == null) {
+			throw new Error('Failed to create config system');
+		}
+
 		// Find matching datastream ID or create new datastream
-		let dsId = await findConfigDatastream(systemId!, configName);
-		if (!dsId) {
-			await insertConfigDatastream(defaultNode, systemId!, configName);
-			dsId = await findConfigDatastream(systemId!, configName);
+		let dsId = await findConfigDatastream(systemId, configName);
+		if (dsId == null) {
+			dsId = await insertConfigDatastream(defaultNode, systemId, configName);
+		}
+		if (dsId == null) {
+			throw new Error('Failed to create config datastream');
 		}
 
 		/* Save Data */
@@ -417,8 +422,38 @@ export function useConfigPersistence() {
 		}
 	}
 
+    async function listConfigs(): Promise<string[]> {
+		// Check defaultNode
+		const defaultNode = nodeStore.defaultNodeId
+			? nodeStore.getNodeById(nodeStore.defaultNodeId)
+			: nodeStore.nodes[0];
+		if (!defaultNode) {
+			return [];
+		}
+
+		// Refresh resources to get latest systems
+		await oshConnectStore.getInstance().fetchSlowResources();
+
+		// Find all systems on the default node whose UID starts with the config base
+		const configSystems = systemStore.systems.filter(
+			(sys) =>
+				sys.parentNode.uuid === defaultNode.uuid &&
+				sys.system.properties.properties?.uid?.startsWith(CONFIG_UID_BASE + ':')
+		);
+
+		// Extract the config name from each UID: "urn:osh:client:config:<name>" -> "<name>"
+		const configNames = configSystems.map((sys) => {
+			console.log(sys);
+			const uid: string = sys.system.properties.properties?.uid ?? '';
+			return uid.slice((CONFIG_UID_BASE + ':').length);
+		});
+
+		return configNames;
+	}
+
 	return {
 		saveConfig,
 		loadConfig,
+		listConfigs,
 	};
 }

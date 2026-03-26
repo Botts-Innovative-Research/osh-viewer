@@ -1,16 +1,26 @@
 <script setup lang="ts">
-
 import {useNodeStore} from "@/stores/nodestore";
-import {computed, watch} from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import {useConfigPersistence} from "@/composables/useConfigPersistence";
 
 const nodeStore = useNodeStore();
-const { loadConfig } = useConfigPersistence();
+const { loadConfig, listConfigs } = useConfigPersistence();
 
 const emit = defineEmits(['load']);
 
+// Config list state
+const availableConfigs = ref<string[]>([]);
+const selectedConfig = ref<string>('');
+const loadingConfigs = ref(false);
+
+async function fetchConfigs() {
+  loadingConfigs.value = true;
+  availableConfigs.value = await listConfigs();
+  loadingConfigs.value = false;
+}
+
 async function handleLoad() {
-  const success = await loadConfig('save2');
+  const success = await loadConfig(selectedConfig.value);
   if (success) {
     emit('load');
   }
@@ -28,6 +38,12 @@ const selectedNode = computed({
   set: (val) => nodeStore.updateDefaultNode(val)
 })
 
+// Re-fetch configs when selected node changes
+watch(selectedNode, fetchConfigs)
+
+// Fetch on mount
+onMounted(fetchConfigs);
+
 </script>
 
 <template>
@@ -43,8 +59,12 @@ const selectedNode = computed({
           item-title="name"
           item-value="id"
         />
+        <v-select v-model="selectedConfig" :items="availableConfigs" :loading="loadingConfigs"
+          :disabled="loadingConfigs" label="Select saved configuration" persistent-hint
+          no-data-text="No saved configurations found" />
         <v-card-actions>
-          <v-btn block type="submit" color="success" variant="tonal">Load State</v-btn>
+          <v-btn block type="submit" color="success" variant="tonal" :disabled="!selectedConfig || loadingConfigs">Load
+            State</v-btn>
         </v-card-actions>
       </v-form>
     </v-card-text>
