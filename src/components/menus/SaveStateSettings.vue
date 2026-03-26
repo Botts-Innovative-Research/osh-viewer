@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import {useNodeStore} from "@/stores/nodestore";
-import {computed, watch} from "vue";
+import { computed, ref, watch } from "vue";
 import {useConfigPersistence} from "@/composables/useConfigPersistence";
 
 const nodeStore = useNodeStore();
@@ -9,8 +9,10 @@ const { saveConfig } = useConfigPersistence();
 
 const emit = defineEmits(['saved']);
 
+const configName = ref('');
+
 async function handleSave() {
-  const success = await saveConfig();
+  const success = await saveConfig(configName.value);
   if (success) {
     emit('saved');
   }
@@ -43,8 +45,9 @@ const selectedNode = computed({
           item-title="name"
           item-value="id"
         />
+        <v-text-field v-model="configName" label="Save name" persistent-hint />
         <v-card-actions>
-          <v-btn block type="submit" color="success" variant="tonal">Save State</v-btn>
+          <v-btn block type="submit" color="success" variant="tonal" :disabled="!configName">Save State</v-btn>
         </v-card-actions>
       </v-form>
     </v-card-text>

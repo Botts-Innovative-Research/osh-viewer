@@ -10,7 +10,7 @@ const { loadConfig } = useConfigPersistence();
 const emit = defineEmits(['load']);
 
 async function handleLoad() {
-  const success = await loadConfig();
+  const success = await loadConfig('save2');
   if (success) {
     emit('load');
   }
