@@ -9,6 +9,7 @@ import { OSHNode, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 
 export const CONFIG_UID_BASE = 'urn:osh:client:config';
 export const CONFIG_DS_NAME_BASE = 'Client Config';
+export const CONFIG_SYSTEM_NAME_BASE = 'Client Configuration System';
 
 export function getConfigUid(name: string): string {
 	return `${CONFIG_UID_BASE}:${name}`;
@@ -16,6 +17,10 @@ export function getConfigUid(name: string): string {
 
 export function getConfigDsName(name: string): string {
 	return `${CONFIG_DS_NAME_BASE}: ${name}`;
+}
+
+export function getConfigSystemName(name: string): string {
+	return `${CONFIG_SYSTEM_NAME_BASE}: ${name}`;
 }
 
 export function useConfigPersistence() {
@@ -47,7 +52,7 @@ export function useConfigPersistence() {
 			id: '0',
 			definition: 'http://www.w3.org/ns/sosa/Sensor',
 			uniqueId: getConfigUid(configName),
-			label: 'Client Configuration System',
+			label: getConfigSystemName(configName),
 			description: 'Stores configuration files for the client viewer',
 			contacts: [
 				{
@@ -176,6 +181,13 @@ export function useConfigPersistence() {
 		// Fetch slow resources to refresh
 		await oshConnectStore.getInstance().fetchSlowResources();
 
+        console.log('Looking for systemId:', systemId);
+		console.log('Looking for dsName:', getConfigDsName(configName));
+		datastreamStore.dataStreams.forEach((ds) => {
+			console.log('DS name:', ds.datastream.properties.name);
+			console.log('DS system@id:', ds.datastream.properties['system@id']);
+		});
+
 		// Search for config datastream in system
 		const cfgDatastream = datastreamStore.dataStreams.find(
 			(ds) =>
@@ -186,57 +198,6 @@ export function useConfigPersistence() {
 		if (cfgDatastream) return cfgDatastream.id;
 		else return null; // No config datastream found
 	}
-
-	// async function findOrCreateConfigSystem(
-	// 	node: OSHNode,
-	// 	configName: string
-	// ): Promise<string | null> {
-	// 	const cfgSystem = systemStore.systems.find(
-	// 		(sys) => sys.system.properties.properties?.uid === getConfigUid(configName)
-	// 	);
-
-	// 	if (cfgSystem) {
-	// 		return cfgSystem.id;
-	// 	}
-
-	// 	return await insertConfigSystem(node, configName);
-	// }
-
-	// async function findOrCreateConfigDatastream(
-	// 	node: OSHNode,
-	// 	systemId: string,
-	// 	configName: string
-	// ): Promise<string | null> {
-	// 	const cfgDatastream = datastreamStore.dataStreams.find(
-	// 		(ds) =>
-	// 			ds.datastream.properties.name === getConfigDsName(configName) &&
-	// 			ds.datastream.properties['system@id'] === systemId
-	// 	);
-
-	// 	if (cfgDatastream) {
-	// 		return cfgDatastream.id;
-	// 	}
-	// 	return await insertConfigDatastream(node, systemId, configName);
-	// }
-
-	// async function getConfigDatastreamId(
-	// 	node: OSHNode,
-	// 	configName: string
-	// ): Promise<string | null> {
-	// 	const systemId = await findOrCreateConfigSystem(node, configName);
-	// 	if (!systemId) {
-	// 		console.error('Failed to find or create config system');
-	// 		return null;
-	// 	}
-
-	// 	const datastreamId = await findOrCreateConfigDatastream(node, systemId, configName);
-	// 	if (!datastreamId) {
-	// 		console.error('Failed to find or create config datastream');
-	// 		return null;
-	// 	}
-
-	// 	return datastreamId;
-	// }
 
 	async function saveConfig(configName: string): Promise<boolean> {
 		// Check configName
