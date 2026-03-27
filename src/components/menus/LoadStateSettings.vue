@@ -50,6 +50,8 @@ onMounted(fetchConfigs);
   <v-card class="pa-2">
     <v-card-title>Load State</v-card-title>
     <v-card-text>
+      <v-alert text="Loading a saved state will delete all current visualizations" type="warning"
+        class="mb-4"></v-alert>
       <v-form @submit.prevent="handleLoad">
         <v-select
           v-model="selectedNode"

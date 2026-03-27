@@ -296,6 +296,9 @@ export function useConfigPersistence() {
 			});
 
 			if (response.ok) {
+				// Delete current visualizations
+				visualizationStore.removeAllVisualizations();
+
 				const data = await response.json();
 				if (data.items && data.items.length > 0) {
 					const latestObs = data.items[0].result;
