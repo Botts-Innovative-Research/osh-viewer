@@ -161,7 +161,7 @@ export class OSHNode {
 						newSys.getControlStreams(),
 						newSys.getSamplingFeatures(),
 					]);
-					
+
 					systemStore?.addSystem?.(newSys);
 					return newSys;
 				}
@@ -178,12 +178,12 @@ export class OSHNode {
 	}
 
 	/**
-	 * Filters systems to exclude the "config" system used for persistence
-	 * @returns Array of OSHSystems, excluding "config" system
+	 * Filters systems to exclude the "config" systems used for persistence
+	 * @returns Array of OSHSystems, excluding "config" systems
 	 */
 	getFilteredSystems(): OSHSystem[] {
 		return this.systems.filter(
-			(system) => system.system.properties.properties.uid !== CONFIG_UID_BASE
+			(system) => !system.system.properties.properties.uid.includes(CONFIG_UID_BASE)
 		);
 	}
 }

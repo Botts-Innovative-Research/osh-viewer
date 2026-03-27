@@ -35,7 +35,7 @@ export const useSystemStore = defineStore('systems', () => {
 	// Fetch all systems EXCEPT the config system
 	const getFilteredSystems = () => {
 		return systems.value.filter(
-			(system) => system.system.properties.properties.uid !== CONFIG_UID_BASE
+			(system) => !system.system.properties.properties.uid.includes(CONFIG_UID_BASE)
 		);
 	}
 
