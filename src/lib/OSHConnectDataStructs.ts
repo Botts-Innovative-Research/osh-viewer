@@ -10,7 +10,7 @@ import { useSystemStore } from '@/stores/systemstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { VisualizationComponents } from '@/lib/VisualizationHelpers';
-import { CONFIG_UID } from '@/composables/useConfigPersistence';
+import { CONFIG_UID_BASE } from '@/composables/useConfigPersistence';
 import { ViewLocation } from '@/components/menus/visualization-wizard/VisualizationRegistry';
 import { WizardConfig } from '@/stores/vizwizstore';
 
@@ -161,7 +161,7 @@ export class OSHNode {
 						newSys.getControlStreams(),
 						newSys.getSamplingFeatures(),
 					]);
-					
+
 					systemStore?.addSystem?.(newSys);
 					return newSys;
 				}
@@ -178,11 +178,13 @@ export class OSHNode {
 	}
 
 	/**
-	 * Filters systems to exclude the "config" system used for persistence
-	 * @returns Array of OSHSystems, excluding "config" system
+	 * Filters systems to exclude the "config" systems used for persistence
+	 * @returns Array of OSHSystems, excluding "config" systems
 	 */
 	getFilteredSystems(): OSHSystem[] {
-		return this.systems.filter(system => system.system.properties.properties.uid !== CONFIG_UID);
+		return this.systems.filter(
+			(system) => !system.system.properties.properties.uid.includes(CONFIG_UID_BASE)
+		);
 	}
 }
 
