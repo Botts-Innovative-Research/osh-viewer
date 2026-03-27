@@ -19,6 +19,14 @@ async function fetchConfigs() {
   loadingConfigs.value = false;
 }
 
+function itemProps(item: any) {
+  return {
+    title: item.name,
+    subtitle: item.description,
+    value: item.name,
+  }
+}
+
 async function handleLoad() {
   const success = await loadConfig(selectedConfig.value);
   if (success) {
@@ -61,7 +69,7 @@ onMounted(fetchConfigs);
           item-title="name"
           item-value="id"
         />
-        <v-select v-model="selectedConfig" :items="availableConfigs" :loading="loadingConfigs"
+        <v-select v-model="selectedConfig" :items="availableConfigs" :item-props="itemProps" :loading="loadingConfigs"
           :disabled="loadingConfigs" label="Select saved configuration" persistent-hint
           no-data-text="No saved configurations found" />
         <v-card-actions>

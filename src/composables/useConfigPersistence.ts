@@ -46,14 +46,18 @@ export function useConfigPersistence() {
 	 * @param configName
 	 * @returns
 	 */
-	async function insertConfigSystem(node: OSHNode, configName: string): Promise<string | null> {
+	async function insertConfigSystem(
+		node: OSHNode,
+		configName: string,
+		configDescription?: string
+	): Promise<string | null> {
 		const systemJSON = {
 			type: 'PhysicalSystem',
 			id: '0',
 			definition: 'http://www.w3.org/ns/sosa/Sensor',
 			uniqueId: getConfigUid(configName),
 			label: getConfigSystemName(configName),
-			description: 'Stores configuration files for the client viewer',
+			description: configDescription ?? 'Stores configuration files for the client viewer',
 			contacts: [
 				{
 					role: 'http://sensorml.com/ont/swe/roles/Operator',
@@ -192,7 +196,7 @@ export function useConfigPersistence() {
 		else return null; // No config datastream found
 	}
 
-	async function saveConfig(configName: string): Promise<boolean> {
+	async function saveConfig(configName: string, configDescription?: string): Promise<boolean> {
 		// Check configName
 		if (!configName) {
 			showToast('No config name', 'ERROR');
@@ -213,7 +217,7 @@ export function useConfigPersistence() {
 		let dsId;
 		// If no system ID, create new config system and datastream
 		if (systemId == null) {
-			systemId = await insertConfigSystem(defaultNode, configName);
+			systemId = await insertConfigSystem(defaultNode, configName, configDescription);
 			if (systemId == null) throw new Error('Failed to create config system');
 			else dsId = await insertConfigDatastream(defaultNode, systemId, configName);
 		}
@@ -380,7 +384,7 @@ export function useConfigPersistence() {
 		}
 	}
 
-    async function listConfigs(): Promise<string[]> {
+    async function listConfigs(): Promise<any[]> {
 		// Check defaultNode
 		const defaultNode = nodeStore.defaultNodeId
 			? nodeStore.getNodeById(nodeStore.defaultNodeId)
@@ -399,14 +403,17 @@ export function useConfigPersistence() {
 				sys.system.properties.properties?.uid?.startsWith(CONFIG_UID_BASE + ':')
 		);
 
-		// Extract the config name from each UID: "urn:osh:client:config:<name>" -> "<name>"
-		const configNames = configSystems.map((sys) => {
+		// Extract the config name and description from each UID: "urn:osh:client:config:<name>" -> "<name>"
+		const configData = configSystems.map((sys) => {
 			console.log(sys);
 			const uid: string = sys.system.properties.properties?.uid ?? '';
-			return uid.slice((CONFIG_UID_BASE + ':').length);
+			return {
+				name: uid.slice((CONFIG_UID_BASE + ':').length),
+				description: sys.system.properties.properties?.description,
+			};
 		});
 
-		return configNames;
+		return configData;
 	}
 
 	return {
