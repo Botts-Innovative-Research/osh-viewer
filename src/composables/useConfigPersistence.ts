@@ -181,18 +181,11 @@ export function useConfigPersistence() {
 		// Fetch slow resources to refresh
 		await oshConnectStore.getInstance().fetchSlowResources();
 
-        console.log('Looking for systemId:', systemId);
-		console.log('Looking for dsName:', getConfigDsName(configName));
-		datastreamStore.dataStreams.forEach((ds) => {
-			console.log('DS name:', ds.datastream.properties.name);
-			console.log('DS system@id:', ds.datastream.properties['system@id']);
-		});
-
 		// Search for config datastream in system
 		const cfgDatastream = datastreamStore.dataStreams.find(
 			(ds) =>
 				ds.datastream.properties.name === getConfigDsName(configName) && // Match DS name
-				ds.datastream.properties['system@id'] === systemId // Match system ID
+				ds.parentId === systemId // Match system ID
 		);
 
 		if (cfgDatastream) return cfgDatastream.id;
@@ -215,22 +208,19 @@ export function useConfigPersistence() {
 			return false;
 		}
 
-		// Find matching system ID or create new system
+		// Find matching system ID
 		let systemId = await findConfigSystem(defaultNode, configName);
+		let dsId;
+		// If no system ID, create new config system and datastream
 		if (systemId == null) {
 			systemId = await insertConfigSystem(defaultNode, configName);
+			if (systemId == null) throw new Error('Failed to create config system');
+			else dsId = await insertConfigDatastream(defaultNode, systemId, configName);
 		}
-		if (systemId == null) {
-			throw new Error('Failed to create config system');
-		}
-
-		// Find matching datastream ID or create new datastream
-		let dsId = await findConfigDatastream(systemId, configName);
-		if (dsId == null) {
-			dsId = await insertConfigDatastream(defaultNode, systemId, configName);
-		}
-		if (dsId == null) {
-			throw new Error('Failed to create config datastream');
+		// Else find config datastream
+		else {
+			dsId = await findConfigDatastream(systemId, configName);
+			if (dsId == null) throw new Error('Failed to create config datastream');
 		}
 
 		/* Save Data */
@@ -288,7 +278,11 @@ export function useConfigPersistence() {
 
 		// Get config datastream ID
 		const systemId = await findConfigSystem(defaultNode, configName);
-		const dsId = await findConfigDatastream(systemId!, configName);
+        let dsId;
+		if (systemId == null) throw new Error('Could not find matching config system');
+		else {
+			dsId = await findConfigDatastream(systemId!, configName);
+		}
 
 		const ep = `${getBaseUrl(defaultNode)}/datastreams/${dsId}/observations?f=json&resultTime=latest`;
 
