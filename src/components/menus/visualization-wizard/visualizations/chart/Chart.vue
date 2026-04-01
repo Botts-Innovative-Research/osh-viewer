@@ -80,13 +80,13 @@ useVisualizationCleanup(ref(dsInstances));
 </script>
 
 <template>
-  <v-card class="chart-card pa-4">
+  <v-sheet class="chart-card pa-4">
     <div :id="chartId"></div>
-  </v-card>
+  </v-sheet>
 </template>
 
 <style scoped>
 .chart-card {
-  height: 20vh;
+  height: auto;
 }
 </style>

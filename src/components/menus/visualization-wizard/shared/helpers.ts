@@ -1,11 +1,11 @@
 import { useVizWizStore } from "@/stores/vizwizstore"
-import { onBeforeUnmount, Ref } from "vue"
+import { onBeforeUnmount, Ref, watch } from "vue"
 //@ts-ignore
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import DataStream from 'osh-js/source/core/sweapi/datastream/DataStream.js';
 import ObservationFilter from 'osh-js/source/core/sweapi/observation/ObservationFilter.js';
 import { OSHControlStream, OSHDatastream } from "@/lib/OSHConnectDataStructs";
-import { DataSourceProperties, ISweApiDataSourceProperties } from "@/lib/VisualizationHelpers";
+import { ISweApiDataSourceProperties } from "@/lib/VisualizationHelpers";
 
 /**
  * Aggregates datastreams from vizwizStore.dsConfig based on selected roles.
@@ -235,4 +235,15 @@ export const getLatestObservation = async (dsProps: {
 
     const obsResult = await results.nextPage()
     return obsResult[0];
+}
+/**
+ * Defines validation logic for visualization form components and emits validation status to parent component
+ * @param valid 
+ * @param emit 
+ */
+export function useComponentValidation(valid: Ref<boolean>, emit: (event: "update:valid", value: boolean) => void) {
+  watch(
+    valid, v => emit('update:valid', v),
+    { immediate: true,}
+  )
 }

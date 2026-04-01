@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
-import { computed, reactive, watch, onMounted } from 'vue';
+import { computed, reactive, watch, onMounted, ref } from 'vue';
 import DataSourcePicker from '../../viz-components/DataSourcePicker.vue';
+import { VisualizationComponentEmits } from '../../VisualizationRegistry';
+import { useComponentValidation } from '../../shared/helpers';
 
 
 // Retrieve datastreams
@@ -17,7 +19,6 @@ const checkedRoles = reactive({
 
 // Initialize dsConfig with stream selected by default when mounted
 onMounted(() => {
-  console.log("Mounted Text Config")
   if (!vizwizStore.dsConfig.stream) {
     vizwizStore.updateDsConfig("stream", { selected: true })
   }
@@ -30,12 +31,20 @@ watch(() => vizwizStore.dsConfig, (newVal) => {
   }
 }, { deep: true })
 
+// Validation: at least datasource must be selected and configured
+const emit = defineEmits<VisualizationComponentEmits>()
+const dsValid = ref<boolean>(false)
+const valid = computed(() => {
+  return checkedRoles.stream ? dsValid.value : true
+})
+useComponentValidation(valid, emit)
+
 </script>
 <template>
   <!-- Stream -->
   <v-container>
     <v-checkbox label="Stream" v-model="checkedRoles.stream" disabled></v-checkbox>
-    <DataSourcePicker v-if="checkedRoles.stream" role="stream" multiple/>
+    <DataSourcePicker v-if="checkedRoles.stream" role="stream" multiple v-model:valid="dsValid"/>
   </v-container>
 </template>
 

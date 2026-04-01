@@ -10,7 +10,9 @@ import { useSystemStore } from '@/stores/systemstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { VisualizationComponents } from '@/lib/VisualizationHelpers';
-import { CONFIG_UID } from '@/composables/useConfigPersistence';
+import { CONFIG_UID_BASE } from '@/composables/useConfigPersistence';
+import { ViewLocation } from '@/components/menus/visualization-wizard/VisualizationRegistry';
+import { WizardConfig } from '@/stores/vizwizstore';
 
 let sharedStores: any = null;
 
@@ -159,7 +161,7 @@ export class OSHNode {
 						newSys.getControlStreams(),
 						newSys.getSamplingFeatures(),
 					]);
-					
+
 					systemStore?.addSystem?.(newSys);
 					return newSys;
 				}
@@ -176,11 +178,13 @@ export class OSHNode {
 	}
 
 	/**
-	 * Filters systems to exclude the "config" system used for persistence
-	 * @returns Array of OSHSystems, excluding "config" system
+	 * Filters systems to exclude the "config" systems used for persistence
+	 * @returns Array of OSHSystems, excluding "config" systems
 	 */
 	getFilteredSystems(): OSHSystem[] {
-		return this.systems.filter(system => system.system.properties.properties.uid !== CONFIG_UID);
+		return this.systems.filter(
+			(system) => !system.system.properties.properties.uid.includes(CONFIG_UID_BASE)
+		);
 	}
 }
 
@@ -222,11 +226,8 @@ export class OSHSystem {
 		while (result.hasNext()) {
 			const items: any[] = await result.nextPage();
 
-			console.log('items - datastreams', items);
-
 			// create new OSHDatastream objects for each item
 			items.forEach((item: any) => {
-				console.log(`result data:`, item);
 				const newStream = new OSHDatastream(item.properties.name, item, this.id);
 				datastreamStore?.addDataStream?.(newStream);
 				this.children.push(newStream.uuid);	// Push to children
@@ -244,11 +245,9 @@ export class OSHSystem {
 
 		while (result.hasNext()) {
 			const items: any[] = await result.nextPage();
-			console.log('items - control streams', items);
 
 			// create new OSHControlStream objects for each item
 			items.forEach((item: any) => {
-				console.log(`result data:`, item);
 				const newStream = new OSHControlStream(item.properties.name, item, this.id);
 				controlstreamStore?.addControlStream?.(newStream);
 				this.children.push(newStream.id);	// Push to children
@@ -349,25 +348,29 @@ export class OSHControlStream {
 }
 
 export class OSHVisualization {
-	id: string;	// Random ID following the format `visualization-${randomUUID()}`
+	id: string; // Random ID following the format `visualization-${randomUUID()}`
 	name: string;
 	type: string;
+	viewLocation: ViewLocation; // Defines where the visualization is displayed (e.g., 'panel', 'map', 'multi')
 	parentId?: string | null;
-	datastream: OSHDatastream[] | null;	// TODO: null handles "All PMS"
+	datastream: OSHDatastream[] | null; // TODO: null handles "All PMS"
 	controlstream?: OSHControlStream[]; // Optional control stream
 	visualizationComponents!: VisualizationComponents;
+	wizardConfig!: WizardConfig; // Store state of wizard for editing visualization
 
 	constructor(
 		id: string,
 		name: string,
 		type: string,
+		viewLocation: ViewLocation,
 		datastream: OSHDatastream[] | null,
 		controlstream?: OSHControlStream[],
-		parentId?: string | null,
+		parentId?: string | null
 	) {
 		this.id = id;
 		this.name = name;
 		this.type = type;
+		this.viewLocation = viewLocation;
 		this.datastream = datastream;
 		this.controlstream = controlstream;
 		this.parentId = parentId;
@@ -375,5 +378,9 @@ export class OSHVisualization {
 
 	setVisualizationComponents(components: VisualizationComponents): void {
 		this.visualizationComponents = components;
+	}
+
+	setWizardConfig(config: WizardConfig): void {
+		this.wizardConfig = config;
 	}
 }

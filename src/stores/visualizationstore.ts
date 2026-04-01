@@ -3,179 +3,148 @@ import { computed, ref, Ref } from 'vue';
 import {OSHControlStream, OSHDatastream, OSHVisualization} from '@/lib/OSHConnectDataStructs';
 import {useDataStreamStore} from "@/stores/datastreamstore";
 import {useControlStreamStore} from "@/stores/controlstreamstore";
+import { ViewLocation } from '@/components/menus/visualization-wizard/VisualizationRegistry';
+import { WizardConfig } from './vizwizstore';
 
 export interface SerializeVisualization {
-    id: string;
-    name: string;
-    type: string;
-    parentId: string | null;
-    datastreamIds: string[],
-    controlstreamIds: string[],
-    visualizationComponents: any
+	id: string;
+	name: string;
+	type: string;
+	parentId: string | null;
+	datastreamIds: string[];
+	controlstreamIds: string[];
+	visualizationComponents: any;
+	viewLocation: ViewLocation;
+	wizardConfig: WizardConfig;
 }
 
-export const PANEL_VISUALIZATIONS = [
-    'chart',
-    'video',
-    'text',
-    'mission',
-]
+export const useVisualizationStore = defineStore(
+	'visualizations',
+	() => {
+		const visualizations: Ref<OSHVisualization[]> = ref([]);
+		const serializedVisualizations: Ref<SerializeVisualization[]> = ref([]);
+		const layerVisibility: Ref<Map<string, boolean>> = ref(new Map());
 
-export const MAP_VISUALIZATIONS = [
-    'pointmarker',  // NEW value for old pmorientation
-    'lob',
-]
+		// Filter only PANEL visualizations
+		const panelVisualizations = computed(() => {
+			return visualizations.value.filter((v: OSHVisualization) => v.viewLocation === 'panel');
+		});
 
-export const useVisualizationStore = defineStore('visualizations',
-    () => {
-	const visualizations: Ref<OSHVisualization[]> = ref([]);
-	const serializedVisualizations: Ref<SerializeVisualization[]> = ref([]);
-	const currentVisDataStreamOptions: Ref<any> = ref({});
-	const currentVisualizationCustomizationOptions: Ref<any> = ref({});
-    const layerVisibility: Ref<Map<string, boolean>> = ref(new Map());
+		// Filter only MAP visualizations
+		const mapVisualizations = computed(() => {
+			return visualizations.value.filter((v: OSHVisualization) => v.viewLocation === 'map');
+		});
 
-    // Filter only PANEL visualizations
-    const panelVisualizations = computed(() => {
-        return visualizations.value.filter((v: OSHVisualization) =>
-            PANEL_VISUALIZATIONS.includes(v.type)
-        )
-    })
+		const addVisualization = (visualization: OSHVisualization): void => {
+			console.log('[VisualizationStore] Adding visualization:', visualization);
+			visualizations.value.push(visualization);
 
-    // Filter only MAP visualizations
-    const mapVisualizations = computed(() => {
-        return visualizations.value.filter((v: OSHVisualization) =>
-            MAP_VISUALIZATIONS.includes(v.type)
-        )
-    })
+			const getIds = (streams: OSHDatastream[] | OSHControlStream[] | null): string[] => {
+				return streams != null
+					? streams.map((item: OSHDatastream | OSHControlStream) => item.id)
+					: [];
+			};
 
-	const addVisualization = (visualization: OSHVisualization): void => {
-		console.log('[VisualizationStore] Adding visualization:', visualization);
-		visualizations.value.push(visualization);
-
-        const getIds = (streams: OSHDatastream[] | OSHControlStream[] | null): string[] => {
-            return streams != null ? streams.map((item: OSHDatastream | OSHControlStream) => item.id) : [];
-        }
-
-        if (visualization.type === 'pointmarker-feature') {
-            console.log("skipping fois for serialization")
-            return;
-        }
-        serializedVisualizations.value.push({
-            id: visualization.id,
-            name: visualization.name,
-            type: visualization.type,
-            parentId: visualization.parentId ?? null,
-            datastreamIds: getIds(visualization.datastream),
-            controlstreamIds: visualization.controlstream ? getIds(visualization.controlstream) : [],
-            visualizationComponents: visualization.visualizationComponents
-        });
-	};
-
-	const removeVisualization = (visualization: OSHVisualization): void => {
-		visualizations.value = visualizations.value.filter((v) => v !== visualization);
-
-        serializedVisualizations.value = serializedVisualizations.value.filter((viz) => viz.id !== visualization.id)
-	};
-
-	const getVisualizationById = (id: string): OSHVisualization | undefined => {
-		return visualizations.value.find((visualization) => visualization.id === id);
-	};
-
-	const getVisualizationsByType = (type: string): OSHVisualization[] => {
-		return visualizations.value.filter((visualization) => visualization.type === type);
-	};
-
-	const updateCurrentVisDataStreamOptions = (options: any): void => {
-		console.log(
-			'[VisualizationStore] Updating current visualization data stream options:',
-			options
-		);
-		currentVisDataStreamOptions.value = {
-			...currentVisDataStreamOptions.value,
-			...options,
+			if (visualization.type === 'pointmarker-feature') {
+				console.log('skipping fois for serialization');
+				return;
+			}
+			serializedVisualizations.value.push({
+				id: visualization.id,
+				name: visualization.name,
+				type: visualization.type,
+				parentId: visualization.parentId ?? null,
+				datastreamIds: getIds(visualization.datastream),
+				controlstreamIds: visualization.controlstream
+					? getIds(visualization.controlstream)
+					: [],
+				visualizationComponents: visualization.visualizationComponents,
+				viewLocation: visualization.viewLocation,
+				wizardConfig: visualization.wizardConfig,
+			});
 		};
-	};
 
-	const clearCurrentVisDataStreamOptions = (): void => {
-		console.log('[VisualizationStore] Clearing current visualization data stream options');
-		currentVisDataStreamOptions.value = {};
-	};
-
-	const updateCurrentVisualizationCustomizationOptions = (options: any): void => {
-		console.log(
-			'[VisualizationStore] Updating current visualization customization options:',
-			options
-		);
-		currentVisualizationCustomizationOptions.value = {
-			...currentVisualizationCustomizationOptions.value,
-			...options,
+		const removeVisualization = (visualization: OSHVisualization): void => {
+			visualizations.value = visualizations.value.filter((v) => v !== visualization);
+			serializedVisualizations.value = serializedVisualizations.value.filter(
+				(viz) => viz.id !== visualization.id
+			);
 		};
-	};
 
-	const clearCurrentVisualizationCustomizationOptions = (): void => {
-		console.log('[VisualizationStore] Clearing current visualization customization options');
-		currentVisualizationCustomizationOptions.value = {};
-	};
+		const removeAllVisualizations = (): void => {
+			visualizations.value = [];
+			serializedVisualizations.value = [];
+			console.log('Removed all current visualizations');
+		};
 
-    const toggleMapLayerVisibility = (layerId: string): boolean => {
-        const currentVisibility = layerVisibility.value.get(layerId) ?? true;
-        layerVisibility.value.set(layerId, !currentVisibility);
-        return !currentVisibility;
-    };
+		const getVisualizationById = (id: string): OSHVisualization | undefined => {
+			return visualizations.value.find((visualization) => visualization.id === id);
+		};
 
-    const isMapLayerVisible = (layerId: string): boolean => {
-        return layerVisibility.value.get(layerId) ?? true;
-    };
+		const getVisualizationsByType = (type: string): OSHVisualization[] => {
+			return visualizations.value.filter((visualization) => visualization.type === type);
+		};
 
-    const rehydrateVisualizations = (): void => {
-        if (serializedVisualizations.value.length === 0 || visualizations.value.length > 0) return;
+		const toggleMapLayerVisibility = (layerId: string): boolean => {
+			const currentVisibility = layerVisibility.value.get(layerId) ?? true;
+			layerVisibility.value.set(layerId, !currentVisibility);
+			return !currentVisibility;
+		};
 
-        const datastreamStore = useDataStreamStore();
-        const controlstreamStore = useControlStreamStore();
+		const isMapLayerVisible = (layerId: string): boolean => {
+			return layerVisibility.value.get(layerId) ?? true;
+		};
 
-        for (const serialized of serializedVisualizations.value) {
+		const rehydrateVisualizations = (): void => {
+			if (serializedVisualizations.value.length === 0 || visualizations.value.length > 0)
+				return;
 
-            if (datastreamStore.dataStreams.length === 0) {
-                console.warn('[VizStore] Datastreams not ready, skipping rehydrate');
-                return;
-            }
+			const datastreamStore = useDataStreamStore();
+			const controlstreamStore = useControlStreamStore();
 
-            const datastreams = datastreamStore.getDataStreamsById(serialized.datastreamIds);
-            const controlstreams = controlstreamStore.getControlStreamsById(serialized.controlstreamIds);
+			for (const serialized of serializedVisualizations.value) {
+				if (datastreamStore.dataStreams.length === 0) {
+					console.warn('[VizStore] Datastreams not ready, skipping rehydrate');
+					return;
+				}
 
-            const visualization = new OSHVisualization(
-                serialized.id,
-                serialized.name,
-                serialized.type,
-                datastreams,
-                controlstreams,
-                serialized.parentId,
-            )
+				const datastreams = datastreamStore.getDataStreamsById(serialized.datastreamIds);
+				const controlstreams = controlstreamStore.getControlStreamsById(
+					serialized.controlstreamIds
+				);
 
-            visualization.setVisualizationComponents(serialized.visualizationComponents);
-            visualizations.value.push(visualization);
-        }
-        console.log('[VizStore] Rehydrated visualizations:', visualizations.value.length);
-    }
+				const visualization = new OSHVisualization(
+					serialized.id,
+					serialized.name,
+					serialized.type,
+					serialized.viewLocation,
+					datastreams,
+					controlstreams,
+					serialized.parentId
+				);
 
-	return {
-		visualizations,
-        serializedVisualizations,
-        panelVisualizations,
-        mapVisualizations,
-		addVisualization,
-		removeVisualization,
-		getVisualizationById,
-		getVisualizationsByType,
-		currentVisDataStreamOptions,
-		updateCurrentVisDataStreamOptions,
-		clearCurrentVisDataStreamOptions,
-		currentVisualizationCustomizationOptions,
-		updateCurrentVisualizationCustomizationOptions,
-		clearCurrentVisualizationCustomizationOptions,
-		toggleMapLayerVisibility,
-        isMapLayerVisible,
-        layerVisibility,
-        rehydrateVisualizations,
-	};
-}, { persist: { pick: ['serializedVisualizations'] } });
+				visualization.setVisualizationComponents(serialized.visualizationComponents);
+				visualization.setWizardConfig(serialized.wizardConfig);
+				visualizations.value.push(visualization);
+			}
+			console.log('[VizStore] Rehydrated visualizations:', visualizations.value.length);
+		};
+
+		return {
+			visualizations,
+			serializedVisualizations,
+			panelVisualizations,
+			mapVisualizations,
+			addVisualization,
+			removeVisualization,
+			removeAllVisualizations,
+			getVisualizationById,
+			getVisualizationsByType,
+			toggleMapLayerVisibility,
+			isMapLayerVisible,
+			layerVisibility,
+			rehydrateVisualizations,
+		};
+	},
+	{ persist: { pick: ['serializedVisualizations'] } }
+);

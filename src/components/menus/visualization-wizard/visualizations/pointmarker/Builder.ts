@@ -10,11 +10,12 @@ import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 //@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
-//@ts-ignore
+// @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { AggregateDatastreams, BuildRoleProperty, getUsedDatastreams } from '../../shared/helpers';
+import { PointMarkerDescriptor } from './Descriptor';
 
-export function build() {
+export default function build() {
 	console.log('Building Point Marker Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
@@ -30,12 +31,14 @@ export function build() {
 	};
 
 	const newViz: OSHVisualization = new OSHVisualization(
-		`visualization-${randomUUID()}`,
-        vizwizStore.visualizationCustomizationOptions.name,
+		vizwizStore.id,
+		vizwizStore.visualizationCustomizationOptions.name,
 		'pointmarker',
-		getUsedDatastreams(),
+		PointMarkerDescriptor.viewLocation,
+		getUsedDatastreams()
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
+	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization
 	visualizationStore.addVisualization(newViz);
 	console.log('Created Point Marker Visualization:', newViz);
 }

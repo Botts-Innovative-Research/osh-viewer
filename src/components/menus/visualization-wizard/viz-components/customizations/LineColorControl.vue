@@ -10,15 +10,17 @@ watch(lineColor, (val) => {
 });
 
 onMounted(() => {
-  vwStore.updateVisualizationCustomizationOptions({
-    lineColor: lineColor.value,
-  });
+  if (!vwStore.visualizationCustomizationOptions.lineColor) {
+    vwStore.updateVisualizationCustomizationOptions({
+      lineColor: lineColor.value,
+    });
+  } else {
+    lineColor.value = vwStore.visualizationCustomizationOptions.lineColor
+  }
 });
 
 </script>
 <template>
-  <v-card class="pa-4" elevation="2">
-    <h3>Line Color</h3>
-    <v-color-picker style="margin: auto" v-model="lineColor" mode="rgba"> </v-color-picker>
-  </v-card>
+  <h3>Line Color</h3>
+  <v-color-picker style="margin: auto" v-model="lineColor" mode="rgba"> </v-color-picker>
 </template>

@@ -10,15 +10,17 @@ watch(backgroundColor, (val) => {
 });
 
 onMounted(() => {
-  vwStore.updateVisualizationCustomizationOptions({
-    backgroundColor: backgroundColor.value,
-  });
+  if (!vwStore.visualizationCustomizationOptions.backgroundColor) {
+    vwStore.updateVisualizationCustomizationOptions({
+      backgroundColor: backgroundColor.value,
+    });
+  } else {
+    backgroundColor.value = vwStore.visualizationCustomizationOptions.backgroundColor
+  }
 });
 
 </script>
 <template>
-  <v-card class="pa-4" elevation="2">
-    <h3>Background Color</h3>
-    <v-color-picker style="margin: auto" v-model="backgroundColor" mode="rgba"> </v-color-picker>
-  </v-card>
+  <h3>Background Color</h3>
+  <v-color-picker style="margin: auto" v-model="backgroundColor" mode="rgba"> </v-color-picker>
 </template>

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { OSHSystem } from '@/lib/OSHConnectDataStructs';
-import { CONFIG_UID } from '@/composables/useConfigPersistence';
+import { CONFIG_UID_BASE } from '@/composables/useConfigPersistence';
 
 export const useSystemStore = defineStore('systems', () => {
 	const systems = ref<OSHSystem[]>([]);
@@ -12,7 +12,7 @@ export const useSystemStore = defineStore('systems', () => {
 			console.log('system already exists or id is undefined', system);
 			return;
 		}
-		console.log('adding system', system);
+		console.log('Adding system', system);
 		systems.value.push(system);
 	};
 
@@ -34,7 +34,9 @@ export const useSystemStore = defineStore('systems', () => {
 
 	// Fetch all systems EXCEPT the config system
 	const getFilteredSystems = () => {
-		return systems.value.filter(system => system.system.properties.properties.uid !== CONFIG_UID);
+		return systems.value.filter(
+			(system) => !system.system.properties.properties.uid.includes(CONFIG_UID_BASE)
+		);
 	}
 
 	return {

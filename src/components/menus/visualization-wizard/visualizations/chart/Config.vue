@@ -2,7 +2,8 @@
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { ref, computed, reactive, watch, ReactiveEffect, onMounted } from 'vue';
 import DataSourcePicker from '../../viz-components/DataSourcePicker.vue';
-
+import { useComponentValidation } from '../../shared/helpers';
+import { VisualizationComponentEmits } from '../../VisualizationRegistry';
 
 // Retrieve datastreams
 const vizwizStore = useVizWizStore()
@@ -21,7 +22,6 @@ const checkedRoles = reactive({
 
 // Initialize dsConfig with x and y selected by default when mounted
 onMounted(() => {
-  console.log("Mounted Chart Config")
   if (!vizwizStore.dsConfig.x) {
     vizwizStore.updateDsConfig("x", { selected: true })
   }
@@ -40,18 +40,30 @@ watch(() => vizwizStore.dsConfig, (newVal) => {
   }
 }, { deep: true })
 
+// Validation: at least x and y must be selected and configured
+const emit = defineEmits<VisualizationComponentEmits>()
+const roleXValid = ref<boolean>(false)
+const roleYValid = ref<boolean>(false)
+const valid = computed(() => {
+  // If role is checked, must be valid. If not checked, ignore validity
+  const xValid = checkedRoles.x ? roleXValid.value : true
+  const yValid = checkedRoles.y ? roleYValid.value : true
+  return xValid && yValid
+})
+useComponentValidation(valid, emit)
+
 </script>
 <template>
   <!-- X -->
   <v-container>
     <v-checkbox label="X Axis" v-model="checkedRoles.x" disabled></v-checkbox>
-    <DataSourcePicker v-if="checkedRoles.x" role="x" />
+    <DataSourcePicker v-if="checkedRoles.x" role="x" v-model:valid="roleXValid" />
   </v-container>
 
   <!-- Y -->
   <v-container>
     <v-checkbox label="Y Axis" v-model="checkedRoles.y" disabled></v-checkbox>
-    <DataSourcePicker v-if="checkedRoles.y" role="y" />
+    <DataSourcePicker v-if="checkedRoles.y" role="y" v-model:valid="roleYValid" />
   </v-container>
 </template>
 

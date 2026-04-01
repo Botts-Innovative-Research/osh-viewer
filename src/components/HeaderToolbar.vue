@@ -13,14 +13,13 @@ const viewerName = import.meta.env.VITE_VIEWER_NAME;
 <template>
 	<v-toolbar :title="viewerName" color="blue" density="comfortable">
 		<v-btn icon="mdi-home" to="/" />
-<!--		<v-btn icon="mdi-account" />-->
-<!--		<v-btn icon="mdi-menu" />-->
-<!--		<v-btn icon="mdi-magnify" />-->
+    <v-btn icon="mdi-help" to="/about" />
+ 
 		<v-btn icon @click="saveDialog = true">
       <v-icon>mdi-content-save</v-icon>
       <v-tooltip activator="parent" location="bottom"> Save State </v-tooltip>
     </v-btn>
-    <v-dialog v-model="saveDialog" max-width="400">
+    <v-dialog v-model="saveDialog" max-width="500">
       <SaveStateSettings @saved="saveDialog = false" />
     </v-dialog>
 
@@ -28,7 +27,7 @@ const viewerName = import.meta.env.VITE_VIEWER_NAME;
       <v-icon>mdi-reload</v-icon>
       <v-tooltip activator="parent" location="bottom"> Load State </v-tooltip>
     </v-btn>
-    <v-dialog v-model="loadDialog" max-width="400">
+    <v-dialog v-model="loadDialog" max-width="500">
       <LoadStateSettings @load="loadDialog = false" />
     </v-dialog>
     

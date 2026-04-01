@@ -3,13 +3,14 @@ import { ISweApiControlStreamProperties, ISweApiDataSourceProperties, Visualizat
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 //@ts-ignore
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-//@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
+// @ts-ignore
+import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { AggregateControlstreams, BuildRoleProperty, getUsedControlstreams } from '../../shared/helpers';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
+import { GeoPtzDescriptor } from './Descriptor';
 
-export function build() {
+export default function build() {
 	console.log('Building GeoPTZ Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
@@ -27,17 +28,19 @@ export function build() {
 		dataSource: geoPtzResult.vizDatasources,
 		dataLayer: null,
 		dataView: null,
-		controlstream: geoPtzResult.vizControlstreams
+		controlstream: geoPtzResult.vizControlstreams,
 	};
 
 	const newViz: OSHVisualization = new OSHVisualization(
-		`visualization-${randomUUID()}`,
+		vizwizStore.id,
 		vizwizStore.visualizationCustomizationOptions.name,
 		'geoPtz',
+		GeoPtzDescriptor.viewLocation,
 		datastreams,
 		getUsedControlstreams()
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
+	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization
 	visualizationStore.addVisualization(newViz);
 	console.log('Created GeoPTZ Visualization:', newViz);
 }

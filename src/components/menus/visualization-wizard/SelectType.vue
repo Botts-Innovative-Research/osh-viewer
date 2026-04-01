@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
-import { VisualizationType } from '@/types/types';
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
+import { VisualizationComponentEmits, VisualizationRegistry } from './VisualizationRegistry';
+import { useComponentValidation } from './shared/helpers';
+import RadioCards from '@/components/ui/RadioCards.vue';
 
-const props = defineProps<{
-	visualizationTypes: VisualizationType[];
-}>();
 
 // Update visualizationType in vizwiz store
 const vizwizStore = useVizWizStore();
@@ -14,22 +13,24 @@ const selectedType = computed({
 	set: (val: string) => vizwizStore.setType(val),
 });
 
+// Sort visualization types by label
+const visualizationTypes = computed(() => {
+	return Object.values(VisualizationRegistry).sort((a, b) => a.label.localeCompare(b.label));
+});
+
 // Uses store setType to update value
-function selectType(type: string) {
-	vizwizStore.reset() // Reset store when selecting new type
-	selectedType.value = type;
+function selectType(item: any) {
+	vizwizStore.clear() // Clear store when selecting new type, KEEP ID
+	selectedType.value = item.id;
 }
+
+// Validation: a type must be selected
+const emit = defineEmits<VisualizationComponentEmits>()
+const valid = computed(() => { return !!selectedType.value })
+useComponentValidation(valid, emit)
+
 </script>
 <template>
-	<v-row justify="center" align="center" class="mb-2" v-if="props.visualizationTypes">
-		<v-col v-for="type in props.visualizationTypes" :key="type.value" cols="12" sm="6" md="3"
-			class="d-flex justify-center">
-			<v-card :elevation="selectedType === type.value ? 10 : 2" :color="selectedType === type.value ? 'primary' : ''"
-				class="d-flex flex-column align-center justify-center pa-4 type-card" @click="selectType(type.value)"
-				style="cursor: pointer; min-height: 120px; max-width: 220px; width: 100%">
-				<v-icon size="36" class="mb-2">{{ type.icon }}</v-icon>
-				<span>{{ type.label }}</span>
-			</v-card>
-		</v-col>
-	</v-row>
+	<radio-cards :items="visualizationTypes" :selected-item="Object.values(VisualizationRegistry).find(item => item.id === selectedType)" tooltip
+		@update:value="selectType"></radio-cards>
 </template>

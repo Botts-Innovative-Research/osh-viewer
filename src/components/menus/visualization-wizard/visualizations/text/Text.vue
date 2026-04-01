@@ -54,14 +54,16 @@ useVisualizationCleanup(ref(textboxDatasource));
 </script>
 
 <template>
-  <v-card :id="textboxId" class="pa-4">
+  <v-sheet :id="textboxId">
     <v-container>
       <h3>Received data:</h3>
-      <ul>
-        <li v-for="(value, key) in receivedData" :key="key">
-          <strong>{{ key }}:</strong> {{ value }}
-        </li>
-      </ul>
+      <v-container>
+        <ul>
+          <li v-for="(value, key) in receivedData" :key="key">
+            <strong>{{ key }}:</strong> {{ value }}
+          </li>
+        </ul>
+      </v-container>
     </v-container>
-  </v-card>
+  </v-sheet>
 </template>

@@ -30,12 +30,11 @@ const deleteNode = () => {
   nodeStore.removeNode(props.node);
 
   // Delete visualizations associated with this node
-  visualizationStore.visualizations.forEach((viz) => {
+  listVizToDelete.value.forEach((viz) => {
     // Check datastreams for this node
     viz.datastream?.forEach((ds) => {
       if (ds.getParentNode() === props.node) {
         visualizationStore.removeVisualization(viz);
-        console.log("Removing viz:", viz, "because of datastream:", ds);
         return;
       }
     });
@@ -43,11 +42,10 @@ const deleteNode = () => {
     viz.controlstream?.forEach((cs) => {
       if (cs.getParentNode() === props.node) {
         visualizationStore.removeVisualization(viz);
-        console.log("Removing viz:", viz, "because of controlstream:", cs);
         return;
       }
     });
-  });
+  })
 
   console.log('Deleted node:', props.node);
   close();

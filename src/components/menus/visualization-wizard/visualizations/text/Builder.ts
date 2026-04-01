@@ -7,17 +7,18 @@ import {
 } from '@/lib/VisualizationHelpers';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 //@ts-ignore
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-//@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
+// @ts-ignore
+import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import {
 	AggregateDatastreams,
 	BuildRoleProperty,
 	getUsedDatastreams,
 } from '../../shared/helpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
+import { TextDescriptor } from './Descriptor';
 
-export function build() {
+export default function build() {
 	console.log('Building Text Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
@@ -35,12 +36,14 @@ export function build() {
 	};
 
 	const newViz = new OSHVisualization(
-		`visualization-${randomUUID()}`,
+		vizwizStore.id,
 		vizwizStore.visualizationCustomizationOptions.name,
 		'text',
-		getUsedDatastreams(),
+		TextDescriptor.viewLocation,
+		getUsedDatastreams()
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
+	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization
 	visualizationStore.addVisualization(newViz);
 	console.log('Created Text Visualization:', newViz);
 }

@@ -10,16 +10,18 @@ watch(clampToGround, (val) => {
 });
 
 onMounted(() => {
-  vwStore.updateVisualizationCustomizationOptions({
-    clampToGround: clampToGround.value,
-  });
+  if (!vwStore.visualizationCustomizationOptions.clampToGround) {
+    vwStore.updateVisualizationCustomizationOptions({
+      clampToGround: clampToGround.value,
+    });
+  } else {
+    clampToGround.value = vwStore.visualizationCustomizationOptions.clampToGround
+  }
 });
 
 </script>
 <template>
-  <v-card class="pa-4" elevation="2">
-    <h3>Clamp To Ground</h3>
-    <v-checkbox v-model="clampToGround">
-    </v-checkbox>
-  </v-card>
+  <h3>Clamp To Ground</h3>
+  <v-checkbox v-model="clampToGround">
+  </v-checkbox>
 </template>

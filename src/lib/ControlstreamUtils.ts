@@ -182,7 +182,5 @@ export function getCommandType(schema: any, id: string) {
 	// Add to store
 	controlStreamStore.addCSSchema(id, commandType, commandSchema);
 
-	console.log(commandSchema);
-
 	return commandSchema;
 }
