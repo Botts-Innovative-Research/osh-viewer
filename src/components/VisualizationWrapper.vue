@@ -5,6 +5,7 @@ import Video from './menus/visualization-wizard/visualizations/video/Video.vue';
 import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
 import Text from './menus/visualization-wizard/visualizations/text/Text.vue';
 import MissionBuilder from '@/components/menus/visualization-wizard/visualizations/mission/MissionBuilder.vue';
+import { IChartViewProperties, ICurveLayerProperties, IVideoLayerProperties, IVideoViewProperties } from '@/lib/VisualizationHelpers';
 
 const { viz, customClass = '' } = defineProps<{
   viz: OSHVisualization,

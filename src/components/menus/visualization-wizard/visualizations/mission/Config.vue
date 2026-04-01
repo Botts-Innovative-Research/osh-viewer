@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
-import { computed, reactive, watch, onMounted } from 'vue';
+import { computed, reactive, watch, onMounted, ref } from 'vue';
 import ControlStreamPicker from "@/components/menus/visualization-wizard/viz-components/ControlStreamPicker.vue";
 import DataSourcePicker from "@/components/menus/visualization-wizard/viz-components/DataSourcePicker.vue";
+import { VisualizationComponentEmits } from '../../VisualizationRegistry';
+import { useComponentValidation } from '../../shared/helpers';
 
 // Retrieve controlstreams
 const vizwizStore = useVizWizStore()
@@ -51,7 +53,7 @@ const checkedRoles = reactive({
   }),
 })
 
-// Initialize csConfig with selected by default when mounted
+// Initialize dsConfig and csConfig with selected by default when mounted
 onMounted(() => {
   if (!vizwizStore.csConfig.qgc) {
     vizwizStore.updateCsConfig("qgc", { selected: true })
@@ -80,6 +82,7 @@ watch(() => vizwizStore.csConfig, (newVal) => {
   }
 }, { deep: true })
 
+// If dsConfig is reset, ensure  is selected by default
 watch(() => vizwizStore.dsConfig, (newVal) => {
   if (!newVal.home) {
     vizwizStore.updateDsConfig("home", { selected: true })
@@ -89,53 +92,84 @@ watch(() => vizwizStore.dsConfig, (newVal) => {
   }
 }, { deep: true })
 
+// Validation: at least location, home, control plan, and QGC plan must be configured
+const emit = defineEmits<VisualizationComponentEmits>()
+const locationValid = ref<boolean>(false)
+const homeValid = ref<boolean>(false)
+const planValid = ref<boolean>(false)
+const qgcValid = ref<boolean>(false)
+const takeoffValid = ref<boolean>(false)
+const landValid = ref<boolean>(false)
+const pauseValid = ref<boolean>(false)
+const rtlValid = ref<boolean>(false)
+const offboardValid = ref<boolean>(false)
+const valid = computed(() => {
+  // If role is checked, must be valid. If not checked, ignore validity
+  const locationValidChecked = checkedRoles.lla ? locationValid.value : true
+  const homeValidChecked = checkedRoles.home ? homeValid.value : true
+  const planValidChecked = checkedRoles.plan ? planValid.value : true
+  const qgcValidChecked = checkedRoles.qgc ? qgcValid.value : true
+  const takeoffValidChecked = checkedRoles.takeoff ? takeoffValid.value : true
+  const landValidChecked = checkedRoles.land ? landValid.value : true
+  const pauseValidChecked = checkedRoles.pause ? pauseValid.value : true
+  const rtlValidChecked = checkedRoles.rtl ? rtlValid.value : true
+  const offboardValidChecked = checkedRoles.offboard ? offboardValid.value : true
+  return locationValidChecked && homeValidChecked && planValidChecked && qgcValidChecked && takeoffValidChecked && landValidChecked && pauseValidChecked && rtlValidChecked && offboardValidChecked
+})
+useComponentValidation(valid, emit)
+
 </script>
 <template>
 
   <v-container>
     <v-checkbox label="Location" v-model="checkedRoles.lla" disabled></v-checkbox>
-    <DataSourcePicker v-if="checkedRoles.lla" role="lla"  :show-property-selector="false" />
+    <DataSourcePicker v-if="checkedRoles.lla" role="lla" :show-property-selector="false"
+      v-model:valid="locationValid" />
   </v-container>
 
   <v-container>
     <v-checkbox label="Home Location" v-model="checkedRoles.home" disabled></v-checkbox>
-    <DataSourcePicker v-if="checkedRoles.home" role="home"  :show-property-selector="false" />
+    <DataSourcePicker v-if="checkedRoles.home" role="home" :show-property-selector="false" v-model:valid="homeValid" />
   </v-container>
-
 
   <v-container>
     <v-checkbox label="Mission Control Plan" v-model="checkedRoles.plan" disabled></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.plan" role="plan"  :show-property-selector="false" />
+    <ControlStreamPicker v-if="checkedRoles.plan" role="plan" :show-property-selector="false"
+      v-model:valid="planValid" />
   </v-container>
 
   <v-container>
     <v-checkbox label="QGCPlan" v-model="checkedRoles.qgc" disabled></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.plan" role="qgc"  :show-property-selector="false" />
+    <ControlStreamPicker v-if="checkedRoles.plan" role="qgc" :show-property-selector="false" v-model:valid="qgcValid" />
   </v-container>
 
   <v-container>
     <v-checkbox label="Takeoff Control" v-model="checkedRoles.takeoff"></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.takeoff" role="takeoff"  :show-property-selector="false"/>
+    <ControlStreamPicker v-if="checkedRoles.takeoff" role="takeoff" :show-property-selector="false"
+      v-model:valid="takeoffValid" />
   </v-container>
 
   <v-container>
     <v-checkbox label="Land Mission" v-model="checkedRoles.land"></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.land" role="land"  :show-property-selector="false"/>
+    <ControlStreamPicker v-if="checkedRoles.land" role="land" :show-property-selector="false"
+      v-model:valid="landValid" />
   </v-container>
 
   <v-container>
     <v-checkbox label="Pause Mission" v-model="checkedRoles.pause"></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.pause" role="pause"  :show-property-selector="false" />
+    <ControlStreamPicker v-if="checkedRoles.pause" role="pause" :show-property-selector="false"
+      v-model:valid="pauseValid" />
   </v-container>
 
   <v-container>
     <v-checkbox label="Return to Launch" v-model="checkedRoles.rtl"></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.rtl" role="rtl"  :show-property-selector="false" />
+    <ControlStreamPicker v-if="checkedRoles.rtl" role="rtl" :show-property-selector="false" v-model:valid="rtlValid" />
   </v-container>
 
   <v-container>
     <v-checkbox label="Offboard Control" v-model="checkedRoles.offboard"></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.offboard" role="offboard"  :show-property-selector="false"/>
+    <ControlStreamPicker v-if="checkedRoles.offboard" role="offboard" :show-property-selector="false"
+      v-model:valid="offboardValid" />
   </v-container>
 
 </template>
