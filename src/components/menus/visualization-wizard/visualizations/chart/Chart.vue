@@ -12,12 +12,12 @@ import { IChartViewProperties, ICurveLayerProperties, ISweApiDataSourcePropertie
 const props = defineProps<{
   visualization: OSHVisualization,
   datasource: ISweApiDataSourceProperties[],
-  curveLayer: ICurveLayerProperties,
+  curveLayer: ICurveLayerProperties[],
   chartView: IChartViewProperties,
 }>();
 
 const chartId = ref('chart-' + randomUUID());
-let curveLayer = ref<CurveLayer | null>(null);
+let curveLayers = ref<CurveLayer[]>([]);
 let chartView =  ref<ChartJsView | null>(null);
 
 onMounted(async () => {
@@ -55,14 +55,23 @@ function initializeChart() {
     console.log('[Chart.vue] Chart datasource created:', dsInstance);
   }
 
-  const layerOpts: ICurveLayerProperties = props.curveLayer;
+  const layerOpts: ICurveLayerProperties[] = props.curveLayer;
 
-  curveLayer.value = new CurveLayer({
-    ...layerOpts,
-    dataSourceIds: dsInstances.map(ds => ds.id),
-    ...(getValues ? { getValues } : {}),
-  });
-  console.log('[Chart.vue] Creating CurveLayer:', curveLayer.value);
+  for (const layer of layerOpts) {
+    curveLayers.value.push(new CurveLayer({
+      ...layer,
+      dataSourceIds: dsInstances.map(ds => ds.id),
+      // ...(getValues ? { getValues } : {}),
+    }));
+  }
+
+  // curveLayer.value = new CurveLayer({
+  //   ...layerOpts,
+  //   dataSourceIds: dsInstances.map(ds => ds.id),
+  //   ...(getValues ? { getValues } : {}),
+  // });
+
+  console.log('[Chart.vue] Creating CurveLayers:', curveLayers.value);
 
   if (chartView.value) {
     chartView.value.destroy?.();
@@ -71,7 +80,7 @@ function initializeChart() {
   chartView.value = new ChartJsView({
     ...props.chartView,
     container: chartId.value,
-    layers: [curveLayer.value],
+    layers: curveLayers.value,
   });
   console.log('[Chart.vue] Chart view created:', chartView.value);
 }
