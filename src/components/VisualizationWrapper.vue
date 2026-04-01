@@ -37,6 +37,13 @@ const { viz, customClass = '' } = defineProps<{
 			:datasource="viz.visualizationComponents.dataSource[0]"
 			v-if="viz.type === 'text'"
 		></Text>
+		<Audio
+            :visualization="viz"
+            :datasource="viz.visualizationComponents.dataSource"
+            :curve-layer="(viz.visualizationComponents.dataLayer as ICurveLayerProperties)"
+            :audio-view="(viz.visualizationComponents.dataView as IChartViewProperties)"
+            v-if="viz.type === 'audio'"
+        ></Audio>
     <FlightPath
         :visualization="viz"
         :datasource="viz.visualizationComponents.dataSource[0]"

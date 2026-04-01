@@ -5,6 +5,7 @@ import { LobDescriptor } from "./visualizations/lob/Descriptor";
 import { PointMarkerDescriptor } from "./visualizations/pointmarker/Descriptor";
 import { TextDescriptor } from "./visualizations/text/Descriptor";
 import { VideoDescriptor } from "./visualizations/video/Descriptor";
+import { AudioDescriptor } from "./visualizations/audio/Descriptor";
 import { P } from "vue-router/dist/router-CWoNjPRp.mjs";
 
 /**
@@ -17,7 +18,8 @@ export const VisualizationRegistry: { [key: string]: VisualizationDescriptor } =
   [LobDescriptor.id]: LobDescriptor,
   [PointMarkerDescriptor.id]: PointMarkerDescriptor,
   [TextDescriptor.id]: TextDescriptor,
-  [VideoDescriptor.id]: VideoDescriptor
+  [VideoDescriptor.id]: VideoDescriptor,
+  [AudioDescriptor.id]: AudioDescriptor
 };
 
 /**
