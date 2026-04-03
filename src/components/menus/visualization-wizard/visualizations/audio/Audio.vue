@@ -14,11 +14,6 @@ const props = defineProps<{
   audioView: IChartViewProperties,
 }>();
 
-const audioSpectrogramVisualizer = new AudioSpectrogramVisualizer({
-    fftSize: 2048,
-    container: 'spectrogram'
-});
-
 const audioId = ref('audio-' + randomUUID());
 let audioView =  ref<ChartJsView | null>(null);
 
@@ -46,10 +41,10 @@ function initializeAudio() {
     console.log('[Audio.vue] Audio datasource created:', dsInstance);
   }
 
-  const spectrogram = new AudioSpectrogramVisualizer({
-    ...props.spectrogramOptions,
-    fftSize: props.spectrogramOptions?.fftSize || 2048,
-    container: audioId.value,
+  const audioSpectrogramVisualizer = new AudioSpectrogramVisualizer({
+     ...props.spectrogramOptions,
+     fftSize: props.spectrogramOptions?.fftSize || 2048,
+     container: audioId.value,
   });
 
   if (audioView.value) {
