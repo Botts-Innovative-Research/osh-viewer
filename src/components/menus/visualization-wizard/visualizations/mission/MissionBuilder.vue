@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {OSHVisualization} from '@/lib/OSHConnectDataStructs';
-import {ISweApiDataSourceProperties} from '@/lib/VisualizationHelpers';
+import {ISweApiControlStreamProperties, ISweApiDataSourceProperties} from '@/lib/VisualizationHelpers';
 import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue';
 // @ts-ignore
 import {randomUUID} from 'osh-js/source/core/utils/Utils.js';
@@ -44,7 +44,7 @@ const props = defineProps({
     default: () => [],
   },
   controlstreams: {
-    type: Array as () => Controlstream[],
+    type: Array as () => ISweApiControlStreamProperties[],
     required: true,
     default: () => [],
   }
@@ -558,7 +558,36 @@ onBeforeUnmount(() => {
                       <span class="text-caption mr-2">{{ index + 1 }}.</span>
                     </template>
                     <v-list-item-title class="text-body-2">
-                      {{ wp.lat.toFixed(5) }}, {{ wp.lon.toFixed(5) }}, {{ wp.alt.toFixed(1) }}
+                      <v-row class="align-center">
+                        <v-col cols="4">
+                          <v-text-field
+                              type="number"
+                              label="Lat"
+                              density="compact"
+                              hide-details
+                              v-model.number="wp.lat"
+                          />
+                        </v-col>
+                        <v-col cols="4">
+                          <v-text-field
+                              type="number"
+                              label="Lon"
+                              density="compact"
+                              hide-details
+                              v-model.number="wp.lon"
+                          />
+                        </v-col>
+                        <v-col cols="4">
+                          <v-text-field
+                              type="number"
+                              label="Alt"
+                              density="compact"
+                              hide-details
+                              v-model.number="wp.alt"
+                          />
+                        </v-col>
+                      </v-row>
+<!--                      {{ // wp.lat.toFixed(5) }}, {{ wp.lon.toFixed(5) }}, {{ wp.alt.toFixed(1) }}-->
                     </v-list-item-title>
                     <template v-slot:append>
                       <v-btn icon size="x-small" variant="text" @click="removeWaypoint(wp.id)">
@@ -720,8 +749,7 @@ onBeforeUnmount(() => {
       <MissionCommandPad
           :controlstreams="controlstreams"
           class="mt-3"
-          v-if="
-        getControlstreamByRole('land') ||
+          v-if="getControlstreamByRole('land') ||
         getControlstreamByRole('pause') ||
         getControlstreamByRole('rtl') ||
         getControlstreamByRole('offboard') ||
