@@ -5,8 +5,8 @@ import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { createDatasource, useVisualizationCleanup } from '../../shared/helpers';
 import { IChartViewProperties, ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
-import AudioView from "osh-js/core/ui/view/audio/AudioView";
-import AudioSpectrogramVisualizer from "osh-js/core/ui/view/audio/visualizer/spectrogram/AudioSpectrogramVisualizer";
+import AudioView from "osh-js/source/core/ui/view/audio/AudioView";
+import AudioSpectrogramVisualizer from "osh-js/source/core/ui/view/audio/visualizer/spectrogram/AudioSpectrogramVisualizer";
 
 const props = defineProps<{
   visualization: OSHVisualization,
@@ -15,8 +15,7 @@ const props = defineProps<{
 }>();
 
 const audioId = ref('audio-' + randomUUID());
-let audioView =  ref<ChartJsView | null>(null);
-
+let audioViewInstance = ref<AudioView | null>(null);
 onMounted(async () => {
   initializeAudio();
 });

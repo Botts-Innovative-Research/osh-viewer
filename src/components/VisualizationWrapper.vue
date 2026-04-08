@@ -4,6 +4,7 @@ import Chart from './menus/visualization-wizard/visualizations/chart/Chart.vue';
 import Video from './menus/visualization-wizard/visualizations/video/Video.vue';
 import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
 import Text from './menus/visualization-wizard/visualizations/text/Text.vue';
+import Audio from './menus/visualization-wizard/visualizations/audio/Audio.vue';
 import FlightPath from './menus/visualization-wizard/visualizations/flightpath/FlightPath.vue';
 import { IChartViewProperties, ICurveLayerProperties, IVideoLayerProperties, IVideoViewProperties } from '@/lib/VisualizationHelpers';
 

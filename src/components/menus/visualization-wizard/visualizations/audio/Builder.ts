@@ -10,6 +10,7 @@ import {Mode} from 'osh-js/source/core/datasource/Mode';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { AudioDescriptor } from "./Descriptor";
+import { ISweApiDataSourceProperties, VisualizationComponents } from '@/lib/VisualizationHelpers';
 
 export default function build() {
 	console.log('Building Audio Visualization...');
@@ -25,14 +26,14 @@ export default function build() {
 	);
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: audioResult.vizDatasources,
-		dataLayer: audioResult.curveLayer,
-		dataView: audioResult.chartView,
+		spectrogramOptions: audioResult.spectrogramOptions,
+        audioViewOptions: audioResult.audioViewOptions,
 	};
 
 	const newViz: OSHVisualization = new OSHVisualization(
 		vizwizStore.id,
 		vizwizStore.visualizationCustomizationOptions.name,
-		'audio',
+		'spectrogram',
 		AudioDescriptor.viewLocation,
 		getUsedDatastreams()
 	);
@@ -48,26 +49,17 @@ export function CreateAudioViewProps(datastreams: { [key: string]: any }, visOpt
 
     // Create datasources, layer, and view
     const vizDatasources: ISweApiDataSourceProperties[] = [];
-    let curveLayer: ICurveLayerProperties = {
-        name: vizwizStore.dsConfig['y'].label + (vizwizStore.dsConfig['y'].uom ? ` (${vizwizStore.dsConfig['y'].uom})` : '') || 'Y-Axis Data',
-        maxValues: 1000,
-        lineColor: visOptions.lineColor || '#FF0000',
-        backgroundColor: visOptions.backgroundColor || '#FFFFFF',
-        fill: true,
-        getCurveId: (rec: any, timestamp: any) => '2',
-        xLabel: vizwizStore.dsConfig['x'].label != null ? vizwizStore.dsConfig['x'].label : 'X-Axis Data',
-        yLabel: vizwizStore.dsConfig['y'].label + (vizwizStore.dsConfig['y'].uom ? ` (${vizwizStore.dsConfig['y'].uom})` : '') || 'Y-Axis Data',
-        getValues: (rec: any, timestamp: any) => {
-            return {
-                x: rec[vizwizStore.dsConfig['x'].property || rec.timestamp],
-                y: rec[vizwizStore.dsConfig['y'].property || ''],
-            }
-        },
-    }
-    let audioView: IChartViewProperties = {
+
+    const spectrogramOptions = {
+            fftSize: visOptions.fftSize || 2048,
+            // The visualizer needs to know which field in the data stream contains the array
+            sampleField: vizwizStore.dsConfig['samples']?.property || 'samples',
+            colorScale: visOptions.colorScale || 'jet',
+        };
+
+    const audioViewOptions = {
         container: `audio-container-${randomUUID()}`,
         css: 'audio-view',
-        layers: [curveLayer],
         datasetOptions: { tension: 0.2 },
         refreshRate: 1000,
     }
@@ -95,11 +87,11 @@ export function CreateAudioViewProps(datastreams: { [key: string]: any }, visOpt
         vizDatasources.push(currentDataSource);
     }
 
-    console.log('Created AudioViewProps:', {vizDatasources, curveLayer, audioView});
+    console.log('Created AudioViewProps:', {vizDatasources, spectrogramOptions, audioViewOptions});
 
     return {
         vizDatasources,
-        curveLayer,
-        audioView,
+        spectrogramOptions,
+        audioViewOptions,
     };
 }
