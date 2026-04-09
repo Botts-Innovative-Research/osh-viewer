@@ -4,8 +4,7 @@ import { GeoPtzDescriptor } from "./visualizations/geoptz/Descriptor";
 import { LobDescriptor } from "./visualizations/lob/Descriptor";
 import { PointMarkerDescriptor } from "./visualizations/pointmarker/Descriptor";
 import { TextDescriptor } from "./visualizations/text/Descriptor";
-import { VideoDescriptor } from "./visualizations/video/Descriptor";
-import { P } from "vue-router/dist/router-CWoNjPRp.mjs";
+import { VideoDescriptor } from './visualizations/video/Descriptor';
 import {MissionDescriptor} from "@/components/menus/visualization-wizard/visualizations/mission/Descriptor";
 
 /**
