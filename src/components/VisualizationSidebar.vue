@@ -19,7 +19,7 @@ const uiStore = useUIStore();
 
 // Separate visualizations into panel and map types
 const panelVisualizations = computed<OSHVisualization[]>(() => visualizations.value.filter(viz =>
-	viz.viewLocation === 'panel' || viz.viewLocation === 'multi'
+	viz.viewLocation === 'panel' || (viz.viewLocation === 'multi' && viz.type !== 'geoPtz')
 ));
 const mapVisualizations = computed<OSHVisualization[]>(() => visualizations.value.filter(viz =>
 	viz.viewLocation === 'map'
