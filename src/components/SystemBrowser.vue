@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useSystemStore } from '@/stores/systemstore'
 import { useNodeStore } from '@/stores/nodestore.js'
 import { useOSHConnectStore } from '@/stores/oshconnectstore.js'
@@ -166,7 +166,8 @@ const openPropertiesDialog = (item: any) => {
 			<template v-slot:prepend="{ item }">
 				<v-icon v-if="item.type === 'node'" :icon="NodeIcon"></v-icon>
 				<v-icon v-if="item.type === 'system'" icon="mdi-cogs"></v-icon>
-				<v-icon v-if="item.type === 'ds' || item.type === 'cs'" icon="mdi-cable-data"></v-icon>
+				<v-icon v-if="item.type === 'ds'" icon="mdi-cable-data"></v-icon>
+				<v-icon v-if="item.type === 'cs'" icon="mdi-controller"></v-icon>
 			</template>
 
 			<!-- Actions -->
