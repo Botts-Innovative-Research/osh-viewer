@@ -4,8 +4,8 @@ import { GeoPtzDescriptor } from "./visualizations/geoptz/Descriptor";
 import { LobDescriptor } from "./visualizations/lob/Descriptor";
 import { PointMarkerDescriptor } from "./visualizations/pointmarker/Descriptor";
 import { TextDescriptor } from "./visualizations/text/Descriptor";
-import { VideoDescriptor } from "./visualizations/video/Descriptor";
-import { P } from "vue-router/dist/router-CWoNjPRp.mjs";
+import { VideoDescriptor } from './visualizations/video/Descriptor';
+import {MissionDescriptor} from "@/components/menus/visualization-wizard/visualizations/mission/Descriptor";
 
 /**
  * Central registry for all visualizations available in the Visualization Wizard.
@@ -17,7 +17,8 @@ export const VisualizationRegistry: { [key: string]: VisualizationDescriptor } =
   [LobDescriptor.id]: LobDescriptor,
   [PointMarkerDescriptor.id]: PointMarkerDescriptor,
   [TextDescriptor.id]: TextDescriptor,
-  [VideoDescriptor.id]: VideoDescriptor
+  [VideoDescriptor.id]: VideoDescriptor,
+  [MissionDescriptor.id]: MissionDescriptor
 };
 
 /**
