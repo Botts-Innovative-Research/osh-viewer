@@ -428,6 +428,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   if (isSelected.value)
     uiStore.disableWaypointSelection();
+  clearWaypoints();
   useDisconnectDatasources(droneDatasourceLLA);
   useDisconnectDatasources(droneHomeDatasource);
 })
