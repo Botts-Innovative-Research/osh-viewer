@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, Ref } from 'vue';
+import { ref } from 'vue';
 import { SchemaFieldProperty } from '@/lib/DatasourceUtils';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { GeoPTZCommand } from '@/components/menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
@@ -44,14 +44,14 @@ export const useUIStore = defineStore('ui', () => {
 		altitude: number;
 	} | null>(null);
 
-	const selectedFlightPath = ref<{
+	const selectedWaypoints = ref<{
 		controlStreamId: string;
 		commandBaseUrl: string;
 		auth: string;
 	} | null>(null);
 
-	const flightPathWaypoints = ref<{ lat: number; lon: number; alt: number }[]>([]);
-	const clearFlightPathMarkersSignal = ref(false);
+	const missionWaypoints = ref<{ lat: number; lon: number; alt: number }[]>([]);
+	const clearMissionWaypointsMarkers = ref(false);
 
 	// Theme state
 	const theme = ref<'dark' | 'light'>('dark');
@@ -169,26 +169,30 @@ export const useUIStore = defineStore('ui', () => {
 		editVizOpen.value = true;
 	}
 
-	function setSelectedFlightPath(controlStreamId: string, commandBaseUrl: string, auth: string) {
-		selectedFlightPath.value = { controlStreamId, commandBaseUrl, auth };
+	function setSelectedWaypoints(controlStreamId: string, commandBaseUrl: string, auth: string) {
+		selectedWaypoints.value = { controlStreamId, commandBaseUrl, auth };
 	}
-	function clearSelectedFlightPath() {
-		selectedFlightPath.value = null;
-		flightPathWaypoints.value = [];
+	function clearSelectedMissionWaypoints() {
+		selectedWaypoints.value = null;
+		missionWaypoints.value = [];
 	}
 
-	function clearFlightPathWaypoints() {
-		flightPathWaypoints.value = [];
+	function disableWaypointSelection() {
+		selectedWaypoints.value = null;
+	}
+
+	function clearMissionWaypoints() {
+		missionWaypoints.value = [];
 	}
 	function setFlightPathWaypoints(waypoints: { lat: number; lon: number; alt: number }[]) {
-		flightPathWaypoints.value = waypoints;
+		missionWaypoints.value = waypoints;
 	}
 
-	function triggerClearFlightPathMarkers() {
-		clearFlightPathMarkersSignal.value = true;
+	function triggerClearWaypointMarkers() {
+        clearMissionWaypointsMarkers.value = true;
 	}
-	function resetClearFlightPathMarkersSignal() {
-		clearFlightPathMarkersSignal.value = false;
+	function resetClearWaypointMarkersSignal() {
+        clearMissionWaypointsMarkers.value = false;
 	}
 	return {
 		leftSidebarOpen,
@@ -233,15 +237,17 @@ export const useUIStore = defineStore('ui', () => {
 		toggleEditViz,
 		openEditViz,
 
-		selectedFlightPath,
-		setSelectedFlightPath,
-		clearSelectedFlightPath,
-		flightPathWaypoints,
-		clearFlightPathWaypoints,
+		selectedWaypoints,
+		setSelectedWaypoints,
+		disableWaypointSelection,
+		clearMissionWaypoints,
+		missionWaypoints,
+		clearSelectedMissionWaypoints,
 		setFlightPathWaypoints,
-		clearFlightPathMarkersSignal,
-		triggerClearFlightPathMarkers,
-		resetClearFlightPathMarkersSignal,
+		clearMissionWaypointsMarkers,
+		triggerClearWaypointMarkers,
+		resetClearWaypointMarkersSignal,
+
 		selectedMapItem,
 		setSelectedMapItem,
 	};

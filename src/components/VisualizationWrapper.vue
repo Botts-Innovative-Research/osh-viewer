@@ -4,7 +4,7 @@ import Chart from './menus/visualization-wizard/visualizations/chart/Chart.vue';
 import Video from './menus/visualization-wizard/visualizations/video/Video.vue';
 import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
 import Text from './menus/visualization-wizard/visualizations/text/Text.vue';
-import FlightPath from './menus/visualization-wizard/visualizations/flightpath/FlightPath.vue';
+import MissionBuilder from '@/components/menus/visualization-wizard/visualizations/mission/MissionBuilder.vue';
 import { IChartViewProperties, ICurveLayerProperties, IVideoLayerProperties, IVideoViewProperties } from '@/lib/VisualizationHelpers';
 
 const { viz, customClass = '' } = defineProps<{
@@ -37,12 +37,12 @@ const { viz, customClass = '' } = defineProps<{
 			:datasource="viz.visualizationComponents.dataSource[0]"
 			v-if="viz.type === 'text'"
 		></Text>
-    <FlightPath
+    <MissionBuilder
         :visualization="viz"
-        :datasource="viz.visualizationComponents.dataSource[0]"
-        :controlstream="viz.visualizationComponents.controlstream"
-        v-if="viz.type === 'flightPath'"
-    ></FlightPath>
+        :datasource="Array.isArray(viz.visualizationComponents.dataSource) ? viz.visualizationComponents.dataSource : [viz.visualizationComponents.dataSource]"
+        :controlstreams="Array.isArray(viz.visualizationComponents.controlstream) ? viz.visualizationComponents.controlstream : [viz.visualizationComponents.controlstream]"
+        v-if="viz.type === 'mission'"
+    ></MissionBuilder>
 		<slot name="after" />
 		<slot name="overlay" />
 	</div>
