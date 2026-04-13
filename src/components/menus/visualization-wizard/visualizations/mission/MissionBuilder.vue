@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import {OSHVisualization} from '@/lib/OSHConnectDataStructs';
-import {ISweApiControlStreamProperties, ISweApiDataSourceProperties} from '@/lib/VisualizationHelpers';
-import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { ISweApiControlStreamProperties, ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 // @ts-ignore
-import {randomUUID} from 'osh-js/source/core/utils/Utils.js';
-import {useUIStore} from '@/stores/uistore';
-import {sendCommand} from '@/lib/ControlstreamUtils';
-import {showToast} from "@/composables/useToast";
+import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+import { useUIStore } from '@/stores/uistore';
+import { sendCommand } from '@/lib/ControlstreamUtils';
+import { showToast } from "@/composables/useToast";
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
 import {
@@ -14,12 +14,11 @@ import {
   getLatestObservation,
   useDisconnectDatasources
 } from "@/components/menus/visualization-wizard/shared/helpers";
-import {DATASOURCE_DATA_TOPIC} from 'osh-js/source/core/Constants.js';
-import {useDataStreamStore} from "@/stores/datastreamstore";
+import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
+import { useDataStreamStore } from "@/stores/datastreamstore";
 
 
 // python sim_vehicle.py -v ArduCopter -f quad --console --map --location=Taiwan
-const missionPlannerId = ref('missionPlanner-' + randomUUID());
 
 interface Controlstream {
   id: string;
@@ -39,7 +38,7 @@ const props = defineProps({
     default: null,
   },
   datasource: {
-    type:  Array as () => ISweApiDataSourceProperties[],
+    type: Array as () => ISweApiDataSourceProperties[],
     required: true,
     default: () => [],
   },
@@ -74,7 +73,7 @@ interface LLAData {
 
 const missionSource = ref<'waypoints' | 'file'>('waypoints')
 
-const receivedLLA = ref<LLAData>({lat: 0, lon: 0, alt: 0});
+const receivedLLA = ref<LLAData>({ lat: 0, lon: 0, alt: 0 });
 const waypoints = ref<Waypoint[]>([]);
 
 const latInput = ref<number>(0.0);
@@ -112,8 +111,8 @@ const commandBaseUrl = computed(() => {
 
 const csAuth = computed(() => {
   const cs = missionControlStream.value;
-  if (!cs) return {username: '', password: ''};
-  return {username: cs.connectorOpts.username, password: cs.connectorOpts.password};
+  if (!cs) return { username: '', password: '' };
+  return { username: cs.connectorOpts.username, password: cs.connectorOpts.password };
 });
 
 watch(() => uiStore.selectedWaypoints, (newVal) => {
@@ -177,7 +176,7 @@ watch(waypoints, (newWaypoints) => {
     lon: wp.lon,
     alt: wp.alt
   })));
-}, {deep: true});
+}, { deep: true });
 
 function sendMission() {
   if (missionSource.value === 'waypoints')
@@ -190,28 +189,28 @@ function sendMission() {
 function sendWaypoints() {
   const plan = generateMissionControlPlan();
 
-    if (!plan) {
-      showToast("Cannot send empty mission", 'ERROR');
-    }
+  if (!plan) {
+    showToast("Cannot send empty mission", 'ERROR');
+  }
 
-    const command = {
-      parameters: {
-        qGroundControlPlan: JSON.stringify(plan)
-      }
-    };
-
-    const cs = missionControlStream.value;
-    if (!cs) {
-      showToast("No mission controlstream configured", 'ERROR');
-      return;
+  const command = {
+    parameters: {
+      qGroundControlPlan: JSON.stringify(plan)
     }
-    console.log('[MissionBuilder.vue] Sending MissionBuilder command:', command);
-    sendCommand(
-        commandBaseUrl.value,
-        cs.id,
-        command,
-        `${csAuth.value.username}:${csAuth.value.password}`
-    );
+  };
+
+  const cs = missionControlStream.value;
+  if (!cs) {
+    showToast("No mission controlstream configured", 'ERROR');
+    return;
+  }
+  console.log('[MissionBuilder.vue] Sending MissionBuilder command:', command);
+  sendCommand(
+    commandBaseUrl.value,
+    cs.id,
+    command,
+    `${csAuth.value.username}:${csAuth.value.password}`
+  );
 }
 
 function sendQGCPlanFileUpload() {
@@ -239,10 +238,10 @@ function sendQGCPlanFileUpload() {
 
     console.log('[MissionBuilder.vue] Sending mission file command:', command, qgcControlStream.value);
     sendCommand(
-        commandBaseUrl.value,
-        qgcControlStream.value.id,
-        command,
-        `${csAuth.value.username}:${csAuth.value.password}`
+      commandBaseUrl.value,
+      qgcControlStream.value.id,
+      command,
+      `${csAuth.value.username}:${csAuth.value.password}`
     );
   }
   reader.onerror = (e) => {
@@ -380,7 +379,7 @@ function generateMissionControlPlan() {
 }
 
 
-function onLLAListener(dsInstance:SweApi) {
+function onLLAListener(dsInstance: SweApi) {
   const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
 
   dataBroadcastChannel.onmessage = (message) => {
@@ -436,29 +435,26 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <v-card :id="missionPlannerId">
-    <v-container>
-      <v-card class="telemetry-card">
-        <v-card-text>Live Telemetry</v-card-text>
-        <v-row dense class="">
-          <v-col cols="12" md="4">
-            <v-card-subtitle>Latitude</v-card-subtitle>
-            <v-card-title>{{ receivedLLA.lat.toFixed(6) }}</v-card-title>
-          </v-col>
-          <v-col cols="12" md="4">
-            <v-card-subtitle>Longitude</v-card-subtitle>
-            <v-card-title>{{ receivedLLA.lon.toFixed(6) }}</v-card-title>
-          </v-col>
-          <v-col cols="12" md="4">
-            <v-card-subtitle>Altitude</v-card-subtitle>
-            <v-card-title>{{ receivedLLA.alt.toFixed(2) }}</v-card-title>
-          </v-col>
-        </v-row>
-      </v-card>
-    </v-container>
+  <v-sheet class="pa-0 d-flex flex-column ga-2">
+    <v-card class="telemetry-card">
+      <v-card-text>Live Telemetry</v-card-text>
+      <v-row dense class="">
+        <v-col cols="12" md="4">
+          <v-card-subtitle>Latitude</v-card-subtitle>
+          <v-card-title>{{ receivedLLA.lat.toFixed(6) }}</v-card-title>
+        </v-col>
+        <v-col cols="12" md="4">
+          <v-card-subtitle>Longitude</v-card-subtitle>
+          <v-card-title>{{ receivedLLA.lon.toFixed(6) }}</v-card-title>
+        </v-col>
+        <v-col cols="12" md="4">
+          <v-card-subtitle>Altitude</v-card-subtitle>
+          <v-card-title>{{ receivedLLA.alt.toFixed(2) }}</v-card-title>
+        </v-col>
+      </v-row>
+    </v-card>
 
-
-    <v-container class="pa-2">
+    <v-card class="pa-2">
       <v-tabs v-model="missionSource" grow color="primary" class="mb-2">
         <v-tab value="waypoints" prepend-icon="mdi-map-marker-path">
           <span class="d-none d-sm-inline">Build Mission</span>
@@ -472,83 +468,44 @@ onBeforeUnmount(() => {
 
       <v-window v-model="missionSource">
         <v-window-item value="waypoints" class="mt-2">
-          <v-row dense align="center">
-            <v-col cols="12" sm="auto">
-              <v-btn
-                  icon
-                  :color="isSelected ? 'primary' : 'grey'"
-                  @click="toggle"
-              >
-                <v-icon>{{ isSelected ? 'mdi-crosshairs-gps' : 'mdi-crosshairs' }}</v-icon>
+          <v-form ref="waypointForm">
+            <v-row dense cols="12" class="d-flex align-start justify-center">
+              <v-col cols="auto" xs="3">
+                <IconButton :color="isSelected ? 'primary' : 'grey'" @click="toggle">
+                  <v-icon>{{ isSelected ? 'mdi-crosshairs-gps' : 'mdi-crosshairs' }}</v-icon>
+                </IconButton>
                 <v-tooltip activator="parent" location="top">
                   {{ isSelected ? 'Click map to add waypoints' : 'Enable map selection' }}
                 </v-tooltip>
-              </v-btn>
-            </v-col>
-            <v-col cols="12" sm="">
-              <v-form ref="waypointForm">
-                <v-row dense>
-                  <v-col cols="12" md="3">
-                    <v-text-field
-                          v-model.number="latInput"
-                          type="number"
-                          label="Latitude"
-                          placeholder="0.0"
-                          density="compact"
-                          hint="-90 to 90"
-                          :rules="[v => (v >= -90 && v <= 90) || 'Must be -90 to 90']"
-                    />
-                  </v-col>
-                  <v-col cols="12" md="3">
-                    <v-text-field
-                        v-model.number="lonInput"
-                        type="number"
-                        label="Longitude"
-                        placeholder="0.0"
-                        density="compact"
-                        hint="-180 to 180"
-                        :rules="[v => (v >= -180 && v <= 180) || 'Must be -180 to 180']"
-                    />
-                  </v-col>
-                  <v-col cols="12" md="3">
-                    <v-text-field
-                        v-model.number="altInput"
-                        type="number"
-                        label="Altitude"
-                        placeholder="0.0"
-                        density="compact"
-                        hide-details
-                    />
-                  </v-col>
-                  <v-col cols="12" md="3">
-                    <v-btn
-                        block
-                        color="primary"
-                        @click="addWaypoint"
-                        prepend-icon="mdi-plus"
-                        variant="flat"
-                    >
-                      Add
-                    </v-btn>
-                  </v-col>
-                </v-row>
-              </v-form>
-            </v-col>
-          </v-row>
+              </v-col>
+              <v-col cols="2.3" xs="3">
+                <v-text-field v-model.number="latInput" type="number" label="Latitude" placeholder="0.0"
+                  hint="-90 to 90" :rules="[v => (v >= -90 && v <= 90) || 'Must be -90 to 90']" />
+              </v-col>
+              <v-col cols="2.3" xs="3">
+                <v-text-field v-model.number="lonInput" type="number" label="Longitude" placeholder="0.0"
+                  hint="-180 to 180" :rules="[v => (v >= -180 && v <= 180) || 'Must be -180 to 180']" />
+              </v-col>
+              <v-col cols="2.3" xs="3">
+                <v-text-field v-model.number="altInput" type="number" label="Altitude" placeholder="0.0" hide-details />
+              </v-col>
+              <v-col xs="12">
+                <v-btn block color="primary" @click="addWaypoint" prepend-icon="mdi-plus" variant="flat">
+                  Add
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-form>
+
 
 
           <v-expansion-panels class="mt-3">
             <v-expansion-panel title="Waypoint Settings">
               <v-expansion-panel-text>
-                <div  class="d-flex justify-space-between align-center mb-2">
+                <div class="d-flex justify-space-between align-center mb-2">
                   <span class="text-subtitle-2">Waypoints ({{ waypoints.length }})</span>
-                  <v-btn
-                      size="small"
-                      variant="text"
-                      color="error"
-                      @click="clearWaypoints"
-                      :disabled="waypoints.length === 0"
-                  >
+                  <v-btn size="small" variant="text" color="error" @click="clearWaypoints"
+                    :disabled="waypoints.length === 0">
                     Clear All
                   </v-btn>
                 </div>
@@ -560,34 +517,19 @@ onBeforeUnmount(() => {
                     <v-list-item-title class="text-body-2">
                       <v-row class="align-center">
                         <v-col cols="4">
-                          <v-text-field
-                              type="number"
-                              label="Lat"
-                              density="compact"
-                              hide-details
-                              v-model.number="wp.lat"
-                          />
+                          <v-text-field type="number" label="Lat" density="compact" hide-details
+                            v-model.number="wp.lat" />
                         </v-col>
                         <v-col cols="4">
-                          <v-text-field
-                              type="number"
-                              label="Lon"
-                              density="compact"
-                              hide-details
-                              v-model.number="wp.lon"
-                          />
+                          <v-text-field type="number" label="Lon" density="compact" hide-details
+                            v-model.number="wp.lon" />
                         </v-col>
                         <v-col cols="4">
-                          <v-text-field
-                              type="number"
-                              label="Alt"
-                              density="compact"
-                              hide-details
-                              v-model.number="wp.alt"
-                          />
+                          <v-text-field type="number" label="Alt" density="compact" hide-details
+                            v-model.number="wp.alt" />
                         </v-col>
                       </v-row>
-<!--                      {{ // wp.lat.toFixed(5) }}, {{ wp.lon.toFixed(5) }}, {{ wp.alt.toFixed(1) }}-->
+                      <!--                      {{ // wp.lat.toFixed(5) }}, {{ wp.lon.toFixed(5) }}, {{ wp.alt.toFixed(1) }}-->
                     </v-list-item-title>
                     <template v-slot:append>
                       <v-btn icon size="x-small" variant="text" @click="removeWaypoint(wp.id)">
@@ -605,40 +547,19 @@ onBeforeUnmount(() => {
                 <v-divider class="my-3"></v-divider>
                 <v-row dense>
                   <v-col cols="12" md="6">
-                    <v-text-field
-                        v-model.number="waypointAltitude"
-                        type="number"
-                        label="Altitude (m)"
-                        density="compact"
-                        hide-details
-                    />
+                    <v-text-field v-model.number="waypointAltitude" type="number" label="Altitude (m)" density="compact"
+                      hide-details />
                   </v-col>
                   <v-col cols="12" md="6">
-                    <v-text-field
-                        v-model.number="amslAltAboveTerrain"
-                        type="number"
-                        label="AMSL Alt Above Terrain"
-                        density="compact"
-                        hide-details
-                        clearable
-                    />
+                    <v-text-field v-model.number="amslAltAboveTerrain" type="number" label="AMSL Alt Above Terrain"
+                      density="compact" hide-details clearable />
                   </v-col>
                   <v-col cols="12" md="6">
-                    <v-select
-                        v-model="altitudeMode"
-                        :items="altitudeModeOptions"
-                        label="Altitude Mode"
-                        density="compact"
-                        hide-details
-                    />
+                    <v-select v-model="altitudeMode" :items="altitudeModeOptions" label="Altitude Mode"
+                      density="compact" hide-details />
                   </v-col>
                   <v-col cols="12" md="6">
-                    <v-checkbox
-                        v-model="autoContinue"
-                        label="Auto Continue"
-                        density="compact"
-                        color="primary"
-                    />
+                    <v-checkbox v-model="autoContinue" label="Auto Continue" density="compact" color="primary" />
                   </v-col>
                 </v-row>
               </v-expansion-panel-text>
@@ -665,23 +586,12 @@ onBeforeUnmount(() => {
               <v-expansion-panel-text>
                 <v-row dense>
                   <v-col cols="6" md="3">
-                    <v-text-field
-                        v-model.number="cruiseSpeed"
-                        type="number"
-                        label="Cruise Speed"
-                        density="compact"
-                        hide-details
-                    />
+                    <v-text-field v-model.number="cruiseSpeed" type="number" label="Cruise Speed" density="compact"
+                      hide-details />
                   </v-col>
                   <v-col cols="6" md="3">
-                    <v-text-field
-                        v-model.number="hoverSpeed"
-                        type="number"
-                        label="Hover Speed"
-                        density="compact"
-                        hide-details
-                        clearable
-                    />
+                    <v-text-field v-model.number="hoverSpeed" type="number" label="Hover Speed" density="compact"
+                      hide-details clearable />
                   </v-col>
                 </v-row>
               </v-expansion-panel-text>
@@ -693,33 +603,16 @@ onBeforeUnmount(() => {
         <v-window-item value="file">
           <v-row dense>
             <v-col cols="12">
-              <v-btn
-                  block
-                  @click="triggerFileInput"
-                  prepend-icon="mdi-folder-open"
-                  variant="outlined"
-              >
+              <v-btn block @click="triggerFileInput" prepend-icon="mdi-folder-open" variant="outlined">
                 Browse Files
               </v-btn>
-              <input
-                  type="file"
-                  ref="fileInputRef"
-                  style="display: none"
-                  accept=".plan"
-                  @change="handleFileChange"
-              />
+              <input type="file" ref="fileInputRef" style="display: none" accept=".plan" @change="handleFileChange" />
             </v-col>
           </v-row>
 
           <v-row v-if="selectedFile" dense class="mt-3">
             <v-col cols="12">
-              <v-alert
-                  type="info"
-                  variant="tonal"
-                  density="compact"
-                  closable
-                  @click:close="clearSelectedFile"
-              >
+              <v-alert type="info" variant="tonal" density="compact" closable @click:close="clearSelectedFile">
                 <template v-slot:prepend>
                   <v-icon>mdi-file-document</v-icon>
                 </template>
@@ -733,47 +626,29 @@ onBeforeUnmount(() => {
           </div>
         </v-window-item>
       </v-window>
+    </v-card>
 
-      <v-divider class="my-4"></v-divider>
+    <v-btn color="primary" block @click="sendMission"
+      :disabled="(missionSource === 'waypoints' && waypoints.length === 0) || (missionSource === 'file' && !selectedFile)"
+      prepend-icon="mdi-send">
+      Send Mission
+    </v-btn>
 
-      <v-btn
-          color="primary"
-          block
-          @click="sendMission"
-          :disabled="(missionSource === 'waypoints' && waypoints.length === 0) || (missionSource === 'file' && !selectedFile)"
-          prepend-icon="mdi-send"
-      >
-        Send Mission
-      </v-btn>
-
-      <MissionCommandPad
-          :controlstreams="controlstreams"
-          class="mt-3"
-          v-if="getControlstreamByRole('land') ||
+    <v-card>
+      <MissionCommandPad :controlstreams="controlstreams" class="mt-3" v-if="getControlstreamByRole('land') ||
         getControlstreamByRole('pause') ||
         getControlstreamByRole('rtl') ||
         getControlstreamByRole('offboard') ||
         getControlstreamByRole('takeoff')
-      "
-      />
-    </v-container>
+" />
+    </v-card>
 
-
-  </v-card>
+  </v-sheet>
 </template>
 
 <style scoped>
 .waypoints-list {
   max-height: 125px;
   overflow-y: auto;
-}
-
-:deep(.v-btn) {
-  transition: all 0.2s ease;
-}
-
-:deep(.v-btn:hover) {
-  filter: brightness(1.2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 </style>

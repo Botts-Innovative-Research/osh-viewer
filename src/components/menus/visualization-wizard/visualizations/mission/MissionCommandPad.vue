@@ -137,7 +137,7 @@ function toggle() {
 </script>
 
 <template>
-  <v-card class="pa-4 mission-control-card">
+  <v-sheet class="pa-4 mission-control-card">
 
     <!--pause, rtl, land-->
     <div v-if="getControlstreamByRole('pause') || getControlstreamByRole('rtl') || getControlstreamByRole('land') || getControlstreamByRole('cancel')">
@@ -287,7 +287,7 @@ function toggle() {
       </v-form>
     </div>
 
-  </v-card>
+  </v-sheet>
 </template>
 
 <style scoped>
