@@ -25,33 +25,19 @@ onMounted(async () => {
 });
 
 // Array of SweApi instances for datasources
-const dsInstances: SweApi[] = [];
+const dsInstances = ref<SweApi[]>([]);
 
 function initializeChart() {
   const viz = props.visualization;
   if (!viz || viz.type !== 'chart') return;
 
-  let getValues: any;
   const dsArray: ISweApiDataSourceProperties[] = props.datasource
 
   for (const dsProps of dsArray) {
-    let rawDs = toRaw(dsProps);
-
     const dsInstance = createDatasource(dsProps)
 
-    if (rawDs && rawDs.properties?.x && rawDs.properties?.y) {
-      getValues = (rec: any, timestamp: any) => {
-        const xProp = rawDs.properties?.x;
-        const yProp = rawDs.properties?.y;
-        return {
-          x: rec[xProp.outputName]?.[xProp.property] ?? rec[xProp.property] ?? timestamp,
-          y: rec[yProp.outputName]?.[yProp.property] ?? rec[yProp.property] ?? '',
-        }
-      }
-    }
-
     dsInstance.connect();
-    dsInstances.push(dsInstance);
+    dsInstances.value.push(dsInstance);
     console.log('[Chart.vue] Chart datasource created:', dsInstance);
   }
 
@@ -60,16 +46,18 @@ function initializeChart() {
   for (const layer of layerOpts) {
     curveLayers.value.push(new CurveLayer({
       ...layer,
-      dataSourceIds: dsInstances.map(ds => ds.id),
-      // ...(getValues ? { getValues } : {}),
+      dataSourceIds: dsInstances.value.map((ds: any) => ds.id),
+      getCurveId: (rec: any, timestamp: any) => layer.curveId,
+      getValues: (rec: any, timestamp: any) => {
+        const xProp = layer.values.x;
+        const yProp = layer.values.y;
+        return {
+          x: rec[xProp.outputName]?.[xProp.property] ?? rec[xProp.property] ?? timestamp,
+          y: rec[yProp.outputName]?.[yProp.property] ?? rec[yProp.property] ?? '',
+        }
+      },
     }));
   }
-
-  // curveLayer.value = new CurveLayer({
-  //   ...layerOpts,
-  //   dataSourceIds: dsInstances.map(ds => ds.id),
-  //   ...(getValues ? { getValues } : {}),
-  // });
 
   console.log('[Chart.vue] Creating CurveLayers:', curveLayers.value);
 

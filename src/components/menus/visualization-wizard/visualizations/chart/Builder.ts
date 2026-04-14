@@ -50,6 +50,7 @@ export function CreateChartViewProps(datastreams: { [key: string]: any }, visOpt
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
 	let curveLayers: ICurveLayerProperties[] = [];
 
+	// Handle multiple Y properties (for multiple curves)
 	const yProperties = Array.isArray(vizwizStore.dsConfig['y'].property)
 		? vizwizStore.dsConfig['y'].property
 		: [vizwizStore.dsConfig['y'].property];
@@ -67,39 +68,19 @@ export function CreateChartViewProps(datastreams: { [key: string]: any }, visOpt
 			lineColor: visOptions.lineColor || '#FF0000',
 			backgroundColor: visOptions.backgroundColor || '#FFFFFF',
 			fill: true,
-			getCurveId: (rec: any, timestamp: any) => `curve-${i}`,
 			xLabel:
 				vizwizStore.dsConfig['x'].label != null
 					? vizwizStore.dsConfig['x'].label
 					: 'X-Axis Data',
 			yLabel: yLabels[i] + (yUoms[i] ? ` (${yUoms[i]})` : '') || `Y-Axis Data ${i + 1}`,
-			getValues: (rec: any, timestamp: any) => {
-				const xProp = vizwizStore.dsConfig['x'];
-				const yOutputName = vizwizStore.dsConfig['y'].outputName;
-				return {
-					x: rec[xProp.outputName]?.[xProp.property] ?? rec[xProp.property] ?? timestamp,
-					y: rec[yOutputName]?.[yProperties[i]] ?? rec[yProperties[i]] ?? '',
-				};
-			},
+			curveId: `curve-${i}`,
+			values: {
+				x: { outputName: vizwizStore.dsConfig['x'].outputName, property: vizwizStore.dsConfig['x'].property },
+				y: { outputName: vizwizStore.dsConfig['y'].outputName, property: yProperties[i] },
+			}
 		});
 	}
 
-	// let curveLayer: ICurveLayerProperties = {
-	//     name: vizwizStore.dsConfig['y'].label + (vizwizStore.dsConfig['y'].uom ? ` (${vizwizStore.dsConfig['y'].uom})` : '') || 'Y-Axis Data',
-	//     maxValues: 1000,
-	//     lineColor: visOptions.lineColor || '#FF0000',
-	//     backgroundColor: visOptions.backgroundColor || '#FFFFFF',
-	//     fill: true,
-	//     getCurveId: (rec: any, timestamp: any) => '2',
-	//     xLabel: vizwizStore.dsConfig['x'].label != null ? vizwizStore.dsConfig['x'].label : 'X-Axis Data',
-	//     yLabel: vizwizStore.dsConfig['y'].label + (vizwizStore.dsConfig['y'].uom ? ` (${vizwizStore.dsConfig['y'].uom})` : '') || 'Y-Axis Data',
-	//     getValues: (rec: any, timestamp: any) => {
-	//         return {
-	//             x: rec[vizwizStore.dsConfig['x'].property || rec.timestamp],
-	//             y: rec[vizwizStore.dsConfig['y'].property || ''],
-	//         }
-	//     },
-	// }
 	let chartView: IChartViewProperties = {
 		container: `chart-container-${randomUUID()}`,
 		css: 'chart-view',

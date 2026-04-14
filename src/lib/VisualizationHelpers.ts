@@ -63,13 +63,18 @@ export interface ISweApiControlStreamProperties extends DataSourceProperties {}
 
 export interface ICurveLayerProperties extends DataLayerProperties {
 	maxValues: number;
-	getValues: (rec: any, timestamp: any) => { x: any; y: any };
 	lineColor: string;
 	backgroundColor: string;
 	fill: boolean;
-	getCurveId: (rec: any, timestamp: any) => string;
 	xLabel: string;
 	yLabel: string;
+	// Use static curveId for serialization
+	curveId: string;
+	// Use static values mapping for serialization instead of getValues function
+	values: {
+		x: { outputName: string; property: string };
+		y: { outputName: string; property: string };
+	};
 }
 
 /* CHART */
