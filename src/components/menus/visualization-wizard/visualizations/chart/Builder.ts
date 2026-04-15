@@ -65,8 +65,8 @@ export function CreateChartViewProps(datastreams: { [key: string]: any }, visOpt
 		curveLayers.push({
 			name: yLabels[i] + (yUoms[i] ? ` (${yUoms[i]})` : '') || `Y-Axis Data ${i + 1}`,
 			maxValues: 1000,
-			lineColor: visOptions.lineColor || '#FF0000',
-			backgroundColor: visOptions.backgroundColor || '#FFFFFF',
+			lineColor: visOptions.lineColor[yProperties[i]] || '#FF0000',
+			backgroundColor: visOptions.backgroundColor[yProperties[i]] || '#FFFFFF',
 			fill: true,
 			xLabel:
 				vizwizStore.dsConfig['x'].label != null
