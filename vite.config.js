@@ -4,6 +4,7 @@ import {defineConfig, loadEnv} from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import vueDevTools from 'vite-plugin-vue-devtools'
+import svgLoader from 'vite-svg-loader'
 
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
@@ -25,6 +26,7 @@ export default defineConfig(({ mode }) => {
             vue(),
             vueJsx(),
             vueDevTools(),
+            svgLoader(),
             viteStaticCopy({
                 targets: [
                     { src: `${cesiumSource}/ThirdParty`, dest: cesiumBaseUrl },

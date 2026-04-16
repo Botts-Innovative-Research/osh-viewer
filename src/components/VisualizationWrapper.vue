@@ -20,7 +20,7 @@ const { viz, customClass = '' } = defineProps<{
 		<Chart
 			:visualization="viz"
 			:datasource="viz.visualizationComponents.dataSource"
-			:curve-layer="(viz.visualizationComponents.dataLayer as ICurveLayerProperties)"
+			:curve-layer="(viz.visualizationComponents.dataLayer as ICurveLayerProperties[])"
 			:chart-view="(viz.visualizationComponents.dataView as IChartViewProperties)"
 			v-if="viz.type === 'chart'"
 		></Chart>

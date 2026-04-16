@@ -39,7 +39,7 @@ const removeGeoPTZ = (controller: OSHVisualization) => {
 
 // Check that type is a map layer
 const isMapLayer = (
-	layer: VisualizationLayerProperties | null
+	layer: VisualizationLayerProperties | VisualizationLayerProperties[] | null
 ): layer is IPointMarkerLayerProperties | ILineOfBearingLayerProperties => {
 	return !!layer && 'iconName' in layer;
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useSystemStore } from '@/stores/systemstore'
 import { useNodeStore } from '@/stores/nodestore.js'
 import { useOSHConnectStore } from '@/stores/oshconnectstore.js'
@@ -12,6 +12,7 @@ import DeleteNodeDialog from './menus/DeleteNodeDialog.vue'
 import NodeConfigForm from './menus/NodeConfigForm.vue'
 import DeleteButton from './ui/DeleteButton.vue'
 import PropertiesDialog from './menus/PropertiesDialog.vue'
+import NodeIcon from '@/components/icons/node-logo.svg'
 
 const oshConnect = useOSHConnectStore().getInstance();
 const nodeStore = useNodeStore()
@@ -163,9 +164,10 @@ const openPropertiesDialog = (item: any) => {
 		<v-treeview :items="treeItems" item-value="id" item-children="children" fluid open-all>
 			<!-- Icons -->
 			<template v-slot:prepend="{ item }">
-				<v-icon v-if="item.type === 'node'" icon="mdi-server"></v-icon>
+				<v-icon v-if="item.type === 'node'" :icon="NodeIcon"></v-icon>
 				<v-icon v-if="item.type === 'system'" icon="mdi-cogs"></v-icon>
-				<v-icon v-if="item.type === 'ds' || item.type === 'cs'" icon="mdi-cable-data"></v-icon>
+				<v-icon v-if="item.type === 'ds'" icon="mdi-cable-data"></v-icon>
+				<v-icon v-if="item.type === 'cs'" icon="mdi-controller"></v-icon>
 			</template>
 
 			<!-- Actions -->

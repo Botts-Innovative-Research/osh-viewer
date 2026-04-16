@@ -103,6 +103,24 @@ export function BuildRoleProperty(entry: any[]) {
 }
 
 /**
+ * Turn dsConfig.y properties into an array of line configurations for the chart visualization
+ * @param yConfig 
+ */
+export function getYLines(yConfig: any) {
+  if (!yConfig) return []
+
+  const yProperties = Array.isArray(yConfig.property) ? yConfig.property : [yConfig.property]
+  const yLabels = Array.isArray(yConfig.label) ? yConfig.label : [yConfig.label]
+  const yUoms = Array.isArray(yConfig.uom) ? yConfig.uom : [yConfig.uom]
+
+  return yProperties.map((prop: string, index: number) => ({
+    property: prop,
+    label: yLabels[index] || `Y-Axis Data ${index + 1}`,
+    uom: yUoms[index] || '',
+  }))
+}
+
+/**
  * Returns an array of OSHDatastream objects that are actually being used (associated with a selected role)
  * @returns 
  */
