@@ -34,7 +34,19 @@ export default defineConfig(({ mode }) => {
                     { src: `${cesiumSource}/Assets`, dest: cesiumBaseUrl },
                     { src: `${cesiumSource}/Widgets`, dest: cesiumBaseUrl },
                 ]
-            })
+            }),
+            {
+                name: 'fix-osh-worker',
+                enforce: 'pre',
+                transform(code, id) {
+                    if (id.includes('DataSynchronizer.replay.js')) {
+                    return code.replace(
+                        './DataSynchronizer.replay.worker.js',
+                        './DataSynchronizer.replay.worker.js?worker'
+                    );
+                    }
+                },
+            },
         ],
         resolve: {
             alias: {

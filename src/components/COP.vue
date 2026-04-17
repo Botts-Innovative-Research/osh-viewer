@@ -5,6 +5,7 @@ import SystemBrowser from '@/components/SystemBrowser.vue';
 import VisualizationSidebar from '@/components/VisualizationSidebar.vue';
 import { Splitpanes, Pane } from 'splitpanes'
 import 'splitpanes/dist/splitpanes.css'
+import ReplaySynchronizer from './menus/ReplaySynchronizer.vue';
 
 const paneSize1 = ref(localStorage.paneSize1 ?? 30)	// System browser AND Visualization pane
 const paneSize2 = ref(localStorage.paneSize2 ?? 70)	// Map view pane
@@ -39,7 +40,8 @@ const tab = ref('one')
 				</v-tabs-window>
 			</v-sheet>
 		</pane>
-		<pane key="map-view" :size="paneSize2">
+		<pane key="map-view" :size="paneSize2" class="map-view">
+			<ReplaySynchronizer class="replay-synchronizer" />
 			<MapView class="fill-height" />
 		</pane>
 	</splitpanes>
@@ -52,5 +54,15 @@ const tab = ref('one')
 }
 .equal-tabs .v-tab {
 	flex: 1;
+}
+.map-view {
+	position: relative;
+	z-index: 0;
+}
+.replay-synchronizer {
+	position: absolute;
+	top: 2%;
+	left: 2%;
+	z-index: 2000;
 }
 </style>
