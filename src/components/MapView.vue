@@ -16,7 +16,8 @@ import { ILineOfBearingLayerProperties, IPointMarkerLayerProperties, ISweApiData
 import * as Cesium from "cesium";
 
 // THIS token is working, taken from showcase examples :P
-Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0NTkzNS02NzI0LTQwNDktODk4Zi0zZDJjOWI2NTdmYTMiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI1ODJ9.IbAajOLYnsoyKy1BOd7fY1p6GH-wwNVMdMduA2IzGjA';
+// Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0NTkzNS02NzI0LTQwNDktODk4Zi0zZDJjOWI2NTdmYTMiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI1ODJ9.IbAajOLYnsoyKy1BOd7fY1p6GH-wwNVMdMduA2IzGjA';
+Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkNDIyMzU2OC0wMWI4LTRjNGYtYTdiMy1kYjRmYzAwNGJkYTgiLCJpZCI6MzM1ODkzLCJpYXQiOjE3NTYzMDQ3MjZ9.5-F-lSal7TV6bHASnlpo5JCxamD0ppGPtQT7GUK5Ne4';
 
 const visualizationStore = useVisualizationStore();
 const mapView = ref<any>(null);
@@ -41,7 +42,7 @@ const featureVisualizations = computed(() => {
 /**
  * Toggle map type
  */
-function toggleMapType() {
+async function toggleMapType() {
   if (mapLayerType.value === 'leaflet') {
     const leafletMapView = new LeafletView({
       container: 'mapContainer',
@@ -56,6 +57,10 @@ function toggleMapType() {
       layers: [],
     });
     mapView.value = cesiumView;
+
+    // Add 3D buildings tileset from Cesium Ion
+    const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(96188);
+    mapView.value.viewer.scene.primitives.add(tileset);
   }
 }
 
@@ -65,7 +70,7 @@ onMounted(() => {
 
 watch(() => mapLayerType.value, (mapLayerType) => {
   if (mapView.value) {
-    
+
     // Temporarily disconnect datasources
     listDatasourceInstances.value.forEach((ds: any) => ds.disconnect())
 
@@ -104,7 +109,135 @@ watch(() => mapLayerType.value, (mapLayerType) => {
 
     // Reconnect datasources
     listDatasourceInstances.value.forEach((ds: any) => ds.connect())
-  }  
+  }
+})
+
+watch(() => uiStore.cesiumIonAssetId, async (id) => {
+  // Skip if not on Cesium or ID is null
+  if (mapLayerType.value !== 'cesium' || !id) return;
+  const viewer = mapView.value.viewer;
+
+  const intId = Number(id);
+
+  // Look up the asset type from Ion
+  const token = Ion.defaultAccessToken;
+  const base = Ion.defaultServer.toString().replace(/\/$/, '');
+  // const response = await fetch(`${base}/v1/assets/${id}`, {
+  const response = await fetch(`${Ion.defaultServer}/v1/assets/${intId}`, {
+    method: 'GET',
+    mode: 'cors',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  if (!response.ok) {
+    console.error(`[Ion] Could not find asset ${intId}`);
+    return;
+  }
+
+  const asset = await response.json();
+
+  switch (asset.type) {
+    case '3DTILES': {
+      const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(intId);
+      viewer.scene.primitives.add(tileset);
+      break;
+    }
+    case 'IMAGERY': {
+      const provider = await Cesium.IonImageryProvider.fromAssetId(intId);
+      viewer.imageryLayers.addImageryProvider(provider);
+      break;
+    }
+    case 'TERRAIN': {
+      viewer.scene.setTerrain(new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromIonAssetId(intId)));
+      break;
+    }
+    case 'GLTF': {
+      const resource = await Cesium.IonResource.fromAssetId(intId);
+      viewer.entities.add({ model: { uri: resource, scale: 1.0 } });
+      break;
+    }
+    case 'CZML': {
+      const resource = await Cesium.IonResource.fromAssetId(intId);
+      viewer.dataSources.add(Cesium.CzmlDataSource.load(resource));
+      break;
+    }
+    case 'KML': {
+      const resource = await Cesium.IonResource.fromAssetId(intId);
+      viewer.dataSources.add(Cesium.KmlDataSource.load(resource));
+      break;
+    }
+    case 'GEOJSON': {
+      const resource = await Cesium.IonResource.fromAssetId(intId);
+      viewer.dataSources.add(Cesium.GeoJsonDataSource.load(resource));
+      break;
+    }
+    default:
+      console.warn(`[Ion] Unsupported asset type: ${asset.type}`);
+  }
+})
+
+watch(() => uiStore.cesiumIonAssetUrl, (url) => {
+  // Skip if not on Cesium or ID is null
+  if (mapLayerType.value !== 'cesium' || !url) return;
+  const viewer = mapView.value.viewer;
+
+  // Parse URL
+  const parsed = new URL(url);
+  console.log('service param:', parsed.searchParams.get('SERVICE'));
+  console.log('all params:', [...parsed.searchParams.entries()]);
+  const service = parsed.searchParams.get('SERVICE')?.toUpperCase();
+
+  if (service === 'WMS') {
+    const layers = parsed.searchParams.get('LAYERS') ?? parsed.searchParams.get('layers') ?? '';
+    try {
+      const provider = new Cesium.WebMapServiceImageryProvider({
+        url: url.split('?')[0], // ← base URL only, no query params
+        layers,
+        parameters: { transparent: true, format: 'image/png' },
+      });
+      viewer.imageryLayers.addImageryProvider(provider);
+    } catch (err) {
+      console.error('[WMS] Failed:', err);
+    }
+    // const provider = new Cesium.WebMapServiceImageryProvider({
+    //   url,
+    //   layers,
+    //   parameters: { transparent: true, format: 'image/png' },
+    // });
+    // viewer.imageryLayers.addImageryProvider(provider);
+  }
+  else if (service === 'WMTS') {
+    const layer = parsed.searchParams.get('LAYER') ?? parsed.searchParams.get('layer') ?? '';
+    const style = parsed.searchParams.get('STYLE') ?? parsed.searchParams.get('style') ?? 'default';
+    const tileMatrixSetID = parsed.searchParams.get('TILEMATRIXSET') ?? parsed.searchParams.get('tilematrixset') ?? '';
+    const format = parsed.searchParams.get('FORMAT') ?? parsed.searchParams.get('format') ?? 'image/png';
+    const provider = new Cesium.WebMapTileServiceImageryProvider({
+      url,
+      layer,
+      style,
+      tileMatrixSetID,
+      format,
+    });
+    viewer.imageryLayers.addImageryProvider(provider);
+  }
+  else if (url.includes('{x}') && url.includes('{y}') && url.includes('{z}')) {
+    const provider = new Cesium.UrlTemplateImageryProvider({
+      url
+    });
+    viewer.imageryLayers.addImageryProvider(provider);
+  }
+  // Add asset based on URL file type
+  else if (url.endsWith('.json') || url.endsWith('.czml')) {
+    viewer.dataSources.add(Cesium.CzmlDataSource.load(url));
+  } else if (url.endsWith('.kml')) {
+    viewer.dataSources.add(Cesium.KmlDataSource.load(url));
+  } else if (url.endsWith('.geojson') || url.endsWith('.json')) {
+    viewer.dataSources.add(Cesium.GeoJsonDataSource.load(url));
+  } else if (url.endsWith('.gltf') || url.endsWith('.glb')) {
+    viewer.entities.add({ model: { uri: url, scale: 1.0 } });
+  } else {
+    console.warn(`[Ion] Unsupported asset URL type: ${url}`);
+  }
 })
 
 /**
@@ -185,7 +318,7 @@ function deleteVisualizations(removedVizIds: string[]) {
 
   for (const vizId of removedVizIds) {
     const layer = mapItemLayers.value.get(vizId);
-    if (!layer) {console.log("Didn't find layer"); continue};
+    if (!layer) { console.log("Didn't find layer"); continue };
 
     // Collect datasource IDs
     removedDsIds.push(...layer.dataSourceIds);
@@ -395,8 +528,8 @@ function createVisualizations(addedVizIds: string[]) {
           handler: (rec: any) => {
             return (`
               <div>${uiStore.selectedGeoPTZ?.map((viz: OSHVisualization) => {
-                return `${viz.name}`
-              }).join(', ')}</div>
+              return `${viz.name}`
+            }).join(', ')}</div>
             `)
           }
         }
@@ -445,7 +578,7 @@ watch(() => uiStore.selectedGeoPTZ, (geoPtz, oldGeoPtz) => {
  * Fly to pointmarker when selected in visualizations panel
  */
 watch(() => uiStore.selectedMapItem,
-  (newVal) => {    
+  (newVal) => {
     if (!newVal) return; // Only fly when a map item is selected
 
     const layer = mapItemLayers.value.get(newVal.id);
@@ -469,64 +602,64 @@ watch(() => uiStore.selectedMapItem,
         }
       })
     }
-    
+
 
   }
 );
 
 const layerTypes = [
   'layerIdToPolylines',
-    //these are not implemented yet, so u can comment them out tbh but i wouldnt remove them
+  //these are not implemented yet, so u can comment them out tbh but i wouldnt remove them
   'layerIdToEllipsoids',
   'layerIdToPolygon',
   'layerIdToFrustum',
   'layerIdToDrapedImage'
 ]
 watch(() => visualizationStore.layerVisibility.entries(),
-    (entries) => {
+  (entries) => {
 
-  for (const [layerId, isVisible] of entries) {
-    const layer = mapItemLayers.value.get(layerId);
+    for (const [layerId, isVisible] of entries) {
+      const layer = mapItemLayers.value.get(layerId);
 
-    if (!layer) continue;
+      if (!layer) continue;
 
-    const ids: string[] = layer.getIds();
+      const ids: string[] = layer.getIds();
 
-    for (const id of ids) {
-      const marker = mapView.value.layerIdToMarkers?.[id];
-      const polyline = mapView.value.layerIdToPolylines?.[id];
+      for (const id of ids) {
+        const marker = mapView.value.layerIdToMarkers?.[id];
+        const polyline = mapView.value.layerIdToPolylines?.[id];
 
-      if (mapLayerType.value === 'leaflet') {
-        // Handle PM and LoB
-        if (marker) {
-          marker.setOpacity(isVisible ? 1 : 0);
+        if (mapLayerType.value === 'leaflet') {
+          // Handle PM and LoB
+          if (marker) {
+            marker.setOpacity(isVisible ? 1 : 0);
+          }
+          // Handle polyline
+          if (polyline) {
+            polyline.setStyle({ opacity: isVisible ? 0.8 : 0 });
+          }
+
         }
-        // Handle polyline
-        if (polyline) {
-          polyline.setStyle({ opacity: isVisible ? 0.8 : 0 });
+        else if (mapLayerType.value === 'cesium') {
+          // Handle LoB
+          if (marker && polyline) {
+            marker.show = isVisible;
+            polyline.show = isVisible;
+          }
+          // Handle PM
+          else if (marker) {
+            marker.show = isVisible;
+          }
+          // Handle polyline
+          else if (polyline) {
+            polyline.show = isVisible;
+          }
+          mapView.value.viewer.scene.requestRender();
         }
-        
       }
-      else if (mapLayerType.value === 'cesium') {
-        // Handle LoB
-        if (marker && polyline) {
-          marker.show = isVisible;
-          polyline.show = isVisible;
-        }
-        // Handle PM
-        else if (marker) {
-          marker.show = isVisible;
-        }
-        // Handle polyline
-        else if (polyline) {
-          polyline.show = isVisible;
-        }
-        mapView.value.viewer.scene.requestRender();
-      }
+      console.log('[MapView] Layer visibility changed:', layerId, isVisible);
     }
-    console.log('[MapView] Layer visibility changed:', layerId, isVisible);
-  }
-}, { deep: true, immediate: true })
+  }, { deep: true, immediate: true })
 
 
 /**
@@ -582,78 +715,78 @@ watch(() => uiStore.clearMissionWaypointsMarkers, (newVal) => {
 
 
 watch(() => uiStore.missionWaypoints, (waypoints) => {
-    if (!mapView.value) return;
+  if (!mapView.value) return;
 
-    for (const layer of waypointLayers.value) {
-      mapView.value.removeAllFromLayer(layer);
-    }
-    waypointLayers.value = [];
+  for (const layer of waypointLayers.value) {
+    mapView.value.removeAllFromLayer(layer);
+  }
+  waypointLayers.value = [];
 
-    if (mapLayerType.value === 'leaflet' && mapView.value?.map && flightPathPolyline.value) {
-      mapView.value.map.removeLayer(flightPathPolyline.value);
-      flightPathPolyline.value = null;
-    } else if (mapLayerType.value === 'cesium' && mapView.value?.viewer && flightPathPolyline.value) {
-      mapView.value.viewer.entities.remove(flightPathPolyline.value);
-      flightPathPolyline.value = null;
-    }
-    waypoints.forEach(async (wp, index) => {
-      const waypointLayer = new PointMarkerLayer({
-        id: `waypoint-${index}`,
-        name: `Waypoint ${index + 1}`,
-        location: {
-          x: wp.lon,
-          y: wp.lat,
-          z: wp.alt || 0
-        },
-        icon: '/icons/map/geoPtz-pin.svg',
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
-        label: `WP ${index + 1}`,
-        labelColor: '#FFFFFF',
-        labelOutlineColor: '#000000',
-        labelSize: 14,
-        labelOffset: [0, -36],
-        defaultToTerrainElevation: true,
-      });
-
-      mapView.value.addLayer(waypointLayer);
-      waypointLayers.value.push(waypointLayer);
-
-      await waypointLayer.setData('waypoint', [{ data: { timestamp: Date.now() } }]);
-      const props = waypointLayer.getProps();
-      if (props.values.length > 0) {
-        mapView.value.updateMarker(props.values[0]);
-      }
+  if (mapLayerType.value === 'leaflet' && mapView.value?.map && flightPathPolyline.value) {
+    mapView.value.map.removeLayer(flightPathPolyline.value);
+    flightPathPolyline.value = null;
+  } else if (mapLayerType.value === 'cesium' && mapView.value?.viewer && flightPathPolyline.value) {
+    mapView.value.viewer.entities.remove(flightPathPolyline.value);
+    flightPathPolyline.value = null;
+  }
+  waypoints.forEach(async (wp, index) => {
+    const waypointLayer = new PointMarkerLayer({
+      id: `waypoint-${index}`,
+      name: `Waypoint ${index + 1}`,
+      location: {
+        x: wp.lon,
+        y: wp.lat,
+        z: wp.alt || 0
+      },
+      icon: '/icons/map/geoPtz-pin.svg',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      label: `WP ${index + 1}`,
+      labelColor: '#FFFFFF',
+      labelOutlineColor: '#000000',
+      labelSize: 14,
+      labelOffset: [0, -36],
+      defaultToTerrainElevation: true,
     });
 
-    if (waypoints.length >= 2) {
-      if (mapLayerType.value === 'leaflet' && mapView.value?.map) {
-        const latLngs = waypoints.map(wp => [wp.lat, wp.lon]);
-        flightPathPolyline.value = L.polyline(latLngs, {
-          color: 'red',
-          weight: 5,
-        }).addTo(mapView.value.map);
-      } else if (mapLayerType.value === 'cesium' && mapView.value?.viewer) {
+    mapView.value.addLayer(waypointLayer);
+    waypointLayers.value.push(waypointLayer);
 
-        const positions = waypoints.map(wp =>
-          Cesium.Cartesian3.fromDegrees(wp.lon, wp.lat, wp.alt || 0)
-        );
-        //https://sandcastle.cesium.com/index.html?id=polyline
-        flightPathPolyline.value = mapView.value.viewer.entities.add({
-          polyline: {
-            positions: positions,
-            width: 5,
-            material: new Cesium.PolylineOutlineMaterialProperty({
-              color: Cesium.Color.RED,
-              outlineWidth: 2,
-              outlineColor: Cesium.Color.BLACK,
-            }),
-            clampToGround: true,
-          }
-        });
-      }
+    await waypointLayer.setData('waypoint', [{ data: { timestamp: Date.now() } }]);
+    const props = waypointLayer.getProps();
+    if (props.values.length > 0) {
+      mapView.value.updateMarker(props.values[0]);
     }
-  },
+  });
+
+  if (waypoints.length >= 2) {
+    if (mapLayerType.value === 'leaflet' && mapView.value?.map) {
+      const latLngs = waypoints.map(wp => [wp.lat, wp.lon]);
+      flightPathPolyline.value = L.polyline(latLngs, {
+        color: 'red',
+        weight: 5,
+      }).addTo(mapView.value.map);
+    } else if (mapLayerType.value === 'cesium' && mapView.value?.viewer) {
+
+      const positions = waypoints.map(wp =>
+        Cesium.Cartesian3.fromDegrees(wp.lon, wp.lat, wp.alt || 0)
+      );
+      //https://sandcastle.cesium.com/index.html?id=polyline
+      flightPathPolyline.value = mapView.value.viewer.entities.add({
+        polyline: {
+          positions: positions,
+          width: 5,
+          material: new Cesium.PolylineOutlineMaterialProperty({
+            color: Cesium.Color.RED,
+            outlineWidth: 2,
+            outlineColor: Cesium.Color.BLACK,
+          }),
+          clampToGround: true,
+        }
+      });
+    }
+  }
+},
   { deep: true }
 );
 

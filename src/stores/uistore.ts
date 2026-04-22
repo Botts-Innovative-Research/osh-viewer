@@ -56,6 +56,10 @@ export const useUIStore = defineStore('ui', () => {
 	// Theme state
 	const theme = ref<'dark' | 'light'>('dark');
 
+	// Cesium Ion assets
+	const cesiumIonAssetId = ref<number | null>(null);
+	const cesiumIonAssetUrl = ref<string | null>(null);
+
 	// Example actions
 	function toggleLeftSidebar() {
 		leftSidebarOpen.value = !leftSidebarOpen.value;
@@ -250,5 +254,7 @@ export const useUIStore = defineStore('ui', () => {
 
 		selectedMapItem,
 		setSelectedMapItem,
+		cesiumIonAssetId,
+		cesiumIonAssetUrl,
 	};
 }, { persist: {pick: ['theme', 'focusedMap']}});
