@@ -56,8 +56,7 @@ export const useUIStore = defineStore('ui', () => {
 	// Theme state
 	const theme = ref<'dark' | 'light'>('dark');
 
-	// Cesium Ion assets
-	const cesiumIonAssetId = ref<number | null>(null);
+	// Cesium Ion asset URL to fetch
 	const cesiumIonAssetUrl = ref<string | null>(null);
 
 	// Example actions
@@ -66,6 +65,9 @@ export const useUIStore = defineStore('ui', () => {
 	}
 	function toggleRightSidebar() {
 		rightSidebarOpen.value = !rightSidebarOpen.value;
+	}
+	function setTheme(newTheme: 'dark' | 'light') {
+		theme.value = newTheme;
 	}
 	function setFocusedMap(value: 'cesium' | 'leaflet') {
 		focusedMap.value = value;
@@ -84,9 +86,6 @@ export const useUIStore = defineStore('ui', () => {
 	}
 	function clearSelectedProperty() {
 		selectedProperty.value = null;
-	}
-	function toggleTheme() {
-		theme.value = theme.value === 'dark' ? 'light' : 'dark';
 	}
 	function toggleNodeConfigForm() {
 		nodeConfigFormOpen.value = !nodeConfigFormOpen.value;
@@ -215,7 +214,7 @@ export const useUIStore = defineStore('ui', () => {
 		setSelectedProperty,
 		clearSelectedProperty,
 		theme,
-		toggleTheme,
+		setTheme,
 		nodeConfigFormOpen,
 		toggleNodeConfigForm,
 		deleteNodeDialog,
@@ -254,7 +253,6 @@ export const useUIStore = defineStore('ui', () => {
 
 		selectedMapItem,
 		setSelectedMapItem,
-		cesiumIonAssetId,
 		cesiumIonAssetUrl,
 	};
 }, { persist: {pick: ['theme', 'focusedMap']}});
