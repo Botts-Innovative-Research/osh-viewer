@@ -4,7 +4,7 @@ import { ISweApiControlStreamProperties, ISweApiDataSourceProperties } from '@/l
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import { useUIStore } from '@/stores/uistore';
+import { useMapStore } from '@/stores/mapstore';
 import { sendCommand } from '@/lib/ControlstreamUtils';
 import { showToast } from "@/composables/useToast";
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
@@ -81,7 +81,7 @@ const lonInput = ref<number>(0.0);
 const altInput = ref<number>(0.0);
 const waypointForm = ref<any>(null);
 
-const uiStore = useUIStore();
+const mapStore = useMapStore();
 const isSelected = ref<boolean>(false);
 const fileInputRef = ref<any | null>(null);
 const selectedFile = ref<File | null>(null);
@@ -115,7 +115,7 @@ const csAuth = computed(() => {
   return { username: cs.connectorOpts.username, password: cs.connectorOpts.password };
 });
 
-watch(() => uiStore.selectedWaypoints, (newVal) => {
+watch(() => mapStore.selectedWaypoints, (newVal) => {
   const cs = missionControlStream.value;
   if (cs && newVal?.controlStreamId === cs.id) {
     isSelected.value = true;
@@ -124,7 +124,7 @@ watch(() => uiStore.selectedWaypoints, (newVal) => {
   }
 });
 
-watch(() => uiStore.currentLLA, (newVal) => {
+watch(() => mapStore.currentLLA, (newVal) => {
   if (isSelected.value && newVal) {
     latInput.value = newVal.latitude;
     lonInput.value = newVal.longitude;
@@ -137,9 +137,9 @@ watch(() => uiStore.currentLLA, (newVal) => {
 function toggle() {
   const cs = missionControlStream.value;
   if (isSelected.value) {
-    uiStore.disableWaypointSelection();
+    mapStore.disableWaypointSelection();
   } else if (cs) {
-    uiStore.setSelectedWaypoints(cs.id, commandBaseUrl.value, `${csAuth.value.username}:${csAuth.value.password}`);
+    mapStore.setSelectedWaypoints(cs.id, commandBaseUrl.value, `${csAuth.value.username}:${csAuth.value.password}`);
   }
 }
 
@@ -165,13 +165,13 @@ function removeWaypoint(id: string) {
 
 function clearWaypoints() {
   waypoints.value = [];
-  uiStore.clearMissionWaypoints();
-  uiStore.triggerClearWaypointMarkers();
+  mapStore.clearMissionWaypoints();
+  mapStore.triggerClearWaypointMarkers();
   console.log('[MissionBuilder.vue] Cleared all waypoints');
 }
 
 watch(waypoints, (newWaypoints) => {
-  uiStore.setFlightPathWaypoints(newWaypoints.map(wp => ({
+  mapStore.setFlightPathWaypoints(newWaypoints.map(wp => ({
     lat: wp.lat,
     lon: wp.lon,
     alt: wp.alt
@@ -427,7 +427,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   if (isSelected.value)
-    uiStore.disableWaypointSelection();
+    mapStore.disableWaypointSelection();
   clearWaypoints();
   useDisconnectDatasources(droneDatasourceLLA);
   useDisconnectDatasources(droneHomeDatasource);

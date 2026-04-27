@@ -11,6 +11,7 @@ import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vu
 import VisualizationWizard from './menus/visualization-wizard/VisualizationWizard.vue';
 import DeleteButton from './ui/DeleteButton.vue';
 import EditVisualization from './menus/visualization-wizard/EditVisualization.vue';
+import { useMapStore } from '@/stores/mapstore';
 
 // Each visualization can be represented by an object with a unique id
 const visualizationStore = useVisualizationStore();
@@ -45,11 +46,11 @@ const isMapLayer = (
 }
 
 const toggleSelectedMapItem = (item: any) => {
-	const uiStore = useUIStore();
-	if (uiStore.selectedMapItem && uiStore.selectedMapItem.id === item.id) {
-		uiStore.setSelectedMapItem(null);
+	const mapStore = useMapStore();
+	if (mapStore.selectedMapItem && mapStore.selectedMapItem.id === item.id) {
+		mapStore.setSelectedMapItem(null);
 	} else {
-		uiStore.setSelectedMapItem(item);
+		mapStore.setSelectedMapItem(item);
 	}
 };
 

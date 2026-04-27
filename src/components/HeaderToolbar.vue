@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import AppSettings from './menus/AppSettings.vue';
+import Settings from '@/components/menus/settings/Settings.vue';
 import SaveStateSettings from "@/components/menus/SaveStateSettings.vue";
 import LoadStateSettings from "@/components/menus/LoadStateSettings.vue";
 
@@ -35,8 +35,8 @@ const viewerName = import.meta.env.VITE_VIEWER_NAME;
 			<v-icon>mdi-cog</v-icon>
 			<v-tooltip activator="parent" location="bottom"> Settings </v-tooltip>
 		</v-btn>
-		<v-dialog v-model="settingsDialog" max-width="400">
-			<AppSettings />
+		<v-dialog v-model="settingsDialog" max-width="800">
+			<Settings />
 		</v-dialog>
 	</v-toolbar>
 </template>
