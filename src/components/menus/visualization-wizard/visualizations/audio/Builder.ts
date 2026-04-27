@@ -10,7 +10,6 @@ import {Mode} from 'osh-js/source/core/datasource/Mode';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { AudioDescriptor } from "./Descriptor";
-import { ISweApiDataSourceProperties, VisualizationComponents } from '@/lib/VisualizationHelpers';
 
 export default function build() {
 	console.log('Building Audio Visualization...');
@@ -33,7 +32,7 @@ export default function build() {
 	const newViz: OSHVisualization = new OSHVisualization(
 		vizwizStore.id,
 		vizwizStore.visualizationCustomizationOptions.name,
-		'spectrogram',
+		'audio',
 		AudioDescriptor.viewLocation,
 		getUsedDatastreams()
 	);
@@ -76,7 +75,7 @@ export function CreateAudioViewProps(datastreams: { [key: string]: any }, visOpt
             startTime: 'now',
             endTime: '2125-08-01T00:00:00Z',
             mode: Mode.REAL_TIME,
-            responseFormat: 'application/swe+json',
+            responseFormat: 'application/swe+binary',
             id: randomUUID(),
             properties: properties,
             connectorOpts: {

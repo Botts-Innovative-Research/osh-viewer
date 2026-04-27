@@ -12,6 +12,8 @@ const props = defineProps<{
   visualization: OSHVisualization,
   datasource: ISweApiDataSourceProperties[],
   audioView: IChartViewProperties,
+  spectrogramOptions?: { fftSize?: number, sampleField?: string, colorScale?: string },
+  audioViewOptions?: Record<string, any>,
 }>();
 
 const audioId = ref('audio-' + randomUUID());
@@ -27,7 +29,6 @@ function initializeAudio() {
   const viz = props.visualization;
   if (!viz || viz.type !== 'audio') return;
 
-  let getValues: any;
   const dsArray: ISweApiDataSourceProperties[] = props.datasource
 
   for (const dsProps of dsArray) {
@@ -46,17 +47,18 @@ function initializeAudio() {
      container: audioId.value,
   });
 
-  if (audioView.value) {
-    audioView.value.destroy?.();
-    audioView.value = null;
+  if (audioViewInstance.value) {
+    audioViewInstance.value.destroy?.();
+    audioViewInstance.value = null;
   }
-  audioView.value = new AudioView({
+  audioViewInstance.value = new AudioView({
          ...props.audioViewOptions,
          container: audioId.value,
          dataSource: dsInstances[0],
          playSound: false
   });
-  console.log('[Audio.vue] Audio view created:', audioView.value);
+  audioViewInstance.value.addVisualizer(audioSpectrogramVisualizer);
+  console.log('[Audio.vue] Audio view created:', audioViewInstance.value);
 }
 
 useVisualizationCleanup(ref(dsInstances));
