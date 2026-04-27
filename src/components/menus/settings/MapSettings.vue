@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useMapStore } from '@/stores/mapstore';
 import { computed, ref } from 'vue';
-
+import DeleteButton from '@/components/ui/DeleteButton.vue';
 
 const mapStore = useMapStore()
 const url = ref('');
@@ -11,9 +11,14 @@ const focusedMap = computed({
   set: (val) => mapStore.setFocusedMap(val),
 })
 
-function addIonAssetUrl() {
+async function addIonAssetUrl() {
   if (focusedMap.value === 'cesium' && url.value) {
-    mapStore.cesiumIonAssetUrl = url.value;
+    try {
+      await mapStore.fetchLayerFromUrl(url.value);
+      url.value = ''; // Clear input on success
+    } catch (error) {
+      console.error('Error fetching layer from URL:', error);
+    }
   }
 }
 
@@ -49,7 +54,7 @@ const canAdd = computed(() => {
           <div v-if="focusedMap === 'cesium'">
             <v-divider class="ma-2" />
             <v-list-item>
-              <v-list-item-title>Add Map Layer</v-list-item-title>
+              <v-list-item-title>Map Layers</v-list-item-title>
               <v-list-item-subtitle>
                 Enter a URL to add a new map service layer
               </v-list-item-subtitle>
@@ -57,11 +62,25 @@ const canAdd = computed(() => {
               <v-text-field label="Map layer URL" v-model="url"
                 :rules="[v => !v || v.startsWith('http') || 'Must be a valid URL']">
                 <template #append-inner>
-                  <v-btn color="info" :disabled="!canAdd" @click="addIonAssetUrl">
+                  <v-btn prepend-icon="mdi-plus" color="info" :disabled="!canAdd" @click="addIonAssetUrl">
                     Add
                   </v-btn>
                 </template>
               </v-text-field>
+              <v-expansion-panels variant="accordion" rounded="lg">
+                <v-expansion-panel title="Current Layers">
+                  <v-expansion-panel-text>
+                    <v-list-item v-for="layer in mapStore.cesiumMapLayers" :key="layer.id">
+                      <template #prepend>
+                        <DeleteButton label="Remove"
+                          @delete="mapStore.removeLayer(layer.id)">
+                        </DeleteButton>
+                      </template>
+                      <v-list-item-title>{{ layer.url }}</v-list-item-title>
+                    </v-list-item>
+                  </v-expansion-panel-text>
+                </v-expansion-panel>
+              </v-expansion-panels>
             </v-list-item>
           </div>
         </v-expand-transition>
@@ -69,3 +88,8 @@ const canAdd = computed(() => {
     </v-card-text>
   </v-card>
 </template>
+<style scoped>
+.x-scroll {
+  overflow-x: auto;
+}
+</style>

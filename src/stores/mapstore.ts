@@ -4,6 +4,24 @@ import { GeoPTZCommand } from '@/components/menus/visualization-wizard/visualiza
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { ISweApiControlStreamProperties } from '@/lib/VisualizationHelpers';
 import { sendCommand } from '@/lib/ControlstreamUtils';
+// @ts-ignore
+import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+
+export type LayerType =
+  | 'WMS'
+  | 'WMTS'
+  | 'XYZ'
+  | 'GEOJSON'
+  | 'KML'
+  | 'CZML'
+  | 'GLTF';
+
+export interface MapLayer {
+  id: string;
+  url: string;
+  type: LayerType;
+  parsedParams?: Record<string, any>; // Optional parsed parameters from URL (e.g. layers for WMS, style for WMTS, etc.)
+}
 
 export const useMapStore = defineStore('map', () => {
 	const focusedMap: Ref<'cesium' | 'leaflet'> = ref('cesium'); // Focused map corresponds to map type
@@ -12,7 +30,7 @@ export const useMapStore = defineStore('map', () => {
 		ref(null); // Currently selected LLA coordinates
 
 	/* CESIUM */
-	const cesiumIonAssetUrl: Ref<string | null> = ref(null); // Cesium Ion asset URL to fetch
+  const cesiumMapLayers: Ref<MapLayer[]> = ref([]);
 
 	/* GEOPTZ */
 	const selectedGeoPTZ: Ref<any[] | null> = ref(null); // Currently selected GeoPTZ Visualization(s) or null if none selected
@@ -110,11 +128,63 @@ export const useMapStore = defineStore('map', () => {
 		clearMissionWaypointsMarkers.value = false;
 	}
 
+  // Cesium
+  async function fetchLayerFromUrl(url: string) {
+    const parsedUrl = new URL(url);
+
+    const type = detectLayerType(parsedUrl, url);
+    if (!type) {
+      console.error('Could not detect layer type from URL:', url);
+      return;
+      // TODO: Add toast
+    }
+
+    const parsedParams = extractParams(parsedUrl, type);
+    cesiumMapLayers.value.push({
+      id: randomUUID(),
+      url,
+      type,
+      parsedParams,
+    });
+  }
+  function detectLayerType(parsed: URL, url: string): LayerType | null {
+    const service = parsed.searchParams.get('SERVICE')?.toUpperCase();
+
+    if (service === 'WMS') return 'WMS'
+    else if (service === 'WMTS') return 'WMTS'
+    else if (url.includes('{x}') && url.includes('{y}') && url.includes('{z}')) return 'XYZ'
+    else if (url.endsWith('.json') || url.endsWith('.geojson')) return 'GEOJSON'
+    else if (url.endsWith('.kml')) return 'KML'
+    else if (url.endsWith('.czml')) return 'CZML'
+    else if (url.endsWith('.gltf') || url.endsWith('.glb')) return 'GLTF'
+    else return null; // Unknown layer type
+  }
+  function extractParams(parsed: URL, type: LayerType) {
+    switch (type) {
+      case 'WMS':
+        return {
+          layers: parsed.searchParams.get('LAYERS') ?? parsed.searchParams.get('layers') ?? '',
+          }
+      case 'WMTS':
+        return {
+          layer: parsed.searchParams.get('LAYER') ?? parsed.searchParams.get('layer') ?? '',
+          style: parsed.searchParams.get('STYLE') ?? parsed.searchParams.get('style') ?? 'default',
+          tileMatrixSetID: parsed.searchParams.get('TILEMATRIXSET') ?? parsed.searchParams.get('tilematrixset') ?? '',
+          format: parsed.searchParams.get('FORMAT') ?? parsed.searchParams.get('format') ?? 'image/png',
+        }
+      default:
+        return {};
+    }
+  }
+  function removeLayer(id: string) {
+    cesiumMapLayers.value = cesiumMapLayers.value.filter((layer: any) => layer.id !== id);
+	}
+
 	return {
 		focusedMap,
 		selectedMapItem,
 		currentLLA,
-		cesiumIonAssetUrl,
+		cesiumMapLayers,
 		selectedGeoPTZ,
 		isGeoPTZSelected,
 		selectedWaypoints,
@@ -135,5 +205,7 @@ export const useMapStore = defineStore('map', () => {
     setFlightPathWaypoints,
     triggerClearWaypointMarkers,
     resetClearWaypointMarkersSignal,
+    fetchLayerFromUrl,
+    removeLayer,
 	};
 }, { persist: { pick: ['focusedMap'] } });
