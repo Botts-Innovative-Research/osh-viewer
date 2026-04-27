@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { useUIStore } from '@/stores/uistore';
+import { useMapStore } from '@/stores/mapstore';
 import { computed, ref } from 'vue';
 
 
-const uiStore = useUIStore()
+const mapStore = useMapStore()
 const url = ref('');
 
 const focusedMap = computed({
-  get: () => uiStore.focusedMap,
-  set: (val) => uiStore.setFocusedMap(val),
+  get: () => mapStore.focusedMap,
+  set: (val) => mapStore.setFocusedMap(val),
 })
 
 function addIonAssetUrl() {
   if (focusedMap.value === 'cesium' && url.value) {
-    uiStore.cesiumIonAssetUrl = url.value;
+    mapStore.cesiumIonAssetUrl = url.value;
   }
 }
 

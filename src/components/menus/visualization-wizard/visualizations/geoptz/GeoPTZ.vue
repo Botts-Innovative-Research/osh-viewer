@@ -3,7 +3,7 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import { useUIStore } from '@/stores/uistore';
+import { useMapStore } from '@/stores/mapstore';
 
 const props = defineProps<{
 	visualizations: OSHVisualization[],
@@ -29,12 +29,12 @@ const latInput = ref<number>(0.0);
 const lonInput = ref<number>(0.0);
 const altInput = ref<number>(0.0);
 
-const uiStore = useUIStore();
-const isSelected = computed(() => uiStore.isGeoPTZSelected);
+const mapStore = useMapStore();
+const isSelected = computed(() => mapStore.isGeoPTZSelected);
 
 // Watch for changes in currentLLA to update input fields, IF selected
 watch(
-	() => uiStore.currentLLA,
+	() => mapStore.currentLLA,
 	(newVal) => {
 		if (isSelected.value && newVal) {
 			latInput.value = newVal.latitude;
@@ -48,24 +48,24 @@ watch(
 watch(
 	() => props.visualizations,
 	(newVal) => {
-		uiStore.setSelectedGeoPTZ(newVal);
+		mapStore.setSelectedGeoPTZ(newVal);
 	}
 )
 
 // Toggle selection of GeoPTZ in UI store and locally
 function toggle() {
 	if (isSelected.value) {
-		uiStore.setIsGeoPTZSelected(false);
+		mapStore.setIsGeoPTZSelected(false);
 	} else {
-		uiStore.setIsGeoPTZSelected(true);
-		uiStore.setSelectedGeoPTZ(props.visualizations);
+		mapStore.setIsGeoPTZSelected(true);
+		mapStore.setSelectedGeoPTZ(props.visualizations);
 	}
 }
 
 // Send PTZ command based on LLA inputs
 function onSend() {
 	// Ensure newly selected controllers are added
-	uiStore.setSelectedGeoPTZ(props.visualizations)
+	mapStore.setSelectedGeoPTZ(props.visualizations)
 
 	const command: GeoPTZCommand = {
 		parameters: {
@@ -76,12 +76,12 @@ function onSend() {
 	};
 
 	console.log('[GeoPtzView] Sending GeoPTZ command:', command);
-	uiStore.sendGeoPTZCommand(command);
+	mapStore.sendGeoPTZCommand(command);
 }
 
 onBeforeUnmount(() => {
 	// Disselect GeoPTZ before unmount
-	if (isSelected.value) uiStore.clearSelectedGeoPTZ();
+	if (isSelected.value) mapStore.clearSelectedGeoPTZ();
 })
 </script>
 

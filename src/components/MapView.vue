@@ -14,6 +14,7 @@ import { RoleDatastream } from '@/types/types';
 import { createDatasource } from './menus/visualization-wizard/shared/helpers';
 import { ILineOfBearingLayerProperties, IPointMarkerLayerProperties, ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
 import * as Cesium from "cesium";
+import { useMapStore } from '@/stores/mapstore';
 
 // THIS token is working, taken from showcase examples :P
 // Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0NTkzNS02NzI0LTQwNDktODk4Zi0zZDJjOWI2NTdmYTMiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI1ODJ9.IbAajOLYnsoyKy1BOd7fY1p6GH-wwNVMdMduA2IzGjA';
@@ -27,11 +28,12 @@ const listDatasourceInstances = ref<SweApi[]>([]);
 const iconBase = import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.meta.env.VITE_VIEWER_ENDPOINT : "";
 
 const uiStore = useUIStore();
+const mapStore = useMapStore();
 const waypointLayers = ref<PointMarkerLayer[]>([]);
 const flightPathPolyline = ref<any>(null);
 
 const mapLayerType = computed(() => {
-  return uiStore.focusedMap
+  return mapStore.focusedMap
 })
 
 // TODO: Update feature visualization code
@@ -112,7 +114,7 @@ watch(() => mapLayerType.value, (mapLayerType) => {
   }
 })
 
-watch(() => uiStore.cesiumIonAssetId, async (id) => {
+watch(() => mapStore.cesiumIonAssetId, async (id) => {
   // Skip if not on Cesium or ID is null
   if (mapLayerType.value !== 'cesium' || !id) return;
   const viewer = mapView.value.viewer;
@@ -176,7 +178,7 @@ watch(() => uiStore.cesiumIonAssetId, async (id) => {
   }
 })
 
-watch(() => uiStore.cesiumIonAssetUrl, (url) => {
+watch(() => mapStore.cesiumIonAssetUrl, (url) => {
   // Skip if not on Cesium or ID is null
   if (mapLayerType.value !== 'cesium' || !url) return;
   const viewer = mapView.value.viewer;
@@ -253,8 +255,8 @@ watch(
       map.map.on('click', (event: any) => {
         const lat = event.latlng.lat;
         const lon = event.latlng.lng;
-        if (uiStore.isGeoPTZSelected) taskGeoPtz(lat, lon, 100);
-        if (uiStore.selectedWaypoints) uiStore.setCurrentLLA(lat, lon, 0);
+        if (mapStore.isGeoPTZSelected) taskGeoPtz(lat, lon, 100);
+        if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lon, 0);
       })
     }
     // Handle cesium map click
@@ -278,8 +280,8 @@ watch(
         const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
         const lat = Cesium.Math.toDegrees(cartographic.latitude);
         const lon = Cesium.Math.toDegrees(cartographic.longitude);
-        if (uiStore.isGeoPTZSelected) taskGeoPtz(lat, lon, 100);
-        if (uiStore.selectedWaypoints) uiStore.setCurrentLLA(lat, lon, 0);
+        if (mapStore.isGeoPTZSelected) taskGeoPtz(lat, lon, 100);
+        if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lon, 0);
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
     }
 
@@ -517,9 +519,9 @@ function createVisualizations(addedVizIds: string[]) {
           dataSourceIds: [dsInstances.map(ds => ds.id)],
           handler: (rec: any) => {
             return {
-              x: uiStore.currentLLA?.longitude,
-              y: uiStore.currentLLA?.latitude,
-              z: uiStore.currentLLA?.altitude,
+              x: mapStore.currentLLA?.longitude,
+              y: mapStore.currentLLA?.latitude,
+              z: mapStore.currentLLA?.altitude,
             }
           },
         },
@@ -527,7 +529,7 @@ function createVisualizations(addedVizIds: string[]) {
           dataSourceIds: [dsInstances.map(ds => ds.id)],
           handler: (rec: any) => {
             return (`
-              <div>${uiStore.selectedGeoPTZ?.map((viz: OSHVisualization) => {
+              <div>${mapStore.selectedGeoPTZ?.map((viz: OSHVisualization) => {
               return `${viz.name}`
             }).join(', ')}</div>
             `)
@@ -549,10 +551,10 @@ function createVisualizations(addedVizIds: string[]) {
  * @param alt 
  */
 function taskGeoPtz(lat: number, lon: number, alt: number) {
-  uiStore.setCurrentLLA(lat, lon, alt);
-  console.log('LLA:', uiStore.currentLLA)
+  mapStore.setCurrentLLA(lat, lon, alt);
+  console.log('LLA:', mapStore.currentLLA)
 
-  if (!uiStore.isGeoPTZSelected || !uiStore.selectedGeoPTZ) return;
+  if (!mapStore.isGeoPTZSelected || !mapStore.selectedGeoPTZ) return;
 
   const command = {
     parameters: {
@@ -561,13 +563,13 @@ function taskGeoPtz(lat: number, lon: number, alt: number) {
       alt: 120.0,
     },
   };
-  uiStore.sendGeoPTZCommand(command); // Send command
+  mapStore.sendGeoPTZCommand(command); // Send command
 }
 
 /**
  * Create/delete GeoPTZ marker as selected GeoPTZ value changes
  */
-watch(() => uiStore.selectedGeoPTZ, (geoPtz, oldGeoPtz) => {
+watch(() => mapStore.selectedGeoPTZ, (geoPtz, oldGeoPtz) => {
   // If had a value, delete
   if (oldGeoPtz?.length) deleteVisualizations([oldGeoPtz[0].id]);
   // If has a new value, create new
@@ -577,7 +579,7 @@ watch(() => uiStore.selectedGeoPTZ, (geoPtz, oldGeoPtz) => {
 /**
  * Fly to pointmarker when selected in visualizations panel
  */
-watch(() => uiStore.selectedMapItem,
+watch(() => mapStore.selectedMapItem,
   (newVal) => {
     if (!newVal) return; // Only fly when a map item is selected
 
@@ -665,7 +667,7 @@ watch(() => visualizationStore.layerVisibility.entries(),
 /**
  * Handle cursor style for GeoPTZ selection
  */
-watch(() => uiStore.isGeoPTZSelected, (geoPtz) => {
+watch(() => mapStore.isGeoPTZSelected, (geoPtz) => {
   // Leaflet
   if (mapLayerType.value === 'leaflet') {
     mapView.value.map.getContainer().style.cursor = geoPtz ? 'crosshair' : '';
@@ -679,7 +681,7 @@ watch(() => uiStore.isGeoPTZSelected, (geoPtz) => {
 /**
  * Handle cursor style for Mission Planner selection
  */
-watch(() => uiStore.selectedWaypoints, (waypoint) => {
+watch(() => mapStore.selectedWaypoints, (waypoint) => {
   // Leaflet
   if (mapLayerType.value === 'leaflet') {
     mapView.value.map.getContainer().style.cursor = waypoint ? 'crosshair' : '';
@@ -694,7 +696,7 @@ watch(() => uiStore.selectedWaypoints, (waypoint) => {
 /**
  * FlightPath watchers
  */
-watch(() => uiStore.clearMissionWaypointsMarkers, (newVal) => {
+watch(() => mapStore.clearMissionWaypointsMarkers, (newVal) => {
   if (!newVal) return;
 
   for (const layer of waypointLayers.value) {
@@ -710,11 +712,11 @@ watch(() => uiStore.clearMissionWaypointsMarkers, (newVal) => {
     flightPathPolyline.value = null;
   }
 
-  uiStore.resetClearWaypointMarkersSignal();
+  mapStore.resetClearWaypointMarkersSignal();
 });
 
 
-watch(() => uiStore.missionWaypoints, (waypoints) => {
+watch(() => mapStore.missionWaypoints, (waypoints) => {
   if (!mapView.value) return;
 
   for (const layer of waypointLayers.value) {
