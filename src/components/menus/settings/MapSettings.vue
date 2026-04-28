@@ -10,6 +10,7 @@ const focusedMap = computed({
   get: () => mapStore.focusedMap,
   set: (val) => mapStore.setFocusedMap(val),
 })
+const cesiumSettings = computed(() => mapStore.cesiumSettings);
 
 async function addIonAssetUrl() {
   if (focusedMap.value === 'cesium' && url.value) {
@@ -22,7 +23,8 @@ async function addIonAssetUrl() {
   }
 }
 
-const canAdd = computed(() => {
+
+const canAddUrl = computed(() => {
   return focusedMap.value === 'cesium' && url.value && url.value.startsWith('http');
 })
 
@@ -54,6 +56,30 @@ const canAdd = computed(() => {
           <div v-if="focusedMap === 'cesium'">
             <v-divider class="ma-2" />
             <v-list-item>
+              <v-list-item-title>Enable 3D Terrain</v-list-item-title>
+              <template #append>
+                <v-switch 
+                  :model-value="cesiumSettings.enable3DTerrain"
+                  @update:model-value="mapStore.set3DTerrain"
+                  color="primary" 
+                  inset 
+                  hide-details 
+                ></v-switch>
+              </template>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-title>Enable 3D Buildings</v-list-item-title>
+              <template #append>
+                <v-switch 
+                  :model-value="cesiumSettings.enable3DBuildings"
+                  @update:model-value="mapStore.set3DBuildings"
+                  color="primary" 
+                  inset 
+                  hide-details 
+                ></v-switch>
+              </template>
+            </v-list-item>
+            <v-list-item>
               <v-list-item-title>Map Layers</v-list-item-title>
               <v-list-item-subtitle>
                 Enter a URL to add a new map service layer
@@ -62,22 +88,24 @@ const canAdd = computed(() => {
               <v-text-field label="Map layer URL" v-model="url"
                 :rules="[v => !v || v.startsWith('http') || 'Must be a valid URL']">
                 <template #append-inner>
-                  <v-btn prepend-icon="mdi-plus" color="info" :disabled="!canAdd" @click="addIonAssetUrl">
+                  <v-btn prepend-icon="mdi-plus" color="info" :disabled="!canAddUrl" @click="addIonAssetUrl">
                     Add
                   </v-btn>
                 </template>
               </v-text-field>
-              <v-expansion-panels variant="accordion" rounded="lg">
+              <v-expansion-panels variant="accordion" rounded="lg" flat>
                 <v-expansion-panel title="Current Layers">
-                  <v-expansion-panel-text>
-                    <v-list-item v-for="layer in mapStore.cesiumMapLayers" :key="layer.id">
+                  <v-expansion-panel-text v-if="mapStore.cesiumMapLayers.length">
+                    <v-list-item v-for="layer in mapStore.cesiumMapLayers" :key="layer.id" class="pl-0">
                       <template #prepend>
-                        <DeleteButton label="Remove"
-                          @delete="mapStore.removeLayer(layer.id)">
+                        <DeleteButton label="Remove" @delete="mapStore.removeLayer(layer.id)">
                         </DeleteButton>
                       </template>
                       <v-list-item-title>{{ layer.url }}</v-list-item-title>
                     </v-list-item>
+                  </v-expansion-panel-text>
+                  <v-expansion-panel-text v-else>
+                    No layers added yet.
                   </v-expansion-panel-text>
                 </v-expansion-panel>
               </v-expansion-panels>

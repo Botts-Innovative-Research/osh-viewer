@@ -24,6 +24,8 @@ const visualizationStore = useVisualizationStore();
 const mapView = ref<any>(null);
 const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer>>(new Map())
 const renderedCesiumLayers = ref <Map<string, any>>(new Map());
+const buildingsTileset = ref<Cesium.Cesium3DTileset | null>(null); // For toggling 3D buildings layer
+const terrainProvider = ref<Cesium.CesiumTerrainProvider | null>(null); // For toggling 3D terrain
 const listDatasourceInstances = ref<SweApi[]>([]);
 
 const iconBase = import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.meta.env.VITE_VIEWER_ENDPOINT : "";
@@ -61,9 +63,13 @@ async function toggleMapType() {
     });
     mapView.value = cesiumView;
 
-    // Add 3D buildings tileset from Cesium Ion
-    const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(96188);
-    mapView.value.viewer.scene.primitives.add(tileset);
+    // Add 3D buildings tileset from Cesium Ion, depending on settings
+    if (mapStore.cesiumSettings.enable3DBuildings) {
+      await addBuildings();
+    }
+    if (mapStore.cesiumSettings.enable3DTerrain) {
+      await addTerrain();
+    }
   }
 }
 
@@ -115,6 +121,7 @@ watch(() => mapLayerType.value, (mapLayerType) => {
   }
 })
 
+/* CESIUM MAP LAYERS */
 watch(() => mapStore.cesiumMapLayers, (layers) => {
   // Add new layers
   layers.forEach((layer: any) => {
@@ -196,6 +203,53 @@ function removeLayerFromCesium(ref: any) {
     viewer.dataSources.remove(ref);
   } else if (ref instanceof Cesium.Entity) {
     viewer.entities.remove(ref);
+  }
+}
+/* CESIUM SETTINGS */
+watch(
+  () => mapStore.cesiumSettings.enable3DTerrain,
+  async (enabled) => {
+    if (enabled) await addTerrain();
+    else removeTerrain();
+  }
+);
+async function addTerrain() {
+  if (!terrainProvider.value) {
+    terrainProvider.value =
+      await Cesium.CesiumTerrainProvider.fromIonAssetId(1);
+    mapView.value.viewer.terrainProvider = terrainProvider.value;
+  }
+  mapView.value.viewer.terrainProvider = terrainProvider.value;
+}
+function removeTerrain() {
+  mapView.value.viewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
+}
+watch(
+  () => mapStore.cesiumSettings.enable3DBuildings,
+  async (enabled) => {
+    if (enabled) await addBuildings();
+    else removeBuildings();
+  }
+);
+async function addBuildings() {
+  const viewer = mapView.value.viewer;
+  if (!viewer) return;
+
+  if (buildingsTileset.value) {
+    if (!viewer.scene.primitives.contains(buildingsTileset.value)) {
+      viewer.scene.primitives.add(buildingsTileset.value);
+    }
+  } else {
+    buildingsTileset.value =
+      await Cesium.Cesium3DTileset.fromIonAssetId(96188);
+    viewer.scene.primitives.add(buildingsTileset.value);
+  }
+  viewer.scene.requestRender();
+}
+function removeBuildings() {
+  if (buildingsTileset.value && mapView.value.viewer) {
+    mapView.value.viewer.scene.primitives.remove(buildingsTileset.value);
+    buildingsTileset.value = null;
   }
 }
 
