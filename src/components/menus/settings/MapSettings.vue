@@ -2,6 +2,7 @@
 import { useMapStore } from '@/stores/mapstore';
 import { computed, ref, watch } from 'vue';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
+import { showToast } from '@/composables/useToast';
 
 const mapStore = useMapStore()
 const url = ref('');
@@ -14,11 +15,23 @@ const cesiumSettings = computed(() => mapStore.cesiumSettings);
 
 async function addIonAssetUrl() {
   if (focusedMap.value === 'cesium' && url.value) {
+
+    // Check if layer already exists with the same URL
+    const exists = mapStore.cesiumMapLayers.some(
+      layer => layer.url === url.value
+    );
+    if (exists) {
+      showToast('Layer already exists', 'ERROR');
+      return;
+    }
+
     try {
       await mapStore.fetchLayerFromUrl(url.value);
+      showToast('Layer added successfully', 'SUCCESS');
       url.value = ''; // Clear input on success
-    } catch (error) {
-      console.error('Error fetching layer from URL:', error);
+    } catch (error: any) {
+      console.error(error);
+      showToast(error.toString(), 'ERROR');
     }
   }
 }

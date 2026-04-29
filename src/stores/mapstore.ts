@@ -141,13 +141,18 @@ export const useMapStore = defineStore(
 
 		// Cesium
 		async function fetchLayerFromUrl(url: string) {
-			const parsedUrl = new URL(url);
+			let parsedUrl: URL;
+			try {
+				parsedUrl = new URL(url);
+			}
+			catch (error) {
+				throw new Error(`Invalid URL`);
+				return;
+			}
 
 			const type = detectLayerType(parsedUrl, url);
 			if (!type) {
-				console.error('Could not detect layer type from URL:', url);
-				return;
-				// TODO: Add toast
+				throw new Error(`Could not detect layer type from URL: ${url}`);
 			}
 
 			const parsedParams = extractParams(parsedUrl, type);
