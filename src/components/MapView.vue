@@ -23,6 +23,9 @@ Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkNDIyM
 const visualizationStore = useVisualizationStore();
 const mapView = ref<any>(null);
 const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer>>(new Map())
+const renderedCesiumLayers = ref<Map<string, any>>(new Map());
+const buildingsTileset = ref<Cesium.Cesium3DTileset | null>(null); // For toggling 3D buildings layer
+const terrainProvider = ref<Cesium.CesiumTerrainProvider | null>(null); // For toggling 3D terrain
 const listDatasourceInstances = ref<SweApi[]>([]);
 
 const iconBase = import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.meta.env.VITE_VIEWER_ENDPOINT : "";
@@ -46,6 +49,9 @@ const featureVisualizations = computed(() => {
  */
 async function toggleMapType() {
   if (mapLayerType.value === 'leaflet') {
+    // Clear Cesium layers when switching
+    renderedCesiumLayers.value.clear();
+
     const leafletMapView = new LeafletView({
       container: 'mapContainer',
       layers: [],
@@ -60,9 +66,18 @@ async function toggleMapType() {
     });
     mapView.value = cesiumView;
 
-    // Add 3D buildings tileset from Cesium Ion
-    const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(96188);
-    mapView.value.viewer.scene.primitives.add(tileset);
+    // wait for Cesium to be fully ready
+    await new Promise(requestAnimationFrame);
+
+    // Add map layers from store
+    await rebuildCesiumLayers();
+    // Add 3D buildings tileset from Cesium Ion, depending on settings
+    if (mapStore.cesiumSettings.enable3DBuildings) {
+      await addBuildings();
+    }
+    if (mapStore.cesiumSettings.enable3DTerrain) {
+      await addTerrain();
+    }
   }
 }
 
@@ -114,133 +129,159 @@ watch(() => mapLayerType.value, (mapLayerType) => {
   }
 })
 
-watch(() => mapStore.cesiumIonAssetId, async (id) => {
-  // Skip if not on Cesium or ID is null
-  if (mapLayerType.value !== 'cesium' || !id) return;
-  const viewer = mapView.value.viewer;
+/* CESIUM MAP LAYERS */
+watch(() => mapStore.cesiumMapLayers, (layers) => {
+  // Add new layers
+  layers.forEach((layer: any) => {
+    if (!renderedCesiumLayers.value.has(layer.id)) {
+      const ref = addLayerToCesium(layer);
+      renderedCesiumLayers.value.set(layer.id, ref);
+    }
+  })
 
-  const intId = Number(id);
-
-  // Look up the asset type from Ion
-  const token = Ion.defaultAccessToken;
-  const base = Ion.defaultServer.toString().replace(/\/$/, '');
-  // const response = await fetch(`${base}/v1/assets/${id}`, {
-  const response = await fetch(`${Ion.defaultServer}/v1/assets/${intId}`, {
-    method: 'GET',
-    mode: 'cors',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
-
-  if (!response.ok) {
-    console.error(`[Ion] Could not find asset ${intId}`);
-    return;
+  // Remove deleted layers
+  for (const [id, ref] of renderedCesiumLayers.value.entries()) {
+    if (!layers.some((layer: any) => layer.id === id)) {
+      removeLayerFromCesium(ref);
+      renderedCesiumLayers.value.delete(id);
+    }
   }
+}, { deep: true })
 
-  const asset = await response.json();
+function addLayerToCesium(layer: any) {
+  const viewer = mapView.value.viewer;
+  let ref: any;
 
-  switch (asset.type) {
-    case '3DTILES': {
-      const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(intId);
-      viewer.scene.primitives.add(tileset);
+  switch (layer.type) {
+    case 'WMS': {
+      const provider = new Cesium.WebMapServiceImageryProvider({
+        url: layer.url.split('?')[0], // ← base URL only, no query params
+        layers: layer.parsedParams.layers,
+        parameters: { transparent: true, format: 'image/png' },
+      });
+      ref = viewer.imageryLayers.addImageryProvider(provider);
       break;
     }
-    case 'IMAGERY': {
-      const provider = await Cesium.IonImageryProvider.fromAssetId(intId);
-      viewer.imageryLayers.addImageryProvider(provider);
+    case 'WMTS': {
+      const provider = new Cesium.WebMapTileServiceImageryProvider({
+        url: layer.url,
+        layer: layer.parsedParams.layer,
+        style: layer.parsedParams.style,
+        tileMatrixSetID: layer.parsedParams.tileMatrixSetID,
+        format: layer.parsedParams.format,
+      });
+      ref = viewer.imageryLayers.addImageryProvider(provider);
       break;
     }
-    case 'TERRAIN': {
-      viewer.scene.setTerrain(new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromIonAssetId(intId)));
-      break;
-    }
-    case 'GLTF': {
-      const resource = await Cesium.IonResource.fromAssetId(intId);
-      viewer.entities.add({ model: { uri: resource, scale: 1.0 } });
-      break;
-    }
-    case 'CZML': {
-      const resource = await Cesium.IonResource.fromAssetId(intId);
-      viewer.dataSources.add(Cesium.CzmlDataSource.load(resource));
-      break;
-    }
-    case 'KML': {
-      const resource = await Cesium.IonResource.fromAssetId(intId);
-      viewer.dataSources.add(Cesium.KmlDataSource.load(resource));
+    case 'XYZ': {
+      const provider = new Cesium.UrlTemplateImageryProvider({
+        url: layer.url
+      });
+      ref = viewer.imageryLayers.addImageryProvider(provider);
       break;
     }
     case 'GEOJSON': {
-      const resource = await Cesium.IonResource.fromAssetId(intId);
-      viewer.dataSources.add(Cesium.GeoJsonDataSource.load(resource));
+      ref = viewer.dataSources.add(Cesium.GeoJsonDataSource.load(layer.url));
+      break;
+    }
+    case 'KML': {
+      ref = viewer.dataSources.add(Cesium.KmlDataSource.load(layer.url));
+      break;
+    }
+    case 'CZML': {
+      ref = viewer.dataSources.add(Cesium.CzmlDataSource.load(layer.url));
+      break;
+    }
+    case 'GLTF': {
+      ref = viewer.entities.add({ model: { uri: layer.url, scale: 1.0 } });
       break;
     }
     default:
-      console.warn(`[Ion] Unsupported asset type: ${asset.type}`);
+      console.warn(`[Ion] Unsupported layer type: ${layer.type}`);
   }
-})
 
-watch(() => mapStore.cesiumIonAssetUrl, (url) => {
-  // Skip if not on Cesium or ID is null
-  if (mapLayerType.value !== 'cesium' || !url) return;
+  return ref;
+}
+function removeLayerFromCesium(ref: any) {
   const viewer = mapView.value.viewer;
 
-  // Parse URL
-  const parsed = new URL(url);
-  console.log('service param:', parsed.searchParams.get('SERVICE'));
-  console.log('all params:', [...parsed.searchParams.entries()]);
-  const service = parsed.searchParams.get('SERVICE')?.toUpperCase();
+  if (ref instanceof Cesium.ImageryLayer) {
+    viewer.imageryLayers.remove(ref);
+  } else if (ref instanceof Cesium.DataSource) {
+    viewer.dataSources.remove(ref);
+  } else if (ref instanceof Cesium.Entity) {
+    viewer.entities.remove(ref);
+  }
+}
+async function rebuildCesiumLayers() {
+  const viewer = mapView.value?.viewer;
+  if (!viewer) return;
 
-  if (service === 'WMS') {
-    const layers = parsed.searchParams.get('LAYERS') ?? parsed.searchParams.get('layers') ?? '';
-    try {
-      const provider = new Cesium.WebMapServiceImageryProvider({
-        url: url.split('?')[0], // ← base URL only, no query params
-        layers,
-        parameters: { transparent: true, format: 'image/png' },
-      });
-      viewer.imageryLayers.addImageryProvider(provider);
-    } catch (err) {
-      console.error('[WMS] Failed:', err);
+  for (const layer of mapStore.cesiumMapLayers) {
+    if (!renderedCesiumLayers.value.has(layer.id)) {
+      const ref = addLayerToCesium(layer);
+      renderedCesiumLayers.value.set(layer.id, ref);
     }
-    // const provider = new Cesium.WebMapServiceImageryProvider({
-    //   url,
-    //   layers,
-    //   parameters: { transparent: true, format: 'image/png' },
-    // });
-    // viewer.imageryLayers.addImageryProvider(provider);
   }
-  else if (service === 'WMTS') {
-    const layer = parsed.searchParams.get('LAYER') ?? parsed.searchParams.get('layer') ?? '';
-    const style = parsed.searchParams.get('STYLE') ?? parsed.searchParams.get('style') ?? 'default';
-    const tileMatrixSetID = parsed.searchParams.get('TILEMATRIXSET') ?? parsed.searchParams.get('tilematrixset') ?? '';
-    const format = parsed.searchParams.get('FORMAT') ?? parsed.searchParams.get('format') ?? 'image/png';
-    const provider = new Cesium.WebMapTileServiceImageryProvider({
-      url,
-      layer,
-      style,
-      tileMatrixSetID,
-      format,
-    });
-    viewer.imageryLayers.addImageryProvider(provider);
+
+  viewer.scene.requestRender();
+}
+/* CESIUM SETTINGS */
+watch(
+  () => mapStore.cesiumSettings.enable3DTerrain,
+  async (enabled) => {
+    const viewer = mapView.value?.viewer;
+    if (!viewer) return;
+
+    if (enabled) await addTerrain();
+    else removeTerrain();
+
+    viewer.scene.requestRender();
   }
-  else if (url.includes('{x}') && url.includes('{y}') && url.includes('{z}')) {
-    const provider = new Cesium.UrlTemplateImageryProvider({
-      url
-    });
-    viewer.imageryLayers.addImageryProvider(provider);
+);
+async function addTerrain() {
+  if (!terrainProvider.value) {
+    terrainProvider.value =
+      await Cesium.CesiumTerrainProvider.fromIonAssetId(1);
+    mapView.value.viewer.terrainProvider = terrainProvider.value;
   }
-  // Add asset based on URL file type
-  else if (url.endsWith('.json') || url.endsWith('.czml')) {
-    viewer.dataSources.add(Cesium.CzmlDataSource.load(url));
-  } else if (url.endsWith('.kml')) {
-    viewer.dataSources.add(Cesium.KmlDataSource.load(url));
-  } else if (url.endsWith('.geojson') || url.endsWith('.json')) {
-    viewer.dataSources.add(Cesium.GeoJsonDataSource.load(url));
-  } else if (url.endsWith('.gltf') || url.endsWith('.glb')) {
-    viewer.entities.add({ model: { uri: url, scale: 1.0 } });
+  mapView.value.viewer.terrainProvider = terrainProvider.value;
+}
+function removeTerrain() {
+  mapView.value.viewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
+}
+watch(
+  () => mapStore.cesiumSettings.enable3DBuildings,
+  async (enabled) => {
+    const viewer = mapView.value?.viewer;
+    if (!viewer) return;
+
+    if (enabled) await addBuildings();
+    else removeBuildings();
+
+    viewer.scene.requestRender();
+  }
+);
+async function addBuildings() {
+  const viewer = mapView.value.viewer;
+  if (!viewer) return;
+
+  if (buildingsTileset.value) {
+    if (!viewer.scene.primitives.contains(buildingsTileset.value)) {
+      viewer.scene.primitives.add(buildingsTileset.value);
+    }
   } else {
-    console.warn(`[Ion] Unsupported asset URL type: ${url}`);
+    buildingsTileset.value =
+      await Cesium.Cesium3DTileset.fromIonAssetId(96188);
+    viewer.scene.primitives.add(buildingsTileset.value);
   }
-})
+}
+function removeBuildings() {
+  if (buildingsTileset.value && mapView.value.viewer) {
+    mapView.value.viewer.scene.primitives.remove(buildingsTileset.value);
+    buildingsTileset.value = null;
+  }
+}
 
 /**
  * Map click listener
@@ -383,7 +424,7 @@ function createVisualizations(addedVizIds: string[]) {
               return {
                 x: rec[dsProps.properties.location.property].lon,
                 y: rec[dsProps.properties.location.property].lat,
-                z: rec[dsProps.properties.location.property].alt || 0, // Default to 0 if altitude is not provided
+                z: rec[dsProps.properties.location.property].alt || 120, // Default to 0 if altitude is not provided
               }
             },
           }

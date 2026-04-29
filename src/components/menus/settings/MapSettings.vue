@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { useMapStore } from '@/stores/mapstore';
-import { computed, ref } from 'vue';
-
+import { computed, ref, watch } from 'vue';
+import DeleteButton from '@/components/ui/DeleteButton.vue';
+import { showToast } from '@/composables/useToast';
 
 const mapStore = useMapStore()
 const url = ref('');
@@ -10,14 +11,33 @@ const focusedMap = computed({
   get: () => mapStore.focusedMap,
   set: (val) => mapStore.setFocusedMap(val),
 })
+const cesiumSettings = computed(() => mapStore.cesiumSettings);
 
-function addIonAssetUrl() {
+async function addIonAssetUrl() {
   if (focusedMap.value === 'cesium' && url.value) {
-    mapStore.cesiumIonAssetUrl = url.value;
+
+    // Check if layer already exists with the same URL
+    const exists = mapStore.cesiumMapLayers.some(
+      layer => layer.url === url.value
+    );
+    if (exists) {
+      showToast('Layer already exists', 'ERROR');
+      return;
+    }
+
+    try {
+      await mapStore.fetchLayerFromUrl(url.value);
+      showToast('Layer added successfully', 'SUCCESS');
+      url.value = ''; // Clear input on success
+    } catch (error: any) {
+      console.error(error);
+      showToast(error.toString(), 'ERROR');
+    }
   }
 }
 
-const canAdd = computed(() => {
+// Can add if URL is valid and Cesium map is selected
+const canAddUrl = computed(() => {
   return focusedMap.value === 'cesium' && url.value && url.value.startsWith('http');
 })
 
@@ -49,7 +69,21 @@ const canAdd = computed(() => {
           <div v-if="focusedMap === 'cesium'">
             <v-divider class="ma-2" />
             <v-list-item>
-              <v-list-item-title>Add Map Layer</v-list-item-title>
+              <v-list-item-title>Enable 3D Terrain</v-list-item-title>
+              <template #append>
+                <v-switch :model-value="cesiumSettings.enable3DTerrain" @update:model-value="mapStore.set3DTerrain"
+                  color="primary" inset hide-details></v-switch>
+              </template>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-title>Enable 3D Buildings</v-list-item-title>
+              <template #append>
+                <v-switch :model-value="cesiumSettings.enable3DBuildings" @update:model-value="mapStore.set3DBuildings"
+                  color="primary" inset hide-details></v-switch>
+              </template>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-title>Map Layers</v-list-item-title>
               <v-list-item-subtitle>
                 Enter a URL to add a new map service layer
               </v-list-item-subtitle>
@@ -57,11 +91,33 @@ const canAdd = computed(() => {
               <v-text-field label="Map layer URL" v-model="url"
                 :rules="[v => !v || v.startsWith('http') || 'Must be a valid URL']">
                 <template #append-inner>
-                  <v-btn color="info" :disabled="!canAdd" @click="addIonAssetUrl">
+                  <v-btn prepend-icon="mdi-plus" color="info" :disabled="!canAddUrl" @click="addIonAssetUrl">
                     Add
                   </v-btn>
                 </template>
               </v-text-field>
+              <v-expansion-panels variant="accordion" rounded="lg" flat>
+                <v-expansion-panel>
+                  <v-expansion-panel-title>
+                    Current Layers
+                    <v-badge v-if="mapStore.cesiumMapLayers.length" inline location="top right" :content="mapStore.cesiumMapLayers.length" class="pl-2" />
+                  </v-expansion-panel-title>
+                  <v-expansion-panel-text v-if="mapStore.cesiumMapLayers.length" class="layer-list">
+                    <v-list activatable>
+                      <v-list-item v-for="layer in mapStore.cesiumMapLayers" :key="layer.id" class="pl-4">
+                        <template #prepend>
+                          <DeleteButton label="Remove" @delete="mapStore.removeLayer(layer.id)">
+                          </DeleteButton>
+                        </template>
+                        <v-list-item-title>{{ layer.url }}</v-list-item-title>
+                      </v-list-item>
+                    </v-list>
+                  </v-expansion-panel-text>
+                  <v-expansion-panel-text v-else>
+                    No layers added yet.
+                  </v-expansion-panel-text>
+                </v-expansion-panel>
+              </v-expansion-panels>
             </v-list-item>
           </div>
         </v-expand-transition>
@@ -69,3 +125,8 @@ const canAdd = computed(() => {
     </v-card-text>
   </v-card>
 </template>
+<style scoped>
+:deep(.layer-list .v-expansion-panel-text__wrapper) {
+  padding: 0;
+}
+</style>
