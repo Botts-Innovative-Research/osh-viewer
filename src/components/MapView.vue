@@ -424,7 +424,7 @@ function createVisualizations(addedVizIds: string[]) {
               return {
                 x: rec[dsProps.properties.location.property].lon,
                 y: rec[dsProps.properties.location.property].lat,
-                z: rec[dsProps.properties.location.property].alt || 0, // Default to 0 if altitude is not provided
+                z: rec[dsProps.properties.location.property].alt || 120, // Default to 0 if altitude is not provided
               }
             },
           }
