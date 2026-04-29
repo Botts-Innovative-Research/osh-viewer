@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useMapStore } from '@/stores/mapstore';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
 
 const mapStore = useMapStore()
@@ -23,7 +23,7 @@ async function addIonAssetUrl() {
   }
 }
 
-
+// Can add if URL is valid and Cesium map is selected
 const canAddUrl = computed(() => {
   return focusedMap.value === 'cesium' && url.value && url.value.startsWith('http');
 })
@@ -58,25 +58,15 @@ const canAddUrl = computed(() => {
             <v-list-item>
               <v-list-item-title>Enable 3D Terrain</v-list-item-title>
               <template #append>
-                <v-switch 
-                  :model-value="cesiumSettings.enable3DTerrain"
-                  @update:model-value="mapStore.set3DTerrain"
-                  color="primary" 
-                  inset 
-                  hide-details 
-                ></v-switch>
+                <v-switch :model-value="cesiumSettings.enable3DTerrain" @update:model-value="mapStore.set3DTerrain"
+                  color="primary" inset hide-details></v-switch>
               </template>
             </v-list-item>
             <v-list-item>
               <v-list-item-title>Enable 3D Buildings</v-list-item-title>
               <template #append>
-                <v-switch 
-                  :model-value="cesiumSettings.enable3DBuildings"
-                  @update:model-value="mapStore.set3DBuildings"
-                  color="primary" 
-                  inset 
-                  hide-details 
-                ></v-switch>
+                <v-switch :model-value="cesiumSettings.enable3DBuildings" @update:model-value="mapStore.set3DBuildings"
+                  color="primary" inset hide-details></v-switch>
               </template>
             </v-list-item>
             <v-list-item>
@@ -94,15 +84,21 @@ const canAddUrl = computed(() => {
                 </template>
               </v-text-field>
               <v-expansion-panels variant="accordion" rounded="lg" flat>
-                <v-expansion-panel title="Current Layers">
-                  <v-expansion-panel-text v-if="mapStore.cesiumMapLayers.length">
-                    <v-list-item v-for="layer in mapStore.cesiumMapLayers" :key="layer.id" class="pl-0">
-                      <template #prepend>
-                        <DeleteButton label="Remove" @delete="mapStore.removeLayer(layer.id)">
-                        </DeleteButton>
-                      </template>
-                      <v-list-item-title>{{ layer.url }}</v-list-item-title>
-                    </v-list-item>
+                <v-expansion-panel>
+                  <v-expansion-panel-title>
+                    Current Layers
+                    <v-badge v-if="mapStore.cesiumMapLayers.length" inline location="top right" :content="mapStore.cesiumMapLayers.length" class="pl-2" />
+                  </v-expansion-panel-title>
+                  <v-expansion-panel-text v-if="mapStore.cesiumMapLayers.length" class="layer-list">
+                    <v-list activatable>
+                      <v-list-item v-for="layer in mapStore.cesiumMapLayers" :key="layer.id" class="pl-4">
+                        <template #prepend>
+                          <DeleteButton label="Remove" @delete="mapStore.removeLayer(layer.id)">
+                          </DeleteButton>
+                        </template>
+                        <v-list-item-title>{{ layer.url }}</v-list-item-title>
+                      </v-list-item>
+                    </v-list>
                   </v-expansion-panel-text>
                   <v-expansion-panel-text v-else>
                     No layers added yet.
@@ -117,7 +113,7 @@ const canAddUrl = computed(() => {
   </v-card>
 </template>
 <style scoped>
-.x-scroll {
-  overflow-x: auto;
+:deep(.layer-list .v-expansion-panel-text__wrapper) {
+  padding: 0;
 }
 </style>

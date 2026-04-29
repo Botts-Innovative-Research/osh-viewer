@@ -247,5 +247,5 @@ export const useMapStore = defineStore(
 			set3DBuildings,
 		};
 	},
-	{ persist: { pick: ['focusedMap'] } }
+	{ persist: { pick: ['focusedMap', 'cesiumMapLayers', 'cesiumSettings'] } }
 );

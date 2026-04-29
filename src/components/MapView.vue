@@ -23,7 +23,7 @@ Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkNDIyM
 const visualizationStore = useVisualizationStore();
 const mapView = ref<any>(null);
 const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer>>(new Map())
-const renderedCesiumLayers = ref <Map<string, any>>(new Map());
+const renderedCesiumLayers = ref<Map<string, any>>(new Map());
 const buildingsTileset = ref<Cesium.Cesium3DTileset | null>(null); // For toggling 3D buildings layer
 const terrainProvider = ref<Cesium.CesiumTerrainProvider | null>(null); // For toggling 3D terrain
 const listDatasourceInstances = ref<SweApi[]>([]);
@@ -49,6 +49,9 @@ const featureVisualizations = computed(() => {
  */
 async function toggleMapType() {
   if (mapLayerType.value === 'leaflet') {
+    // Clear Cesium layers when switching
+    renderedCesiumLayers.value.clear();
+
     const leafletMapView = new LeafletView({
       container: 'mapContainer',
       layers: [],
@@ -63,6 +66,11 @@ async function toggleMapType() {
     });
     mapView.value = cesiumView;
 
+    // wait for Cesium to be fully ready
+    await new Promise(requestAnimationFrame);
+
+    // Add map layers from store
+    await rebuildCesiumLayers();
     // Add 3D buildings tileset from Cesium Ion, depending on settings
     if (mapStore.cesiumSettings.enable3DBuildings) {
       await addBuildings();
@@ -205,12 +213,30 @@ function removeLayerFromCesium(ref: any) {
     viewer.entities.remove(ref);
   }
 }
+async function rebuildCesiumLayers() {
+  const viewer = mapView.value?.viewer;
+  if (!viewer) return;
+
+  for (const layer of mapStore.cesiumMapLayers) {
+    if (!renderedCesiumLayers.value.has(layer.id)) {
+      const ref = addLayerToCesium(layer);
+      renderedCesiumLayers.value.set(layer.id, ref);
+    }
+  }
+
+  viewer.scene.requestRender();
+}
 /* CESIUM SETTINGS */
 watch(
   () => mapStore.cesiumSettings.enable3DTerrain,
   async (enabled) => {
+    const viewer = mapView.value?.viewer;
+    if (!viewer) return;
+
     if (enabled) await addTerrain();
     else removeTerrain();
+
+    viewer.scene.requestRender();
   }
 );
 async function addTerrain() {
@@ -227,8 +253,13 @@ function removeTerrain() {
 watch(
   () => mapStore.cesiumSettings.enable3DBuildings,
   async (enabled) => {
+    const viewer = mapView.value?.viewer;
+    if (!viewer) return;
+
     if (enabled) await addBuildings();
     else removeBuildings();
+
+    viewer.scene.requestRender();
   }
 );
 async function addBuildings() {
@@ -244,7 +275,6 @@ async function addBuildings() {
       await Cesium.Cesium3DTileset.fromIonAssetId(96188);
     viewer.scene.primitives.add(buildingsTileset.value);
   }
-  viewer.scene.requestRender();
 }
 function removeBuildings() {
   if (buildingsTileset.value && mapView.value.viewer) {
