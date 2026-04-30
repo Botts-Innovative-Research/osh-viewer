@@ -424,7 +424,7 @@ function createVisualizations(addedVizIds: string[]) {
               return {
                 x: rec[dsProps.properties.location.property].lon,
                 y: rec[dsProps.properties.location.property].lat,
-                z: rec[dsProps.properties.location.property].alt || 120, // Default to 0 if altitude is not provided
+                z: rec[dsProps.properties.location.property].alt || 120, // Default to 120 if altitude is not provided
               }
             },
           }
@@ -519,7 +519,7 @@ function createVisualizations(addedVizIds: string[]) {
             return {
               x: originData.lon,
               y: originData.lat,
-              z: originData.alt || 0,
+              z: originData.alt || 120, // Default to 120 if altitude is not provided
             };
           },
         };
@@ -552,6 +552,7 @@ function createVisualizations(addedVizIds: string[]) {
         label: 'GeoPTZ',
         id: viz.id,
         icon: `${iconBase}/icons/map/geoPtz-pin.svg`,
+        iconColor: '#ff0000',
         iconSize: [32, 32],
         iconAnchor: [16, 16],
         labelOffset: [-16, -32],
@@ -562,7 +563,7 @@ function createVisualizations(addedVizIds: string[]) {
             return {
               x: mapStore.currentLLA?.longitude,
               y: mapStore.currentLLA?.latitude,
-              z: mapStore.currentLLA?.altitude,
+              z: mapStore.currentLLA?.altitude || 120,
             }
           },
         },
