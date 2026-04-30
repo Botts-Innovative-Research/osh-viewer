@@ -30,7 +30,6 @@ const checkedRoles = reactive({
 
 // Initialize dsConfig with video selected by default when mounted
 onMounted(() => {
-  console.log("Mounted Video Config")
   if (!vizwizStore.dsConfig.video) {
     vizwizStore.updateDsConfig("video", { selected: true })
   }

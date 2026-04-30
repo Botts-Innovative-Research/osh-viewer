@@ -10,32 +10,39 @@ const time = ref<boolean>(false);
 
 watch(stats, (val) => {
   vwStore.updateVisualizationCustomizationOptions({ stats: val });
-  // emit('update:stats', true)
 });
 
 watch(time, (val) => {
   vwStore.updateVisualizationCustomizationOptions({ time: val });
-  // emit('update:time', true)
 });
 
 
 onMounted(() => {
-  vwStore.updateVisualizationCustomizationOptions({
-    stats: stats.value,
-    time: time.value
-  });
+  if (!vwStore.visualizationCustomizationOptions.stats) {
+    vwStore.updateVisualizationCustomizationOptions({
+      stats: stats.value,
+    });
+  } else {
+    stats.value = vwStore.visualizationCustomizationOptions.stats
+  }
+
+  if (!vwStore.visualizationCustomizationOptions.time) {
+    vwStore.updateVisualizationCustomizationOptions({
+      time: time.value
+    });
+  } else {
+    time.value = vwStore.visualizationCustomizationOptions.time
+  }
 });
 </script>
 
 <template>
-  <v-card class="pa-4" elevation="2">
-    <v-checkbox
-        v-model="stats"
-        label="Show Video Stats"
-    />
-    <v-checkbox
-        v-model="time"
-        label="Show Video Time"
-    />
-  </v-card>
+  <v-checkbox
+      v-model="stats"
+      label="Show Video Stats"
+  />
+  <v-checkbox
+      v-model="time"
+      label="Show Video Time"
+  />
 </template>

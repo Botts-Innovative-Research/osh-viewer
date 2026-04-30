@@ -10,9 +10,7 @@ const props = defineProps<{
 }>();
 
 const vwStore = useVizWizStore();
-const name = ref<string>(
-  props.role ? generateVizName(props.role) : props.defaultName ? props.defaultName : ''
-)
+const name = ref<string>(props.role ? generateVizName(props.role) : props.defaultName ? props.defaultName : '')
 
 watch(props, (val) => {
   if (val.role) name.value = generateVizName(val.role);
@@ -24,9 +22,13 @@ watch(name, (val) => {
 });
 
 onMounted(() => {
-  vwStore.updateVisualizationCustomizationOptions({
-    name: name.value,
-  });
+  if (!vwStore.visualizationCustomizationOptions.name) {
+    vwStore.updateVisualizationCustomizationOptions({
+      name: name.value,
+    });
+  } else {
+    name.value = vwStore.visualizationCustomizationOptions.name;
+  }
 });
 
 // Validation: Name cannot be empty
@@ -38,9 +40,7 @@ useComponentValidation(valid, emit)
 
 </script>
 <template>
-  <v-card class="pa-4" elevation="2">
-    <h3>Visualization Name</h3>
-    <v-text-field v-model="name" label="Name" :rules="[() => !!name || 'Visualization name is required']">
-    </v-text-field>
-  </v-card>
+  <h3>Visualization Name</h3>
+  <v-text-field v-model="name" label="Name" :rules="[() => !!name || 'Visualization name is required']">
+  </v-text-field>
 </template>

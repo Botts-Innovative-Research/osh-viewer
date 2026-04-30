@@ -19,20 +19,20 @@ watch(videoFormat, (val) => {
 
 
 onMounted(() => {
-	vwStore.updateVisualizationCustomizationOptions({ videoFormat: videoFormat.value });
+  if (!vwStore.visualizationCustomizationOptions.videoFormat) {
+    vwStore.updateVisualizationCustomizationOptions({ videoFormat: videoFormat.value });
+  } else {
+    videoFormat.value = vwStore.visualizationCustomizationOptions.videoFormat
+  }
 });
 </script>
 
 <template>
-	<v-card class="pa-4" elevation="2">
-		<v-card class="pa-4" elevation="2">
-      <v-select
-          v-model="videoFormat"
-          :items="videoFormatOptions"
-          label="Video Format"
-          variant="outlined"
-          density="comfortable"
-      ></v-select>
-		</v-card>
-	</v-card>
+  <v-select
+    v-model="videoFormat"
+    :items="videoFormatOptions"
+    label="Video Format"
+    variant="outlined"
+    density="comfortable"
+  ></v-select>
 </template>

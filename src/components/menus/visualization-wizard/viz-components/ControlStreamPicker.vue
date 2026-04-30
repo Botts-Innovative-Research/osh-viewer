@@ -4,7 +4,7 @@ import {
 } from '@/lib/DatasourceUtils';
 import { getCommandType } from '@/lib/ControlstreamUtils';
 import { useVizWizStore } from '@/stores/vizwizstore';
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { VisualizationComponentEmits } from '../VisualizationRegistry';
 import { useComponentValidation } from '../shared/helpers';
 
@@ -58,6 +58,13 @@ async function fetchProps() {
 watch(selectedControlstream, async (newVal) => {
   if (!newVal) return
   await fetchProps()
+})
+
+// If already selected datastream on mount (edit viz), fetch props
+onMounted(async () => {
+  if (selectedControlstream.value) {
+    await fetchProps();
+  }
 })
 
 // Validation: must have a controlstream selected, and if property selector is shown, must have property(ies) selected

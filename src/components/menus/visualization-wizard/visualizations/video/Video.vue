@@ -41,7 +41,6 @@ function createVideoView(viewConfig: any) {
 }
 
 const ptzControl = computed(() => {
-  console.log(props.controlstream)
   if (props.controlstream && Object.keys(props.controlstream).length > 0) {
     const csId = props.controlstream.id;
     if (!csId) return { hasControl: false, commandBaseUrl: '', id: '', auth: '' };
@@ -142,8 +141,8 @@ useVisualizationCleanup(ref(dsInstances));
 </script>
 
 <template>
-  <v-card :id="videoDivId" class="video-mjpeg video-h264">
-  </v-card>
+  <v-sheet :id="videoDivId" class="video-mjpeg video-h264">
+  </v-sheet>
   <PTZControl v-if="ptzControl.hasControl" :command-base-url="ptzControl.commandBaseUrl" :id="ptzControl.id"
     :auth="ptzControl.auth" />
 </template>

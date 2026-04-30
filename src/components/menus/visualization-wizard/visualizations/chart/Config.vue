@@ -22,7 +22,6 @@ const checkedRoles = reactive({
 
 // Initialize dsConfig with x and y selected by default when mounted
 onMounted(() => {
-  console.log("Mounted Chart Config")
   if (!vizwizStore.dsConfig.x) {
     vizwizStore.updateDsConfig("x", { selected: true })
   }
@@ -64,7 +63,7 @@ useComponentValidation(valid, emit)
   <!-- Y -->
   <v-container>
     <v-checkbox label="Y Axis" v-model="checkedRoles.y" disabled></v-checkbox>
-    <DataSourcePicker v-if="checkedRoles.y" role="y" v-model:valid="roleYValid" />
+    <DataSourcePicker v-if="checkedRoles.y" role="y" v-model:valid="roleYValid" multiple />
   </v-container>
 </template>
 

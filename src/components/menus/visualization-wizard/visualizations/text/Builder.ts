@@ -7,9 +7,9 @@ import {
 } from '@/lib/VisualizationHelpers';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 //@ts-ignore
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-//@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
+// @ts-ignore
+import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import {
 	AggregateDatastreams,
 	BuildRoleProperty,
@@ -36,13 +36,14 @@ export default function build() {
 	};
 
 	const newViz = new OSHVisualization(
-		`visualization-${randomUUID()}`,
+		vizwizStore.id,
 		vizwizStore.visualizationCustomizationOptions.name,
 		'text',
 		TextDescriptor.viewLocation,
-		getUsedDatastreams(),
+		getUsedDatastreams()
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
+	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization
 	visualizationStore.addVisualization(newViz);
 	console.log('Created Text Visualization:', newViz);
 }

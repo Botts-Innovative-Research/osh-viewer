@@ -3,16 +3,29 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 import BackgroundColorControl from '../../viz-components/customizations/BackgroundColorControl.vue';
 import LineColorControl from '../../viz-components/customizations/LineColorControl.vue';
 import NameControl from '../../viz-components/customizations/NameControl.vue';
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { VisualizationComponentEmits } from '../../VisualizationRegistry';
-import { useComponentValidation } from '../../shared/helpers';
+import { getYLines, useComponentValidation } from '../../shared/helpers';
 
-const vizwizStore = useVizWizStore();
-const defaultValue = ref<string>('')
+const vizwizStore = useVizWizStore()
+const defaultName = ref<string>('')
+// Get properties organized per line
+const lines = computed(() => {
+  const yConfig = vizwizStore.dsConfig.y
+  if (!yConfig) return []
+  else return getYLines(yConfig);
+})
+const selectedTab = ref<any>()
+
+watch(lines, (val) => {
+  if (val.length > 0) {
+    selectedTab.value = val[0]
+  }
+})
 
 watch(() => vizwizStore.dsConfig.y, (val) => {
   if (val && val.label) {
-    defaultValue.value = val.label + (val.uom ? ` (${val.uom})` : '')
+    defaultName.value = val.label + (val.uom ? ` (${val.uom})` : '')
   }
 }, { immediate: true, deep: true })
 
@@ -27,7 +40,25 @@ useComponentValidation(valid, emit)
 </script>
 
 <template>
-  <name-control :default-name="defaultValue" v-model:valid="nameValid"></name-control>
-  <LineColorControl />
-  <BackgroundColorControl />
+  <name-control :default-name="defaultName" v-model:valid="nameValid"></name-control>
+  <v-sheet v-if="lines">
+    <h2>Customize Line{{ lines.length > 1 ? `s` : '' }}</h2>
+    <v-tabs v-model="selectedTab">
+      <v-tab v-for="line in lines" :key="line.property" :value="line">
+        {{ line.label }}
+      </v-tab>
+    </v-tabs>
+    <v-tabs-window v-model="selectedTab">
+      <v-tabs-window-item v-for="line in lines" :key="line.property" :value="line">
+        <v-row class="justify-space-between pa-4">
+          <v-col cols="auto">
+            <LineColorControl :line-id="line.property" :key="line.property"></LineColorControl>
+          </v-col>
+          <v-col cols="auto">
+            <BackgroundColorControl :line-id="line.property" :key="`bg-${line.property}`"></BackgroundColorControl>
+          </v-col>
+        </v-row>
+      </v-tabs-window-item>
+    </v-tabs-window>
+  </v-sheet>
 </template>

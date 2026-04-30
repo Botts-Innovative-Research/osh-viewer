@@ -3,9 +3,9 @@ import COP from '@/components/COP.vue';
 </script>
 
 <template>
-	<v-card flat height="100%">
+	<v-sheet flat height="100%">
 		<COP />
-	</v-card>
+	</v-sheet>
 </template>
 
 <style scoped></style>

@@ -4,8 +4,7 @@ import { useSystemStore } from '@/stores/systemstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { computed, watch } from 'vue';
 import {OSHControlStream, OSHDatastream} from '@/lib/OSHConnectDataStructs';
-import {useControlStreamStore} from "@/stores/controlstreamstore";
-import { CONFIG_UID } from '@/composables/useConfigPersistence';
+import { useControlStreamStore } from "@/stores/controlstreamstore";
 import { useComponentValidation } from './shared/helpers';
 import { VisualizationComponentEmits } from './VisualizationRegistry';
 
@@ -55,14 +54,12 @@ watch(selectedSystems, () => {
 // Clear DS CONFIG/CUSTOMIZE when datastreams are deselected
 watch(selectedDatastreams, (newVal, oldVal) => {
   if (newVal.length < oldVal.length) {  // Datastreams were removed
-    vizwizStore.resetDsConfig()
-    vizwizStore.resetDsCustomization()
+		vizwizStore.resetDsConfig()
   }
 })
 watch(selectedControlstreams, (newVal, oldVal) => {
   if (newVal.length < oldVal.length) {  // Controlstreams were removed
-    vizwizStore.resetCsConfig()
-    vizwizStore.resetCsCustomization()
+		vizwizStore.resetCsConfig()
   }
 })
 

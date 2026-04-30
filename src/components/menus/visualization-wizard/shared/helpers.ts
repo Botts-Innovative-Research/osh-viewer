@@ -2,6 +2,8 @@ import { useVizWizStore } from "@/stores/vizwizstore"
 import { onBeforeUnmount, Ref, watch } from "vue"
 //@ts-ignore
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
+import DataStream from 'osh-js/source/core/sweapi/datastream/DataStream.js';
+import ObservationFilter from 'osh-js/source/core/sweapi/observation/ObservationFilter.js';
 import { OSHControlStream, OSHDatastream } from "@/lib/OSHConnectDataStructs";
 import { ISweApiDataSourceProperties } from "@/lib/VisualizationHelpers";
 
@@ -98,6 +100,24 @@ export function BuildRoleProperty(entry: any[]) {
         return [role, { property: roleEntry.property, outputName: roleEntry.outputName }]
     }),
   )
+}
+
+/**
+ * Turn dsConfig.y properties into an array of line configurations for the chart visualization
+ * @param yConfig 
+ */
+export function getYLines(yConfig: any) {
+  if (!yConfig) return []
+
+  const yProperties = Array.isArray(yConfig.property) ? yConfig.property : [yConfig.property]
+  const yLabels = Array.isArray(yConfig.label) ? yConfig.label : [yConfig.label]
+  const yUoms = Array.isArray(yConfig.uom) ? yConfig.uom : [yConfig.uom]
+
+  return yProperties.map((prop: string, index: number) => ({
+    property: prop,
+    label: yLabels[index] || `Y-Axis Data ${index + 1}`,
+    uom: yUoms[index] || '',
+  }))
 }
 
 /**
@@ -205,6 +225,35 @@ export function generateVizName(role: string) {
   return `New ${vizwizStore.visualizationType}`
 }
 
+
+/**
+ * Fetches the latest observation from a datasource
+ *
+ * @param dsProps - Datasource properties containing endpoint, id, and auth info
+ * @returns Promise resolving to the latest observation data, or null if not found
+ */
+export const getLatestObservation = async (dsProps: {
+    id: string
+    endpointUrl: string
+    tls: boolean
+    connectorOpts?: { username: string; password: string }
+}): Promise<any | null> => {
+    const networkProperties = {
+        endpointUrl: dsProps.endpointUrl,
+        tls: dsProps.tls,
+        connectorOpts: dsProps.connectorOpts ?? { username: '', password: '' }
+    }
+
+    const datastream = new DataStream({ id: dsProps.id }, networkProperties)
+
+    const results = await datastream.searchObservations(
+        new ObservationFilter({ resultTime: 'latest' }),
+        1
+    )
+
+    const obsResult = await results.nextPage()
+    return obsResult[0];
+}
 /**
  * Defines validation logic for visualization form components and emits validation status to parent component
  * @param valid 

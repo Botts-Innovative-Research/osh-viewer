@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useUIStore } from '@/stores/uistore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import SelectType from './SelectType.vue';
 import SelectData from './SelectData.vue';
 import { VisualizationFormComponent, VisualizationRegistry } from './VisualizationRegistry';
+// @ts-ignore
+import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 
 const uiStore = useUIStore();
 const vizwizStore = useVizWizStore();
@@ -12,9 +14,10 @@ const selectedType = computed(() => {
 	return vizwizStore.visualizationType;
 });
 
-// Clear store every time the wizard opens
+// Clear store every time the wizard opens, set new ID
 onMounted(() => {
 	vizwizStore.reset();
+	vizwizStore.setId(`visualization-${randomUUID()}`)
 });
 
 // Stepper Variables
@@ -76,7 +79,7 @@ const componentValid = ref<boolean[]>([])
 </script>
 
 <template>
-	<v-card class="pa-4 vwizard-card" elevation="4">
+	<v-card class="pa-4">
 		<v-card-title class="text-h4 text-center">Visualization Wizard</v-card-title>
 
 		<v-stepper v-model="currentStep" class="wizard-content">
@@ -97,7 +100,7 @@ const componentValid = ref<boolean[]>([])
 				<v-stepper-window>
 					<!-- STEP CONTENT -->
 					<v-stepper-window-item v-for="(step, index) in completeSteps" :key="step.id" :value="index + 1">
-						<h2 class="pa-2">{{ step.label }}</h2>
+						<h2 class="pb-2">{{ step.label }}</h2>
 						<component :is="step.component" v-model:valid="componentValid[index]" v-bind="index === 1 ? { requireCs: VisualizationRegistry[selectedType]?.requireCs } : {}" />
 					</v-stepper-window-item>
 				</v-stepper-window>
@@ -125,20 +128,8 @@ const componentValid = ref<boolean[]>([])
 </template>
 
 <style scoped>
-.vwizard-card {
-	width: 75vw;
-	max-width: 100%;
-	min-width: 320px;
-	margin: 32px 0;
-	display: flex;
-	flex-direction: column;
-	align-items: stretch;
-	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-	scroll-behavior: smooth;
-}
-
 .wizard-content {
-	max-height: 900px;
+	max-height: 80vh;
 	overflow-y: auto;
 	padding-right: 4px;
 }

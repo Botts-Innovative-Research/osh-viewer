@@ -10,19 +10,21 @@ watch(maxPoints, (val) => {
 });
 
 onMounted(() => {
-  vwStore.updateVisualizationCustomizationOptions({
-    maxPoints: maxPoints.value,
-  });
+  if (!vwStore.visualizationCustomizationOptions.maxPoints) {
+    vwStore.updateVisualizationCustomizationOptions({
+      maxPoints: maxPoints.value,
+    });
+  } else {
+    maxPoints.value = vwStore.visualizationCustomizationOptions.maxPoints
+  }
 });
 
 </script>
 <template>
-  <v-card class="pa-4" elevation="2">
-    <h3>Max Points</h3>
-    <v-slider v-model="maxPoints" :min="1" :max="100" step="0.5">
-      <template v-slot:append>
-        <span>{{ maxPoints }}</span>
-      </template>
-    </v-slider>
-  </v-card>
+  <h3>Max Points</h3>
+  <v-slider v-model="maxPoints" :min="1" :max="100" step="0.5">
+    <template v-slot:append>
+      <span>{{ maxPoints }}</span>
+    </template>
+  </v-slider>
 </template>
