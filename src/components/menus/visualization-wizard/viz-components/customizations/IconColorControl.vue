@@ -22,6 +22,6 @@ onMounted(() => {
 
 </script>
 <template>
-  <h3>Icon Color</h3>
+  <h3 class="pb-2">Icon Color</h3>
   <v-color-picker style="margin: auto" v-model="iconColor" mode="rgba"> </v-color-picker>
 </template>

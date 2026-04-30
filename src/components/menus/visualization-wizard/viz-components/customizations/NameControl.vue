@@ -40,7 +40,7 @@ useComponentValidation(valid, emit)
 
 </script>
 <template>
-  <h3>Visualization Name</h3>
+  <h3 class="pb-2">Visualization Name</h3>
   <v-text-field v-model="name" label="Name" :rules="[() => !!name || 'Visualization name is required']">
   </v-text-field>
 </template>
