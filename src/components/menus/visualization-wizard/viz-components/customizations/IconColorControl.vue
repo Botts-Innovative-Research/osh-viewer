@@ -10,15 +10,18 @@ watch(iconColor, (val) => {
 });
 
 onMounted(() => {
-  vwStore.updateVisualizationCustomizationOptions({
-    iconColor: iconColor.value,
-  });
+  // Initialize icon color in store if not already set
+  if (!vwStore.visualizationCustomizationOptions.iconColor) {
+    vwStore.updateVisualizationCustomizationOptions({
+      iconColor: iconColor.value,
+    });
+  } else {
+    iconColor.value = vwStore.visualizationCustomizationOptions.iconColor;
+  }
 });
 
 </script>
 <template>
-  <v-card class="pa-4" elevation="2">
-    <h3>Icon Color</h3>
-    <v-color-picker style="margin: auto" v-model="iconColor" mode="rgba"> </v-color-picker>
-  </v-card>
+  <h3>Icon Color</h3>
+  <v-color-picker style="margin: auto" v-model="iconColor" mode="rgba"> </v-color-picker>
 </template>
