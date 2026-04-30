@@ -20,7 +20,7 @@ const router = createRouter({
 		{
 			path: '/mapview',
 			name: 'mapview',
-			component: () => import('../components/MapView.vue'),
+			component: () => import('../modules/map/components/MapView.vue'),
 		},
 	],
 });
