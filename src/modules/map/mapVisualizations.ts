@@ -198,3 +198,26 @@ export function createGeoPTZLayer(
 
 	return { vizLayer: pmLayer, dsInstances };
 }
+
+export function rebuildMapVisualizations(oldLayers: Map<string, PointMarkerLayer | LoBLayer>) {
+	const newLayers = new Map<string, PointMarkerLayer | LoBLayer>();
+
+	oldLayers.forEach((layer) => {
+		// Add new PM Layers
+		if (layer instanceof PointMarkerLayer) {
+			const pmLayer = new PointMarkerLayer({
+				...layer.properties,
+			});
+			newLayers.set(layer.properties.id, pmLayer);
+		}
+		// Add new LoB Layers
+		else if (layer instanceof LoBLayer) {
+			const lobLayer = new LoBLayer({
+				...layer.properties,
+			});
+			newLayers.set(layer.properties.id, lobLayer);
+		}
+	});
+
+	return newLayers;
+}

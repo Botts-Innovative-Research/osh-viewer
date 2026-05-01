@@ -5,7 +5,7 @@ import LeafletView from 'osh-js/source/core/ui/view/map/LeafletView';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
-import { createMapVisualizations } from '../mapVisualizations';
+import { createMapVisualizations, rebuildMapVisualizations } from '../mapVisualizations';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 
@@ -51,8 +51,21 @@ export function useMap() {
 	}
 
 	async function switchMap() {
+		// Temporarily disconnect datasources
+		disconnectDatasources();
+
 		await destroyMap();
 		await initMap();
+
+		// Rebuild layers
+		const newLayers = rebuildMapVisualizations(mapItemLayers.value);
+		newLayers.forEach((layer) => {
+			mapView.value.addLayer(layer);
+		});
+		mapItemLayers.value = newLayers;
+
+		// Reconnect datasources
+		connectDatasources();
 	}
 
 	onMounted(() => {
@@ -62,6 +75,14 @@ export function useMap() {
 	watch(mapType, async () => {
 		await switchMap();
 	});
+
+	/* DATASOURCE MANAGEMENT */
+	function connectDatasources() {
+		listDataSourceInstances.value.forEach((ds: any) => ds.connect());
+	}
+	function disconnectDatasources() {
+		listDataSourceInstances.value.forEach((ds: any) => ds.disconnect());
+	}
 
 	/* CREATE/DELETE VISUALIZATIONS */
 	watch(
@@ -133,5 +154,6 @@ export function useMap() {
 		initMap,
 		destroyMap,
 		switchMap,
+		deleteMapVisualizations,
 	};
 }
