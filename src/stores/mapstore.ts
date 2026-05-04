@@ -1,20 +1,10 @@
 import { defineStore } from 'pinia';
 import { ref, Ref } from 'vue';
-import { GeoPTZCommand } from '@/components/menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vue';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { ISweApiControlStreamProperties } from '@/lib/VisualizationHelpers';
-import { sendCommand } from '@/lib/ControlstreamUtils';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+import { MapLayer } from '@/modules/map/composables/useCesium';
 
-export type LayerType = 'WMS' | 'WMTS' | 'XYZ' | 'GEOJSON' | 'KML' | 'CZML' | 'GLTF';
-
-export interface MapLayer {
-	id: string;
-	url: string;
-	type: LayerType;
-	parsedParams?: Record<string, any>; // Optional parsed parameters from URL (e.g. layers for WMS, style for WMTS, etc.)
-}
 
 export const useMapStore = defineStore(
 	'map',

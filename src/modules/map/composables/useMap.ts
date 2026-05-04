@@ -11,6 +11,7 @@ import { createMapVisualizations, rebuildMapVisualizations } from '../mapVisuali
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { useGeoPTZ } from './useGeoPTZ';
+import { createCesiumMap, MapLayer } from './useCesium';
 
 export function useMap() {
 	// Stores
@@ -40,14 +41,7 @@ export function useMap() {
 				autoZoomOnFirstMarker: true,
 			});
 		} else {
-			mapView.value = new CesiumView({
-				container: 'mapContainer',
-				autoZoomOnFirstMarker: true,
-				layers: [],
-			});
-
-			// Wait for Cesium to be fully ready
-			await new Promise(requestAnimationFrame);
+			mapView.value = await createCesiumMap('mapContainer');
 		}
 	}
 	async function destroyMap() {
@@ -155,13 +149,40 @@ export function useMap() {
 		);
 	}
 
+	/* CESIUM */
+	watch(
+		() => mapStore.cesiumMapLayers,
+		(layers) => {
+			if (mapType.value !== 'cesium' || !mapView.value) return;
+			syncCesiumLayers(layers);
+		},
+		{ deep: true }
+	);
+	function syncCesiumLayers(layers: MapLayer[]) {
+		// Add new layers
+		layers.forEach((layer: any) => {
+			if (!renderedCesiumLayers.value.has(layer.id)) {
+				const ref = addLayerToCesium(layer);
+				renderedCesiumLayers.value.set(layer.id, ref);
+			}
+		});
+
+		// Remove deleted layers
+		for (const [id, ref] of renderedCesiumLayers.value.entries()) {
+			if (!layers.some((layer: any) => layer.id === id)) {
+				removeLayerFromCesium(ref);
+				renderedCesiumLayers.value.delete(id);
+			}
+		}
+	}
+
 	/* GEOPTZ */
 	watch(
 		() => mapStore.selectedGeoPTZ,
 		(geoPtz, oldGeoPtz) => {
 			// If had a value, delete
 			if (oldGeoPtz?.length) {
-				console.log("Deleting geoptz")
+				console.log('Deleting geoptz');
 				deleteMapVisualizations([...oldGeoPtz.map((viz) => viz.id)]);
 			}
 			// If has a new value, create new
