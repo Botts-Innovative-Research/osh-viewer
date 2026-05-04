@@ -32,3 +32,19 @@ export const GeoPtzDescriptor: VisualizationDescriptor = {
   builder: () => import('@/components/menus/visualization-wizard/visualizations/geoptz/Builder'),
   requireCs: true, // This visualization requires a controlstream to function
 }
+
+// Define PTZ data interface
+export interface PTZData {
+	pan: number;
+	tilt: number;
+	zoom: number;
+}
+
+// Define GeoPTZ command structure
+export interface GeoPTZCommand {
+	parameters: {
+		lat: number;
+		lon: number;
+		alt: number;
+	}
+}

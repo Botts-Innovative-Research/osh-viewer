@@ -35,7 +35,7 @@ export const useMapStore = defineStore(
 		});
 
 		/* GEOPTZ */
-		const selectedGeoPTZ: Ref<any[] | null> = ref(null); // Currently selected GeoPTZ Visualization(s) or null if none selected
+		const selectedGeoPTZ: Ref<OSHVisualization[] | null> = ref(null); // Currently selected GeoPTZ Visualization(s) or null if none selected
 		const isGeoPTZSelected: Ref<boolean> = ref(false); // Whether a GeoPTZ visualization is currently selected
 
 		/* MISSION PLANNER */
@@ -77,35 +77,6 @@ export const useMapStore = defineStore(
 		}
 		function clearCurrentLLA() {
 			currentLLA.value = null;
-		}
-
-		// GeoPTZ Command Tasking
-		function sendGeoPTZCommand(command: GeoPTZCommand) {
-			// Iterate thru GeoPTZ instances
-			if (selectedGeoPTZ) {
-				selectedGeoPTZ.value?.map((viz: OSHVisualization) => {
-					const controlstream: ISweApiControlStreamProperties | null = viz
-						.visualizationComponents.controlstream
-						? viz.visualizationComponents.controlstream[0]
-						: null;
-					if (controlstream) {
-						const csId = controlstream.id;
-						const commandBaseUrl = `${controlstream.tls ? 'https' : 'http'}://${controlstream.endpointUrl}`;
-						const auth = {
-							username: controlstream.connectorOpts.username,
-							password: controlstream.connectorOpts.password,
-						};
-						sendCommand(
-							commandBaseUrl,
-							csId,
-							command,
-							`${auth.username}:${auth.password}`
-						);
-					} else {
-						console.error('Could not send command. No controlstream found.');
-					}
-				});
-			}
 		}
 
 		// Mission planner functions
@@ -238,7 +209,6 @@ export const useMapStore = defineStore(
 			setSelectedGeoPTZ,
 			clearSelectedGeoPTZ,
 			setIsGeoPTZSelected,
-			sendGeoPTZCommand,
 			setSelectedWaypoints,
 			clearSelectedMissionWaypoints,
 			disableWaypointSelection,

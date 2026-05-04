@@ -16,6 +16,7 @@ import { ILineOfBearingLayerProperties, IPointMarkerLayerProperties, ISweApiData
 import * as Cesium from "cesium";
 import { useMapStore } from '@/stores/mapstore';
 import { useMap } from '../composables/useMap';
+import { useGeoPTZ } from '../composables/useGeoPTZ';
 
 // THIS token is working, taken from showcase examples :P
 // Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0NTkzNS02NzI0LTQwNDktODk4Zi0zZDJjOWI2NTdmYTMiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI1ODJ9.IbAajOLYnsoyKy1BOd7fY1p6GH-wwNVMdMduA2IzGjA';
@@ -72,53 +73,6 @@ const { mapView } = useMap()
 //   }
 // }
 
-// onMounted(() => {
-//   toggleMapType()
-// });
-
-// watch(() => mapLayerType.value, (mapLayerType) => {
-//   if (mapView.value) {
-
-//     // Temporarily disconnect datasources
-//     listDatasourceInstances.value.forEach((ds: any) => ds.disconnect())
-
-//     // Destroy map and layers
-//     mapView.value.destroy();
-//     mapView.value = null;
-
-//     // Switch map type
-//     toggleMapType();
-
-//     // Hold new layers for mapItemLayers
-//     const newLayers = new Map();
-
-//     // Create new layers
-//     mapItemLayers.value.forEach((layer) => {
-//       // Add new PM Layers
-//       if (layer instanceof PointMarkerLayer) {
-//         const pmLayer = new PointMarkerLayer({
-//           ...layer.properties,
-//         })
-//         mapView.value.addLayer(pmLayer)
-//         newLayers.set(layer.properties.id, pmLayer)
-//       }
-//       // Add new LoB Layers
-//       else if (layer instanceof LoBLayer) {
-//         const lobLayer = new LoBLayer({
-//           ...layer.properties,
-//         })
-//         mapView.value.addLayer(lobLayer)
-//         newLayers.set(layer.properties.id, lobLayer)
-//       }
-//     })
-
-//     // Reset mapItemLayers to new layers
-//     mapItemLayers.value = newLayers;
-
-//     // Reconnect datasources
-//     listDatasourceInstances.value.forEach((ds: any) => ds.connect())
-//   }
-// })
 
 // /* CESIUM MAP LAYERS */
 // watch(() => mapStore.cesiumMapLayers, (layers) => {

@@ -1,28 +1,16 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
-// @ts-ignore
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useMapStore } from '@/stores/mapstore';
+import { useGeoPTZ } from '@/modules/map/composables/useGeoPTZ';
+import { GeoPTZCommand } from './Descriptor';
 
 const props = defineProps<{
 	visualizations: OSHVisualization[],
 }>();
 
-// Define PTZ data interface
-export interface PTZData {
-	pan: number;
-	tilt: number;
-	zoom: number;
-}
-
-export interface GeoPTZCommand {
-	parameters: {
-		lat: number;
-		lon: number;
-		alt: number;
-	}
-}
+// Composables
+const { sendGeoPTZCommand } = useGeoPTZ();
 
 // Values for LLA inputs
 const latInput = ref<number>(0.0);
@@ -76,7 +64,7 @@ function onSend() {
 	};
 
 	console.log('[GeoPtzView] Sending GeoPTZ command:', command);
-	mapStore.sendGeoPTZCommand(command);
+	sendGeoPTZCommand(command);
 }
 
 onBeforeUnmount(() => {
