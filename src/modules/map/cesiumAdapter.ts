@@ -53,6 +53,11 @@ export function handleCesiumClick(map: any, onClick: MapClickHandler) {
 	return () => handler.destroy();
 }
 
+export function setCesiumCursor(map: any, mode: string) {
+	if (mode === 'default') mode = '';
+	map.viewer.canvas.style.cursor = mode;
+}
+
 async function fetchLayerFromUrl(url: string) {
 	let parsedUrl: URL;
 	try {

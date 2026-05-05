@@ -6,8 +6,8 @@ import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import { createMapVisualizations, rebuildMapVisualizations } from '../mapVisualizations';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
-import { createCesiumMap, handleCesiumClick } from '../cesiumAdapter';
-import { createLeafletMap, handleLeafletClick } from '../leafletAdapter';
+import { createCesiumMap, handleCesiumClick, setCesiumCursor } from '../cesiumAdapter';
+import { createLeafletMap, handleLeafletClick, setLeafletCursor } from '../leafletAdapter';
 import { taskGeoPTZ } from '../geoPTZ.service';
 
 export function useMap() {
@@ -197,13 +197,22 @@ export function useMap() {
 
 		// Handle map click
 		if (mapType.value === 'leaflet') {
-			handleLeafletClick(map, handleClick)
+			handleLeafletClick(map, handleClick);
 		} else if (mapType.value === 'cesium') {
 			cleanupClickHandler = handleCesiumClick(map, handleClick);
 		}
 	});
 
 	//TODO: Cursor styling
+	watch(
+		() => mapStore.mapCursorMode,
+		(mode) => {
+			// Leaflet
+			if (mapType.value === 'leaflet') setLeafletCursor(mapView.value, mode);
+			// Cesium
+			else if (mapType.value === 'cesium') setCesiumCursor(mapView.value, mode);
+		}
+	);
 
 	onMounted(() => {
 		initMap();

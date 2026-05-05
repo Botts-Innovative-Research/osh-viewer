@@ -5,7 +5,6 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { MapLayer } from '@/modules/map/cesiumAdapter';
 
-
 export const useMapStore = defineStore(
 	'map',
 	() => {
@@ -13,6 +12,7 @@ export const useMapStore = defineStore(
 		const selectedMapItem: Ref<any | null> = ref(null); // Currently selected map item from list of map visualizations
 		const currentLLA: Ref<{ latitude: number; longitude: number; altitude: number } | null> =
 			ref(null); // Currently selected LLA coordinates
+		const mapCursorMode = ref<'default' | 'crosshair'>('default');
 
 		/* CESIUM */
 		const cesiumMapLayers: Ref<MapLayer[]> = ref([]);
@@ -46,6 +46,12 @@ export const useMapStore = defineStore(
 			selectedMapItem.value = item;
 		}
 
+		function toggleMapCursorMode() {
+			if (isGeoPTZSelected.value || selectedWaypoints.value)
+				mapCursorMode.value = 'crosshair';
+			else mapCursorMode.value = 'default';
+		}
+
 		// Handle list of selected GeoPTZ controllers
 		function setSelectedGeoPTZ(vizList: OSHVisualization[]) {
 			selectedGeoPTZ.value = vizList;
@@ -59,6 +65,7 @@ export const useMapStore = defineStore(
 		// Handle selection of GeoPTZ
 		function setIsGeoPTZSelected(val: boolean) {
 			isGeoPTZSelected.value = val;
+			toggleMapCursorMode()
 		}
 
 		// Handle current LLA coordinates
@@ -76,14 +83,17 @@ export const useMapStore = defineStore(
 			auth: string
 		) {
 			selectedWaypoints.value = { controlStreamId, commandBaseUrl, auth };
+			toggleMapCursorMode();
 		}
 		function clearSelectedMissionWaypoints() {
 			selectedWaypoints.value = null;
 			missionWaypoints.value = [];
+			toggleMapCursorMode();
 		}
 
 		function disableWaypointSelection() {
 			selectedWaypoints.value = null;
+			toggleMapCursorMode();
 		}
 
 		function clearMissionWaypoints() {
@@ -105,8 +115,7 @@ export const useMapStore = defineStore(
 			let parsedUrl: URL;
 			try {
 				parsedUrl = new URL(url);
-			}
-			catch (error) {
+			} catch (error) {
 				throw new Error(`Invalid URL`);
 				return;
 			}
@@ -210,6 +219,8 @@ export const useMapStore = defineStore(
 			removeLayer,
 			set3DTerrain,
 			set3DBuildings,
+			mapCursorMode,
+			toggleMapCursorMode,
 		};
 	},
 	{ persist: { pick: ['focusedMap', 'cesiumMapLayers', 'cesiumSettings'] } }

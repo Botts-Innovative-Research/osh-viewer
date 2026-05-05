@@ -17,3 +17,8 @@ export function handleLeafletClick(map: any, onClick: MapClickHandler) {
 		onClick(lat, lon, 120);
 	});
 }
+
+export function setLeafletCursor(map: any, mode: string) {
+  if (mode === 'default') mode = '';
+  map.map.getContainer().style.cursor = mode;
+}

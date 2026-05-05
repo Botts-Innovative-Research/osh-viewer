@@ -85,9 +85,7 @@ onBeforeUnmount(() => {
 						<span v-bind="tooltipProps" style="display: inline-block;">
 							<IconButton icon :color="isSelected ? 'primary' : 'grey'" @click="toggle"
 								:disabled="props.visualizations.length === 0" class="pa-0" size="default">
-								<v-icon>
-									{{ isSelected ? 'mdi-check-circle' : 'mdi-circle-outline' }}
-								</v-icon>
+								<v-icon>{{ isSelected ? 'mdi-crosshairs-gps' : 'mdi-crosshairs' }}</v-icon>
 							</IconButton>
 						</span>
 					</template>
