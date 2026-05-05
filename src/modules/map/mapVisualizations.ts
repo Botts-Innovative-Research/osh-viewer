@@ -175,8 +175,7 @@ export function createGeoPTZLayer(
 		getLocation: {
 			dataSourceIds: dsInstances.map((ds) => ds.id),
 			handler: (rec: any) => {
-									console.log('Datasource emitted value:', rec);
-
+				if (!mapStore.currentLLA) return;
 				return {
 					x: mapStore.currentLLA?.longitude,
 					y: mapStore.currentLLA?.latitude,

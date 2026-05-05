@@ -174,23 +174,23 @@ export function useMap() {
 	watch(
 		() => mapStore.selectedGeoPTZ,
 		(geoPtz, oldGeoPtz) => {
-			// If had a value, delete
-			if (oldGeoPtz?.length) {
-				console.log('Deleting geoptz');
-				deleteMapVisualizations([...oldGeoPtz.map((viz) => viz.id)]);
-			}
+			// If had value, delete
+			if (oldGeoPtz?.length) deleteMapVisualizations([oldGeoPtz[0].id])
 			// If has a new value, create new
-			if (geoPtz?.length) {
-				addMapVisualizationLayer(geoPtz[0]);
-			}
-		},
-		{ immediate: true, deep: true }
-	);
+		if (geoPtz?.length) addMapVisualizationLayer(geoPtz[0])
+		}, { deep: true }
+	)
 
 	/** MAP INTERACTIONS */
+	let cleanupClickHandler: (() => void) | null = null;
 	watch(mapView, (map) => {
 		if (!map) return;
-		console.log("Heyyy")
+		console.log('Heyyy');
+
+		if (cleanupClickHandler) {
+			cleanupClickHandler();
+			cleanupClickHandler = null;
+		}
 
 		const handleClick: MapClickHandler = (lat: number, lon: number, alt: number) => {
 			if (mapStore.isGeoPTZSelected) taskGeoPTZ(lat, lon, alt);
@@ -202,7 +202,7 @@ export function useMap() {
 		if (mapType.value === 'leaflet') {
 			// TODO: Handle leaflet
 		} else if (mapType.value === 'cesium') {
-			handleCesiumClick(map, handleClick);
+			cleanupClickHandler = handleCesiumClick(map, handleClick);
 		}
 	});
 

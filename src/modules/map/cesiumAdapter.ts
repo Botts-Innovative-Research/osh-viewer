@@ -25,7 +25,7 @@ export async function createCesiumMap(container: string) {
 	return map;
 }
 
-export async function handleCesiumClick(map: any, onClick: MapClickHandler) {
+export function handleCesiumClick(map: any, onClick: MapClickHandler) {
 	const viewer = map.viewer;
 	// Description box styling
 	viewer.infoBox.frame.onload = function () {
@@ -35,18 +35,22 @@ export async function handleCesiumClick(map: any, onClick: MapClickHandler) {
 	};
 
 	let lat = 0,
-		lon = 0;
+		lon = 0,
+		alt = 0;
 	const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
 	handler.setInputAction((click: any) => {
-		const cartesian = viewer.camera.pickEllipsoid(click.position, viewer.scene.globe.ellipsoid);
+		// Updated to pickPosition to handle 3D terrain/tiles
+		const cartesian = viewer.scene.pickPosition(click.position);
 		if (!cartesian) return;
 
 		const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
 		lat = Cesium.Math.toDegrees(cartographic.latitude);
 		lon = Cesium.Math.toDegrees(cartographic.longitude);
+		alt = cartographic.height;
+		onClick(lat, lon, alt ?? 120);
 	}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
-	onClick(lat, lon, 120);
+	return () => handler.destroy();
 }
 
 async function fetchLayerFromUrl(url: string) {
