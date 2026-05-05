@@ -1,13 +1,13 @@
 import { useMapStore } from '@/stores/mapstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { computed, onMounted, ref, watch } from 'vue';
-import LeafletView from 'osh-js/source/core/ui/view/map/LeafletView';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import { createMapVisualizations, rebuildMapVisualizations } from '../mapVisualizations';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { createCesiumMap, handleCesiumClick } from '../cesiumAdapter';
+import { createLeafletMap, handleLeafletClick } from '../leafletAdapter';
 import { taskGeoPTZ } from '../geoPTZ.service';
 
 export function useMap() {
@@ -29,11 +29,7 @@ export function useMap() {
 	/* MAP INITIALIZATION/DESTRUCTION */
 	async function initMap() {
 		if (mapType.value === 'leaflet') {
-			mapView.value = new LeafletView({
-				container: 'mapContainer',
-				layers: [],
-				autoZoomOnFirstMarker: true,
-			});
+			mapView.value = createLeafletMap('mapContainer');
 		} else if (mapType.value === 'cesium') {
 			mapView.value = await createCesiumMap('mapContainer');
 		}
@@ -175,11 +171,12 @@ export function useMap() {
 		() => mapStore.selectedGeoPTZ,
 		(geoPtz, oldGeoPtz) => {
 			// If had value, delete
-			if (oldGeoPtz?.length) deleteMapVisualizations([oldGeoPtz[0].id])
+			if (oldGeoPtz?.length) deleteMapVisualizations([oldGeoPtz[0].id]);
 			// If has a new value, create new
-		if (geoPtz?.length) addMapVisualizationLayer(geoPtz[0])
-		}, { deep: true }
-	)
+			if (geoPtz?.length) addMapVisualizationLayer(geoPtz[0]);
+		},
+		{ deep: true }
+	);
 
 	/** MAP INTERACTIONS */
 	let cleanupClickHandler: (() => void) | null = null;
@@ -200,7 +197,7 @@ export function useMap() {
 
 		// Handle map click
 		if (mapType.value === 'leaflet') {
-			// TODO: Handle leaflet
+			handleLeafletClick(map, handleClick)
 		} else if (mapType.value === 'cesium') {
 			cleanupClickHandler = handleCesiumClick(map, handleClick);
 		}
