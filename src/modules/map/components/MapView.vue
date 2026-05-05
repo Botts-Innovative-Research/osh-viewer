@@ -16,7 +16,6 @@ import { ILineOfBearingLayerProperties, IPointMarkerLayerProperties, ISweApiData
 import * as Cesium from "cesium";
 import { useMapStore } from '@/stores/mapstore';
 import { useMap } from '../composables/useMap';
-import { useGeoPTZ } from '../composables/useGeoPTZ';
 
 // THIS token is working, taken from showcase examples :P
 // Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0NTkzNS02NzI0LTQwNDktODk4Zi0zZDJjOWI2NTdmYTMiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI1ODJ9.IbAajOLYnsoyKy1BOd7fY1p6GH-wwNVMdMduA2IzGjA';

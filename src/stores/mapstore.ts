@@ -3,7 +3,7 @@ import { ref, Ref } from 'vue';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import { MapLayer } from '@/modules/map/composables/useCesium';
+import { MapLayer } from '@/modules/map/cesiumAdapter';
 
 
 export const useMapStore = defineStore(

@@ -2,15 +2,12 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
-import { useGeoPTZ } from '@/modules/map/composables/useGeoPTZ';
+import { sendGeoPTZCommand } from '@/modules/map/geoPTZ.service';
 import { GeoPTZCommand } from './Descriptor';
 
 const props = defineProps<{
 	visualizations: OSHVisualization[],
 }>();
-
-// Composables
-const { sendGeoPTZCommand } = useGeoPTZ();
 
 // Values for LLA inputs
 const latInput = ref<number>(0.0);
@@ -63,8 +60,12 @@ function onSend() {
 		},
 	};
 
-	console.log('[GeoPtzView] Sending GeoPTZ command:', command);
-	sendGeoPTZCommand(command);
+	if (mapStore.selectedGeoPTZ) {
+		console.log('[GeoPtzView] Sending GeoPTZ command:', command);
+		sendGeoPTZCommand(mapStore.selectedGeoPTZ, command);
+	} else {
+		console.warn('[GeoPtzView] No GeoPTZ selected, cannot send command');
+	}
 }
 
 onBeforeUnmount(() => {
@@ -77,7 +78,9 @@ onBeforeUnmount(() => {
 	<v-container fluid>
 		<v-row class="d-flex align-center" no-gutters>
 			<v-col class="pr-4" cols="auto">
-				<v-tooltip :text="props.visualizations.length === 0 ? 'No GeoPTZ controllers selected' : 'Select map click-to-task'" location="top">
+				<v-tooltip
+					:text="props.visualizations.length === 0 ? 'No GeoPTZ controllers selected' : 'Select map click-to-task'"
+					location="top">
 					<template #activator="{ props: tooltipProps }">
 						<span v-bind="tooltipProps" style="display: inline-block;">
 							<IconButton icon :color="isSelected ? 'primary' : 'grey'" @click="toggle"
@@ -95,11 +98,14 @@ onBeforeUnmount(() => {
 			</v-col>
 		</v-row>
 		<v-divider class="my-4" v-if="props.visualizations.length > 0"></v-divider>
-		<v-row :style="{display: props.visualizations.length > 0 ? 'block' : 'none'}">
+		<v-row :style="{ display: props.visualizations.length > 0 ? 'block' : 'none' }">
 			<v-col no-gutters>
-				<v-text-field v-model.number="latInput" type="number" label="Latitude (-90 to 90)" placeholder="0.0" min="-90" max="90" />
-				<v-text-field v-model.number="lonInput" type="number" label="Longitude (-180 to 180)" placeholder="0.0" min="-180" max="180" />
-				<v-text-field v-model.number="altInput" type="number" label="Altitude" placeholder="0.0" min="-9999" max="99999" />
+				<v-text-field v-model.number="latInput" type="number" label="Latitude (-90 to 90)" placeholder="0.0" min="-90"
+					max="90" />
+				<v-text-field v-model.number="lonInput" type="number" label="Longitude (-180 to 180)" placeholder="0.0"
+					min="-180" max="180" />
+				<v-text-field v-model.number="altInput" type="number" label="Altitude" placeholder="0.0" min="-9999"
+					max="99999" />
 				<v-btn color="primary" @click="onSend" block>Send</v-btn>
 			</v-col>
 		</v-row>

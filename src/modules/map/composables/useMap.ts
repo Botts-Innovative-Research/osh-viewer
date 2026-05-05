@@ -2,24 +2,18 @@ import { useMapStore } from '@/stores/mapstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { computed, onMounted, ref, watch } from 'vue';
 import LeafletView from 'osh-js/source/core/ui/view/map/LeafletView';
-import L from 'leaflet';
-import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
-import * as Cesium from 'cesium';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import { createMapVisualizations, rebuildMapVisualizations } from '../mapVisualizations';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
-import { useGeoPTZ } from './useGeoPTZ';
-import { createCesiumMap, MapLayer } from './useCesium';
+import { createCesiumMap, handleCesiumClick } from '../cesiumAdapter';
+import { taskGeoPTZ } from '../geoPTZ.service';
 
 export function useMap() {
 	// Stores
 	const mapStore = useMapStore();
 	const visualizationStore = useVisualizationStore();
-
-	// Composables
-	const { taskGeoPTZ } = useGeoPTZ();
 
 	// Map state
 	const mapView = ref<any>(null);
@@ -40,7 +34,7 @@ export function useMap() {
 				layers: [],
 				autoZoomOnFirstMarker: true,
 			});
-		} else {
+		} else if (mapType.value === 'cesium') {
 			mapView.value = await createCesiumMap('mapContainer');
 		}
 	}
@@ -150,31 +144,31 @@ export function useMap() {
 	}
 
 	/* CESIUM */
-	watch(
-		() => mapStore.cesiumMapLayers,
-		(layers) => {
-			if (mapType.value !== 'cesium' || !mapView.value) return;
-			syncCesiumLayers(layers);
-		},
-		{ deep: true }
-	);
-	function syncCesiumLayers(layers: MapLayer[]) {
-		// Add new layers
-		layers.forEach((layer: any) => {
-			if (!renderedCesiumLayers.value.has(layer.id)) {
-				const ref = addLayerToCesium(layer);
-				renderedCesiumLayers.value.set(layer.id, ref);
-			}
-		});
+	// watch(
+	// 	() => mapStore.cesiumMapLayers,
+	// 	(layers) => {
+	// 		if (mapType.value !== 'cesium' || !mapView.value) return;
+	// 		syncCesiumLayers(layers);
+	// 	},
+	// 	{ deep: true }
+	// );
+	// function syncCesiumLayers(layers: MapLayer[]) {
+	// 	// Add new layers
+	// 	layers.forEach((layer: any) => {
+	// 		if (!renderedCesiumLayers.value.has(layer.id)) {
+	// 			const ref = addLayerToCesium(layer);
+	// 			renderedCesiumLayers.value.set(layer.id, ref);
+	// 		}
+	// 	});
 
-		// Remove deleted layers
-		for (const [id, ref] of renderedCesiumLayers.value.entries()) {
-			if (!layers.some((layer: any) => layer.id === id)) {
-				removeLayerFromCesium(ref);
-				renderedCesiumLayers.value.delete(id);
-			}
-		}
-	}
+	// 	// Remove deleted layers
+	// 	for (const [id, ref] of renderedCesiumLayers.value.entries()) {
+	// 		if (!layers.some((layer: any) => layer.id === id)) {
+	// 			removeLayerFromCesium(ref);
+	// 			renderedCesiumLayers.value.delete(id);
+	// 		}
+	// 	}
+	// }
 
 	/* GEOPTZ */
 	watch(
@@ -196,41 +190,22 @@ export function useMap() {
 	/** MAP INTERACTIONS */
 	watch(mapView, (map) => {
 		if (!map) return;
+		console.log("Heyyy")
+
+		const handleClick: MapClickHandler = (lat: number, lon: number, alt: number) => {
+			if (mapStore.isGeoPTZSelected) taskGeoPTZ(lat, lon, alt);
+			if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lon, 0);
+			// Add additional onClick functions
+		};
 
 		// Handle map click
-		let lat: number, lng: number;
 		if (mapType.value === 'leaflet') {
-			map.map.on('click', (event: any) => {
-				lat = event.latlng.lat;
-				lng = event.latlng.lng;
-				if (mapStore.isGeoPTZSelected) taskGeoPTZ(lat, lng, 100);
-				if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lng, 0);
-			});
+			// TODO: Handle leaflet
 		} else if (mapType.value === 'cesium') {
-			const viewer = map.viewer;
-			// Description box styling
-			viewer.infoBox.frame.onload = function () {
-				const doc = viewer.infoBox.frame.contentDocument;
-				doc.body.style.backgroundColor = '#242424';
-				doc.body.style.color = '#ffffff';
-			};
-
-			const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
-			handler.setInputAction((click: any) => {
-				const cartesian = viewer.camera.pickEllipsoid(
-					click.position,
-					viewer.scene.globe.ellipsoid
-				);
-				if (!cartesian) return;
-
-				const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
-				lat = Cesium.Math.toDegrees(cartographic.latitude);
-				lng = Cesium.Math.toDegrees(cartographic.longitude);
-				if (mapStore.isGeoPTZSelected) taskGeoPTZ(lat, lng, 100);
-				if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lng, 0);
-			}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+			handleCesiumClick(map, handleClick);
 		}
 	});
+
 	//TODO: Cursor styling
 
 	onMounted(() => {
@@ -245,3 +220,5 @@ export function useMap() {
 		deleteMapVisualizations,
 	};
 }
+
+export type MapClickHandler = (lat: number, lon: number, alt: number) => void;
