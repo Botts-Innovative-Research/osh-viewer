@@ -5,6 +5,9 @@ import { useMapStore } from '@/stores/mapstore';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
+import { FrustumPrimitive } from '@/cesium/FrustumPrimitive.js';
+
+const _frustumDebug = new URLSearchParams(window.location.search).has('frustumDebug');
 
 // prettier-ignore
 // @ts-ignore
@@ -13,6 +16,11 @@ const iconBase = import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.met
 export interface ICreateMapVisualizationResult {
 	vizLayer: PointMarkerLayer | LoBLayer;
 	dsInstances: SweApi[];
+}
+
+export interface IFrustumVisualizationResult {
+	dsInstances: SweApi[];
+	cleanup: () => void;
 }
 
 export function createMapVisualizations(
@@ -198,6 +206,98 @@ export function createGeoPTZLayer(
 	});
 
 	return { vizLayer: pmLayer, dsInstances };
+}
+
+/**
+ * Creates a camera-frustum visualization driven by live OSH datasources.
+ *
+ * If existingDsInstances is provided, those are reused instead of creating new
+ * connections (use this when piggybacking on a PointMarkerLayer's datasources).
+ * dsArray and existingDsInstances must be parallel arrays of the same length.
+ *
+ * Expected datasource property roles:
+ *   location    → rec[prop].lon / .lat / .alt
+ *   orientation → rec[prop].heading / .pitch / .roll
+ */
+export function createFrustumVisualization(
+	viz: OSHVisualization,
+	dsArray: ISweApiDataSourceProperties[],
+	viewer: any,
+	existingDsInstances?: SweApi[],
+): IFrustumVisualizationResult {
+	const layerOpts = (viz.visualizationComponents?.dataLayer as any) ?? {};
+	const primitive = new FrustumPrimitive(viewer, layerOpts);
+
+	let lon: number | null = null;
+	let lat: number | null = null;
+	let alt = 120;
+	let heading = 0;
+	let pitch = 0;
+	let roll = 0;
+
+	function tryUpdate() {
+		if (lon !== null && lat !== null) {
+			primitive.update(lon, lat, alt, heading, pitch, roll);
+		}
+	}
+
+	const dsInstances: SweApi[] = existingDsInstances ?? [];
+	const channels: BroadcastChannel[] = [];
+
+	if (!existingDsInstances) {
+		for (const dsProps of dsArray) {
+			const dsInstance = createDatasource(dsProps);
+			dsInstance.connect();
+			dsInstances.push(dsInstance);
+		}
+	}
+
+	for (let i = 0; i < dsInstances.length; i++) {
+		const dsInstance = dsInstances[i];
+		const dsProps = dsArray[i];
+
+		const channel = new BroadcastChannel((dsInstance as any).getTopicId());
+		channel.onmessage = (event: MessageEvent) => {
+			if (event.data.type !== 'data') return;
+			for (const record of event.data.values ?? []) {
+				const rec = record.data;
+				if (!rec) continue;
+
+				if (dsProps.properties.location) {
+					const loc = rec[dsProps.properties.location.property];
+					if (loc) {
+						lon = loc.lon;
+						lat = loc.lat;
+						alt = loc.alt ?? 120;
+					}
+				}
+				if (dsProps.properties.orientation) {
+					const orient = rec[dsProps.properties.orientation.property];
+					if (orient) {
+						heading = (orient.heading ?? 0) - 180;
+						const rawPitch = orient.pitch ?? 0;
+						roll = -(orient.roll ?? 0);
+						// iOS OSH app measures pitch as angle from nadir (0=down, 90=horizon, 180=up).
+						// FrustumGeometry treats pitch=0 as zenith, -90=horizon, ±180=nadir.
+						pitch = rawPitch - 180;
+					}
+				}
+				if (_frustumDebug) {
+					console.log('[Frustum] h=%f p_raw=%f p_cesium=%f r=%f', heading, (pitch + 90), pitch, roll);
+				}
+				tryUpdate();
+			}
+		};
+		channels.push(channel);
+	}
+
+	return {
+		dsInstances,
+		cleanup: () => {
+			channels.forEach((ch) => ch.close());
+			primitive.destroy();
+		},
+	};
 }
 
 export function rebuildMapVisualizations(oldLayers: Map<string, PointMarkerLayer | LoBLayer>) {

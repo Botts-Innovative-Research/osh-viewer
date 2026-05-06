@@ -3,7 +3,11 @@ import { useVisualizationStore } from '@/stores/visualizationstore';
 import { computed, onMounted, ref, watch } from 'vue';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
-import { createMapVisualizations, rebuildMapVisualizations } from '../mapVisualizations';
+import {
+	createFrustumVisualization,
+	createMapVisualizations,
+	rebuildMapVisualizations,
+} from '../mapVisualizations';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { createCesiumMap, handleCesiumClick, setCesiumCursor } from '../cesiumAdapter';
@@ -23,6 +27,11 @@ export function useMap() {
 
 	// Map of visualization ID to its corresponding visualization layer instance
 	const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer>>(new Map());
+	// Cleanup entries for Cesium-native (non-osh-js-layer) visualizations such as frustums
+	const frustumCleanups = ref<Map<string, { cleanup: () => void; dsIds: string[] }>>(new Map());
+	// Cleanup functions for frustums co-created alongside PointMarkerLayers with orientation
+	// These share the parent layer's datasources, so there are no extra dsIds to disconnect.
+	const coFrustumCleanups = ref<Map<string, () => void>>(new Map());
 	// List of all connected datasource instances created for map visualizations
 	const listDataSourceInstances = ref<SweApi[]>([]);
 
@@ -36,6 +45,11 @@ export function useMap() {
 	}
 	async function destroyMap() {
 		if (!mapView.value) return;
+		// Tear down Cesium-native primitives before the viewer is destroyed
+		frustumCleanups.value.forEach((entry) => entry.cleanup());
+		frustumCleanups.value.clear();
+		coFrustumCleanups.value.forEach((cleanup) => cleanup());
+		coFrustumCleanups.value.clear();
 		mapView.value.destroy();
 		mapView.value = null;
 	}
@@ -95,6 +109,26 @@ export function useMap() {
 	);
 	function addMapVisualizationLayer(viz: OSHVisualization) {
 		console.log('[Map] Creating viz layer for:', viz.id);
+
+		if (viz.type === 'frustum') {
+			if (!mapView.value?.viewer) {
+				console.warn('[Map] Frustum visualization requires Cesium viewer; skipping:', viz.id);
+				return;
+			}
+			const result = createFrustumVisualization(
+				viz,
+				viz.visualizationComponents.dataSource,
+				mapView.value.viewer,
+			);
+			listDataSourceInstances.value.push(...result.dsInstances);
+			frustumCleanups.value.set(viz.id, {
+				cleanup: result.cleanup,
+				dsIds: result.dsInstances.map((ds) => ds.id),
+			});
+			console.log(`Created frustum Visualization:`, viz.id);
+			return;
+		}
+
 		const result = createMapVisualizations(viz);
 		if (result) {
 			const { vizLayer, dsInstances } = result;
@@ -102,12 +136,36 @@ export function useMap() {
 			listDataSourceInstances.value.push(...dsInstances); // Push dsInstances to list of all active ds
 			mapItemLayers.value.set(viz.id, vizLayer); // Store vizLayer instance for this viz.id
 			mapView.value.addLayer(vizLayer); // Add vizLayer to map
+
+			// Auto-attach a frustum when this pointmarker has orientation configured
+			const hasOrientation = viz.visualizationComponents.dataSource.some(
+				(ds) => ds.properties.orientation != null,
+			);
+			if (hasOrientation && mapView.value?.viewer) {
+				const { cleanup } = createFrustumVisualization(
+					viz,
+					viz.visualizationComponents.dataSource,
+					mapView.value.viewer,
+					dsInstances,
+				);
+				coFrustumCleanups.value.set(viz.id, cleanup);
+				console.log(`Auto-attached frustum to pointmarker visualization:`, viz.id);
+			}
 		}
 	}
 	function deleteMapVisualizations(removedVizIds: string[]) {
 		const removedDsIds: string[] = [];
 
 		for (const vizId of removedVizIds) {
+			// Handle Cesium-native frustum visualizations
+			const frustumEntry = frustumCleanups.value.get(vizId);
+			if (frustumEntry) {
+				frustumEntry.cleanup();
+				frustumCleanups.value.delete(vizId);
+				removedDsIds.push(...frustumEntry.dsIds); // let the filter below disconnect them
+				continue;
+			}
+
 			const layer = mapItemLayers.value.get(vizId);
 			if (!layer) continue; // Skip if no layer found for this vizId
 
@@ -123,6 +181,13 @@ export function useMap() {
 
 			// Remove layer from mapItemLayers
 			mapItemLayers.value.delete(vizId);
+
+			// Remove any co-created frustum that was attached to this layer
+			const coCleanup = coFrustumCleanups.value.get(vizId);
+			if (coCleanup) {
+				coCleanup();
+				coFrustumCleanups.value.delete(vizId);
+			}
 		}
 
 		// Disconnect and remove datasources
