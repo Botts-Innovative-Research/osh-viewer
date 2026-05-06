@@ -6,9 +6,10 @@ import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import { createMapVisualizations, rebuildMapVisualizations } from '../mapVisualizations';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
-import { createCesiumMap, handleCesiumClick, setCesiumCursor } from '../cesiumAdapter';
-import { createLeafletMap, handleLeafletClick, setLeafletCursor } from '../leafletAdapter';
+import { createCesiumAdapter } from '../adapters/cesium.adapter';
 import { taskGeoPTZ } from '../geoPTZ.service';
+import { MapAdapter } from '../adapters/types';
+import { createLeafletAdapter } from '../adapters/leaflet.adapter';
 
 export function useMap() {
 	// Stores
@@ -16,7 +17,7 @@ export function useMap() {
 	const visualizationStore = useVisualizationStore();
 
 	// Map state
-	const mapView = ref<any>(null);
+	const mapAdapter = ref<MapAdapter | null>(null);
 	const mapType = computed(() => {
 		return mapStore.focusedMap;
 	});
@@ -26,38 +27,37 @@ export function useMap() {
 	// List of all connected datasource instances created for map visualizations
 	const listDataSourceInstances = ref<SweApi[]>([]);
 
-	/* MAP INITIALIZATION/DESTRUCTION */
+	/* MAP INITIALIZATION/DESTRUCTION/TOGGLE */
 	async function initMap() {
-		if (mapType.value === 'leaflet') {
-			mapView.value = createLeafletMap('mapContainer');
-		} else if (mapType.value === 'cesium') {
-			mapView.value = await createCesiumMap('mapContainer');
+		if (mapType.value === 'cesium') {
+			mapAdapter.value = createCesiumAdapter();
+		} else if (mapType.value === 'leaflet') {
+			mapAdapter.value = createLeafletAdapter();
 		}
+		await mapAdapter.value?.init?.('mapContainer');
+  	bindMapInteractions();
 	}
-	async function destroyMap() {
-		if (!mapView.value) return;
-		mapView.value.destroy();
-		mapView.value = null;
+	function destroyMap() {
+		mapAdapter.value?.destroy();
+		mapAdapter.value = null;
 	}
 	async function switchMap() {
 		// Temporarily disconnect datasources
 		disconnectDatasources();
 
-		await destroyMap();
+		destroyMap();
 		await initMap();
 
 		// Rebuild layers
 		const newLayers = rebuildMapVisualizations(mapItemLayers.value);
 		newLayers.forEach((layer) => {
-			mapView.value.addLayer(layer);
+			mapAdapter.value?.addLayer(layer);
 		});
 		mapItemLayers.value = newLayers;
 
 		// Reconnect datasources
 		connectDatasources();
 	}
-
-	/** TOGGLE MAP */
 	watch(mapType, async () => {
 		await switchMap();
 	});
@@ -74,37 +74,40 @@ export function useMap() {
 	watch(
 		() => visualizationStore.mapVisualizations.map((v) => v.id),
 		(newIds, oldIds) => {
-			// Handle removed visualizations
 			const removedIds = oldIds?.filter((oldId) => !newIds.some((id) => id === oldId));
-			if (removedIds) deleteMapVisualizations(removedIds);
+			const addedIds = newIds?.filter((newId) => !oldIds?.some((id) => id === newId));
+
+			// Handle removed visualizations
+			if (removedIds) deleteVisualizations(removedIds);
 
 			//Handle added visualizations
-			const addedIds = newIds?.filter((newId) => !oldIds?.some((id) => id === newId));
 			if (addedIds) {
 				const newOSHVisualizations: OSHVisualization[] = addedIds
 					.map((id) => visualizationStore.getVisualizationById(id))
 					.filter(Boolean) as OSHVisualization[];
 
-				for (const viz of newOSHVisualizations) {
-					addMapVisualizationLayer(viz);
+				newOSHVisualizations.forEach((viz: OSHVisualization) => {
+					addVisualization(viz);
 					console.log(`Added visualization with id ${viz.id} to map.`);
-				}
+				})
 			}
 		},
 		{ immediate: true, deep: true }
 	);
-	function addMapVisualizationLayer(viz: OSHVisualization) {
+	function addVisualization(viz: OSHVisualization) {
 		console.log('[Map] Creating viz layer for:', viz.id);
+		
 		const result = createMapVisualizations(viz);
-		if (result) {
-			const { vizLayer, dsInstances } = result;
-			console.log(`Created ${viz.type} Visualization:`, vizLayer);
-			listDataSourceInstances.value.push(...dsInstances); // Push dsInstances to list of all active ds
-			mapItemLayers.value.set(viz.id, vizLayer); // Store vizLayer instance for this viz.id
-			mapView.value.addLayer(vizLayer); // Add vizLayer to map
-		}
+		if (!result) return;
+		
+		const { vizLayer, dsInstances } = result;
+
+		console.log(`Created ${viz.type} Visualization:`, vizLayer);
+		listDataSourceInstances.value.push(...dsInstances); // Push dsInstances to list of all active ds
+		mapItemLayers.value.set(viz.id, vizLayer); // Store vizLayer instance for this viz.id
+		mapAdapter.value?.addLayer(vizLayer); // Add vizLayer to map
 	}
-	function deleteMapVisualizations(removedVizIds: string[]) {
+	function deleteVisualizations(removedVizIds: string[]) {
 		const removedDsIds: string[] = [];
 
 		for (const vizId of removedVizIds) {
@@ -115,11 +118,7 @@ export function useMap() {
 			removedDsIds.push(...layer.dataSourceIds);
 
 			// Remove layer from the actual map safely
-			try {
-				if (mapView.value) mapView.value.removeAllFromLayer(layer);
-			} catch (error) {
-				console.warn(`Error removing layer for vizId ${vizId}:`, error);
-			}
+			mapAdapter.value?.removeLayer(layer);
 
 			// Remove layer from mapItemLayers
 			mapItemLayers.value.delete(vizId);
@@ -138,6 +137,39 @@ export function useMap() {
 			}
 		);
 	}
+
+	/** MAP INTERACTIONS */
+	function bindMapInteractions() {
+		if (!mapAdapter.value) return;
+
+		mapAdapter.value.onClick((lat, lon, alt) => {
+			console.log('Map click:', lat, lon, alt);
+			if (mapStore.isGeoPTZSelected) taskGeoPTZ(lat, lon, alt);
+			if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lon, 0);
+			// Add additional onClick functions
+		})
+	}
+	// Map cursor styling
+	watch(
+		() => mapStore.mapCursorMode,
+		(mode) => {
+			if (mode) {
+				mapAdapter.value?.setCursor(mode);
+			}
+		}
+	);
+
+	/* GEOPTZ */
+	watch(
+		() => mapStore.selectedGeoPTZ,
+		(geoPtz, oldGeoPtz) => {
+			// If had value, delete
+			if (oldGeoPtz?.length) deleteVisualizations([oldGeoPtz[0].id]);
+			// If has a new value, create new
+			if (geoPtz?.length) addVisualization(geoPtz[0]);
+		},
+		{ deep: true }
+	);
 
 	/* CESIUM */
 	// watch(
@@ -166,65 +198,14 @@ export function useMap() {
 	// 	}
 	// }
 
-	/* GEOPTZ */
-	watch(
-		() => mapStore.selectedGeoPTZ,
-		(geoPtz, oldGeoPtz) => {
-			// If had value, delete
-			if (oldGeoPtz?.length) deleteMapVisualizations([oldGeoPtz[0].id]);
-			// If has a new value, create new
-			if (geoPtz?.length) addMapVisualizationLayer(geoPtz[0]);
-		},
-		{ deep: true }
-	);
-
-	/** MAP INTERACTIONS */
-	let cleanupClickHandler: (() => void) | null = null;
-	watch(mapView, (map) => {
-		if (!map) return;
-		console.log('Heyyy');
-
-		if (cleanupClickHandler) {
-			cleanupClickHandler();
-			cleanupClickHandler = null;
-		}
-
-		const handleClick: MapClickHandler = (lat: number, lon: number, alt: number) => {
-			if (mapStore.isGeoPTZSelected) taskGeoPTZ(lat, lon, alt);
-			if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lon, 0);
-			// Add additional onClick functions
-		};
-
-		// Handle map click
-		if (mapType.value === 'leaflet') {
-			handleLeafletClick(map, handleClick);
-		} else if (mapType.value === 'cesium') {
-			cleanupClickHandler = handleCesiumClick(map, handleClick);
-		}
-	});
-
-	//TODO: Cursor styling
-	watch(
-		() => mapStore.mapCursorMode,
-		(mode) => {
-			// Leaflet
-			if (mapType.value === 'leaflet') setLeafletCursor(mapView.value, mode);
-			// Cesium
-			else if (mapType.value === 'cesium') setCesiumCursor(mapView.value, mode);
-		}
-	);
-
 	onMounted(() => {
 		initMap();
 	});
 
 	return {
-		mapView,
+		mapAdapter,
 		initMap,
 		destroyMap,
 		switchMap,
-		deleteMapVisualizations,
 	};
 }
-
-export type MapClickHandler = (lat: number, lon: number, alt: number) => void;

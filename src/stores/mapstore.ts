@@ -3,7 +3,8 @@ import { ref, Ref } from 'vue';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import { MapLayer } from '@/modules/map/cesiumAdapter';
+import { MapLayer } from '@/modules/map/adapters/cesium.adapter';
+import { CursorMode } from '@/modules/map/adapters/types';
 
 export const useMapStore = defineStore(
 	'map',
@@ -12,7 +13,7 @@ export const useMapStore = defineStore(
 		const selectedMapItem: Ref<any | null> = ref(null); // Currently selected map item from list of map visualizations
 		const currentLLA: Ref<{ latitude: number; longitude: number; altitude: number } | null> =
 			ref(null); // Currently selected LLA coordinates
-		const mapCursorMode = ref<'default' | 'crosshair'>('default');
+		const mapCursorMode = ref<CursorMode>('default');
 
 		/* CESIUM */
 		const cesiumMapLayers: Ref<MapLayer[]> = ref([]);
