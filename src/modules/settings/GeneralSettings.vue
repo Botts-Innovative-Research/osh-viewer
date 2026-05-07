@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { useUIStore } from '@/stores/uistore';
+import { useSettingsStore } from '@/stores/settingsstore';
 import { computed } from 'vue';
 
 
-const uiStore = useUIStore()
+const settingsStore = useSettingsStore()
 
 const theme = computed({
-  get: () => uiStore.theme,
-  set: (val) => uiStore.setTheme(val),
+  get: () => settingsStore.theme,
+  set: (val) => settingsStore.setTheme(val),
 })
 
 </script>

@@ -2,15 +2,13 @@
 import { RouterView } from 'vue-router';
 import HeaderToolbar from '@/components/HeaderToolbar.vue';
 import { storeToRefs } from 'pinia';
-import { useUIStore } from '@/stores/uistore';
 import { useNodeStore } from '@/stores/nodestore';
 import { OSHConnect } from '@/lib/OSHConnectDataStructs';
-import {useDataStreamStore} from "@/stores/datastreamstore.js";
-import {useControlStreamStore} from "@/stores/controlstreamstore.js";
 import {useVisualizationStore} from "@/stores/visualizationstore.js";
+import { useSettingsStore } from './stores/settingsstore';
 
-const uistore = useUIStore();
-const { theme } = storeToRefs(uistore);
+const settingsStore = useSettingsStore();
+const { theme } = storeToRefs(settingsStore);
 
 const connect = new OSHConnect();
 const nodeStore = useNodeStore();

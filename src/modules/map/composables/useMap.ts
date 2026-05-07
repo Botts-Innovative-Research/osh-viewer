@@ -14,16 +14,18 @@ import { createCesiumAdapter } from '../adapters/cesium.adapter';
 import { taskGeoPTZ } from '../services/geoPTZ.service';
 import { MapAdapter } from '../adapters/types';
 import { createLeafletAdapter } from '../adapters/leaflet.adapter';
+import { useSettingsStore } from '@/stores/settingsstore';
 
 export function useMap() {
 	// Stores
 	const mapStore = useMapStore();
 	const visualizationStore = useVisualizationStore();
+	const settingsStore = useSettingsStore();
 
 	// Map state
 	const mapAdapter = ref<MapAdapter | null>(null);
 	const mapType = computed(() => {
-		return mapStore.focusedMap;
+		return settingsStore.focusedMap;
 	});
 
 	// Map of visualization ID to its corresponding visualization layer instance
@@ -45,10 +47,10 @@ export function useMap() {
 			}
 
 			// Apply current settings
-			if (mapStore.cesiumSettings.enable3DTerrain) {
+			if (settingsStore.enable3DTerrain) {
 				await mapAdapter.value?.addTerrain?.();
 			}
-			if (mapStore.cesiumSettings.enable3DBuildings) {
+			if (settingsStore.enable3DBuildings) {
 				await mapAdapter.value?.addBuildings?.();
 			}
 		} else if (mapType.value === 'leaflet') {
@@ -265,7 +267,7 @@ export function useMap() {
 
 	/* CESIUM-ONLY FEATURES */
 	watch(
-		() => mapStore.cesiumSettings.enable3DTerrain,
+		() => settingsStore.enable3DTerrain,
 		async (enabled) => {
 			if (!mapAdapter.value) return;
 
@@ -277,7 +279,7 @@ export function useMap() {
 		}
 	);
 	watch(
-		() => mapStore.cesiumSettings.enable3DBuildings,
+		() => settingsStore.enable3DBuildings,
 		async (enabled) => {
 			if (!mapAdapter.value) return;
 
