@@ -8,54 +8,92 @@ import { IChartViewProperties, ISweApiDataSourceProperties } from '@/lib/Visuali
 import AudioView from "osh-js/source/core/ui/view/audio/AudioView";
 import AudioSpectrogramVisualizer from "osh-js/source/core/ui/view/audio/visualizer/spectrogram/AudioSpectrogramVisualizer";
 
-const props = defineProps<{
-  visualization: OSHVisualization,
-  datasource: ISweApiDataSourceProperties[],
-  audioView: IChartViewProperties,
-  spectrogramOptions?: { fftSize?: number, sampleField?: string, colorScale?: string },
-  audioViewOptions?: Record<string, any>,
-}>();
+// const props = defineProps<{
+//   visualization: OSHVisualization,
+//   datasource: ISweApiDataSourceProperties[],
+//   audioView: IChartViewProperties,
+//   spectrogramOptions?: { fftSize?: number, sampleField?: string, colorScale?: string },
+//   audioViewOptions?: Record<string, any>,
+// }>();
 
 const audioId = ref('audio-' + randomUUID());
 let audioViewInstance = ref<AudioView | null>(null);
 onMounted(async () => {
-  initializeAudio();
+  // initializeAudio();
+  createTestAudio();
 });
 
 // Array of SweApi instances for datasources
 const dsInstances: SweApi[] = [];
 
-function initializeAudio() {
-  const viz = props.visualization;
-  if (!viz || viz.type !== 'audio') return;
+// function initializeAudio() {
+//   const viz = props.visualization;
+//   if (!viz || viz.type !== 'audio') return;
 
-  const dsArray: ISweApiDataSourceProperties[] = props.datasource
+//   const dsArray: ISweApiDataSourceProperties[] = props.datasource
 
-  for (const dsProps of dsArray) {
-    let rawDs = toRaw(dsProps);
+//   for (const dsProps of dsArray) {
+//     let rawDs = toRaw(dsProps);
 
-    const dsInstance = createDatasource(dsProps)
+//     const dsInstance = createDatasource(dsProps)
 
-    dsInstance.connect();
-    dsInstances.push(dsInstance);
-    console.log('[Audio.vue] Audio datasource created:', dsInstance);
-  }
+//     dsInstance.connect();
+//     dsInstances.push(dsInstance);
+//     console.log('[Audio.vue] Audio datasource created:', dsInstance);
+//   }
 
-  const audioSpectrogramVisualizer = new AudioSpectrogramVisualizer({
-     ...props.spectrogramOptions,
-     fftSize: props.spectrogramOptions?.fftSize || 2048,
-     container: audioId.value,
+//   const audioSpectrogramVisualizer = new AudioSpectrogramVisualizer({
+//     ...props.spectrogramOptions,
+//     fftSize: props.spectrogramOptions?.fftSize || 2048,
+//     container: audioId.value,
+//   });
+
+//   if (audioViewInstance.value) {
+//     audioViewInstance.value.destroy?.();
+//     audioViewInstance.value = null;
+//   }
+//   audioViewInstance.value = new AudioView({
+//     ...props.audioViewOptions,
+//     container: audioId.value,
+//     dataSource: dsInstances[0],
+//     playSound: false
+//   });
+//   audioViewInstance.value.addVisualizer(audioSpectrogramVisualizer);
+//   console.log('[Audio.vue] Audio view created:', audioViewInstance.value);
+// }
+
+function createTestAudio() {
+  const dsInstance = new SweApi(dsProps.id, {
+    endpointUrl: dsProps.endpointUrl,
+    resource: dsProps.resource,
+    tls: dsProps.tls,
+    protocol: dsProps.protocol,
+    startTime: dsProps.startTime,
+    endTime: dsProps.endTime,
+    mode: dsProps.mode,
+    responseFormat: dsProps.responseFormat,
+    connectorOpts: {
+      username: dsProps?.connectorOpts.username ?? '',
+      password: dsProps?.connectorOpts.password ?? '',
+    }
   });
 
-  if (audioViewInstance.value) {
-    audioViewInstance.value.destroy?.();
-    audioViewInstance.value = null;
-  }
+  dsInstance.connect();
+  console.log('[Audio.vue] Audio datasource created:', dsInstance);
+
+  const audioSpectrogramVisualizer = new AudioSpectrogramVisualizer({
+    fftSize: 2048,
+    container: audioId.value,
+    sampleField: 'samples',
+    colorScale: 'jet',
+  });
   audioViewInstance.value = new AudioView({
-         ...props.audioViewOptions,
-         container: audioId.value,
-         dataSource: dsInstances[0],
-         playSound: false
+    container: audioId.value,
+    dataSource: dsInstance.id,
+    playSound: false,
+    css: 'audio-view',
+    datasetOptions: { tension: 0.2 },
+    refreshRate: 1000,
   });
   audioViewInstance.value.addVisualizer(audioSpectrogramVisualizer);
   console.log('[Audio.vue] Audio view created:', audioViewInstance.value);

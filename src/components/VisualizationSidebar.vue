@@ -11,6 +11,7 @@ import GeoPTZ from './menus/visualization-wizard/visualizations/geoptz/GeoPTZ.vu
 import VisualizationWizard from './menus/visualization-wizard/VisualizationWizard.vue';
 import DeleteButton from './ui/DeleteButton.vue';
 import EditVisualization from './menus/visualization-wizard/EditVisualization.vue';
+import Audio from './menus/visualization-wizard/visualizations/audio/Audio.vue';
 
 // Each visualization can be represented by an object with a unique id
 const visualizationStore = useVisualizationStore();
@@ -78,6 +79,7 @@ const handleEditViz = (viz: OSHVisualization) => {
 			</v-tooltip>
 		</v-sheet>
 		<v-divider></v-divider>
+		<Audio></Audio>
 		<v-sheet class="visualization-list overflow-y-auto">
 			<v-expansion-panels multiple eager variant="accordion" elevation="0">
 				<!-- MAP VISUALIZATIONS -->
