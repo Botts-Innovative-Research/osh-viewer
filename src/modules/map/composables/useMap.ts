@@ -3,13 +3,18 @@ import { useVisualizationStore } from '@/stores/visualizationstore';
 import { computed, onMounted, ref, watch } from 'vue';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
-import { createMapVisualizations, rebuildMapVisualizations } from '../mapVisualizations';
+import {
+	createMapVisualizations,
+	createWaypointLayer,
+	rebuildMapVisualizations,
+} from '../mapVisualizations';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { createCesiumAdapter, MapLayer } from '../adapters/cesium.adapter';
 import { taskGeoPTZ } from '../services/geoPTZ.service';
 import { MapAdapter } from '../adapters/types';
 import { createLeafletAdapter } from '../adapters/leaflet.adapter';
+import { setWaypointData } from '../services/missionBuilder.service';
 
 export function useMap() {
 	// Stores
@@ -26,6 +31,8 @@ export function useMap() {
 	const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer>>(new Map());
 	// List of all connected datasource instances created for map visualizations
 	const listDataSourceInstances = ref<SweApi[]>([]);
+	// Array of waypoint Pointmarkers for mission builder
+	const waypointLayers = ref<PointMarkerLayer[]>([]);
 
 	/* MAP INITIALIZATION/DESTRUCTION/TOGGLE */
 	async function initMap() {
@@ -174,7 +181,7 @@ export function useMap() {
 	watch(
 		() => mapStore.selectedMapItem,
 		(newVal) => {
-			if (!newVal) return;	// Only fly when a map item is selected
+			if (!newVal) return; // Only fly when a map item is selected
 
 			const layer = mapItemLayers.value.get(newVal.id);
 			if (!layer) return;
@@ -183,7 +190,7 @@ export function useMap() {
 
 			mapAdapter.value?.flyToPoint(location);
 		}
-	)
+	);
 	watch(
 		() => visualizationStore.layerVisibility.entries(),
 		(entries) => {
@@ -195,12 +202,12 @@ export function useMap() {
 
 				ids.map((id: string) => {
 					mapAdapter.value?.toggleLayerVisibility(id, isVisible);
-				})
+				});
 
 				console.log('Layer visibility changed:', layerId, isVisible);
 			}
 		}
-	)
+	);
 
 	/* GEOPTZ */
 	watch(
@@ -213,6 +220,49 @@ export function useMap() {
 		},
 		{ deep: true }
 	);
+
+	/* MISSION BUILDER */
+	watch(
+		() => mapStore.clearMissionWaypointsMarkers,
+		(clear: boolean) => {
+			if (!clear || !mapAdapter.value) return;
+
+			clearMission();
+			mapStore.resetClearWaypointMarkersSignal();
+		}
+	);
+	watch(
+		() => mapStore.missionWaypoints,
+		async (waypoints) => {
+			if (!mapAdapter.value) return;
+
+			// Remove waypoints
+			clearMission();
+
+			// Add waypoints
+			for (const [index, waypoint] of waypoints.entries()) {
+				const result = await createWaypointLayer(waypoint, index.toString());
+				if (result) {
+					mapAdapter.value?.addLayer(result.layer);
+					waypointLayers.value.push(result.layer);
+					if (result.props) mapAdapter.value?.updateMarker(result.props);
+				}
+			}
+
+			// Handle polyline if waypoints >= 2
+			if (waypoints.length >= 2) {
+				mapAdapter.value.drawMissionPath(waypoints);
+			}
+		}
+	);
+	function clearMission() {
+		for (const layer of waypointLayers.value) {
+			mapAdapter.value?.removeLayer(layer);
+		}
+		waypointLayers.value = [];
+
+		mapAdapter.value?.clearMissionPath();
+	}
 
 	/* CESIUM-ONLY FEATURES */
 	watch(

@@ -1,8 +1,10 @@
 import LeafletView from 'osh-js/source/core/ui/view/map/LeafletView';
-import { MapAdapter, MapClickHandler } from './types';
+import L from 'leaflet';
+import { MapAdapter, MapClickHandler, MapPoint } from './types';
 
 export function createLeafletAdapter(): MapAdapter {
 	let mapView: LeafletView | null;
+	let flightPathPolyline: any = null;
 
 	async function init(container: string) {
 		mapView = new LeafletView({
@@ -59,6 +61,24 @@ export function createLeafletAdapter(): MapAdapter {
 		mapView.map.flyTo([location.y, location.x]);
 	}
 
+	function updateMarker(props: any) {
+		mapView.updateMarker(props);
+	}
+
+	function drawMissionPath(waypoints: MapPoint[]) {
+		const latLngs = waypoints.map((wp: MapPoint) => [wp.lat, wp.lon]);
+		flightPathPolyline = L.polyline(latLngs, {
+			color: 'red',
+			weight: 5,
+		}).addTo(mapView.map);
+	}
+
+	function clearMissionPath() {
+		if (!flightPathPolyline) return;
+		mapView.map.removeLayer(flightPathPolyline);
+		flightPathPolyline = null;
+	}
+
 	return {
 		init,
 		destroy,
@@ -68,5 +88,8 @@ export function createLeafletAdapter(): MapAdapter {
 		setCursor,
 		onClick,
 		flyToPoint,
+		updateMarker,
+		drawMissionPath,
+		clearMissionPath,
 	};
 }

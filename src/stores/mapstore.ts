@@ -3,7 +3,7 @@ import { ref, Ref } from 'vue';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 // @ts-ignore
 import { MapLayer } from '@/modules/map/adapters/cesium.adapter';
-import { CursorMode } from '@/modules/map/adapters/types';
+import { CursorMode, MapPoint } from '@/modules/map/adapters/types';
 import { fetchLayerFromUrl } from '@/modules/map/services/cesiumLayer.service';
 
 export const useMapStore = defineStore(
@@ -35,7 +35,7 @@ export const useMapStore = defineStore(
 			commandBaseUrl: string;
 			auth: string;
 		} | null> = ref(null); // Currently selected waypoints for mission planner, including control stream ID, command base URL, and auth token
-		const missionWaypoints: Ref<{ lat: number; lon: number; alt: number }[]> = ref([]); // List of waypoints for mission planner
+		const missionWaypoints: Ref<MapPoint[]> = ref([]); // List of waypoints for mission planner
 		const clearMissionWaypointsMarkers: Ref<boolean> = ref(false); // Flag to trigger clearing of mission waypoint markers on the map
 
 		// Handle selection of map type
@@ -53,7 +53,7 @@ export const useMapStore = defineStore(
 			else mapCursorMode.value = 'default';
 		}
 
-		// Handle list of selected GeoPTZ controllers
+		// GeoPTZ functions
 		function setSelectedGeoPTZ(vizList: OSHVisualization[]) {
 			selectedGeoPTZ.value = vizList;
 			if (vizList?.length === 0) setIsGeoPTZSelected(false); // If list is empty, disselect geoptz
@@ -62,8 +62,6 @@ export const useMapStore = defineStore(
 			selectedGeoPTZ.value = null;
 			setIsGeoPTZSelected(false);
 		}
-
-		// Handle selection of GeoPTZ
 		function setIsGeoPTZSelected(val: boolean) {
 			isGeoPTZSelected.value = val;
 			toggleMapCursorMode();
@@ -91,19 +89,16 @@ export const useMapStore = defineStore(
 			missionWaypoints.value = [];
 			toggleMapCursorMode();
 		}
-
 		function disableWaypointSelection() {
 			selectedWaypoints.value = null;
 			toggleMapCursorMode();
 		}
-
 		function clearMissionWaypoints() {
 			missionWaypoints.value = [];
 		}
-		function setFlightPathWaypoints(waypoints: { lat: number; lon: number; alt: number }[]) {
+		function setFlightPathWaypoints(waypoints: MapPoint[]) {
 			missionWaypoints.value = waypoints;
 		}
-
 		function triggerClearWaypointMarkers() {
 			clearMissionWaypointsMarkers.value = true;
 		}

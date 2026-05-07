@@ -5,6 +5,8 @@ import { useMapStore } from '@/stores/mapstore';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
+import { MapPoint } from './adapters/types';
+import { setWaypointData } from './services/missionBuilder.service';
 
 // prettier-ignore
 // @ts-ignore
@@ -87,6 +89,7 @@ export function createPointMarkerLayer(
 		...viz.visualizationComponents.dataLayer,
 		name: viz.name,
 		id: viz.id,
+		defaultToTerrainElevation: true,
 		dataSourceIds: dsInstances.map((ds) => ds.id),
 		...(getLocation ? { getLocation } : {}),
 		...(getOrientation ? { getOrientation } : {}),
@@ -198,6 +201,36 @@ export function createGeoPTZLayer(
 	});
 
 	return { vizLayer: pmLayer, dsInstances };
+}
+export async function createWaypointLayer(
+	waypoint: MapPoint,
+	index: string
+): Promise<{
+	layer: PointMarkerLayer;
+	props: any;
+}> {
+	const waypointLayer = new PointMarkerLayer({
+		id: `waypoint-${index}`,
+		name: `Waypoint ${index + 1}`,
+		location: {
+			x: waypoint.lon,
+			y: waypoint.lat,
+			z: waypoint.alt || 0,
+		},
+		icon: '/icons/map/geoPtz-pin.svg',
+		iconSize: [32, 32],
+		iconAnchor: [16, 32],
+		label: `WP ${index + 1}`,
+		labelColor: '#FFFFFF',
+		labelOutlineColor: '#000000',
+		labelSize: 14,
+		labelOffset: [0, -36],
+		defaultToTerrainElevation: true,
+	});
+
+	const props = await setWaypointData(waypointLayer);
+
+	return { layer: waypointLayer, props };
 }
 
 export function rebuildMapVisualizations(oldLayers: Map<string, PointMarkerLayer | LoBLayer>) {

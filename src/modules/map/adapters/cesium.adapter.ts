@@ -1,7 +1,8 @@
 import * as Cesium from 'cesium';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
-import { CursorMode, MapAdapter, MapClickHandler } from './types';
+import { CursorMode, MapAdapter, MapClickHandler, MapPoint } from './types';
 import { Ion } from 'cesium';
+import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 
 Ion.defaultAccessToken =
 	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkNDIyMzU2OC0wMWI4LTRjNGYtYTdiMy1kYjRmYzAwNGJkYTgiLCJpZCI6MzM1ODkzLCJpYXQiOjE3NTYzMDQ3MjZ9.5-F-lSal7TV6bHASnlpo5JCxamD0ppGPtQT7GUK5Ne4';
@@ -20,6 +21,7 @@ export function createCesiumAdapter(): MapAdapter {
 	let renderedLayers: Map<string, any> = new Map();
 	let terrainProvider: any = null;
 	let buildingsTileset: any = null;
+	let flightPathPolyline: any = null;
 
 	async function init(container: string) {
 		mapView = new CesiumView({
@@ -125,6 +127,33 @@ export function createCesiumAdapter(): MapAdapter {
 				pitch: Cesium.Math.toRadians(-35),
 			},
 		});
+	}
+
+	function updateMarker(props: any) {
+		mapView.updateMarker(props);
+	}
+
+	function drawMissionPath(waypoints: MapPoint[]) {
+		const positions = waypoints.map((wp: MapPoint) => {
+			return Cesium.Cartesian3.fromDegrees(wp.lon, wp.lat, wp.alt || 0);
+		});
+		flightPathPolyline = mapView.viewer.entities.add({
+			polyline: {
+				positions: positions,
+				width: 5,
+				material: new Cesium.PolylineOutlineMaterialProperty({
+					color: Cesium.Color.RED,
+					outlineWidth: 2,
+					outlineColor: Cesium.Color.BLACK,
+				}),
+				clampToGround: true,
+			},
+		});
+	}
+	function clearMissionPath() {
+		if (!mapView) return;
+		mapView.viewer.entities.remove(flightPathPolyline);
+    flightPathPolyline = null;
 	}
 
 	async function addTerrain() {
@@ -270,6 +299,9 @@ export function createCesiumAdapter(): MapAdapter {
 		setCursor,
 		onClick,
 		flyToPoint,
+		updateMarker,
+		drawMissionPath,
+		clearMissionPath,
 		addTerrain,
 		removeTerrain,
 		addBuildings,

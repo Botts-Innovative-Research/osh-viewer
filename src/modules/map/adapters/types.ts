@@ -1,7 +1,13 @@
 import { MapLayer } from './cesium.adapter';
+import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 
 export type MapClickHandler = (lat: number, lon: number, alt: number) => void;
 export type CursorMode = 'default' | 'crosshair';
+export type MapPoint = {
+	lat: number;
+	lon: number;
+	alt: number;
+}
 export const layerTypes = [
   'layerIdToPolylines',
   //these are not implemented yet, so u can comment them out tbh but i wouldnt remove them
@@ -22,6 +28,12 @@ export interface MapAdapter {
 	onClick(handler: MapClickHandler): () => void;
 	setCursor(mode: CursorMode): void;
 	flyToPoint(location: { x: number; y: number, z: number }): void;
+
+	updateMarker(props: any): void;
+
+	// addMissionWaypoint(layer: PointMarkerLayer): Promise<void>;
+	drawMissionPath(waypoints: MapPoint[]): void;
+	clearMissionPath(): void;
 
 	/* CESIUM ONLY */
 	addTerrain?(): void;
