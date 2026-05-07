@@ -1,3 +1,5 @@
+import { MapLayer } from "./cesium.adapter";
+
 export type MapClickHandler = (lat: number, lon: number, alt: number) => void;
 export type CursorMode = 'default' | 'crosshair';
 
@@ -10,4 +12,14 @@ export interface MapAdapter {
 
   onClick(handler: MapClickHandler): () => void;
   setCursor(mode: CursorMode): void;
+
+  /* CESIUM ONLY */
+  addTerrain?(): void;
+  removeTerrain?(): void;
+  addBuildings?(): void;
+  removeBuildings?(): void;
+  addMapLayer?(layer: MapLayer): void;
+  removeMapLayer?(id: string): void;
+  destroyAllLayers?(): void;
+  rebuildMapLayers?(layers: MapLayer[]): void;
 }

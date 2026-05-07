@@ -2,7 +2,7 @@ import LeafletView from 'osh-js/source/core/ui/view/map/LeafletView';
 import { MapAdapter, MapClickHandler } from './types';
 
 export function createLeafletAdapter(): MapAdapter {
-	let mapView: any;
+	let mapView: LeafletView | null;
 
 	return {
 		async init(container) {

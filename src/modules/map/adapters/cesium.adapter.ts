@@ -1,9 +1,10 @@
 import * as Cesium from 'cesium';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
-import { MapAdapter, MapClickHandler } from './types';
+import { CursorMode, MapAdapter, MapClickHandler } from './types';
 import { Ion } from 'cesium';
 
-Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkNDIyMzU2OC0wMWI4LTRjNGYtYTdiMy1kYjRmYzAwNGJkYTgiLCJpZCI6MzM1ODkzLCJpYXQiOjE3NTYzMDQ3MjZ9.5-F-lSal7TV6bHASnlpo5JCxamD0ppGPtQT7GUK5Ne4';
+Ion.defaultAccessToken =
+	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkNDIyMzU2OC0wMWI4LTRjNGYtYTdiMy1kYjRmYzAwNGJkYTgiLCJpZCI6MzM1ODkzLCJpYXQiOjE3NTYzMDQ3MjZ9.5-F-lSal7TV6bHASnlpo5JCxamD0ppGPtQT7GUK5Ne4';
 
 export type LayerType = 'WMS' | 'WMTS' | 'XYZ' | 'GEOJSON' | 'KML' | 'CZML' | 'GLTF';
 export interface MapLayer {
@@ -13,147 +14,232 @@ export interface MapLayer {
 	parsedParams?: Record<string, any>; // Optional parsed parameters from URL (e.g. layers for WMS, style for WMTS, etc.)
 }
 
-const renderedLayers: Map<string, any> = new Map();
-
 export function createCesiumAdapter(): MapAdapter {
-	let mapView: any;
+	let mapView: CesiumView | null;
 	let clickHandler: Cesium.ScreenSpaceEventHandler | null = null;
+	let renderedLayers: Map<string, any> = new Map();
+	let terrainProvider: any = null;
+	let buildingsTileset: any = null;
 
-	return {
-		async init(container) {
-			mapView = new CesiumView({
-				container,
-				autoZoomOnFirstMarker: true,
-				layers: [],
-			});
-			// Wait for Cesium to be fully ready
-			await new Promise(requestAnimationFrame);
-		},
+	async function init(container: string) {
+		mapView = new CesiumView({
+			container,
+			autoZoomOnFirstMarker: true,
+			layers: [],
+		});
+		// Wait for Cesium to be fully ready
+		await new Promise(requestAnimationFrame);
+	}
 
-		destroy() {
+	function invalidate() {
+		mapView.viewer.scene.requestRender?.();
+	}
+
+	function destroy() {
+		if (mapView.viewer && buildingsTileset) {
+			mapView.viewer.scene.primitives.remove(buildingsTileset);
+		}
+		if (renderedLayers) destroyAllLayers();
+
+		mapView?.destroy();
+		clickHandler?.destroy();
+		clickHandler = null;
+		mapView = null;
+		buildingsTileset = null;
+		terrainProvider = null;
+	}
+
+	function addLayer(layer: any) {
+		mapView.addLayer(layer);
+	}
+
+	function removeLayer(layer: any) {
+		mapView.removeAllFromLayer(layer);
+	}
+
+	function setCursor(mode: CursorMode) {
+		mapView.viewer.canvas.style.cursor = mode;
+	}
+
+	function onClick(handler: MapClickHandler) {
+		const viewer = mapView.viewer;
+		// Description box styling
+		viewer.infoBox.frame.onload = function () {
+			const doc = viewer.infoBox.frame.contentDocument;
+			doc.body.style.backgroundColor = '#242424';
+			doc.body.style.color = '#ffffff';
+		};
+
+		let lat = 0,
+			lon = 0,
+			alt = 0;
+
+		clickHandler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+		clickHandler.setInputAction((click: any) => {
+			// Updated to pickPosition to handle 3D terrain/tiles
+			const cartesian = viewer.scene.pickPosition(click.position);
+			if (!cartesian) return;
+			const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+			lat = Cesium.Math.toDegrees(cartographic.latitude);
+			lon = Cesium.Math.toDegrees(cartographic.longitude);
+			alt = cartographic.height;
+			handler(lat, lon, alt ?? 120);
+		}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+		return () => {
 			clickHandler?.destroy();
 			clickHandler = null;
-			mapView?.destroy();
-			mapView = null;
-		},
-
-		addLayer(layer) {
-			mapView.addLayer(layer);
-		},
-
-		removeLayer(layer) {
-			mapView.removeAllFromLayer(layer);
-		},
-
-		setCursor(mode) {
-			mapView.viewer.canvas.style.cursor = mode;
-		},
-
-		onClick(handler: MapClickHandler) {
-			const viewer = mapView.viewer;
-			// Description box styling
-			viewer.infoBox.frame.onload = function () {
-				const doc = viewer.infoBox.frame.contentDocument;
-				doc.body.style.backgroundColor = '#242424';
-				doc.body.style.color = '#ffffff';
-			};
-
-			let lat = 0,
-				lon = 0,
-				alt = 0;
-
-			clickHandler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
-			clickHandler.setInputAction((click: any) => {
-				// Updated to pickPosition to handle 3D terrain/tiles
-				const cartesian = viewer.scene.pickPosition(click.position);
-				if (!cartesian) return;
-				const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
-				lat = Cesium.Math.toDegrees(cartographic.latitude);
-				lon = Cesium.Math.toDegrees(cartographic.longitude);
-				alt = cartographic.height;
-				handler(lat, lon, alt ?? 120);
-			}, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-
-			return () => {
-				clickHandler?.destroy();
-				clickHandler = null;
-			}
-		},
+		};
 	}
+
+	async function addTerrain() {
+		// Assign terrain provider to map
+		if (!terrainProvider) {
+			terrainProvider = await Cesium.CesiumTerrainProvider.fromIonAssetId(1);
+		}
+		mapView.viewer.terrainProvider = terrainProvider;
+	}
+
+	function removeTerrain() {
+		mapView.viewer.terrainProvider = new Cesium.EllipsoidTerrainProvider();
+	}
+
+	async function addBuildings() {
+		const viewer = mapView.viewer;
+		if (!viewer) return;
+
+		if (buildingsTileset) {
+			if (!viewer.scene.primitives.contains(buildingsTileset)) {
+				viewer.scene.primitives.add(buildingsTileset);
+			}
+		} else {
+			buildingsTileset = await Cesium.Cesium3DTileset.fromIonAssetId(96188);
+			viewer.scene.primitives.add(buildingsTileset);
+		}
+	}
+
+	function removeBuildings() {
+		if (buildingsTileset && mapView.viewer) {
+			mapView.viewer.scene.primitives.remove(buildingsTileset);
+			buildingsTileset = null;
+		}
+	}
+
+	function addMapLayer(layer: MapLayer) {
+		const viewer = mapView.viewer;
+		if (!viewer) return;
+		let ref: any;
+
+		switch (layer.type) {
+			case 'WMS': {
+				const provider = new Cesium.WebMapServiceImageryProvider({
+					url: layer.url.split('?')[0], // ← base URL only, no query params
+					layers: layer.parsedParams?.layers,
+					parameters: { transparent: true, format: 'image/png' },
+				});
+				ref = viewer.imageryLayers.addImageryProvider(provider);
+				break;
+			}
+			case 'WMTS': {
+				const provider = new Cesium.WebMapTileServiceImageryProvider({
+					url: layer.url,
+					layer: layer.parsedParams?.layer,
+					style: layer.parsedParams?.style,
+					tileMatrixSetID: layer.parsedParams?.tileMatrixSetID,
+					format: layer.parsedParams?.format,
+				});
+				ref = viewer.imageryLayers.addImageryProvider(provider);
+				break;
+			}
+			case 'XYZ': {
+				const provider = new Cesium.UrlTemplateImageryProvider({
+					url: layer.url,
+				});
+				ref = viewer.imageryLayers.addImageryProvider(provider);
+				break;
+			}
+			case 'GEOJSON': {
+				ref = viewer.dataSources.add(Cesium.GeoJsonDataSource.load(layer.url));
+				break;
+			}
+			case 'KML': {
+				ref = viewer.dataSources.add(Cesium.KmlDataSource.load(layer.url));
+				break;
+			}
+			case 'CZML': {
+				ref = viewer.dataSources.add(Cesium.CzmlDataSource.load(layer.url));
+				break;
+			}
+			case 'GLTF': {
+				ref = viewer.entities.add({ model: { uri: layer.url, scale: 1.0 } });
+				break;
+			}
+			default:
+				console.warn(`[Ion] Unsupported layer type: ${layer.type}`);
+		}
+
+		renderedLayers.set(layer.id, ref);
+		invalidate();
+	}
+
+	function removeMapLayer(id: string) {
+		const viewer = mapView.viewer;
+		const ref = renderedLayers.get(id);
+		if (!viewer || !ref) return;
+
+		if (ref instanceof Cesium.ImageryLayer) {
+			viewer.imageryLayers.remove(ref);
+		} else if (ref instanceof Cesium.DataSource) {
+			viewer.dataSources.remove(ref);
+		} else if (ref instanceof Cesium.Entity) {
+			viewer.entities.remove(ref);
+		}
+
+		renderedLayers.delete(id);
+	}
+
+	function destroyAllLayers() {
+		const viewer = mapView.viewer;
+		if (!viewer) return;
+
+		for (const [id, ref] of renderedLayers) {
+			try {
+				removeMapLayer(id);
+			} catch (e) {
+				console.warn(`Failed removing layer ${id}`, e);
+			}
+		}
+
+		renderedLayers.clear();
+	}
+
+	async function rebuildMapLayers(layers: MapLayer[]) {
+		const viewer = mapView.viewer;
+		if (!viewer) return;
+
+		layers.forEach((layer: MapLayer) => {
+			if (!renderedLayers.has(layer.id)) {
+				addMapLayer(layer);
+			}
+		});
+
+		invalidate();
+	}
+
+	return {
+		init,
+		destroy,
+		addLayer,
+		removeLayer,
+		setCursor,
+		onClick,
+		addTerrain,
+		removeTerrain,
+		addBuildings,
+		removeBuildings,
+		addMapLayer,
+		removeMapLayer,
+		destroyAllLayers,
+		rebuildMapLayers,
+	};
 }
-
-
-// async function fetchLayerFromUrl(url: string) {
-// 	let parsedUrl: URL;
-// 	try {
-// 		parsedUrl = new URL(url);
-// 	} catch (error) {
-// 		throw new Error(`Invalid URL`);
-// 		return;
-// 	}
-
-// 	const type = detectLayerType(parsedUrl, url);
-// 	if (!type) {
-// 		throw new Error(`Could not detect layer type from URL: ${url}`);
-// 	}
-
-// 	const parsedParams = extractParams(parsedUrl, type);
-// 	cesiumMapLayers.value.push({
-// 		id: randomUUID(),
-// 		url,
-// 		type,
-// 		parsedParams,
-// 	});
-// }
-
-// function detectLayerType(parsed: URL, url: string): LayerType | null {
-// 	const service = parsed.searchParams.get('SERVICE')?.toUpperCase();
-
-// 	if (service === 'WMS') return 'WMS';
-// 	else if (service === 'WMTS') return 'WMTS';
-// 	else if (url.includes('{x}') && url.includes('{y}') && url.includes('{z}')) return 'XYZ';
-// 	else if (url.endsWith('.json') || url.endsWith('.geojson')) return 'GEOJSON';
-// 	else if (url.endsWith('.kml')) return 'KML';
-// 	else if (url.endsWith('.czml')) return 'CZML';
-// 	else if (url.endsWith('.gltf') || url.endsWith('.glb')) return 'GLTF';
-// 	else return null; // Unknown layer type
-// }
-// function extractParams(parsed: URL, type: LayerType) {
-// 	switch (type) {
-// 		case 'WMS':
-// 			return {
-// 				layers:
-// 					parsed.searchParams.get('LAYERS') ?? parsed.searchParams.get('layers') ?? '',
-// 			};
-// 		case 'WMTS':
-// 			return {
-// 				layer: parsed.searchParams.get('LAYER') ?? parsed.searchParams.get('layer') ?? '',
-// 				style:
-// 					parsed.searchParams.get('STYLE') ??
-// 					parsed.searchParams.get('style') ??
-// 					'default',
-// 				tileMatrixSetID:
-// 					parsed.searchParams.get('TILEMATRIXSET') ??
-// 					parsed.searchParams.get('tilematrixset') ??
-// 					'',
-// 				format:
-// 					parsed.searchParams.get('FORMAT') ??
-// 					parsed.searchParams.get('format') ??
-// 					'image/png',
-// 			};
-// 		default:
-// 			return {};
-// 	}
-// }
-
-// function removeLayer(id: string) {
-// 	cesiumMapLayers.value = cesiumMapLayers.value.filter((layer: any) => layer.id !== id);
-// }
-// function set3DTerrain(value: boolean | null) {
-// 	if (value === null) return;
-// 	cesiumSettings.value.enable3DTerrain = value;
-// }
-// function set3DBuildings(value: boolean | null) {
-// 	if (value === null) return;
-// 	cesiumSettings.value.enable3DBuildings = value;
-// }

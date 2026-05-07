@@ -6,8 +6,8 @@ import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import { createMapVisualizations, rebuildMapVisualizations } from '../mapVisualizations';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
-import { createCesiumAdapter } from '../adapters/cesium.adapter';
-import { taskGeoPTZ } from '../geoPTZ.service';
+import { createCesiumAdapter, MapLayer } from '../adapters/cesium.adapter';
+import { taskGeoPTZ } from '../services/geoPTZ.service';
 import { MapAdapter } from '../adapters/types';
 import { createLeafletAdapter } from '../adapters/leaflet.adapter';
 
@@ -31,11 +31,25 @@ export function useMap() {
 	async function initMap() {
 		if (mapType.value === 'cesium') {
 			mapAdapter.value = createCesiumAdapter();
+			await mapAdapter.value?.init?.('mapContainer');
+
+			// Rebuild map layers
+			if (mapStore.cesiumMapLayers) {
+				await mapAdapter.value.rebuildMapLayers?.(mapStore.cesiumMapLayers);
+			}
+
+			// Apply current settings
+			if (mapStore.cesiumSettings.enable3DTerrain) {
+				await mapAdapter.value?.addTerrain?.();
+			}
+			if (mapStore.cesiumSettings.enable3DBuildings) {
+				await mapAdapter.value?.addBuildings?.();
+			}
 		} else if (mapType.value === 'leaflet') {
 			mapAdapter.value = createLeafletAdapter();
+			await mapAdapter.value?.init?.('mapContainer');
 		}
-		await mapAdapter.value?.init?.('mapContainer');
-  	bindMapInteractions();
+		bindMapInteractions();
 	}
 	function destroyMap() {
 		mapAdapter.value?.destroy();
@@ -89,17 +103,17 @@ export function useMap() {
 				newOSHVisualizations.forEach((viz: OSHVisualization) => {
 					addVisualization(viz);
 					console.log(`Added visualization with id ${viz.id} to map.`);
-				})
+				});
 			}
 		},
 		{ immediate: true, deep: true }
 	);
 	function addVisualization(viz: OSHVisualization) {
 		console.log('[Map] Creating viz layer for:', viz.id);
-		
+
 		const result = createMapVisualizations(viz);
 		if (!result) return;
-		
+
 		const { vizLayer, dsInstances } = result;
 
 		console.log(`Created ${viz.type} Visualization:`, vizLayer);
@@ -147,7 +161,7 @@ export function useMap() {
 			if (mapStore.isGeoPTZSelected) taskGeoPTZ(lat, lon, alt);
 			if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lon, 0);
 			// Add additional onClick functions
-		})
+		});
 	}
 	// Map cursor styling
 	watch(
@@ -172,31 +186,54 @@ export function useMap() {
 	);
 
 	/* CESIUM */
-	// watch(
-	// 	() => mapStore.cesiumMapLayers,
-	// 	(layers) => {
-	// 		if (mapType.value !== 'cesium' || !mapView.value) return;
-	// 		syncCesiumLayers(layers);
-	// 	},
-	// 	{ deep: true }
-	// );
-	// function syncCesiumLayers(layers: MapLayer[]) {
-	// 	// Add new layers
-	// 	layers.forEach((layer: any) => {
-	// 		if (!renderedCesiumLayers.value.has(layer.id)) {
-	// 			const ref = addLayerToCesium(layer);
-	// 			renderedCesiumLayers.value.set(layer.id, ref);
-	// 		}
-	// 	});
+	watch(
+		() => mapStore.cesiumSettings.enable3DTerrain,
+		async (enabled) => {
+			if (!mapAdapter.value) return;
 
-	// 	// Remove deleted layers
-	// 	for (const [id, ref] of renderedCesiumLayers.value.entries()) {
-	// 		if (!layers.some((layer: any) => layer.id === id)) {
-	// 			removeLayerFromCesium(ref);
-	// 			renderedCesiumLayers.value.delete(id);
-	// 		}
-	// 	}
-	// }
+			if (enabled) {
+				await mapAdapter.value.addTerrain?.();
+			} else {
+				mapAdapter.value.removeTerrain?.();
+			}
+		}
+	);
+	watch(
+		() => mapStore.cesiumSettings.enable3DBuildings,
+		async (enabled) => {
+			if (!mapAdapter.value) return;
+
+			if (enabled) {
+				await mapAdapter.value.addBuildings?.();
+			} else {
+				mapAdapter.value.removeBuildings?.();
+			}
+		}
+	);
+	watch(
+		() => mapStore.cesiumMapLayers.map((l) => l.id),
+		(newIds, oldIds = []) => {
+			if (!mapAdapter.value || mapType.value !== 'cesium') return;
+
+			const newSet = new Set(newIds);
+			const oldSet = new Set(oldIds);
+
+			// ADD
+			for (const layer of mapStore.cesiumMapLayers) {
+				if (!oldSet.has(layer.id)) {
+					mapAdapter.value.addMapLayer?.(layer);
+				}
+			}
+
+			// REMOVE
+			for (const id of oldIds) {
+				if (!newSet.has(id)) {
+					mapAdapter.value.removeMapLayer?.(id);
+				}
+			}
+		},
+		{ deep: true }
+	);
 
 	onMounted(() => {
 		initMap();

@@ -2,7 +2,7 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
-import { sendGeoPTZCommand } from '@/modules/map/geoPTZ.service';
+import { sendGeoPTZCommand } from '@/modules/map/services/geoPTZ.service';
 import { GeoPTZCommand } from './Descriptor';
 
 const props = defineProps<{

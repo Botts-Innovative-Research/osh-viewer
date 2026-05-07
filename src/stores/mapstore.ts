@@ -2,9 +2,9 @@ import { defineStore } from 'pinia';
 import { ref, Ref } from 'vue';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 // @ts-ignore
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { MapLayer } from '@/modules/map/adapters/cesium.adapter';
 import { CursorMode } from '@/modules/map/adapters/types';
+import { fetchLayerFromUrl } from '@/modules/map/services/cesiumLayer.service';
 
 export const useMapStore = defineStore(
 	'map',
@@ -66,7 +66,7 @@ export const useMapStore = defineStore(
 		// Handle selection of GeoPTZ
 		function setIsGeoPTZSelected(val: boolean) {
 			isGeoPTZSelected.value = val;
-			toggleMapCursorMode()
+			toggleMapCursorMode();
 		}
 
 		// Handle current LLA coordinates
@@ -112,72 +112,9 @@ export const useMapStore = defineStore(
 		}
 
 		// Cesium
-		async function fetchLayerFromUrl(url: string) {
-			let parsedUrl: URL;
-			try {
-				parsedUrl = new URL(url);
-			} catch (error) {
-				throw new Error(`Invalid URL`);
-				return;
-			}
-
-			const type = detectLayerType(parsedUrl, url);
-			if (!type) {
-				throw new Error(`Could not detect layer type from URL: ${url}`);
-			}
-
-			const parsedParams = extractParams(parsedUrl, type);
-			cesiumMapLayers.value.push({
-				id: randomUUID(),
-				url,
-				type,
-				parsedParams,
-			});
-		}
-		function detectLayerType(parsed: URL, url: string): LayerType | null {
-			const service = parsed.searchParams.get('SERVICE')?.toUpperCase();
-
-			if (service === 'WMS') return 'WMS';
-			else if (service === 'WMTS') return 'WMTS';
-			else if (url.includes('{x}') && url.includes('{y}') && url.includes('{z}'))
-				return 'XYZ';
-			else if (url.endsWith('.json') || url.endsWith('.geojson')) return 'GEOJSON';
-			else if (url.endsWith('.kml')) return 'KML';
-			else if (url.endsWith('.czml')) return 'CZML';
-			else if (url.endsWith('.gltf') || url.endsWith('.glb')) return 'GLTF';
-			else return null; // Unknown layer type
-		}
-		function extractParams(parsed: URL, type: LayerType) {
-			switch (type) {
-				case 'WMS':
-					return {
-						layers:
-							parsed.searchParams.get('LAYERS') ??
-							parsed.searchParams.get('layers') ??
-							'',
-					};
-				case 'WMTS':
-					return {
-						layer:
-							parsed.searchParams.get('LAYER') ??
-							parsed.searchParams.get('layer') ??
-							'',
-						style:
-							parsed.searchParams.get('STYLE') ??
-							parsed.searchParams.get('style') ??
-							'default',
-						tileMatrixSetID:
-							parsed.searchParams.get('TILEMATRIXSET') ??
-							parsed.searchParams.get('tilematrixset') ??
-							'',
-						format:
-							parsed.searchParams.get('FORMAT') ??
-							parsed.searchParams.get('format') ??
-							'image/png',
-					};
-				default:
-					return {};
-			}
+		async function addLayer(url: string) {
+			const newLayer: MapLayer = await fetchLayerFromUrl(url);
+			if (newLayer) cesiumMapLayers.value.push(newLayer);
 		}
 		function removeLayer(id: string) {
 			cesiumMapLayers.value = cesiumMapLayers.value.filter((layer: any) => layer.id !== id);
@@ -216,7 +153,7 @@ export const useMapStore = defineStore(
 			setFlightPathWaypoints,
 			triggerClearWaypointMarkers,
 			resetClearWaypointMarkersSignal,
-			fetchLayerFromUrl,
+			addLayer,
 			removeLayer,
 			set3DTerrain,
 			set3DBuildings,

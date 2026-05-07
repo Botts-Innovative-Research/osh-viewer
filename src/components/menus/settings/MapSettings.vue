@@ -26,7 +26,7 @@ async function addIonAssetUrl() {
     }
 
     try {
-      await mapStore.fetchLayerFromUrl(url.value);
+      await mapStore.addLayer(url.value);
       showToast('Layer added successfully', 'SUCCESS');
       url.value = ''; // Clear input on success
     } catch (error: any) {
