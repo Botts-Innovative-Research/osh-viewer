@@ -25,6 +25,20 @@ export function createLeafletAdapter(): MapAdapter {
 		mapView.removeAllFromLayer(layer);
 	}
 
+	function toggleLayerVisibility(id: string, isVisible: boolean) {
+		const marker = mapView.layerIdToMarkers?.[id];
+		const polyline = mapView.layerIdToPolylines?.[id];
+
+		// Handle PM and LoB
+		if (marker) {
+			marker.setOpacity(isVisible ? 1 : 0);
+		}
+		// Handle polyline
+		if (polyline) {
+			polyline.setStyle({ opacity: isVisible ? 0.8 : 0 });
+		}
+	}
+
 	function setCursor(mode: any) {
 		mapView.map.getContainer().style.cursor = mode;
 	}
@@ -41,11 +55,8 @@ export function createLeafletAdapter(): MapAdapter {
 		};
 	}
 
-	function flyToPoint(location: { x: number, y: number, z: number }) {
-		mapView.map.flyTo([
-			location.y,
-			location.x,
-		]);
+	function flyToPoint(location: { x: number; y: number; z: number }) {
+		mapView.map.flyTo([location.y, location.x]);
 	}
 
 	return {
@@ -53,6 +64,7 @@ export function createLeafletAdapter(): MapAdapter {
 		destroy,
 		addLayer,
 		removeLayer,
+		toggleLayerVisibility,
 		setCursor,
 		onClick,
 		flyToPoint,

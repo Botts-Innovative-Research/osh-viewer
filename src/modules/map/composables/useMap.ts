@@ -184,6 +184,23 @@ export function useMap() {
 			mapAdapter.value?.flyToPoint(location);
 		}
 	)
+	watch(
+		() => visualizationStore.layerVisibility.entries(),
+		(entries) => {
+			for (const [layerId, isVisible] of entries) {
+				const layer = mapItemLayers.value.get(layerId);
+				if (!layer) continue;
+
+				const ids: string[] = layer.getIds();
+
+				ids.map((id: string) => {
+					mapAdapter.value?.toggleLayerVisibility(id, isVisible);
+				})
+
+				console.log('Layer visibility changed:', layerId, isVisible);
+			}
+		}
+	)
 
 	/* GEOPTZ */
 	watch(

@@ -57,6 +57,27 @@ export function createCesiumAdapter(): MapAdapter {
 		mapView.removeAllFromLayer(layer);
 	}
 
+	function toggleLayerVisibility(id: string, isVisible: boolean) {
+		const marker = mapView.layerIdToMarkers?.[id];
+		const polyline = mapView.layerIdToPolylines?.[id];
+
+		// Handle LoB
+		if (marker && polyline) {
+			marker.show = isVisible;
+			polyline.show = isVisible;
+		}
+		// Handle PM
+		else if (marker) {
+			marker.show = isVisible;
+		}
+		// Handle polyline
+		else if (polyline) {
+			polyline.show = isVisible;
+		}
+
+		invalidate();
+	}
+
 	function setCursor(mode: CursorMode) {
 		mapView.viewer.canvas.style.cursor = mode;
 	}
@@ -245,6 +266,7 @@ export function createCesiumAdapter(): MapAdapter {
 		destroy,
 		addLayer,
 		removeLayer,
+		toggleLayerVisibility,
 		setCursor,
 		onClick,
 		flyToPoint,
