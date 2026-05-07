@@ -4,42 +4,57 @@ import { MapAdapter, MapClickHandler } from './types';
 export function createLeafletAdapter(): MapAdapter {
 	let mapView: LeafletView | null;
 
-	return {
-		async init(container) {
-			mapView = new LeafletView({
-				container,
-				layers: [],
-				autoZoomOnFirstMarker: true,
-			});
-		},
-
-		destroy() {
-			mapView?.destroy();
-			mapView = null;
-		},
-
-		addLayer(layer) {
-			mapView.addLayer(layer);
-		},
-
-		removeLayer(layer) {
-			mapView.removeAllFromLayer(layer);
-		},
-
-		setCursor(mode) {
-			mapView.map.getContainer().style.cursor = mode;
-		},
-
-		onClick(handler: MapClickHandler) {
-			const clickFn = (e: any) => {
-				handler(e.latlng.lat, e.latlng.lng, 120);
-			};
-
-			mapView.map.on('click', clickFn);
-
-			return () => {
-				mapView.map.off('click', clickFn);
-			};
-		},
+	async function init(container: string) {
+		mapView = new LeafletView({
+			container,
+			layers: [],
+			autoZoomOnFirstMarker: true,
+		});
 	}
+
+	function destroy() {
+		mapView?.destroy();
+		mapView = null;
+	}
+
+	function addLayer(layer: any) {
+		mapView.addLayer(layer);
+	}
+
+	function removeLayer(layer: any) {
+		mapView.removeAllFromLayer(layer);
+	}
+
+	function setCursor(mode: any) {
+		mapView.map.getContainer().style.cursor = mode;
+	}
+
+	function onClick(handler: MapClickHandler) {
+		const clickFn = (e: any) => {
+			handler(e.latlng.lat, e.latlng.lng, 120);
+		};
+
+		mapView.map.on('click', clickFn);
+
+		return () => {
+			mapView.map.off('click', clickFn);
+		};
+	}
+
+	function flyToPoint(location: { x: number, y: number, z: number }) {
+		mapView.map.flyTo([
+			location.y,
+			location.x,
+		]);
+	}
+
+	return {
+		init,
+		destroy,
+		addLayer,
+		removeLayer,
+		setCursor,
+		onClick,
+		flyToPoint,
+	};
 }

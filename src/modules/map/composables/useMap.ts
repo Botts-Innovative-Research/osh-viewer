@@ -163,7 +163,6 @@ export function useMap() {
 			// Add additional onClick functions
 		});
 	}
-	// Map cursor styling
 	watch(
 		() => mapStore.mapCursorMode,
 		(mode) => {
@@ -172,6 +171,19 @@ export function useMap() {
 			}
 		}
 	);
+	watch(
+		() => mapStore.selectedMapItem,
+		(newVal) => {
+			if (!newVal) return;	// Only fly when a map item is selected
+
+			const layer = mapItemLayers.value.get(newVal.id);
+			if (!layer) return;
+			const location = layer.getCurrentProps().location;
+			if (!location) return;
+
+			mapAdapter.value?.flyToPoint(location);
+		}
+	)
 
 	/* GEOPTZ */
 	watch(
@@ -185,7 +197,7 @@ export function useMap() {
 		{ deep: true }
 	);
 
-	/* CESIUM */
+	/* CESIUM-ONLY FEATURES */
 	watch(
 		() => mapStore.cesiumSettings.enable3DTerrain,
 		async (enabled) => {

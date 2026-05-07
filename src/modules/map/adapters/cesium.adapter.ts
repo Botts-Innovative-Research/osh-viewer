@@ -92,6 +92,20 @@ export function createCesiumAdapter(): MapAdapter {
 		};
 	}
 
+	function flyToPoint(location: { x: number; y: number; z: number }) {
+		mapView.viewer.camera.flyTo({
+			destination: Cesium.Cartesian3.fromDegrees(
+				location.x,
+				location.y - 0.001,
+				location.z + 100
+			),
+			// Offset to see the marker itself
+			orientation: {
+				pitch: Cesium.Math.toRadians(-35),
+			},
+		});
+	}
+
 	async function addTerrain() {
 		// Assign terrain provider to map
 		if (!terrainProvider) {
@@ -233,6 +247,7 @@ export function createCesiumAdapter(): MapAdapter {
 		removeLayer,
 		setCursor,
 		onClick,
+		flyToPoint,
 		addTerrain,
 		removeTerrain,
 		addBuildings,
