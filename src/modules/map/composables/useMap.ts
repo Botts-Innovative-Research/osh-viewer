@@ -10,11 +10,10 @@ import {
 } from '../mapVisualizations';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
-import { createCesiumAdapter, MapLayer } from '../adapters/cesium.adapter';
+import { createCesiumAdapter } from '../adapters/cesium.adapter';
 import { taskGeoPTZ } from '../services/geoPTZ.service';
 import { MapAdapter } from '../adapters/types';
 import { createLeafletAdapter } from '../adapters/leaflet.adapter';
-import { setWaypointData } from '../services/missionBuilder.service';
 
 export function useMap() {
 	// Stores

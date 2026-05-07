@@ -1,5 +1,4 @@
 import { MapLayer } from './cesium.adapter';
-import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 
 export type MapClickHandler = (lat: number, lon: number, alt: number) => void;
 export type CursorMode = 'default' | 'crosshair';
@@ -31,7 +30,7 @@ export interface MapAdapter {
 
 	updateMarker(props: any): void;
 
-	// addMissionWaypoint(layer: PointMarkerLayer): Promise<void>;
+	/* Mission Builder */
 	drawMissionPath(waypoints: MapPoint[]): void;
 	clearMissionPath(): void;
 
