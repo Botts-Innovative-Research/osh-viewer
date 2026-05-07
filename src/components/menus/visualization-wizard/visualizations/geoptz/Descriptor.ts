@@ -33,13 +33,6 @@ export const GeoPtzDescriptor: VisualizationDescriptor = {
   requireCs: true, // This visualization requires a controlstream to function
 }
 
-// Define PTZ data interface
-export interface PTZData {
-	pan: number;
-	tilt: number;
-	zoom: number;
-}
-
 // Define GeoPTZ command structure
 export interface GeoPTZCommand {
 	parameters: {

@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { Direction } from '@/types/types';
 import { computed, ref, watch } from 'vue';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
-import { storeToRefs } from 'pinia';
 import { showToast } from '@/composables/useToast';
 import { sendCommand } from '@/lib/ControlstreamUtils';
+import { Direction } from './Descriptor';
 
 interface PTZControlProps {
 	commandBaseUrl: string;
