@@ -3,15 +3,26 @@ import { useMapStore } from '@/stores/mapstore';
 import { computed, ref, watch } from 'vue';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
 import { showToast } from '@/composables/useToast';
+import { useSettingsStore } from '@/stores/settingsstore';
 
+const settingsStore = useSettingsStore();
 const mapStore = useMapStore()
 const url = ref('');
 
 const focusedMap = computed({
-  get: () => mapStore.focusedMap,
-  set: (val) => mapStore.setFocusedMap(val),
+  get: () => settingsStore.focusedMap,
+  set: (val) => settingsStore.setFocusedMap(val),
 })
-const cesiumSettings = computed(() => mapStore.cesiumSettings);
+
+const enable3DTerrain = computed({
+  get: () => settingsStore.enable3DTerrain,
+  set: (val) => settingsStore.set3DTerrain(val),
+})
+
+const enable3DBuildings = computed({
+  get: () => settingsStore.enable3DBuildings,
+  set: (val) => settingsStore.set3DBuildings(val),
+})
 
 async function addIonAssetUrl() {
   if (focusedMap.value === 'cesium' && url.value) {
@@ -71,14 +82,14 @@ const canAddUrl = computed(() => {
             <v-list-item>
               <v-list-item-title>Enable 3D Terrain</v-list-item-title>
               <template #append>
-                <v-switch :model-value="cesiumSettings.enable3DTerrain" @update:model-value="mapStore.set3DTerrain"
+                <v-switch v-model="enable3DTerrain"
                   color="primary" inset hide-details></v-switch>
               </template>
             </v-list-item>
             <v-list-item>
               <v-list-item-title>Enable 3D Buildings</v-list-item-title>
               <template #append>
-                <v-switch :model-value="cesiumSettings.enable3DBuildings" @update:model-value="mapStore.set3DBuildings"
+                <v-switch v-model="enable3DBuildings"
                   color="primary" inset hide-details></v-switch>
               </template>
             </v-list-item>

@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import Settings from '@/components/menus/settings/Settings.vue';
+import Settings from '@/modules/settings/Settings.vue';
 import SaveStateSettings from "@/components/menus/SaveStateSettings.vue";
 import LoadStateSettings from "@/components/menus/LoadStateSettings.vue";
 
@@ -42,12 +42,4 @@ const viewerName = import.meta.env.VITE_VIEWER_NAME;
 </template>
 
 <style scoped>
-/*header {
-  width: 100vw;
-  display: flex;
-  justify-content: space-evenly;
-  align-items: start;
-  padding: 0.5rem;
-  background-color: var(--color-background-soft);
-}*/
 </style>

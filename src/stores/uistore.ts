@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { SchemaFieldProperty } from '@/lib/DatasourceUtils';
 
 export const useUIStore = defineStore('ui', () => {
 	// Sidebar state (example: left and right sidebars)
@@ -18,14 +17,6 @@ export const useUIStore = defineStore('ui', () => {
 	// Main window ID to determine center visualization
 	const mainWindowId = ref<string | null>(null);
 
-	// Currently selected datastream (null or object/ID)
-	const selectedDatastream = ref<any | null>(null);
-
-	const selectedProperty = ref<SchemaFieldProperty | null>(null);
-
-	// Theme state
-	const theme = ref<'dark' | 'light'>('dark');
-
 	// Example actions
 	function toggleLeftSidebar() {
 		leftSidebarOpen.value = !leftSidebarOpen.value;
@@ -33,23 +24,12 @@ export const useUIStore = defineStore('ui', () => {
 	function toggleRightSidebar() {
 		rightSidebarOpen.value = !rightSidebarOpen.value;
 	}
-	function setTheme(newTheme: 'dark' | 'light') {
-		theme.value = newTheme;
-	}
+	
 	function setActiveWindows(windows: string[]) {
 		activeWindows.value = windows;
 	}
 	function setMainWindowId(id: string | null) {
 		mainWindowId.value = id;
-	}
-	function setSelectedDatastream(ds: any | null) {
-		selectedDatastream.value = ds;
-	}
-	function setSelectedProperty(prop: SchemaFieldProperty | null) {
-		selectedProperty.value = prop;
-	}
-	function clearSelectedProperty() {
-		selectedProperty.value = null;
 	}
 	function toggleNodeConfigForm() {
 		nodeConfigFormOpen.value = !nodeConfigFormOpen.value;
@@ -88,17 +68,10 @@ export const useUIStore = defineStore('ui', () => {
 		rightSidebarOpen,
 		activeWindows,
 		mainWindowId,
-		selectedDatastream,
 		toggleLeftSidebar,
 		toggleRightSidebar,
 		setActiveWindows,
 		setMainWindowId,
-		setSelectedDatastream,
-		selectedProperty,
-		setSelectedProperty,
-		clearSelectedProperty,
-		theme,
-		setTheme,
 		nodeConfigFormOpen,
 		toggleNodeConfigForm,
 		deleteNodeDialog,

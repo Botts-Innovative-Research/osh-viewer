@@ -9,7 +9,6 @@ import { fetchLayerFromUrl } from '@/modules/map/services/cesiumLayer.service';
 export const useMapStore = defineStore(
 	'map',
 	() => {
-		const focusedMap: Ref<'cesium' | 'leaflet'> = ref('cesium'); // Focused map corresponds to map type
 		const selectedMapItem: Ref<any | null> = ref(null); // Currently selected map item from list of map visualizations
 		const currentLLA: Ref<{ latitude: number; longitude: number; altitude: number } | null> =
 			ref(null); // Currently selected LLA coordinates
@@ -17,13 +16,6 @@ export const useMapStore = defineStore(
 
 		/* CESIUM */
 		const cesiumMapLayers: Ref<MapLayer[]> = ref([]);
-		const cesiumSettings: Ref<{
-			enable3DTerrain: boolean;
-			enable3DBuildings: boolean;
-		}> = ref({
-			enable3DTerrain: true, // Whether to enable 3D terrain in Cesium
-			enable3DBuildings: true, // Whether to show 3D buildings layer in Cesium
-		});
 
 		/* GEOPTZ */
 		const selectedGeoPTZ: Ref<OSHVisualization[] | null> = ref(null); // Currently selected GeoPTZ Visualization(s) or null if none selected
@@ -38,10 +30,6 @@ export const useMapStore = defineStore(
 		const missionWaypoints: Ref<MapPoint[]> = ref([]); // List of waypoints for mission planner
 		const clearMissionWaypointsMarkers: Ref<boolean> = ref(false); // Flag to trigger clearing of mission waypoint markers on the map
 
-		// Handle selection of map type
-		function setFocusedMap(value: 'cesium' | 'leaflet') {
-			focusedMap.value = value;
-		}
 		// Handle selection of map item
 		function setSelectedMapItem(item: any | null) {
 			selectedMapItem.value = item;
@@ -114,27 +102,17 @@ export const useMapStore = defineStore(
 		function removeLayer(id: string) {
 			cesiumMapLayers.value = cesiumMapLayers.value.filter((layer: any) => layer.id !== id);
 		}
-		function set3DTerrain(value: boolean | null) {
-			if (value === null) return;
-			cesiumSettings.value.enable3DTerrain = value;
-		}
-		function set3DBuildings(value: boolean | null) {
-			if (value === null) return;
-			cesiumSettings.value.enable3DBuildings = value;
-		}
+		
 
 		return {
-			focusedMap,
 			selectedMapItem,
 			currentLLA,
 			cesiumMapLayers,
-			cesiumSettings,
 			selectedGeoPTZ,
 			isGeoPTZSelected,
 			selectedWaypoints,
 			missionWaypoints,
 			clearMissionWaypointsMarkers,
-			setFocusedMap,
 			setSelectedMapItem,
 			setCurrentLLA,
 			clearCurrentLLA,
@@ -150,11 +128,9 @@ export const useMapStore = defineStore(
 			resetClearWaypointMarkersSignal,
 			addLayer,
 			removeLayer,
-			set3DTerrain,
-			set3DBuildings,
 			mapCursorMode,
 			toggleMapCursorMode,
 		};
 	},
-	{ persist: { pick: ['focusedMap', 'cesiumMapLayers', 'cesiumSettings'] } }
+	{ persist: { pick: ['cesiumMapLayers'] } }
 );
