@@ -8,10 +8,10 @@ import { useVisualizationStore } from '@/stores/visualizationstore.js'
 import { OSHControlStream, OSHDatastream, OSHNode, OSHSystem, OSHVisualization } from '@/lib/OSHConnectDataStructs.js'
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js'
 import { Geometry } from '@/lib/OSHConnectDefinitions'
-import DeleteNodeDialog from './menus/DeleteNodeDialog.vue'
-import NodeConfigForm from './menus/NodeConfigForm.vue'
-import DeleteButton from './ui/DeleteButton.vue'
-import PropertiesDialog from './menus/PropertiesDialog.vue'
+import DeleteNodeDialog from '@/components/menus/DeleteNodeDialog.vue'
+import NodeConfigForm from '@/components/menus/NodeConfigForm.vue'
+import DeleteButton from '@/components/ui/DeleteButton.vue'
+import PropertiesDialog from '@/components/menus/PropertiesDialog.vue'
 import NodeIcon from '@/components/icons/node-logo.svg'
 
 const oshConnect = useOSHConnectStore().getInstance();
@@ -64,10 +64,6 @@ watch(
 const fetchResources = () => {
 	console.log('Fetch Resources button clicked', oshConnect);
 	oshConnect.fetchSlowResources();
-};
-
-const openNodeConfig = () => {
-	uiStore.openNodeConfigForm();
 };
 
 const addFeatureMarker = (item) => {
@@ -123,6 +119,10 @@ const addAllSamplingFeaturePMs = () => {
 			visualizationStore.addVisualization(newViz);
 		});
 	});
+};
+
+const openNodeConfig = () => {
+	uiStore.openNodeConfigForm();
 };
 
 const openDeleteNodeDialog = (node: any) => {

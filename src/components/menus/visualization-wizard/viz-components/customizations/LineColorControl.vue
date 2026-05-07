@@ -23,7 +23,6 @@ watch(lineColor, (val) => {
       }
     });
   }
-  console.log(lineId.value, vwStore.visualizationCustomizationOptions)
 })
 
 onMounted(() => {

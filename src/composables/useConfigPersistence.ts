@@ -405,7 +405,6 @@ export function useConfigPersistence() {
 
 		// Extract the config name and description from each UID: "urn:osh:client:config:<name>" -> "<name>"
 		const configData = configSystems.map((sys) => {
-			console.log(sys);
 			const uid: string = sys.system.properties.properties?.uid ?? '';
 			return {
 				name: uid.slice((CONFIG_UID_BASE + ':').length),
