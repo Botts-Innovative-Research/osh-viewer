@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import MapView from '@/modules/map/components/MapView.vue';
 import SystemBrowser from '@/modules/system-browser/SystemBrowser.vue';
-import VisualizationSidebar from '@/components/VisualizationSidebar.vue';
+import VisualizationSidebar from '@/modules/visualization/components/VisualizationSidebar.vue';
 import { Splitpanes, Pane } from 'splitpanes'
 import 'splitpanes/dist/splitpanes.css'
 
