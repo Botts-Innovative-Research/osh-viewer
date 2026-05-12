@@ -9,7 +9,7 @@ type IconItem = {
 	label: string;
 	icon: string;
 };
-// icon value corresponds to mdi icon names AND svg filenames in /icons/map/
+// icon value corresponds to mdi icon names AND png filenames in /icons/map/
 const iconOptions: IconItem[] = [
 	{ id: 1, label: 'Marker', icon: 'map-marker' },
 	{ id: 2, label: 'Pin', icon: 'pin' },
@@ -27,7 +27,7 @@ const icon = ref(iconOptions[0]);
 function selectIcon(val: any) {
 	icon.value = val;
 	vwStore.updateVisualizationCustomizationOptions({
-		icon: `${iconBase}/icons/map/${val.icon}.svg`,
+		icon: `${iconBase}/icons/map/${val.icon}.png`,
 		iconName: val.icon,
 	});
 }
@@ -35,7 +35,7 @@ function selectIcon(val: any) {
 onMounted(() => {
 	if (!vwStore.visualizationCustomizationOptions.icon) {
 		vwStore.updateVisualizationCustomizationOptions({
-			icon: `/icons/map/${icon.value.icon}.svg`,
+			icon: `/icons/map/${icon.value.icon}.png`,
 			iconName: icon.value.icon,
 		});
 	} else {
