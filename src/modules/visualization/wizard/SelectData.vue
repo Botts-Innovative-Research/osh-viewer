@@ -5,8 +5,8 @@ import { useDataStreamStore } from '@/stores/datastreamstore';
 import { computed, watch } from 'vue';
 import {OSHControlStream, OSHDatastream} from '@/lib/OSHConnectDataStructs';
 import { useControlStreamStore } from "@/stores/controlstreamstore";
-import { useComponentValidation } from '../../../components/menus/visualization-wizard/shared/helpers';
 import { VisualizationComponentEmits } from '../registry/VisualizationRegistry';
+import { useComponentValidation } from './composables/useComponentValidation';
 
 const props = defineProps<{
 	requireCs?: boolean

@@ -1,6 +1,5 @@
 import {useVisualizationStore} from "@/stores/visualizationstore";
 import {useVizWizStore} from "@/stores/vizwizstore";
-import {AggregateDatastreams, BuildRoleProperty, getUsedDatastreams} from "../../../../components/menus/visualization-wizard/shared/helpers";
 //@ts-ignore
 import {useDataStreamStore} from "@/stores/datastreamstore";
 import {IChartViewProperties, ICurveLayerProperties, ISweApiDataSourceProperties, VisualizationComponents} from "@/lib/VisualizationHelpers";
@@ -10,6 +9,7 @@ import {Mode} from 'osh-js/source/core/datasource/Mode';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { ChartDescriptor } from "./Descriptor";
+import { AggregateDatastreams, BuildRoleProperty, getUsedDatastreams } from "../../services/aggregation.service";
 
 export default function build() {
 	console.log('Building Chart Visualization...');
@@ -17,7 +17,7 @@ export default function build() {
 	const visualizationStore = useVisualizationStore();
 
 	// Aggregate datastreams from vizwizStore
-	const datastreams = AggregateDatastreams();
+	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
 	const chartResult = CreateChartViewProps(
 		datastreams,
@@ -34,7 +34,7 @@ export default function build() {
 		vizwizStore.visualizationCustomizationOptions.name,
 		'chart',
 		ChartDescriptor.viewLocation,
-		getUsedDatastreams()
+		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig)
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
 	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization

@@ -6,7 +6,7 @@ import {
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { computed, onMounted, ref, watch } from 'vue'
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
-import { useComponentValidation } from '../../../../components/menus/visualization-wizard/shared/helpers';
+import { useComponentValidation } from '../composables/useComponentValidation';
 
 const props = withDefaults(defineProps<{
   role: string, // Property role to be used as key in vizwiz store

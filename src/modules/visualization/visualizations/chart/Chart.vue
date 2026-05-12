@@ -5,8 +5,9 @@ import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import ChartJsView from 'osh-js/source/core/ui/view/chart/ChartJsView.js';
 import CurveLayer from 'osh-js/source/core/ui/layer/CurveLayer.js';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { createDatasource, useVisualizationCleanup } from '../../../../components/menus/visualization-wizard/shared/helpers';
+import { createDatasource } from '@/modules/visualization/services/datasource.service';
 import { IChartViewProperties, ICurveLayerProperties, ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
+import { useVisualizationCleanup } from '../../components/composables/useVisualizationCleanup';
 
 
 const props = defineProps<{

@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import { computed } from 'vue';
-import { useComponentValidation } from '../../../../components/menus/visualization-wizard/shared/helpers';
+import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>()

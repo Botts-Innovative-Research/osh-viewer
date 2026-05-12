@@ -10,12 +10,10 @@ import { showToast } from "@/composables/useToast";
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
 import {
-  createDatasource,
-  getLatestObservation,
-  useDisconnectDatasources
-} from "@/components/menus/visualization-wizard/shared/helpers";
+  createDatasource, disconnectDatasources, getLatestObservation,
+} from '@/modules/visualization/services/datasource.service';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
-import { useDataStreamStore } from "@/stores/datastreamstore";
+import { useVisualizationCleanup } from '../../components/composables/useVisualizationCleanup';
 
 
 // python sim_vehicle.py -v ArduCopter -f quad --console --map --location=Taiwan
@@ -88,6 +86,8 @@ const selectedFile = ref<File | null>(null);
 
 const droneDatasourceLLA = ref<SweApi | null>(null);
 const droneHomeDatasource = ref<SweApi | null>(null);
+// Create SweApi instance from props.datasource if provided
+let dsInstances = ref<SweApi[]>([]);
 
 let homeLocation = ref<{ lat: number; lon: number; alt: number }>({ lat: 0, lon: 0, alt: 0 });
 
@@ -396,11 +396,6 @@ function onLLAListener(dsInstance: SweApi) {
 
 
 onMounted(async () => {
-  // Create SweApi instance from props.datasource if provided
-  let dsInstances: SweApi[] = [];
-
-  const datastreamStore = useDataStreamStore();
-
   for (const ds of props.datasource) {
     let dsInstance = createDatasource(ds);
     dsInstance.connect();
@@ -421,7 +416,7 @@ onMounted(async () => {
       onLLAListener(dsInstance);
     }
 
-    dsInstances.push(dsInstance);
+    dsInstances.value.push(dsInstance);
   }
 });
 
@@ -429,9 +424,10 @@ onBeforeUnmount(() => {
   if (isSelected.value)
     mapStore.disableWaypointSelection();
   clearWaypoints();
-  useDisconnectDatasources(droneDatasourceLLA);
-  useDisconnectDatasources(droneHomeDatasource);
+  if (droneDatasourceLLA) disconnectDatasources(droneDatasourceLLA)
+  if (droneHomeDatasource) disconnectDatasources(droneHomeDatasource)
 })
+useVisualizationCleanup(dsInstances);
 
 </script>
 
@@ -641,7 +637,7 @@ onBeforeUnmount(() => {
         getControlstreamByRole('rtl') ||
         getControlstreamByRole('offboard') ||
         getControlstreamByRole('takeoff')
-" />
+      " />
     </v-card>
 
   </v-sheet>

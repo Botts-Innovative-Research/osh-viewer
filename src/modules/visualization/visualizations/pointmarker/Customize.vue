@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useComponentValidation } from '../../../../components/menus/visualization-wizard/shared/helpers';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
 import IconControl from '@/modules/visualization/wizard/customizations/IconControl.vue';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import IconColorControl from '@/modules/visualization/wizard/customizations/IconColorControl.vue';
+import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>()

@@ -10,8 +10,8 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 import { Mode } from 'osh-js/source/core/datasource/Mode';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import { AggregateDatastreams, AggregateControlstreams, BuildRoleProperty, getUsedDatastreams, getUsedControlstreams } from '../../../../components/menus/visualization-wizard/shared/helpers';
 import { VideoDescriptor } from './Descriptor';
+import { AggregateControlstreams, AggregateDatastreams, BuildRoleProperty, getUsedControlstreams, getUsedDatastreams } from '../../services/aggregation.service';
 
 
 export default function build() {
@@ -19,8 +19,8 @@ export default function build() {
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
 
-	const datastreams = AggregateDatastreams();
-	const controlstreams = AggregateControlstreams();
+	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
+	const controlstreams = AggregateControlstreams(vizwizStore.csConfig);
 
 	const videoResult = CreateVideoViewProps(
 		datastreams,
@@ -38,8 +38,8 @@ export default function build() {
 		vizwizStore.visualizationCustomizationOptions.name,
 		'video',
 		VideoDescriptor.viewLocation,
-		getUsedDatastreams(),
-		getUsedControlstreams()
+		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
+		getUsedControlstreams(vizwizStore.controlstreams, vizwizStore.csConfig)
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
 	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization

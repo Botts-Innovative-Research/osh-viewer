@@ -7,8 +7,8 @@ import DistanceKmControl from '@/modules/visualization/wizard/customizations/Dis
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
 import { computed, ref } from 'vue';
-import { useComponentValidation } from '../../../../components/menus/visualization-wizard/shared/helpers';
 import IconColorControl from '@/modules/visualization/wizard/customizations/IconColorControl.vue';
+import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>()

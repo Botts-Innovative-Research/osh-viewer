@@ -8,24 +8,18 @@ import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 //@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
-import {
-	AggregateControlstreams,
-	AggregateDatastreams,
-	BuildRoleProperty,
-	getUsedControlstreams,
-	getUsedDatastreams,
-} from '../../../../components/menus/visualization-wizard/shared/helpers';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { MissionDescriptor } from './Descriptor';
+import { AggregateControlstreams, AggregateDatastreams, BuildRoleProperty, getUsedControlstreams, getUsedDatastreams } from '../../services/aggregation.service';
 
 export default function build() {
 	console.log('Building Mission Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
 
-	const datastreams = AggregateDatastreams();
-	const controlstreams = AggregateControlstreams();
+	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
+	const controlstreams = AggregateControlstreams(vizwizStore.csConfig);
 
 	const missionResult = CreateMissionViewProps(
 		datastreams,
@@ -45,8 +39,8 @@ export default function build() {
 		vizwizStore.visualizationCustomizationOptions.name,
 		'mission',
 		MissionDescriptor.viewLocation,
-		getUsedDatastreams(),
-		getUsedControlstreams()
+		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
+		getUsedControlstreams(vizwizStore.controlstreams, vizwizStore.csConfig)
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
 	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization

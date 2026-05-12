@@ -10,20 +10,16 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { Mode } from 'osh-js/source/core/datasource/Mode';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import {
-	AggregateDatastreams,
-	BuildRoleProperty,
-	getUsedDatastreams,
-} from '../../../../components/menus/visualization-wizard/shared/helpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { TextDescriptor } from './Descriptor';
+import { AggregateDatastreams, BuildRoleProperty, getUsedDatastreams } from '../../services/aggregation.service';
 
 export default function build() {
 	console.log('Building Text Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
 
-	const datastreams = AggregateDatastreams();
+	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
 	const textResult = CreateTextViewProps(
 		datastreams,
@@ -40,7 +36,7 @@ export default function build() {
 		vizwizStore.visualizationCustomizationOptions.name,
 		'text',
 		TextDescriptor.viewLocation,
-		getUsedDatastreams()
+		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig)
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
 	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization

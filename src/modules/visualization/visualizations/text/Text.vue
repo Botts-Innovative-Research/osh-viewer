@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { onMounted, PropType, ref } from 'vue';
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
+import { onMounted, ref } from 'vue';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
-import { createDatasource, useVisualizationCleanup } from '../../../../components/menus/visualization-wizard/shared/helpers';
+import { createDatasource } from '@/modules/visualization/services/datasource.service';
 import { ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers'
+import { useVisualizationCleanup } from '../../components/composables/useVisualizationCleanup';
 
 
 // Generate a random ID when the component is created

@@ -5,7 +5,7 @@ import LineColorControl from '@/modules/visualization/wizard/customizations/Line
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import { computed, ref, watch } from 'vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
-import { getYLines, useComponentValidation } from '../../../../components/menus/visualization-wizard/shared/helpers';
+import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 
 const vizwizStore = useVizWizStore()
 const defaultName = ref<string>('')
@@ -36,6 +36,24 @@ const valid = computed(() => {
   return nameValid.value
 })
 useComponentValidation(valid, emit)
+
+/**
+ * Turn dsConfig.y properties into an array of line configurations for the chart visualization
+ * @param yConfig 
+ */
+function getYLines(yConfig: any) {
+  if (!yConfig) return []
+
+  const yProperties = Array.isArray(yConfig.property) ? yConfig.property : [yConfig.property]
+  const yLabels = Array.isArray(yConfig.label) ? yConfig.label : [yConfig.label]
+  const yUoms = Array.isArray(yConfig.uom) ? yConfig.uom : [yConfig.uom]
+
+  return yProperties.map((prop: string, index: number) => ({
+    property: prop,
+    label: yLabels[index] || `Y-Axis Data ${index + 1}`,
+    uom: yUoms[index] || '',
+  }))
+}
 
 </script>
 

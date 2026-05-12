@@ -1,6 +1,6 @@
 import { useUIStore } from '@/stores/uistore';
 import { useVizWizStore } from '@/stores/vizwizstore';
-import { computed, nextTick, onMounted, ref, toRaw } from 'vue';
+import { computed, nextTick, ref, toRaw } from 'vue';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { VisualizationFormComponent } from '../../registry/types';
@@ -24,7 +24,10 @@ export function useVisualizationWizard(options: {
 	const isLoading = ref(true);
 	const currentStep = ref(1);
 	const componentValid = ref<boolean[]>([]);
-	const selectedType = ref<string>('');
+	const selectedType = computed({
+		get: () => vizwizStore.visualizationType,
+		set: (val: string) => vizwizStore.setType(val),
+	});
 	const initialConfig = ref(null);
 
 	/* INIT */
@@ -34,7 +37,7 @@ export function useVisualizationWizard(options: {
 		if (options.mode === 'create') {
 			vizwizStore.setId(`visualization-${randomUUID()}`);
 		} else if (options.mode === 'edit' && options.viz) {
-			console.log("help me")
+			console.log('help me');
 			initialConfig.value = JSON.parse(JSON.stringify(options.viz.wizardConfig));
 			vizwizStore.setWizardConfig(options.viz.wizardConfig);
 			selectedType.value = options.viz.type;
@@ -42,24 +45,25 @@ export function useVisualizationWizard(options: {
 		}
 
 		isLoading.value = false;
-	};
+	}
 
 	/* STEP BUILDING */
 	const completeSteps = computed(() => {
-		const baseSteps: VisualizationFormComponent[] = [
-			{
-				id: 'select-type',
-				label: 'Select Visualization Type',
-				short: 'Type',
-				component: SelectType,
-			},
-			{
-				id: 'select-data',
-				label: `Select System & Datasource - ${VisualizationRegistry[selectedType.value]?.label || 'Unknown'}`,
-				short: 'Data',
-				component: SelectData,
-			},
-		];
+		const step1: VisualizationFormComponent = {
+			id: 'select-type',
+			label: 'Select Visualization Type',
+			short: 'Type',
+			component: SelectType,
+		};
+		const step2: VisualizationFormComponent = {
+			id: 'select-data',
+			label: `Select System & Datasource - ${VisualizationRegistry[selectedType.value]?.label || 'Unknown'}`,
+			short: 'Data',
+			component: SelectData,
+		};
+		const baseSteps: VisualizationFormComponent[] = [];
+		if (options.mode === 'create') baseSteps.push(step1);
+		baseSteps.push(step2);
 
 		if (!selectedType.value) {
 			const placeholderStep: VisualizationFormComponent = {
@@ -105,6 +109,7 @@ export function useVisualizationWizard(options: {
 			if (initial === updated) {
 				console.log('No changes were made. Skipping rebuild.');
 				showToast('No changes made to visualization', 'INFO');
+				close();
 				return;
 			}
 			// Changes made, delete and unmount old viz
@@ -120,7 +125,13 @@ export function useVisualizationWizard(options: {
 
 		// Close the wizard
 		showToast(`Visualization ${options.mode === 'create' ? 'created' : 'updated'}`, 'SUCCESS');
-		uiStore.vizWizOpen = false;
+		close();
+	}
+
+	/* CLOSE WIZARD */
+	function close() {
+		if (options.mode === 'create') uiStore.vizWizOpen = false;
+		else if (options.mode === 'edit') uiStore.editVizOpen = false;
 	}
 
 	return {
@@ -129,7 +140,7 @@ export function useVisualizationWizard(options: {
 		componentValid,
 		selectedType,
 		completeSteps,
-    stepStatus,
+		stepStatus,
 		isLastStep,
 		changeStep,
 		init,

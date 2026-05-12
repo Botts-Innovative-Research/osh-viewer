@@ -3,7 +3,7 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 import { computed, reactive, watch, onMounted, ref } from 'vue';
 import ControlStreamPicker from '../../wizard/components/ControlStreamPicker.vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
-import { useComponentValidation } from '../../../../components/menus/visualization-wizard/shared/helpers';
+import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 
 // Retrieve controlstreams
 const vizwizStore = useVizWizStore()

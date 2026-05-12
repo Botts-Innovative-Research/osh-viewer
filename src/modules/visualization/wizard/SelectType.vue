@@ -2,8 +2,8 @@
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { computed } from 'vue';
 import { VisualizationComponentEmits, VisualizationRegistry } from '../registry/VisualizationRegistry';
-import { useComponentValidation } from '../../../components/menus/visualization-wizard/shared/helpers';
 import RadioCards from '@/components/ui/RadioCards.vue';
+import { useComponentValidation } from './composables/useComponentValidation';
 
 
 // Update visualizationType in vizwiz store

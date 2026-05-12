@@ -1,4 +1,4 @@
-import { createDatasource } from '@/components/menus/visualization-wizard/shared/helpers';
+import { createDatasource } from '@/modules/visualization/services/datasource.service';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
 import { useMapStore } from '@/stores/mapstore';

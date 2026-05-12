@@ -12,8 +12,8 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 import { Mode } from 'osh-js/source/core/datasource/Mode';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import { AggregateDatastreams, BuildRoleProperty, getUsedDatastreams } from '../../../../components/menus/visualization-wizard/shared/helpers';
 import { PointMarkerDescriptor } from './Descriptor';
+import { AggregateDatastreams, BuildRoleProperty, getUsedDatastreams } from '../../services/aggregation.service';
 
 export default function build() {
 	console.log('Building Point Marker Visualization...');
@@ -21,7 +21,7 @@ export default function build() {
 	const visualizationStore = useVisualizationStore();
 
 	// Aggregate datastreams from vizwizStore
-	const datastreams = AggregateDatastreams();
+	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
 	const pmResult = CreateMapViewProps(datastreams, vizwizStore.visualizationCustomizationOptions);
 	const visualizationComponents: VisualizationComponents = {
@@ -35,7 +35,7 @@ export default function build() {
 		vizwizStore.visualizationCustomizationOptions.name,
 		'pointmarker',
 		PointMarkerDescriptor.viewLocation,
-		getUsedDatastreams()
+		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig)
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
 	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization

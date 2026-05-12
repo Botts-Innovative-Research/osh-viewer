@@ -10,16 +10,16 @@ import { Mode } from 'osh-js/source/core/datasource/Mode';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
-import { AggregateDatastreams, BuildRoleProperty, getUsedDatastreams } from '../../../../components/menus/visualization-wizard/shared/helpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { LobDescriptor } from './Descriptor';
+import { AggregateDatastreams, BuildRoleProperty, getUsedDatastreams } from '../../services/aggregation.service';
 
 export default function build() {
 	console.log('Building LOB Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
 
-	const datastreams = AggregateDatastreams();
+	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
 	const lobResult = CreateLobViewProps(
 		datastreams,
@@ -36,7 +36,7 @@ export default function build() {
 		vizwizStore.visualizationCustomizationOptions.name,
 		'lob',
 		LobDescriptor.viewLocation,
-		getUsedDatastreams()
+		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig)
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
 	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization
