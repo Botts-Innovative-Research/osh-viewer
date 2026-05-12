@@ -52,23 +52,56 @@ function sanitizeAPIRoot(path) {
 
 		<v-card-text>
 			<v-form @submit.prevent="createNode">
-				<v-text-field label="Node Name" v-model="nodeName" placeholder="Test" required />
+				<v-text-field
+					label="Node Name"
+					v-model="nodeName"
+					placeholder="Test"
+					required
+				/>
 				<v-text-field
 					label="Node Host"
 					v-model="nodeHost"
 					placeholder="localhost"
 					required
 				/>
-				<v-text-field label="Node Port" v-model="nodePort" placeholder="8181" required />
-				<v-text-field label="Node Path" v-model="nodePath" placeholder="sensorhub/api" />
-				<v-text-field label="Node User" v-model="nodeUser" />
-				<v-text-field label="Node Password" v-model="nodePassword" type="password" />
-				<v-checkbox label="TLS: Secure" v-model="tls"></v-checkbox>
+				<v-text-field
+					label="Node Port"
+					v-model="nodePort"
+					placeholder="8181"
+					required
+				/>
+				<v-text-field
+					label="Node Path"
+					v-model="nodePath"
+					placeholder="sensorhub/api"
+				/>
+				<v-text-field
+					label="Node User"
+					v-model="nodeUser"
+				/>
+				<v-text-field
+					label="Node Password"
+					v-model="nodePassword"
+					type="password"
+				/>
+				<v-checkbox
+					label="TLS: Secure"
+					v-model="tls"
+				></v-checkbox>
 
 				<!-- Buttons inside the form -->
 				<v-card-actions>
-					<v-btn type="submit" color="success" variant="tonal">Create Node</v-btn>
-					<v-btn text @click="cancelForm">Cancel</v-btn>
+					<v-btn
+						type="submit"
+						color="success"
+						variant="tonal"
+						>Create Node</v-btn
+					>
+					<v-btn
+						text
+						@click="cancelForm"
+						>Cancel</v-btn
+					>
 				</v-card-actions>
 			</v-form>
 		</v-card-text>

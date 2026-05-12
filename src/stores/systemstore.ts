@@ -3,49 +3,52 @@ import { ref } from 'vue';
 import { OSHSystem } from '@/lib/OSHConnectDataStructs';
 import { CONFIG_UID_BASE } from '@/composables/useConfigPersistence';
 
-export const useSystemStore = defineStore('systems', () => {
-	const systems = ref<OSHSystem[]>([]);
+export const useSystemStore = defineStore(
+	'systems',
+	() => {
+		const systems = ref<OSHSystem[]>([]);
 
-	const addSystem = (system: OSHSystem) => {
-		// Check if the system already exists
-		if (checkIfSystemExists(system.id) || system.id === undefined) {
-			console.log('system already exists or id is undefined', system);
-			return;
-		}
-		console.log('Adding system', system);
-		systems.value.push(system);
-	};
+		const addSystem = (system: OSHSystem) => {
+			// Check if the system already exists
+			if (checkIfSystemExists(system.id) || system.id === undefined) {
+				console.log('System already exists or id is undefined', system);
+				return;
+			}
+			systems.value.push(system);
+		};
 
-	const removeSystem = (system: OSHSystem) => {
-		systems.value = systems.value.filter((s) => s !== system);
-	};
+		const removeSystem = (system: OSHSystem) => {
+			systems.value = systems.value.filter((s) => s !== system);
+		};
 
-	const getSystemByName = (name: string) => {
-		return systems.value.find((system) => system.name === name);
-	};
+		const getSystemByName = (name: string) => {
+			return systems.value.find((system) => system.name === name);
+		};
 
-	const checkIfSystemExists = (id: string) => {
-		return systems.value.some((system) => system.id === id);
-	};
+		const checkIfSystemExists = (id: string) => {
+			return systems.value.some((system) => system.id === id);
+		};
 
-	const getSystemById = (id: string) => {
-		return systems.value.find((system) => system.id === id);
-	};
+		const getSystemById = (id: string) => {
+			return systems.value.find((system) => system.id === id);
+		};
 
-	// Fetch all systems EXCEPT the config system
-	const getFilteredSystems = () => {
-		return systems.value.filter(
-			(system) => !system.system.properties.properties.uid.includes(CONFIG_UID_BASE)
-		);
-	}
+		// Fetch all systems EXCEPT the config system
+		const getFilteredSystems = () => {
+			return systems.value.filter(
+				(system) => !system.system.properties.properties.uid.includes(CONFIG_UID_BASE)
+			);
+		};
 
-	return {
-		systems,
-		addSystem,
-		removeSystem,
-		getSystemByName,
-		checkIfSystemExists,
-		getSystemById,
-		getFilteredSystems
-	};
-}, { persist: { pick: ['systems'] } });
+		return {
+			systems,
+			addSystem,
+			removeSystem,
+			getSystemByName,
+			checkIfSystemExists,
+			getSystemById,
+			getFilteredSystems,
+		};
+	},
+	{ persist: { pick: ['systems'] } }
+);

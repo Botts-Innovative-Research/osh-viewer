@@ -11,8 +11,8 @@ import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { VisualizationComponents } from '@/lib/VisualizationHelpers';
 import { CONFIG_UID_BASE } from '@/composables/useConfigPersistence';
-import { ViewLocation } from '@/components/menus/visualization-wizard/VisualizationRegistry';
 import { WizardConfig } from '@/stores/vizwizstore';
+import { ViewLocation } from '@/modules/visualization/registry/types';
 
 let sharedStores: any = null;
 
@@ -56,7 +56,8 @@ export class OSHConnect {
 		// fetch all systems of all nodes'
 		const nodes = this.nodeStore.nodes;
 		const promises = nodes.map((node: OSHNode) =>
-			node.collectAndStoreSystems()
+			node
+				.collectAndStoreSystems()
 				.then((systems: OSHSystem[]) => {
 					console.log(`Collected ${systems.length} systems for node ${node.name}`);
 				})
@@ -72,11 +73,7 @@ export class OSHConnect {
 		const datastreamStore = getSharedStores().datastreamStore;
 		system
 			.getDataStreams()
-			.then((dataStreams: any[]) => {
-				console.log(
-					`Collected ${dataStreams.length} data streams for system ${system.name}`
-				);
-			})
+			.then((dataStreams: any[]) => {})
 			.catch((error: any) => {
 				console.error(`Error collecting data streams for system ${system.name}:`, error);
 			});
@@ -87,11 +84,7 @@ export class OSHConnect {
 		const controlStreamStore = getSharedStores().controlstreamStore;
 		system
 			.getControlStreams()
-			.then((controlStreams: any[]) => {
-				console.log(
-					`Collected ${controlStreams.length} control streams for system ${system.name}`
-				);
-			})
+			.then((controlStreams: any[]) => {})
 			.catch((error: any) => {
 				console.error(`Error collecting control streams for system ${system.name}:`, error);
 			});
@@ -189,17 +182,17 @@ export class OSHNode {
 }
 
 export class OSHSystem {
-	uuid: string;	// Random unique ID
-	id: string;	// OSH ID
-	name: string;	// Name of system
-	type: string;	// Type of system
-	parentId: string | null;	// Parent ID, if applicable
-	system: System;	// osh-js System object
-	parentNode: OSHNode;	// OSHNode parent node
-	children: string[];	// IDs of system's children (datastreams and controlstreams)
+	uuid: string; // Random unique ID
+	id: string; // OSH ID
+	name: string; // Name of system
+	type: string; // Type of system
+	parentId: string | null; // Parent ID, if applicable
+	system: System; // osh-js System object
+	parentNode: OSHNode; // OSHNode parent node
+	children: string[]; // IDs of system's children (datastreams and controlstreams)
 	datastreams: OSHDatastream[] = []; // Datastreams associated with this system
 	controlstreams: OSHControlStream[] = []; // Control streams associated with this system
-	subsystems: string[] = [];	// TODO: Not implemented
+	subsystems: string[] = []; // TODO: Not implemented
 	samplingFeatures: any[] = [];
 
 	constructor(system: any, parentNode: OSHNode) {
@@ -230,7 +223,7 @@ export class OSHSystem {
 			items.forEach((item: any) => {
 				const newStream = new OSHDatastream(item.properties.name, item, this.id);
 				datastreamStore?.addDataStream?.(newStream);
-				this.children.push(newStream.uuid);	// Push to children
+				this.children.push(newStream.uuid); // Push to children
 				this.datastreams.push(newStream); // Push OSHDatastream object
 			});
 		}
@@ -250,7 +243,7 @@ export class OSHSystem {
 			items.forEach((item: any) => {
 				const newStream = new OSHControlStream(item.properties.name, item, this.id);
 				controlstreamStore?.addControlStream?.(newStream);
-				this.children.push(newStream.id);	// Push to children
+				this.children.push(newStream.id); // Push to children
 				this.controlstreams.push(newStream); // Push OSHControlStream object
 			});
 		}
@@ -269,7 +262,6 @@ export class OSHSystem {
 			samplingFeatures.push(...items);
 		}
 		this.samplingFeatures = samplingFeatures;
-		console.log('[OSHConnect-System] Collected sampling features:', samplingFeatures);
 		return samplingFeatures;
 	}
 
@@ -382,5 +374,27 @@ export class OSHVisualization {
 
 	setWizardConfig(config: WizardConfig): void {
 		this.wizardConfig = config;
+	}
+}
+
+export class Geometry {
+	id: string;
+	type: string;
+	coordinates: number[] | number[][];
+	properties?: any;
+	bbox?: number[] | undefined;
+
+	constructor(
+		id: string,
+		type: string,
+		coordinates: number[] | number[][],
+		properties?: any,
+		bbox?: number[]
+	) {
+		this.id = id;
+		this.type = type;
+		this.coordinates = coordinates;
+		this.properties = properties || {};
+		this.bbox = bbox;
 	}
 }

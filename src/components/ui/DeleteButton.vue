@@ -5,22 +5,32 @@
  */
 
 const props = defineProps<{
-  label: string
-}>()
+	label: string;
+}>();
 
 const emit = defineEmits<{
-  (e: 'delete'): void
-}>()
-
+	(e: 'delete'): void;
+}>();
 </script>
 
 <template>
-  <v-tooltip v-bind="$attrs" text="Delete" location="bottom">
-    <template #activator="{ props: tooltipProps }">
-      <IconButton v-bind="tooltipProps" :aria-label="props.label" class="close-btn" icon="mdi-window-close"
-        size="x-small" variant="plain" @click.stop="emit('delete')"></IconButton>
-    </template>
-  </v-tooltip>
+	<v-tooltip
+		v-bind="$attrs"
+		text="Delete"
+		location="bottom"
+	>
+		<template #activator="{ props: tooltipProps }">
+			<IconButton
+				v-bind="tooltipProps"
+				:aria-label="props.label"
+				class="close-btn"
+				icon="mdi-window-close"
+				size="x-small"
+				variant="plain"
+				@click.stop="emit('delete')"
+			></IconButton>
+		</template>
+	</v-tooltip>
 </template>
 
 <style scoped>

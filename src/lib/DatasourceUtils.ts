@@ -1,8 +1,8 @@
 import { useUIStore } from '@/stores/uistore';
 import DataStreamFilter from 'osh-js/source/core/sweapi/datastream/DataStreamFilter';
 import ControlFilter from 'osh-js/source/core/sweapi/control/ControlFilter';
-import { useDataStreamStore } from '@/stores/datastreamstore'
-import {useControlStreamStore} from "@/stores/controlstreamstore";
+import { useDataStreamStore } from '@/stores/datastreamstore';
+import { useControlStreamStore } from '@/stores/controlstreamstore';
 
 export function mineDatasourceObsProps(): { ds: any; observedProps: any } {
 	const uiStore = useUIStore();
@@ -13,7 +13,6 @@ export function mineDatasourceObsProps(): { ds: any; observedProps: any } {
 	}
 
 	const observedProps = ds.datastream.properties?.observedProperties || [];
-	console.log('[DS-Utils] Observed Properties:', ds.datastream.properties);
 
 	// fetchSchema(ds.datastream);
 
@@ -23,18 +22,17 @@ export function mineDatasourceObsProps(): { ds: any; observedProps: any } {
 /**
  * FOR NEW VISUALIZATION WIZARD
  * Takes datasource ID as parameter
- * @returns 
+ * @returns
  */
 export function mineDatasourceObsPropsFromDS(dsId: string): { ds: any; observedProps: any } {
-  const dataStreamStore = useDataStreamStore()
-  const ds = dataStreamStore.getDataStreamsById([dsId])[0]
+	const dataStreamStore = useDataStreamStore();
+	const ds = dataStreamStore.getDataStreamsById([dsId])[0];
 
-  if (!ds) {
-    console.warn('No datastream given')
-  }
+	if (!ds) {
+		console.warn('No datastream given');
+	}
 
 	const observedProps = ds.datastream.properties?.observedProperties || [];
-	console.log('[DS-Utils] Observed Properties:', ds.datastream.properties);
 
 	// fetchSchema(ds.datastream);
 
@@ -50,7 +48,6 @@ export function mineControlObsPropsFromCS(csID: string): { cs: any; controlledPr
 	}
 
 	const controlledProperties = cs.controlstream.properties.controlledProperties || [];
-	console.log('[DS-Utils] Controlled Properties:', cs.controlstream.properties);
 
 	return { cs, controlledProperties };
 }
@@ -58,7 +55,6 @@ export function mineControlObsPropsFromCS(csID: string): { cs: any; controlledPr
 export function checkDSForProp(propName: string, observedProps: any): any {
 	for (const prop of observedProps) {
 		if (prop.definition.includes(propName)) {
-			console.log(`[DS-Utils] Found property: ${propName}`);
 			return prop;
 		}
 	}
@@ -84,8 +80,6 @@ export function checkDSForProps(propNames: string[], observedProps: any): any {
 }
 
 export async function fetchSchema(datastream: any): Promise<any> {
-	console.log('[DatasourceUtils] Fetching schema for datastream:', datastream);
-
 	let checkedFormat = datastream.properties.formats.filter(
 		(format: any) =>
 			format.includes('application/swe+json') || format.includes('application/swe+binary')
@@ -100,7 +94,6 @@ export async function fetchSchema(datastream: any): Promise<any> {
 		.getSchema(filter)
 		.then((schemaRes: any) => {
 			if (schemaRes) {
-				console.log('[DatasourceUtils] Schema fetched:', schemaRes);
 				return schemaRes;
 			}
 		})
@@ -111,30 +104,27 @@ export async function fetchSchema(datastream: any): Promise<any> {
 }
 
 export async function fetchCsSchema(controlstream: any): Promise<any> {
-    console.log('[DatasourceUtils] Fetching schema for controlstream:', controlstream);
+	let checkedFormat = controlstream.properties.formats.filter(
+		(format: any) =>
+			format.includes('application/swe+json') || format.includes('application/swe+binary')
+	);
 
-    let checkedFormat = controlstream.properties.formats.filter(
-        (format: any) =>
-            format.includes('application/swe+json') || format.includes('application/swe+binary')
-    );
+	if (!checkedFormat) {
+		checkedFormat = ['application/om+json']; // Fallback to om+json which should be available always
+	}
 
-    if (!checkedFormat) {
-        checkedFormat = ['application/om+json']; // Fallback to om+json which should be available always
-    }
-
-    let filter = new ControlFilter({ format: 'application/json' });
-    return controlstream
-        .getSchema(filter)
-        .then((schemaRes: any) => {
-            if (schemaRes) {
-                console.log('[DatasourceUtils] Schema fetched:', schemaRes);
-                return schemaRes;
-            }
-        })
-        .catch((error: any) => {
-            console.error('[DatasourceUtils] Error fetching schema:', error);
-            return null;
-        });
+	let filter = new ControlFilter({ format: 'application/json' });
+	return controlstream
+		.getSchema(filter)
+		.then((schemaRes: any) => {
+			if (schemaRes) {
+				return schemaRes;
+			}
+		})
+		.catch((error: any) => {
+			console.error('[DatasourceUtils] Error fetching schema:', error);
+			return null;
+		});
 }
 
 export function matchPropAndSchema(observedProp: any, schema: any[]): any {
@@ -172,21 +162,21 @@ export class VisualizationMetadata {
  * Used to show a partial representation of a json Schema representation of the available fields in a datastream
  */
 export class SchemaFieldProperty {
-    definition: string;
-    name: string;
-    type: string;
-    referenceFrame?: string;
-    uom?: any;
-    fields?: SchemaFieldProperty[];
-    datastream_id?: string;
-    controlstream_id?: string;
-    label?: string;
+	definition: string;
+	name: string;
+	type: string;
+	referenceFrame?: string;
+	uom?: any;
+	fields?: SchemaFieldProperty[];
+	datastream_id?: string;
+	controlstream_id?: string;
+	label?: string;
 
-    constructor(definition: string, name: string, type: string, unitOfMeasure?: string) {
-        this.definition = definition;
-        this.name = name;
-        this.type = type;
-        this.uom = unitOfMeasure;
-        this.fields = [];
-    }
+	constructor(definition: string, name: string, type: string, unitOfMeasure?: string) {
+		this.definition = definition;
+		this.name = name;
+		this.type = type;
+		this.uom = unitOfMeasure;
+		this.fields = [];
+	}
 }
