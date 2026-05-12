@@ -61,7 +61,6 @@ function onSend() {
 	};
 
 	if (mapStore.selectedGeoPTZ) {
-		console.log('[GeoPtzView] Sending GeoPTZ command:', command);
 		sendGeoPTZCommand(mapStore.selectedGeoPTZ, command);
 	} else {
 		console.warn('[GeoPtzView] No GeoPTZ selected, cannot send command');

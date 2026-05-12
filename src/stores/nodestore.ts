@@ -21,7 +21,6 @@ export const useNodeStore = defineStore(
 
 		const addNode = (node: OSHNode): any => {
 			if (checkIfNodeExists(node.name) || node.name === undefined) {
-				console.log('Node already exists or name is undefined', node);
 				showToast('Node already exists or name is undefined', 'ERROR');
 				return;
 			}

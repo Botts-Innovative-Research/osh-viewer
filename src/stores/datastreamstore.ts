@@ -8,8 +8,6 @@ export const useDataStreamStore = defineStore('datastreams', () => {
 
 	const addDataStream = (dataStream: OSHDatastream): void => {
 		dataStreams.value.push(dataStream);
-
-		console.log('[DataStreamStore] Added data stream:', dataStream);
 	};
 
 	const removeDataStream = (dataStream: OSHDatastream): void => {

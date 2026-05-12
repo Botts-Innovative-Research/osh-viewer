@@ -37,7 +37,6 @@ export function useVisualizationWizard(options: {
 		if (options.mode === 'create') {
 			vizwizStore.setId(`visualization-${randomUUID()}`);
 		} else if (options.mode === 'edit' && options.viz) {
-			console.log('help me');
 			initialConfig.value = JSON.parse(JSON.stringify(options.viz.wizardConfig));
 			vizwizStore.setWizardConfig(options.viz.wizardConfig);
 			selectedType.value = options.viz.type;

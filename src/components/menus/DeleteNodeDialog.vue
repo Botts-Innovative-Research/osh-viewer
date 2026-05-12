@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { showToast } from '@/composables/useToast';
 import { OSHNode } from '@/lib/OSHConnectDataStructs';
 import { useNodeStore } from '@/stores/nodestore';
 import { useUIStore } from '@/stores/uistore';
@@ -55,7 +56,7 @@ const deleteNode = () => {
 		});
 	});
 
-	console.log('Deleted node:', props.node);
+	showToast('Node deleted', 'SUCCESS');
 	close();
 };
 

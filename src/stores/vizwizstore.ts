@@ -31,27 +31,22 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 
 	const setId = (val: string): void => {
 		id.value = val;
-		console.log('[VizWizStore] Set ID:', val);
 	};
 
 	const setType = (type: string): void => {
 		visualizationType.value = type;
-		console.log('[VizWizStore] Set type:', type);
 	};
 
 	const setSystems = (val: string[]): void => {
 		systems.value = val;
-		console.log('[VizWizStore] Set systems:', val);
 	};
 
 	const setDatastreams = (val: OSHDatastream[]): void => {
 		datastreams.value = val;
-		console.log('[VizWizStore] Set datastreams:', val);
 	};
 
 	const setControlstreams = (val: OSHControlStream[]): void => {
 		controlstreams.value = val;
-		console.log('[VizWizStore] Set controlstreams:', val);
 	};
 
 	const updateDsConfig = (role: string, patch: Partial<Record<string, any>>) => {
@@ -62,7 +57,6 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 			...dsConfig.value[role],
 			...patch,
 		};
-		console.log('[VizWizStore] Updated DS config:', role, patch);
 	};
 
 	const updateCsConfig = (role: string, patch: Partial<Record<string, any>>) => {
@@ -73,7 +67,6 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 			...csConfig.value[role],
 			...patch,
 		};
-		console.log('[VizWizStore] Updated CS config:', role, patch);
 	};
 
 	const setVisualizationCustomizationOptions = (options: VisualizationCustomizationOptions) => {
@@ -91,12 +84,10 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 
 	const resetDsConfig = () => {
 		dsConfig.value = {};
-		console.log('[VizWizStore] DS Config reset');
 	};
 
 	const resetCsConfig = () => {
 		csConfig.value = {};
-		console.log('[VizWizStore] CS Config reset');
 	};
 
 	// Clear viz wiz EXCLUDING ID
@@ -109,8 +100,6 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 		dsConfig.value = {};
 		csConfig.value = {};
 		visualizationCustomizationOptions.value = {};
-
-		console.log('[VizWizStore] Store cleared, ID persisted:', id.value);
 	};
 
 	// RESET STORE STATE

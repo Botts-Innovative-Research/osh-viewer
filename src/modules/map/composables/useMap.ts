@@ -110,15 +110,12 @@ export function useMap() {
 
 				newOSHVisualizations.forEach((viz: OSHVisualization) => {
 					addVisualization(viz);
-					console.log(`Added visualization with id ${viz.id} to map.`);
 				});
 			}
 		},
 		{ immediate: true, deep: true }
 	);
 	function addVisualization(viz: OSHVisualization) {
-		console.log('[Map] Creating viz layer for:', viz.id);
-
 		const result = createMapVisualizations(viz);
 		if (!result) return;
 
@@ -165,7 +162,6 @@ export function useMap() {
 		if (!mapAdapter.value) return;
 
 		mapAdapter.value.onClick((lat, lon, alt) => {
-			console.log('Map click:', lat, lon, alt);
 			if (mapStore.isGeoPTZSelected) taskGeoPTZ(lat, lon, alt);
 			if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lon, 0);
 			// Add additional onClick functions
@@ -204,8 +200,6 @@ export function useMap() {
 				ids.map((id: string) => {
 					mapAdapter.value?.toggleLayerVisibility(id, isVisible);
 				});
-
-				console.log('Layer visibility changed:', layerId, isVisible);
 			}
 		}
 	);

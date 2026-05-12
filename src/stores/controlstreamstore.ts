@@ -12,8 +12,6 @@ export const useControlStreamStore = defineStore(
 		/* Control Stream management */
 		const addControlStream = (controlStream: OSHControlStream): void => {
 			controlStreams.value.push(controlStream);
-
-			console.log('[ControlStreamStore] Added control stream:', controlStream);
 		};
 
 		const removeControlStream = (controlStream: OSHControlStream): void => {
@@ -45,10 +43,6 @@ export const useControlStreamStore = defineStore(
 		};
 
 		const getCSSchemaById = (id: string): any | undefined => {
-			console.log(
-				'[ControlStreamStore] Getting control stream schema for id:',
-				schemas.value[id]?.schema
-			);
 			return schemas.value[id]?.schema;
 		};
 

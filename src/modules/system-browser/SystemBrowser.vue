@@ -70,17 +70,13 @@ watch(
 );
 
 const fetchResources = () => {
-	console.log('Fetch Resources button clicked', oshConnect);
 	oshConnect.fetchSlowResources();
 };
 
 const addFeatureMarker = (item) => {
-	console.log('Add Feature Marker button clicked for item:', item);
 	const oshSystem: OSHSystem = item as OSHSystem;
 
 	for (let foi of oshSystem.samplingFeatures) {
-		console.log('Feature of Interest:', foi);
-
 		const geom = new Geometry(
 			foi.properties.id,
 			foi.properties.geometry.type,
@@ -88,7 +84,6 @@ const addFeatureMarker = (item) => {
 			foi.properties,
 			foi.properties.bbox
 		);
-		console.log('SamplingFeature Geometry:', geom);
 
 		let newViz = new OSHVisualization(
 			'featuremarker-' + randomUUID(),
@@ -104,10 +99,8 @@ const addFeatureMarker = (item) => {
 };
 
 const addAllSamplingFeaturePMs = () => {
-	console.log('Add All Sampling Feature PMs button clicked');
 	systems.forEach((system) => {
 		system.samplingFeatures.forEach((feature) => {
-			console.log('[SystemBrowser] Adding feature marker for:', feature);
 			const geom = new Geometry(
 				feature.properties.id,
 				feature.properties.geometry.type,

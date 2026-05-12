@@ -42,7 +42,6 @@ function onSend() {
 	}
 	// If successfully constructed command, send it
 	if (command) {
-		console.log('PanTiltControl: Sending command', command);
 		sendCommand(props.commandBaseUrl, props.id, command, props.auth);
 	} else {
 		console.warn('PanTiltControl: No command to send');
@@ -113,7 +112,6 @@ const controlStreamType = computed(() => controlStreamStore.getCSTypeById(props.
 
 // List of command options based on schema
 const commandOptions = computed(() => {
-	console.log('Control Stream Schema:', Object.keys(controlStreamSchema.value));
 	return Object.keys(controlStreamSchema.value);
 });
 
@@ -158,7 +156,6 @@ const presetOptions = computed(() => {
 });
 // Reset singleValue when selectedCommand changes to preset or others
 watch(selectedCommand, (newCommand) => {
-	console.log('[PanTiltControl] selectedCommand changed:', newCommand);
 	if (newCommand === 'preset' && hasPreset.value)
 		singleValue.value = presetOptions.value ? presetOptions.value[0] : '';
 	else singleValue.value = 0.0;

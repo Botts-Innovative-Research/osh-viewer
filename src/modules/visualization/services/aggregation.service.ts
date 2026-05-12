@@ -18,8 +18,6 @@ export function AggregateDatastreams(dsConfig: any) {
 	const result: any = {};
 
 	for (const [role, entry] of Object.entries(dsConfig)) {
-		console.log('Processing role:', role, 'with entry:', entry);
-
 		if (!entry['selected']) {
 			continue; // Skip unselected roles
 		}
@@ -47,8 +45,6 @@ export function AggregateControlstreams(csConfig: any) {
 	const result: any = {};
 
 	for (const [role, entry] of Object.entries(csConfig)) {
-		console.log('Processing controlstream role:', role, 'with entry:', entry);
-
 		if (!entry['selected']) {
 			continue; // Skip unselected roles
 		}

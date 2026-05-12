@@ -11,10 +11,9 @@ export const useSystemStore = defineStore(
 		const addSystem = (system: OSHSystem) => {
 			// Check if the system already exists
 			if (checkIfSystemExists(system.id) || system.id === undefined) {
-				console.log('system already exists or id is undefined', system);
+				console.log('System already exists or id is undefined', system);
 				return;
 			}
-			console.log('Adding system', system);
 			systems.value.push(system);
 		};
 

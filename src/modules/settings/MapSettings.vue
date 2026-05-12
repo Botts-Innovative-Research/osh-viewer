@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useMapStore } from '@/stores/mapstore';
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
 import { showToast } from '@/composables/useToast';
 import { useSettingsStore } from '@/stores/settingsstore';

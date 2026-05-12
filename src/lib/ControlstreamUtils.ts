@@ -1,4 +1,3 @@
-import { h, ref } from 'vue';
 import ControlFilter from 'osh-js/source/core/sweapi/control/ControlFilter';
 import Control from 'osh-js/source/core/sweapi/control/Control';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
@@ -74,14 +73,11 @@ export async function fetchControlStreamSchema(controlstream: any, networkProper
 
 	const control = new Control(props, networkProperties);
 
-	console.log('[ControlstreamUtils] Fetching schema for controlstream:', control);
-
 	let filter = new ControlFilter();
 	return control
 		.getSchema(filter)
 		.then((schema: any) => {
 			if (schema) {
-				console.log('[ControlstreamUtils] Schema fetched:', schema);
 				// Add to store and fetch beautified command schema
 				const schemaItems = schema.parametersSchema.items
 					? schema.parametersSchema.items

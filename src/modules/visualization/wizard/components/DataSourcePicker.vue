@@ -74,10 +74,6 @@ async function fetchProps() {
 		if (compression) vizwizStore.updateDsConfig(props.role, { compression: compression });
 	}
 	vizwizStore.updateDsConfig(props.role, { outputName: ds.datastream.properties.outputName });
-	console.log(
-		'[DataSourcePicker] dsConfig after update:',
-		JSON.stringify(vizwizStore.dsConfig, null, 2)
-	);
 }
 
 // Watch for changes in selected datastream to update properties

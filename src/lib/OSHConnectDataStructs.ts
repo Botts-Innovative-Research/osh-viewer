@@ -11,8 +11,8 @@ import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { VisualizationComponents } from '@/lib/VisualizationHelpers';
 import { CONFIG_UID_BASE } from '@/composables/useConfigPersistence';
-import { ViewLocation } from '@/modules/visualization/registry/VisualizationRegistry';
 import { WizardConfig } from '@/stores/vizwizstore';
+import { ViewLocation } from '@/modules/visualization/registry/types';
 
 let sharedStores: any = null;
 
@@ -73,11 +73,7 @@ export class OSHConnect {
 		const datastreamStore = getSharedStores().datastreamStore;
 		system
 			.getDataStreams()
-			.then((dataStreams: any[]) => {
-				console.log(
-					`Collected ${dataStreams.length} data streams for system ${system.name}`
-				);
-			})
+			.then((dataStreams: any[]) => {})
 			.catch((error: any) => {
 				console.error(`Error collecting data streams for system ${system.name}:`, error);
 			});
@@ -88,11 +84,7 @@ export class OSHConnect {
 		const controlStreamStore = getSharedStores().controlstreamStore;
 		system
 			.getControlStreams()
-			.then((controlStreams: any[]) => {
-				console.log(
-					`Collected ${controlStreams.length} control streams for system ${system.name}`
-				);
-			})
+			.then((controlStreams: any[]) => {})
 			.catch((error: any) => {
 				console.error(`Error collecting control streams for system ${system.name}:`, error);
 			});
@@ -270,7 +262,6 @@ export class OSHSystem {
 			samplingFeatures.push(...items);
 		}
 		this.samplingFeatures = samplingFeatures;
-		console.log('[OSHConnect-System] Collected sampling features:', samplingFeatures);
 		return samplingFeatures;
 	}
 

@@ -13,7 +13,6 @@ export function mineDatasourceObsProps(): { ds: any; observedProps: any } {
 	}
 
 	const observedProps = ds.datastream.properties?.observedProperties || [];
-	console.log('[DS-Utils] Observed Properties:', ds.datastream.properties);
 
 	// fetchSchema(ds.datastream);
 
@@ -34,7 +33,6 @@ export function mineDatasourceObsPropsFromDS(dsId: string): { ds: any; observedP
 	}
 
 	const observedProps = ds.datastream.properties?.observedProperties || [];
-	console.log('[DS-Utils] Observed Properties:', ds.datastream.properties);
 
 	// fetchSchema(ds.datastream);
 
@@ -50,7 +48,6 @@ export function mineControlObsPropsFromCS(csID: string): { cs: any; controlledPr
 	}
 
 	const controlledProperties = cs.controlstream.properties.controlledProperties || [];
-	console.log('[DS-Utils] Controlled Properties:', cs.controlstream.properties);
 
 	return { cs, controlledProperties };
 }
@@ -58,7 +55,6 @@ export function mineControlObsPropsFromCS(csID: string): { cs: any; controlledPr
 export function checkDSForProp(propName: string, observedProps: any): any {
 	for (const prop of observedProps) {
 		if (prop.definition.includes(propName)) {
-			console.log(`[DS-Utils] Found property: ${propName}`);
 			return prop;
 		}
 	}
@@ -84,8 +80,6 @@ export function checkDSForProps(propNames: string[], observedProps: any): any {
 }
 
 export async function fetchSchema(datastream: any): Promise<any> {
-	console.log('[DatasourceUtils] Fetching schema for datastream:', datastream);
-
 	let checkedFormat = datastream.properties.formats.filter(
 		(format: any) =>
 			format.includes('application/swe+json') || format.includes('application/swe+binary')
@@ -100,7 +94,6 @@ export async function fetchSchema(datastream: any): Promise<any> {
 		.getSchema(filter)
 		.then((schemaRes: any) => {
 			if (schemaRes) {
-				console.log('[DatasourceUtils] Schema fetched:', schemaRes);
 				return schemaRes;
 			}
 		})
@@ -111,8 +104,6 @@ export async function fetchSchema(datastream: any): Promise<any> {
 }
 
 export async function fetchCsSchema(controlstream: any): Promise<any> {
-	console.log('[DatasourceUtils] Fetching schema for controlstream:', controlstream);
-
 	let checkedFormat = controlstream.properties.formats.filter(
 		(format: any) =>
 			format.includes('application/swe+json') || format.includes('application/swe+binary')
@@ -127,7 +118,6 @@ export async function fetchCsSchema(controlstream: any): Promise<any> {
 		.getSchema(filter)
 		.then((schemaRes: any) => {
 			if (schemaRes) {
-				console.log('[DatasourceUtils] Schema fetched:', schemaRes);
 				return schemaRes;
 			}
 		})
