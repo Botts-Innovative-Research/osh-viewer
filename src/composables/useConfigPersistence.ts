@@ -282,7 +282,7 @@ export function useConfigPersistence() {
 
 		// Get config datastream ID
 		const systemId = await findConfigSystem(defaultNode, configName);
-        let dsId;
+		let dsId;
 		if (systemId == null) throw new Error('Could not find matching config system');
 		else {
 			dsId = await findConfigDatastream(systemId!, configName);
@@ -384,7 +384,7 @@ export function useConfigPersistence() {
 		}
 	}
 
-    async function listConfigs(): Promise<any[]> {
+	async function listConfigs(): Promise<any[]> {
 		// Check defaultNode
 		const defaultNode = nodeStore.defaultNodeId
 			? nodeStore.getNodeById(nodeStore.defaultNodeId)

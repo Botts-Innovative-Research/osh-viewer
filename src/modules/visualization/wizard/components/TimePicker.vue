@@ -101,10 +101,16 @@ onMounted(() => {
 		<v-card-title>{{ props.title }}</v-card-title>
 		<v-container>
 			<v-row>
-				<v-text-field v-model="formattedDate" label="ISO Time Instant (UTC)" />
+				<v-text-field
+					v-model="formattedDate"
+					label="ISO Time Instant (UTC)"
+				/>
 			</v-row>
 
-			<v-row v-if="!manualInput" dense>
+			<v-row
+				v-if="!manualInput"
+				dense
+			>
 				<v-col cols="4">
 					<v-combobox
 						v-model="year"
@@ -137,7 +143,10 @@ onMounted(() => {
 				</v-col>
 			</v-row>
 
-			<v-row v-if="!manualInput" dense>
+			<v-row
+				v-if="!manualInput"
+				dense
+			>
 				<v-col cols="3">
 					<v-number-input
 						v-model="hour"
@@ -178,13 +187,20 @@ onMounted(() => {
 
 			<v-row>
 				<v-col>
-					<v-checkbox v-model="manualInput" label="Enable manual input" />
+					<v-checkbox
+						v-model="manualInput"
+						label="Enable manual input"
+					/>
 				</v-col>
 			</v-row>
 
 			<v-row v-if="manualInput">
 				<v-col>
-					<v-alert v-if="manualInputError" type="error" dismissible>
+					<v-alert
+						v-if="manualInputError"
+						type="error"
+						dismissible
+					>
 						{{ manualInputError }}
 					</v-alert>
 				</v-col>

@@ -3,14 +3,14 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 import { useSystemStore } from '@/stores/systemstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { computed, watch } from 'vue';
-import {OSHControlStream, OSHDatastream} from '@/lib/OSHConnectDataStructs';
-import { useControlStreamStore } from "@/stores/controlstreamstore";
+import { OSHControlStream, OSHDatastream } from '@/lib/OSHConnectDataStructs';
+import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { VisualizationComponentEmits } from '../registry/VisualizationRegistry';
 import { useComponentValidation } from './composables/useComponentValidation';
 
 const props = defineProps<{
-	requireCs?: boolean
-}>()
+	requireCs?: boolean;
+}>();
 
 // Stores
 const vizwizStore = useVizWizStore();
@@ -28,8 +28,8 @@ const selectedDatastreams = computed({
 });
 
 const selectedControlstreams = computed({
-  get: () => vizwizStore.controlstreams,
-  set: (val: OSHControlStream[]) => vizwizStore.setControlstreams(val),
+	get: () => vizwizStore.controlstreams,
+	set: (val: OSHControlStream[]) => vizwizStore.setControlstreams(val),
 });
 
 // List of available systems
@@ -41,38 +41,39 @@ const listDatastreams = computed(() => {
 });
 
 const listControlstreams = computed(() => {
-  if (!selectedSystems.value.length) return [];
-  else return controlstreamStore.getControlStreamsBySystemId(selectedSystems.value);
+	if (!selectedSystems.value.length) return [];
+	else return controlstreamStore.getControlStreamsBySystemId(selectedSystems.value);
 });
 
 // Clear DATASTREAMS/CONTROLSTREAMS when systems are changed
 watch(selectedSystems, () => {
-  selectedDatastreams.value = []
-  selectedControlstreams.value = []
-})
+	selectedDatastreams.value = [];
+	selectedControlstreams.value = [];
+});
 
 // Clear DS CONFIG/CUSTOMIZE when datastreams are deselected
 watch(selectedDatastreams, (newVal, oldVal) => {
-  if (newVal.length < oldVal.length) {  // Datastreams were removed
-		vizwizStore.resetDsConfig()
-  }
-})
+	if (newVal.length < oldVal.length) {
+		// Datastreams were removed
+		vizwizStore.resetDsConfig();
+	}
+});
 watch(selectedControlstreams, (newVal, oldVal) => {
-  if (newVal.length < oldVal.length) {  // Controlstreams were removed
-		vizwizStore.resetCsConfig()
-  }
-})
+	if (newVal.length < oldVal.length) {
+		// Controlstreams were removed
+		vizwizStore.resetCsConfig();
+	}
+});
 
 // Validation: Must have at least 1 system, 1 datastream, and 1 controlstream IF required
-const emit = defineEmits<VisualizationComponentEmits>()
+const emit = defineEmits<VisualizationComponentEmits>();
 const valid = computed(() => {
-	const hasSystem = selectedSystems.value.length > 0
-	const hasDatastream = selectedDatastreams.value.length > 0
-	const hasControlstream = props.requireCs ? selectedControlstreams.value.length > 0 : true
-	return hasSystem && hasDatastream && hasControlstream
-})
-useComponentValidation(valid, emit)
-
+	const hasSystem = selectedSystems.value.length > 0;
+	const hasDatastream = selectedDatastreams.value.length > 0;
+	const hasControlstream = props.requireCs ? selectedControlstreams.value.length > 0 : true;
+	return hasSystem && hasDatastream && hasControlstream;
+});
+useComponentValidation(valid, emit);
 </script>
 <template>
 	<!-- Select for systems -->
@@ -85,7 +86,7 @@ useComponentValidation(valid, emit)
 		persistent-hint
 		item-title="name"
 		item-value="id"
-    class="mb-4"
+		class="mb-4"
 		chips
 		clearable
 		validate-on="blur"
@@ -101,25 +102,29 @@ useComponentValidation(valid, emit)
 		persistent-hint
 		item-title="name"
 		:item-value="(item: OSHDatastream) => item"
-    class="mb-4"
+		class="mb-4"
 		chips
 		clearable
 		validate-on="blur"
 		:rules="[(v: any) => !!v.length || 'At least one datastream must be selected']"
 	></v-autocomplete>
-  <!-- Select for controlstreams -->
-  <v-autocomplete
-      v-model="selectedControlstreams"
-      :items="listControlstreams"
-      hint="Select one or more controlstreams"
-      :label="'Controlstream(s)' + (props.requireCs ? '*' : '')"
-      multiple
-      persistent-hint
-      item-title="name"
-      :item-value="(item: OSHControlStream) => item"
-			chips
-			clearable
-			validate-on="blur"
-			:rules="props.requireCs? [(v: any) => !!v.length || 'At least one controlstream must be selected'] : []"
-  ></v-autocomplete>
+	<!-- Select for controlstreams -->
+	<v-autocomplete
+		v-model="selectedControlstreams"
+		:items="listControlstreams"
+		hint="Select one or more controlstreams"
+		:label="'Controlstream(s)' + (props.requireCs ? '*' : '')"
+		multiple
+		persistent-hint
+		item-title="name"
+		:item-value="(item: OSHControlStream) => item"
+		chips
+		clearable
+		validate-on="blur"
+		:rules="
+			props.requireCs
+				? [(v: any) => !!v.length || 'At least one controlstream must be selected']
+				: []
+		"
+	></v-autocomplete>
 </template>

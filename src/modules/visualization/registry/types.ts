@@ -1,4 +1,4 @@
-import { Component } from "vue";
+import { Component } from 'vue';
 
 /**
  * Define the location where the visualization should be rendered
@@ -16,10 +16,10 @@ export type ViewLocation = 'panel' | 'map' | 'multi';
  * - component: the Vue component to render for this form step
  */
 export interface VisualizationFormComponent {
-  id: string; // Standard: kebab-case, starting with visualization type (___-config, ___-customize, etc.)
-  label: string;  // Standard: Title Case, starting with verbal action (Configure ___ Properties, Customize ___, etc.)
-  short: string;  // Standard: Title Case, concise, no verbal action (Configure, Customize, etc.)
-  component: Component | null;  // Vue component to render for this form step
+	id: string; // Standard: kebab-case, starting with visualization type (___-config, ___-customize, etc.)
+	label: string; // Standard: Title Case, starting with verbal action (Configure ___ Properties, Customize ___, etc.)
+	short: string; // Standard: Title Case, concise, no verbal action (Configure, Customize, etc.)
+	component: Component | null; // Vue component to render for this form step
 }
 
 /**
@@ -40,12 +40,12 @@ export type VisualizationBuilderModule = () => void;
  * - requireCs: Optional boolean flag to indicate if the visualization requires a controlstream
  */
 export interface VisualizationDescriptor {
-  label: string;
-  id: string;
-  icon: string;
-  viewLocation: ViewLocation;
-  description: string;
-  formComponents: VisualizationFormComponent[];
-  builder: () => Promise<{default: VisualizationBuilderModule}>;
-  requireCs?: boolean; // Optional flag to indicate if the visualization requires a controlstream
+	label: string;
+	id: string;
+	icon: string;
+	viewLocation: ViewLocation;
+	description: string;
+	formComponents: VisualizationFormComponent[];
+	builder: () => Promise<{ default: VisualizationBuilderModule }>;
+	requireCs?: boolean; // Optional flag to indicate if the visualization requires a controlstream
 }

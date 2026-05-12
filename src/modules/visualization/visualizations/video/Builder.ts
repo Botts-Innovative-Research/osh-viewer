@@ -1,7 +1,9 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
-    ISweApiDataSourceProperties, IVideoLayerProperties, IVideoViewProperties,
-    VisualizationComponents,
+	ISweApiDataSourceProperties,
+	IVideoLayerProperties,
+	IVideoViewProperties,
+	VisualizationComponents,
 } from '@/lib/VisualizationHelpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
@@ -11,8 +13,13 @@ import { Mode } from 'osh-js/source/core/datasource/Mode';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { VideoDescriptor } from './Descriptor';
-import { AggregateControlstreams, AggregateDatastreams, BuildRoleProperty, getUsedControlstreams, getUsedDatastreams } from '../../services/aggregation.service';
-
+import {
+	AggregateControlstreams,
+	AggregateDatastreams,
+	BuildRoleProperty,
+	getUsedControlstreams,
+	getUsedDatastreams,
+} from '../../services/aggregation.service';
 
 export default function build() {
 	console.log('Building Video Visualization...');
@@ -54,54 +61,59 @@ export default function build() {
  * @param visOptions
  * @constructor
  */
-export function CreateVideoViewProps(datastreams: { [key: string]: any }, controlstreams: { [key: string]: any }, visOptions: any) {
+export function CreateVideoViewProps(
+	datastreams: { [key: string]: any },
+	controlstreams: { [key: string]: any },
+	visOptions: any
+) {
 	const datastreamStore = useDataStreamStore();
 
-    // Create datasources, layer, and view
+	// Create datasources, layer, and view
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
 	let videoLayer: IVideoLayerProperties = {
-        name: visOptions.name,
-        getFrameData(rec, timestamp) {
-            return;
-        },
-        getTimestamp(rec, timestamp) {
-            return;
-        },
-    };
-    let videoView: IVideoViewProperties = {
-        container: `video-container-${randomUUID()}`,
-        css: 'video-view',
-        layers: [videoLayer],
-        width: 640,
-        height: 480,
-        useWebCodecApi: true,
-        showTime: visOptions?.time,
-        showStats: visOptions?.stats,
-    }
-
+		name: visOptions.name,
+		getFrameData(rec, timestamp) {
+			return;
+		},
+		getTimestamp(rec, timestamp) {
+			return;
+		},
+	};
+	let videoView: IVideoViewProperties = {
+		container: `video-container-${randomUUID()}`,
+		css: 'video-view',
+		layers: [videoLayer],
+		width: 640,
+		height: 480,
+		useWebCodecApi: true,
+		showTime: visOptions?.time,
+		showStats: visOptions?.stats,
+	};
 
 	for (const [dsId, entry] of Object.entries(datastreams)) {
-        const properties = BuildRoleProperty(entry);
+		const properties = BuildRoleProperty(entry);
 
-        const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
-        const currentDataSource: ISweApiDataSourceProperties = {
-            endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
-            resource: `/datastreams/${dsId}/observations`,
-            tls: currentOSHDatastream[0].datastream.networkProperties.tls,
-            protocol: 'ws',
-            mode: Mode.REAL_TIME,
-            responseFormat: 'application/swe+binary',
-            id: randomUUID(),
-            properties: properties,
-            connectorOpts: {
-                username: currentOSHDatastream[0].datastream.networkProperties.connectorOpts.username,
-                password: currentOSHDatastream[0].datastream.networkProperties.connectorOpts.password
-            }
-        };
-        vizDatasources.push(currentDataSource);
-    }
+		const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
+		const currentDataSource: ISweApiDataSourceProperties = {
+			endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
+			resource: `/datastreams/${dsId}/observations`,
+			tls: currentOSHDatastream[0].datastream.networkProperties.tls,
+			protocol: 'ws',
+			mode: Mode.REAL_TIME,
+			responseFormat: 'application/swe+binary',
+			id: randomUUID(),
+			properties: properties,
+			connectorOpts: {
+				username:
+					currentOSHDatastream[0].datastream.networkProperties.connectorOpts.username,
+				password:
+					currentOSHDatastream[0].datastream.networkProperties.connectorOpts.password,
+			},
+		};
+		vizDatasources.push(currentDataSource);
+	}
 
-    console.log('Created VideoViewProps:', { vizDatasources, videoLayer, videoView });
+	console.log('Created VideoViewProps:', { vizDatasources, videoLayer, videoView });
 
 	return {
 		vizDatasources,

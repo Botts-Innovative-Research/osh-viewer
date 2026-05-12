@@ -1,5 +1,5 @@
 import { defineAsyncComponent } from 'vue';
-import { VisualizationDescriptor, VisualizationFormComponent } from "../../registry/types";
+import { VisualizationDescriptor, VisualizationFormComponent } from '../../registry/types';
 
 export const ConfigComponent: VisualizationFormComponent = {
 	id: 'video-config',

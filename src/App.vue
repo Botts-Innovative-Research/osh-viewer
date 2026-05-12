@@ -4,7 +4,7 @@ import HeaderToolbar from '@/components/HeaderToolbar.vue';
 import { storeToRefs } from 'pinia';
 import { useNodeStore } from '@/stores/nodestore';
 import { OSHConnect } from '@/lib/OSHConnectDataStructs';
-import {useVisualizationStore} from "@/stores/visualizationstore.js";
+import { useVisualizationStore } from '@/stores/visualizationstore.js';
 import { useSettingsStore } from './stores/settingsstore';
 
 const settingsStore = useSettingsStore();
@@ -12,14 +12,18 @@ const { theme } = storeToRefs(settingsStore);
 
 const connect = new OSHConnect();
 const nodeStore = useNodeStore();
-const  visualizationStore = useVisualizationStore();
-nodeStore.rehydrateNodes(connect).then(() => { visualizationStore.rehydrateVisualizations(); })
-
+const visualizationStore = useVisualizationStore();
+nodeStore.rehydrateNodes(connect).then(() => {
+	visualizationStore.rehydrateVisualizations();
+});
 </script>
 
 <template>
 	<VApp>
-		<v-sheet class="background" :theme="theme">
+		<v-sheet
+			class="background"
+			:theme="theme"
+		>
 			<HeaderToolbar />
 			<div class="router-content">
 				<RouterView />

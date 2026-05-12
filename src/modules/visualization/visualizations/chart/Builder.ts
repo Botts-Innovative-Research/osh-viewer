@@ -1,15 +1,24 @@
-import {useVisualizationStore} from "@/stores/visualizationstore";
-import {useVizWizStore} from "@/stores/vizwizstore";
+import { useVisualizationStore } from '@/stores/visualizationstore';
+import { useVizWizStore } from '@/stores/vizwizstore';
 //@ts-ignore
-import {useDataStreamStore} from "@/stores/datastreamstore";
-import {IChartViewProperties, ICurveLayerProperties, ISweApiDataSourceProperties, VisualizationComponents} from "@/lib/VisualizationHelpers";
+import { useDataStreamStore } from '@/stores/datastreamstore';
+import {
+	IChartViewProperties,
+	ICurveLayerProperties,
+	ISweApiDataSourceProperties,
+	VisualizationComponents,
+} from '@/lib/VisualizationHelpers';
 //@ts-ignore
-import {Mode} from 'osh-js/source/core/datasource/Mode';
+import { Mode } from 'osh-js/source/core/datasource/Mode';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { ChartDescriptor } from "./Descriptor";
-import { AggregateDatastreams, BuildRoleProperty, getUsedDatastreams } from "../../services/aggregation.service";
+import { ChartDescriptor } from './Descriptor';
+import {
+	AggregateDatastreams,
+	BuildRoleProperty,
+	getUsedDatastreams,
+} from '../../services/aggregation.service';
 
 export default function build() {
 	console.log('Building Chart Visualization...');
@@ -75,9 +84,12 @@ export function CreateChartViewProps(datastreams: { [key: string]: any }, visOpt
 			yLabel: yLabels[i] + (yUoms[i] ? ` (${yUoms[i]})` : '') || `Y-Axis Data ${i + 1}`,
 			curveId: `curve-${i}`,
 			values: {
-				x: { outputName: vizwizStore.dsConfig['x'].outputName, property: vizwizStore.dsConfig['x'].property },
+				x: {
+					outputName: vizwizStore.dsConfig['x'].outputName,
+					property: vizwizStore.dsConfig['x'].property,
+				},
 				y: { outputName: vizwizStore.dsConfig['y'].outputName, property: yProperties[i] },
-			}
+			},
 		});
 	}
 

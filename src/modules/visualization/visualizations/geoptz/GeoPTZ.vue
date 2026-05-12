@@ -6,7 +6,7 @@ import { sendGeoPTZCommand } from '@/modules/map/services/geoPTZ.service';
 import { GeoPTZCommand } from './Descriptor';
 
 const props = defineProps<{
-	visualizations: OSHVisualization[],
+	visualizations: OSHVisualization[];
 }>();
 
 // Values for LLA inputs
@@ -35,7 +35,7 @@ watch(
 	(newVal) => {
 		mapStore.setSelectedGeoPTZ(newVal);
 	}
-)
+);
 
 // Toggle selection of GeoPTZ in UI store and locally
 function toggle() {
@@ -50,7 +50,7 @@ function toggle() {
 // Send PTZ command based on LLA inputs
 function onSend() {
 	// Ensure newly selected controllers are added
-	mapStore.setSelectedGeoPTZ(props.visualizations)
+	mapStore.setSelectedGeoPTZ(props.visualizations);
 
 	const command: GeoPTZCommand = {
 		parameters: {
@@ -71,21 +71,43 @@ function onSend() {
 onBeforeUnmount(() => {
 	// Disselect GeoPTZ before unmount
 	if (isSelected.value) mapStore.clearSelectedGeoPTZ();
-})
+});
 </script>
 
 <template>
 	<v-container fluid>
-		<v-row class="d-flex align-center" no-gutters>
-			<v-col class="pr-4" cols="auto">
+		<v-row
+			class="d-flex align-center"
+			no-gutters
+		>
+			<v-col
+				class="pr-4"
+				cols="auto"
+			>
 				<v-tooltip
-					:text="props.visualizations.length === 0 ? 'No GeoPTZ controllers selected' : 'Select map click-to-task'"
-					location="top">
+					:text="
+						props.visualizations.length === 0
+							? 'No GeoPTZ controllers selected'
+							: 'Select map click-to-task'
+					"
+					location="top"
+				>
 					<template #activator="{ props: tooltipProps }">
-						<span v-bind="tooltipProps" style="display: inline-block;">
-							<IconButton icon :color="isSelected ? 'primary' : 'grey'" @click="toggle"
-								:disabled="props.visualizations.length === 0" class="pa-0" size="default">
-								<v-icon>{{ isSelected ? 'mdi-crosshairs-gps' : 'mdi-crosshairs' }}</v-icon>
+						<span
+							v-bind="tooltipProps"
+							style="display: inline-block"
+						>
+							<IconButton
+								icon
+								:color="isSelected ? 'primary' : 'grey'"
+								@click="toggle"
+								:disabled="props.visualizations.length === 0"
+								class="pa-0"
+								size="default"
+							>
+								<v-icon>{{
+									isSelected ? 'mdi-crosshairs-gps' : 'mdi-crosshairs'
+								}}</v-icon>
 							</IconButton>
 						</span>
 					</template>
@@ -95,16 +117,42 @@ onBeforeUnmount(() => {
 				<slot name="controllers"></slot>
 			</v-col>
 		</v-row>
-		<v-divider class="my-4" v-if="props.visualizations.length > 0"></v-divider>
+		<v-divider
+			class="my-4"
+			v-if="props.visualizations.length > 0"
+		></v-divider>
 		<v-row :style="{ display: props.visualizations.length > 0 ? 'block' : 'none' }">
 			<v-col no-gutters>
-				<v-text-field v-model.number="latInput" type="number" label="Latitude (-90 to 90)" placeholder="0.0" min="-90"
-					max="90" />
-				<v-text-field v-model.number="lonInput" type="number" label="Longitude (-180 to 180)" placeholder="0.0"
-					min="-180" max="180" />
-				<v-text-field v-model.number="altInput" type="number" label="Altitude" placeholder="0.0" min="-9999"
-					max="99999" />
-				<v-btn color="primary" @click="onSend" block>Send</v-btn>
+				<v-text-field
+					v-model.number="latInput"
+					type="number"
+					label="Latitude (-90 to 90)"
+					placeholder="0.0"
+					min="-90"
+					max="90"
+				/>
+				<v-text-field
+					v-model.number="lonInput"
+					type="number"
+					label="Longitude (-180 to 180)"
+					placeholder="0.0"
+					min="-180"
+					max="180"
+				/>
+				<v-text-field
+					v-model.number="altInput"
+					type="number"
+					label="Altitude"
+					placeholder="0.0"
+					min="-9999"
+					max="99999"
+				/>
+				<v-btn
+					color="primary"
+					@click="onSend"
+					block
+					>Send</v-btn
+				>
 			</v-col>
 		</v-row>
 	</v-container>

@@ -6,45 +6,57 @@ import { VisualizationComponentEmits } from '../../registry/VisualizationRegistr
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 
 // Retrieve controlstreams
-const vizwizStore = useVizWizStore()
+const vizwizStore = useVizWizStore();
 
 // Checked status for each role
 const checkedRoles = reactive({
-  lla: computed({
-    get: () => vizwizStore.csConfig.lla?.selected ?? true,
-    set: (val: boolean) => vizwizStore.updateCsConfig("lla", { selected: val })
-  }),
-})
+	lla: computed({
+		get: () => vizwizStore.csConfig.lla?.selected ?? true,
+		set: (val: boolean) => vizwizStore.updateCsConfig('lla', { selected: val }),
+	}),
+});
 
 // Initialize csConfig with geo ptz selected by default when mounted
 onMounted(() => {
-  if (!vizwizStore.csConfig.lla) {
-    vizwizStore.updateCsConfig("lla", { selected: true })
-  }
-})
+	if (!vizwizStore.csConfig.lla) {
+		vizwizStore.updateCsConfig('lla', { selected: true });
+	}
+});
 
 // If dsConfig is reset, ensure geoptz is selected by default
-watch(() => vizwizStore.csConfig, (newVal) => {
-  if (!newVal.lla) {
-    vizwizStore.updateCsConfig("lla", { selected: true })
-  }
-}, { deep: true })
+watch(
+	() => vizwizStore.csConfig,
+	(newVal) => {
+		if (!newVal.lla) {
+			vizwizStore.updateCsConfig('lla', { selected: true });
+		}
+	},
+	{ deep: true }
+);
 
 // Validation: CS must be configured
-const emit = defineEmits<VisualizationComponentEmits>()
-const csValid = ref<boolean>(false)
+const emit = defineEmits<VisualizationComponentEmits>();
+const csValid = ref<boolean>(false);
 const valid = computed(() => {
-  return checkedRoles.lla ? csValid.value : true
-})
-useComponentValidation(valid, emit)
-
+	return checkedRoles.lla ? csValid.value : true;
+});
+useComponentValidation(valid, emit);
 </script>
 <template>
-  <!-- GeoPTZ -->
-  <v-container>
-    <v-checkbox label="GeoPTZ Control" v-model="checkedRoles.lla" disabled></v-checkbox>
-    <ControlStreamPicker v-if="checkedRoles.lla" role="lla" :show-property-selector="false" v-model:valid="csValid" />
-  </v-container>
+	<!-- GeoPTZ -->
+	<v-container>
+		<v-checkbox
+			label="GeoPTZ Control"
+			v-model="checkedRoles.lla"
+			disabled
+		></v-checkbox>
+		<ControlStreamPicker
+			v-if="checkedRoles.lla"
+			role="lla"
+			:show-property-selector="false"
+			v-model:valid="csValid"
+		/>
+	</v-container>
 </template>
 
 <style scoped></style>

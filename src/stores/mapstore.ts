@@ -102,7 +102,6 @@ export const useMapStore = defineStore(
 		function removeLayer(id: string) {
 			cesiumMapLayers.value = cesiumMapLayers.value.filter((layer: any) => layer.id !== id);
 		}
-		
 
 		return {
 			selectedMapItem,

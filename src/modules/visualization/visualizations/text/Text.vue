@@ -4,9 +4,8 @@ import { onMounted, ref } from 'vue';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
-import { ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers'
+import { ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
 import { useVisualizationCleanup } from '../../components/composables/useVisualizationCleanup';
-
 
 // Generate a random ID when the component is created
 const textboxId = ref('textbox-' + randomUUID());
@@ -15,55 +14,56 @@ const textboxDatasource = ref<any>(null);
 const receivedData = ref({});
 
 const props = defineProps<{
-  visualization: OSHVisualization,
-  datasource: ISweApiDataSourceProperties
-}>()
-
+	visualization: OSHVisualization;
+	datasource: ISweApiDataSourceProperties;
+}>();
 
 // Create SweApi datasource for Text visualization
 onMounted(async () => {
-  // Create SweApi instance from props.datasource if provided
-  const dsInstance = createDatasource(props.datasource)
+	// Create SweApi instance from props.datasource if provided
+	const dsInstance = createDatasource(props.datasource);
 
-  textboxDatasource.value = dsInstance;
-  console.log('[TextView] Text datasource created:', textboxDatasource.value);
+	textboxDatasource.value = dsInstance;
+	console.log('[TextView] Text datasource created:', textboxDatasource.value);
 
-  dsInstance.connect();
+	dsInstance.connect();
 
-  const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
+	const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
 
-  dataBroadcastChannel.onmessage = (message) => {
-    if (message.data.type !== 'data') return
+	dataBroadcastChannel.onmessage = (message) => {
+		if (message.data.type !== 'data') return;
 
-    const data = message.data.values[0].data
-    const selectedProps: Record<string, string> = props.datasource.properties.stream.property
+		const data = message.data.values[0].data;
+		const selectedProps: Record<string, string> = props.datasource.properties.stream.property;
 
-    const result: Record<string, any> = {}
-    for (const prop of Object.values(selectedProps)) {
-      if (prop && prop in data) {
-        result[prop] = data[prop]
-      }
-    }
+		const result: Record<string, any> = {};
+		for (const prop of Object.values(selectedProps)) {
+			if (prop && prop in data) {
+				result[prop] = data[prop];
+			}
+		}
 
-    receivedData.value = result
-  }
-
+		receivedData.value = result;
+	};
 });
 
 useVisualizationCleanup(ref(textboxDatasource));
 </script>
 
 <template>
-  <v-sheet :id="textboxId">
-    <v-container>
-      <h3>Received data:</h3>
-      <v-container>
-        <ul>
-          <li v-for="(value, key) in receivedData" :key="key">
-            <strong>{{ key }}:</strong> {{ value }}
-          </li>
-        </ul>
-      </v-container>
-    </v-container>
-  </v-sheet>
+	<v-sheet :id="textboxId">
+		<v-container>
+			<h3>Received data:</h3>
+			<v-container>
+				<ul>
+					<li
+						v-for="(value, key) in receivedData"
+						:key="key"
+					>
+						<strong>{{ key }}:</strong> {{ value }}
+					</li>
+				</ul>
+			</v-container>
+		</v-container>
+	</v-sheet>
 </template>

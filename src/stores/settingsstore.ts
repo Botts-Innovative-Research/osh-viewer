@@ -2,8 +2,8 @@ import { defineStore } from 'pinia';
 import { Ref, ref } from 'vue';
 
 const persistedMapKeys = {
-  map: ['focusedMap', 'enable3DTerrain', 'enable3DBuildings'],
-}
+	map: ['focusedMap', 'enable3DTerrain', 'enable3DBuildings'],
+};
 
 export const useSettingsStore = defineStore(
 	'settings',
@@ -11,8 +11,8 @@ export const useSettingsStore = defineStore(
 		// Theme state
 		const theme = ref<'dark' | 'light'>('dark');
 
-    // Map
-    const focusedMap: Ref<'cesium' | 'leaflet'> = ref('cesium'); // Focused map corresponds to map type
+		// Map
+		const focusedMap: Ref<'cesium' | 'leaflet'> = ref('cesium'); // Focused map corresponds to map type
 
 		// Cesium settings
 		const enable3DTerrain: Ref<boolean> = ref(true); // Whether to enable 3D terrain in Cesium
@@ -36,11 +36,11 @@ export const useSettingsStore = defineStore(
 
 		return {
 			theme,
-      focusedMap,
+			focusedMap,
 			enable3DTerrain,
 			enable3DBuildings,
 			setTheme,
-      setFocusedMap,
+			setFocusedMap,
 			set3DTerrain,
 			set3DBuildings,
 		};

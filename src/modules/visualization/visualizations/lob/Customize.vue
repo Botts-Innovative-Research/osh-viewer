@@ -11,17 +11,19 @@ import IconColorControl from '@/modules/visualization/wizard/customizations/Icon
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 
 // Validation: Name cannot be empty
-const emit = defineEmits<VisualizationComponentEmits>()
-const nameValid = ref<boolean>(false)
+const emit = defineEmits<VisualizationComponentEmits>();
+const nameValid = ref<boolean>(false);
 const valid = computed(() => {
-  return nameValid.value
-})
-useComponentValidation(valid, emit)
-
+	return nameValid.value;
+});
+useComponentValidation(valid, emit);
 </script>
 
 <template>
-	<name-control role="origin" v-model:valid="nameValid"></name-control>
+	<name-control
+		role="origin"
+		v-model:valid="nameValid"
+	></name-control>
 	<icon-control></icon-control>
 	<v-row class="justify-space-between pa-4">
 		<v-col cols="auto">

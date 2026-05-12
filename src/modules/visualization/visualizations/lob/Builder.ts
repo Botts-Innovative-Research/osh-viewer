@@ -12,7 +12,11 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { LobDescriptor } from './Descriptor';
-import { AggregateDatastreams, BuildRoleProperty, getUsedDatastreams } from '../../services/aggregation.service';
+import {
+	AggregateDatastreams,
+	BuildRoleProperty,
+	getUsedDatastreams,
+} from '../../services/aggregation.service';
 
 export default function build() {
 	console.log('Building LOB Visualization...');
@@ -94,10 +98,12 @@ export function CreateLobViewProps(datastreams: { [key: string]: any }, visOptio
 			responseFormat: 'application/swe+json',
 			id: dsId,
 			properties: properties,
-				connectorOpts: {
-					username: currentOSHDatastream[0].datastream.networkProperties.connectorOpts.username,
-					password: currentOSHDatastream[0].datastream.networkProperties.connectorOpts.password
-				}
+			connectorOpts: {
+				username:
+					currentOSHDatastream[0].datastream.networkProperties.connectorOpts.username,
+				password:
+					currentOSHDatastream[0].datastream.networkProperties.connectorOpts.password,
+			},
 		};
 		vizDatasources.push(currentDataSource);
 	}
@@ -110,4 +116,3 @@ export function CreateLobViewProps(datastreams: { [key: string]: any }, visOptio
 		lobView,
 	};
 }
-

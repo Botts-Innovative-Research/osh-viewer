@@ -8,7 +8,7 @@ import { Direction } from './Descriptor';
 interface PTZControlProps {
 	commandBaseUrl: string;
 	id: string;
-  auth: string
+	auth: string;
 }
 
 const props = defineProps<PTZControlProps>();
@@ -175,41 +175,57 @@ const increment = ref(10.0);
 
 // Compute constraints for absolute commands
 const constraints = computed(() => {
-	let minPan, maxPan, minTilt, maxTilt, minZoom, maxZoom = 0;
+	let minPan,
+		maxPan,
+		minTilt,
+		maxTilt,
+		minZoom,
+		maxZoom = 0;
 	if (controlStreamSchema.value.pan) {
-		minPan = controlStreamSchema.value.pan.constraint[0]
-		maxPan = controlStreamSchema.value.pan.constraint[1]
+		minPan = controlStreamSchema.value.pan.constraint[0];
+		maxPan = controlStreamSchema.value.pan.constraint[1];
 	}
 	if (controlStreamSchema.value.tilt) {
-		minTilt = controlStreamSchema.value.tilt.constraint[0]
-		maxTilt = controlStreamSchema.value.tilt.constraint[1]
+		minTilt = controlStreamSchema.value.tilt.constraint[0];
+		maxTilt = controlStreamSchema.value.tilt.constraint[1];
 	}
 	if (controlStreamSchema.value.zoom) {
-		minZoom = controlStreamSchema.value.zoom.constraint[0]
-		maxZoom = controlStreamSchema.value.zoom.constraint[1]
+		minZoom = controlStreamSchema.value.zoom.constraint[0];
+		maxZoom = controlStreamSchema.value.zoom.constraint[1];
 	}
-	return { minPan, maxPan, minTilt, maxTilt, minZoom, maxZoom }
-})
+	return { minPan, maxPan, minTilt, maxTilt, minZoom, maxZoom };
+});
 
 const constraintTooltip = computed(() => {
-    if (selectedCommand.value === 'pan') return `Min: ${constraints.value.minPan}, Max: ${constraints.value.maxPan}`
-    	else if (selectedCommand.value === 'tilt') return `Min: ${constraints.value.minTilt}, Max: ${constraints.value.maxTilt}`
-    	else if (selectedCommand.value === 'zoom') return `Min: ${constraints.value.minZoom}, Max: ${constraints.value.maxZoom}`
-    	else return ``
-})
-
+	if (selectedCommand.value === 'pan')
+		return `Min: ${constraints.value.minPan}, Max: ${constraints.value.maxPan}`;
+	else if (selectedCommand.value === 'tilt')
+		return `Min: ${constraints.value.minTilt}, Max: ${constraints.value.maxTilt}`;
+	else if (selectedCommand.value === 'zoom')
+		return `Min: ${constraints.value.minZoom}, Max: ${constraints.value.maxZoom}`;
+	else return ``;
+});
 </script>
 
 <template>
 	<v-container class="controlsContainer">
-		<v-sheet v-if="hasRelative" class="wrapper">
+		<v-sheet
+			v-if="hasRelative"
+			class="wrapper"
+		>
 			<v-container class="controlPadContainer">
 				<IconButton
-					:icon="dir === 'minus' || dir === 'plus' ? `mdi-${dir}-circle` : `mdi-arrow-${dir}-drop-circle`" 
+					:icon="
+						dir === 'minus' || dir === 'plus'
+							? `mdi-${dir}-circle`
+							: `mdi-arrow-${dir}-drop-circle`
+					"
 					:alt="`${dir}`"
-					v-for="({ dir, angle, scale }) in buttonConfig"
+					v-for="{ dir, angle, scale } in buttonConfig"
 					:key="dir"
-					@mousedown="handleMove(dir === 'minus' ? 'zoomOut' : dir === 'plus' ? 'zoomIn' : dir)"
+					@mousedown="
+						handleMove(dir === 'minus' ? 'zoomOut' : dir === 'plus' ? 'zoomIn' : dir)
+					"
 					class="button"
 					:style="{
 						left: `${center - 25 + radius * Math.cos((angle * Math.PI) / 180)}px`,
@@ -221,7 +237,15 @@ const constraintTooltip = computed(() => {
 					variant="text"
 					size="default"
 				></IconButton>
-				<IconButton icon="mdi-home-circle" alt="home" @click="handleMove('home')" class="homeButton" variant="text" size="default" :style="{zIndex: 1000, fontSize: '35px'}"></IconButton>
+				<IconButton
+					icon="mdi-home-circle"
+					alt="home"
+					@click="handleMove('home')"
+					class="homeButton"
+					variant="text"
+					size="default"
+					:style="{ zIndex: 1000, fontSize: '35px' }"
+				></IconButton>
 			</v-container>
 			<v-text-field
 				v-model.number="increment"
@@ -292,7 +316,10 @@ const constraintTooltip = computed(() => {
 			</div>
 
 			<div v-else>
-				<v-tooltip :text="constraintTooltip" :disabled="!constraintTooltip">
+				<v-tooltip
+					:text="constraintTooltip"
+					:disabled="!constraintTooltip"
+				>
 					<template #activator="{ props }">
 						<v-text-field
 							v-model="singleValue"
@@ -300,14 +327,31 @@ const constraintTooltip = computed(() => {
 							:label="selectedCommand"
 							placeholder="Enter value"
 							class="w-100"
-							:min="selectedCommand === 'pan' ? constraints.minPan : selectedCommand === 'tilt' ? constraints.minTilt : constraints.minZoom"
-							:max="selectedCommand === 'pan' ? constraints.maxPan : selectedCommand === 'tilt' ? constraints.maxTilt : constraints.maxZoom"
+							:min="
+								selectedCommand === 'pan'
+									? constraints.minPan
+									: selectedCommand === 'tilt'
+										? constraints.minTilt
+										: constraints.minZoom
+							"
+							:max="
+								selectedCommand === 'pan'
+									? constraints.maxPan
+									: selectedCommand === 'tilt'
+										? constraints.maxTilt
+										: constraints.maxZoom
+							"
 							v-bind="props"
 						/>
 					</template>
 				</v-tooltip>
 			</div>
-			<v-btn color="primary" @click="onSend" block>Send</v-btn>
+			<v-btn
+				color="primary"
+				@click="onSend"
+				block
+				>Send</v-btn
+			>
 		</v-sheet>
 	</v-container>
 </template>

@@ -13,7 +13,11 @@ import { Mode } from 'osh-js/source/core/datasource/Mode';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { PointMarkerDescriptor } from './Descriptor';
-import { AggregateDatastreams, BuildRoleProperty, getUsedDatastreams } from '../../services/aggregation.service';
+import {
+	AggregateDatastreams,
+	BuildRoleProperty,
+	getUsedDatastreams,
+} from '../../services/aggregation.service';
 
 export default function build() {
 	console.log('Building Point Marker Visualization...');

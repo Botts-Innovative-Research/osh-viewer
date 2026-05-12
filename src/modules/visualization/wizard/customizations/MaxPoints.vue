@@ -6,25 +6,29 @@ const vwStore = useVizWizStore();
 const maxPoints = ref<number>(10);
 
 watch(maxPoints, (val) => {
-  vwStore.updateVisualizationCustomizationOptions({ maxPoints: val });
+	vwStore.updateVisualizationCustomizationOptions({ maxPoints: val });
 });
 
 onMounted(() => {
-  if (!vwStore.visualizationCustomizationOptions.maxPoints) {
-    vwStore.updateVisualizationCustomizationOptions({
-      maxPoints: maxPoints.value,
-    });
-  } else {
-    maxPoints.value = vwStore.visualizationCustomizationOptions.maxPoints
-  }
+	if (!vwStore.visualizationCustomizationOptions.maxPoints) {
+		vwStore.updateVisualizationCustomizationOptions({
+			maxPoints: maxPoints.value,
+		});
+	} else {
+		maxPoints.value = vwStore.visualizationCustomizationOptions.maxPoints;
+	}
 });
-
 </script>
 <template>
-  <h3>Max Points</h3>
-  <v-slider v-model="maxPoints" :min="1" :max="100" step="0.5">
-    <template v-slot:append>
-      <span>{{ maxPoints }}</span>
-    </template>
-  </v-slider>
+	<h3>Max Points</h3>
+	<v-slider
+		v-model="maxPoints"
+		:min="1"
+		:max="100"
+		step="0.5"
+	>
+		<template v-slot:append>
+			<span>{{ maxPoints }}</span>
+		</template>
+	</v-slider>
 </template>

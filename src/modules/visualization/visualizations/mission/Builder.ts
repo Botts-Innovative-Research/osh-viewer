@@ -11,7 +11,13 @@ import { Mode } from 'osh-js/source/core/datasource/Mode';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { MissionDescriptor } from './Descriptor';
-import { AggregateControlstreams, AggregateDatastreams, BuildRoleProperty, getUsedControlstreams, getUsedDatastreams } from '../../services/aggregation.service';
+import {
+	AggregateControlstreams,
+	AggregateDatastreams,
+	BuildRoleProperty,
+	getUsedControlstreams,
+	getUsedDatastreams,
+} from '../../services/aggregation.service';
 
 export default function build() {
 	console.log('Building Mission Visualization...');

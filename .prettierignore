@@ -1,0 +1,6 @@
+.vscode
+dist
+node_modules
+coverage
+lib/osh-js
+server

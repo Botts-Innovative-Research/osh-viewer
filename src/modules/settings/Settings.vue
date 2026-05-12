@@ -5,7 +5,6 @@ import GeneralSettings from './GeneralSettings.vue';
 
 // Nav drawer state
 const selectedTab = ref(['general']);
-
 </script>
 
 <template>
@@ -17,13 +16,26 @@ const selectedTab = ref(['general']);
 		<v-card-text>
 			<v-row>
 				<v-col cols="3">
-					<v-navigation-drawer permanent style="position: relative">
-						<v-list nav v-model:selected="selectedTab" mandatory>
-							<v-list-item prepend-avatar="mdi-cog" value="general">
+					<v-navigation-drawer
+						permanent
+						style="position: relative"
+					>
+						<v-list
+							nav
+							v-model:selected="selectedTab"
+							mandatory
+						>
+							<v-list-item
+								prepend-avatar="mdi-cog"
+								value="general"
+							>
 								<template #prepend><v-icon icon="mdi-cog" /></template>
 								<v-list-item-title>General</v-list-item-title>
 							</v-list-item>
-							<v-list-item prepend-avatar="mdi-map" value="map">
+							<v-list-item
+								prepend-avatar="mdi-map"
+								value="map"
+							>
 								<template #prepend><v-icon icon="mdi-map" /></template>
 								<v-list-item-title>Map</v-list-item-title>
 							</v-list-item>

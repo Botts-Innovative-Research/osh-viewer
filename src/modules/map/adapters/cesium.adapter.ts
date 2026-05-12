@@ -156,7 +156,7 @@ export function createCesiumAdapter(): MapAdapter {
 	function clearMissionPath() {
 		if (!mapView) return;
 		mapView.viewer.entities.remove(flightPathPolyline);
-    flightPathPolyline = null;
+		flightPathPolyline = null;
 	}
 
 	async function addTerrain() {

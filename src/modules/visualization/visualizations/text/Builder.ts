@@ -12,7 +12,11 @@ import { Mode } from 'osh-js/source/core/datasource/Mode';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { TextDescriptor } from './Descriptor';
-import { AggregateDatastreams, BuildRoleProperty, getUsedDatastreams } from '../../services/aggregation.service';
+import {
+	AggregateDatastreams,
+	BuildRoleProperty,
+	getUsedDatastreams,
+} from '../../services/aggregation.service';
 
 export default function build() {
 	console.log('Building Text Visualization...');
@@ -49,7 +53,7 @@ export function CreateTextViewProps(datastreams: { [key: string]: any }, visOpti
 
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
 	let dataLayer: DataLayerProperties = {
-		name: visOptions.name
+		name: visOptions.name,
 	};
 
 	// Iterate through each unique datastream ID
@@ -80,7 +84,7 @@ export function CreateTextViewProps(datastreams: { [key: string]: any }, visOpti
 		vizDatasources.push(currentDataSource);
 	}
 
-	console.log('Created Text View Props:', {vizDatasources, dataLayer});
+	console.log('Created Text View Props:', { vizDatasources, dataLayer });
 
 	return {
 		vizDatasources,

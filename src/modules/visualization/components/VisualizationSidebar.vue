@@ -25,59 +25,106 @@ const {
 } = useVisualizationSidebar();
 
 const uiStore = useUIStore();
-
 </script>
 
 <template>
 	<v-sheet id="viz-sidebar">
 		<v-sheet class="d-flex header-title">
 			<h2 class="header-title pa-4">Visualizations</h2>
-			<v-tooltip text="Add Visualization" location="bottom">
+			<v-tooltip
+				text="Add Visualization"
+				location="bottom"
+			>
 				<template v-slot:activator="{ props }">
-					<IconButton v-bind="props" icon="mdi-plus" aria-label="Add Visualization" @click="uiStore.openVizWiz">
+					<IconButton
+						v-bind="props"
+						icon="mdi-plus"
+						aria-label="Add Visualization"
+						@click="uiStore.openVizWiz"
+					>
 					</IconButton>
 				</template>
 			</v-tooltip>
 		</v-sheet>
 		<v-divider></v-divider>
 		<v-sheet class="visualization-list overflow-y-auto">
-			<v-expansion-panels multiple eager variant="accordion" elevation="0">
+			<v-expansion-panels
+				multiple
+				eager
+				variant="accordion"
+				elevation="0"
+			>
 				<!-- MAP VISUALIZATIONS -->
 				<v-expansion-panel :disabled="mapVisualizations.length == 0">
 					<template #title>
-						<div class="panel-header">
-							Map Visualizations
-						</div>
+						<div class="panel-header">Map Visualizations</div>
 					</template>
 					<v-expansion-panel-text class="panel-text">
-						<v-list activatable density="compact" select-strategy="leaf">
-							<v-list-item v-for="viz in mapVisualizations" :key="viz.id" @click="toggleSelectedMapItem(viz)">
+						<v-list
+							activatable
+							density="compact"
+							select-strategy="leaf"
+						>
+							<v-list-item
+								v-for="viz in mapVisualizations"
+								:key="viz.id"
+								@click="toggleSelectedMapItem(viz)"
+							>
 								<!-- Icon -->
 								<template #prepend>
 									<v-icon
 										:icon="`mdi-${isMapLayer(viz.visualizationComponents.dataLayer) ? viz.visualizationComponents.dataLayer.iconName : ''}`"
-										size="16"></v-icon>
+										size="16"
+									></v-icon>
 								</template>
 								<!-- Title -->
-								<template #title><span :style="`text-decoration: ${isMapLayerVisible(viz.id) ? '' : 'line-through'}`">{{
-									viz.name }}</span></template>
+								<template #title
+									><span
+										:style="`text-decoration: ${isMapLayerVisible(viz.id) ? '' : 'line-through'}`"
+										>{{ viz.name }}</span
+									></template
+								>
 								<!-- Actions -->
 								<template #append>
 									<div class="map-actions">
-										<v-tooltip text="Toggle Visibility" location="bottom">
+										<v-tooltip
+											text="Toggle Visibility"
+											location="bottom"
+										>
 											<template v-slot:activator="{ props }">
-												<IconButton v-bind="props" aria-label="Toggle Visibility" size="x-small" variant="plain"
-													:icon="isMapLayerVisible(viz.id) ? 'mdi-eye' : 'mdi-eye-off'"
-													@click.stop="toggleMapLayerVisibility(viz)"></IconButton>
+												<IconButton
+													v-bind="props"
+													aria-label="Toggle Visibility"
+													size="x-small"
+													variant="plain"
+													:icon="
+														isMapLayerVisible(viz.id)
+															? 'mdi-eye'
+															: 'mdi-eye-off'
+													"
+													@click.stop="toggleMapLayerVisibility(viz)"
+												></IconButton>
 											</template>
 										</v-tooltip>
-										<v-tooltip text="Edit Visualization" location="bottom">
+										<v-tooltip
+											text="Edit Visualization"
+											location="bottom"
+										>
 											<template v-slot:activator="{ props }">
-												<IconButton v-bind="props" aria-label="Edit Visualization" size="x-small" variant="plain"
-													icon="mdi-pencil" @click.stop="openEditViz(viz)"></IconButton>
+												<IconButton
+													v-bind="props"
+													aria-label="Edit Visualization"
+													size="x-small"
+													variant="plain"
+													icon="mdi-pencil"
+													@click.stop="openEditViz(viz)"
+												></IconButton>
 											</template>
 										</v-tooltip>
-										<DeleteButton label="Remove" @delete="removeVisualization(viz)"></DeleteButton>
+										<DeleteButton
+											label="Remove"
+											@delete="removeVisualization(viz)"
+										></DeleteButton>
 									</div>
 								</template>
 							</v-list-item>
@@ -87,33 +134,57 @@ const uiStore = useUIStore();
 				<!-- GEOPTZ VISUALIZATIONS -->
 				<v-expansion-panel :disabled="geoPtzVisualizations.length == 0">
 					<template #title>
-						<div class="panel-header">
-							GeoPTZ Controllers
-						</div>
+						<div class="panel-header">GeoPTZ Controllers</div>
 					</template>
 					<v-expansion-panel-text>
 						<v-sheet>
-							<GeoPTZ v-if="selectedGeoPTZControllers" :visualizations="selectedGeoPTZControllers">
+							<GeoPTZ
+								v-if="selectedGeoPTZControllers"
+								:visualizations="selectedGeoPTZControllers"
+							>
 								<template #controllers>
-									<v-select label="Process" v-model="selectedGeoPTZControllers" :items="geoPtzVisualizations"
-										item-title="name" :item-value="(item: OSHVisualization) => item" chips multiple hide-details
-										clearable>
+									<v-select
+										label="Process"
+										v-model="selectedGeoPTZControllers"
+										:items="geoPtzVisualizations"
+										item-title="name"
+										:item-value="(item: OSHVisualization) => item"
+										chips
+										multiple
+										hide-details
+										clearable
+									>
 										<template v-slot:item="{ props, item }">
 											<v-list-item v-bind="props">
 												<template v-slot:prepend="{ isSelected }">
-													<v-checkbox-btn :model-value="isSelected"></v-checkbox-btn>
+													<v-checkbox-btn
+														:model-value="isSelected"
+													></v-checkbox-btn>
 												</template>
 												<!-- Actions -->
 												<template v-slot:append>
-													<v-tooltip text="Edit Visualization" location="bottom">
+													<v-tooltip
+														text="Edit Visualization"
+														location="bottom"
+													>
 														<template v-slot:activator="{ props }">
-															<IconButton v-bind="props" aria-label="Edit Visualization" size="x-small" variant="plain"
+															<IconButton
+																v-bind="props"
+																aria-label="Edit Visualization"
+																size="x-small"
+																variant="plain"
 																icon="mdi-pencil"
-																@click.stop="openEditViz(item.raw.id!)">
+																@click.stop="
+																	openEditViz(item.raw.id!)
+																"
+															>
 															</IconButton>
 														</template>
 													</v-tooltip>
-													<DeleteButton label="Remove" @delete="removeGeoPTZ(item.raw)"></DeleteButton>
+													<DeleteButton
+														label="Remove"
+														@delete="removeGeoPTZ(item.raw)"
+													></DeleteButton>
 												</template>
 											</v-list-item>
 										</template>
@@ -126,39 +197,68 @@ const uiStore = useUIStore();
 			</v-expansion-panels>
 			<v-divider></v-divider>
 			<!-- PANEL VISUALIZATIONS -->
-			<v-expansion-panels :model-value="panelVisualizations.map(v => v.id)" variant="accordion" multiple eager
-				elevation="0">
-				<v-expansion-panel v-for="viz in panelVisualizations" :key="viz.id" class="visualization-item" :value="viz.id"
-					static>
+			<v-expansion-panels
+				:model-value="panelVisualizations.map((v) => v.id)"
+				variant="accordion"
+				multiple
+				eager
+				elevation="0"
+			>
+				<v-expansion-panel
+					v-for="viz in panelVisualizations"
+					:key="viz.id"
+					class="visualization-item"
+					:value="viz.id"
+					static
+				>
 					<template #title>
 						<div class="panel-header">
 							<span class="viz-name">{{ viz.name }}</span>
 							<div class="panel-actions">
-								<v-tooltip text="Edit Visualization" location="bottom">
+								<v-tooltip
+									text="Edit Visualization"
+									location="bottom"
+								>
 									<template v-slot:activator="{ props }">
-										<IconButton v-bind="props" aria-label="Edit Visualization" size="x-small" variant="plain"
-											icon="mdi-pencil" @click.stop="openEditViz(viz)"></IconButton>
+										<IconButton
+											v-bind="props"
+											aria-label="Edit Visualization"
+											size="x-small"
+											variant="plain"
+											icon="mdi-pencil"
+											@click.stop="openEditViz(viz)"
+										></IconButton>
 									</template>
 								</v-tooltip>
-								<DeleteButton class="ml-2 mr-2" label="Remove" @delete="removeVisualization(viz)">
+								<DeleteButton
+									class="ml-2 mr-2"
+									label="Remove"
+									@delete="removeVisualization(viz)"
+								>
 								</DeleteButton>
 							</div>
 						</div>
 					</template>
 					<v-expansion-panel-text>
-						<VisualizationWrapper :viz="viz">
-						</VisualizationWrapper>
+						<VisualizationWrapper :viz="viz"> </VisualizationWrapper>
 					</v-expansion-panel-text>
 				</v-expansion-panel>
 			</v-expansion-panels>
 		</v-sheet>
 	</v-sheet>
 	<!-- VISUALIZATION WIZARD -->
-	<v-dialog v-model="uiStore.vizWizOpen" max-width="900">
+	<v-dialog
+		v-model="uiStore.vizWizOpen"
+		max-width="900"
+	>
 		<VisualizationWizard />
 	</v-dialog>
 	<!-- EDIT VISUALIZATION -->
-	<v-dialog v-model="uiStore.editVizOpen" max-width="900" v-if="editViz?.id">
+	<v-dialog
+		v-model="uiStore.editVizOpen"
+		max-width="900"
+		v-if="editViz?.id"
+	>
 		<EditVisualization :viz="editViz" />
 	</v-dialog>
 </template>
@@ -198,7 +298,9 @@ const uiStore = useUIStore();
 	overflow: hidden;
 	max-width: 0;
 	opacity: 0;
-	transition: max-width 0.2s ease, opacity 0.15s ease;
+	transition:
+		max-width 0.2s ease,
+		opacity 0.15s ease;
 }
 
 .map-actions {
@@ -208,7 +310,9 @@ const uiStore = useUIStore();
 	overflow: hidden;
 	max-width: 0;
 	opacity: 0;
-	transition: max-width 0.2s ease, opacity 0.15s ease;
+	transition:
+		max-width 0.2s ease,
+		opacity 0.15s ease;
 }
 
 .viz-name {

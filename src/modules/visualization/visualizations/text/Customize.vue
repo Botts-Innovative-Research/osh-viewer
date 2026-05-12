@@ -5,14 +5,17 @@ import NameControl from '@/modules/visualization/wizard/customizations/NameContr
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 
 // Validation: Name cannot be empty
-const emit = defineEmits<VisualizationComponentEmits>()
-const nameValid = ref<boolean>(false)
+const emit = defineEmits<VisualizationComponentEmits>();
+const nameValid = ref<boolean>(false);
 const valid = computed(() => {
-  return nameValid.value
-})
-useComponentValidation(valid, emit)
+	return nameValid.value;
+});
+useComponentValidation(valid, emit);
 </script>
 
 <template>
-  <NameControl role="stream" v-model:valid="nameValid" />
+	<NameControl
+		role="stream"
+		v-model:valid="nameValid"
+	/>
 </template>

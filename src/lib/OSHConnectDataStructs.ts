@@ -56,7 +56,8 @@ export class OSHConnect {
 		// fetch all systems of all nodes'
 		const nodes = this.nodeStore.nodes;
 		const promises = nodes.map((node: OSHNode) =>
-			node.collectAndStoreSystems()
+			node
+				.collectAndStoreSystems()
 				.then((systems: OSHSystem[]) => {
 					console.log(`Collected ${systems.length} systems for node ${node.name}`);
 				})
@@ -189,17 +190,17 @@ export class OSHNode {
 }
 
 export class OSHSystem {
-	uuid: string;	// Random unique ID
-	id: string;	// OSH ID
-	name: string;	// Name of system
-	type: string;	// Type of system
-	parentId: string | null;	// Parent ID, if applicable
-	system: System;	// osh-js System object
-	parentNode: OSHNode;	// OSHNode parent node
-	children: string[];	// IDs of system's children (datastreams and controlstreams)
+	uuid: string; // Random unique ID
+	id: string; // OSH ID
+	name: string; // Name of system
+	type: string; // Type of system
+	parentId: string | null; // Parent ID, if applicable
+	system: System; // osh-js System object
+	parentNode: OSHNode; // OSHNode parent node
+	children: string[]; // IDs of system's children (datastreams and controlstreams)
 	datastreams: OSHDatastream[] = []; // Datastreams associated with this system
 	controlstreams: OSHControlStream[] = []; // Control streams associated with this system
-	subsystems: string[] = [];	// TODO: Not implemented
+	subsystems: string[] = []; // TODO: Not implemented
 	samplingFeatures: any[] = [];
 
 	constructor(system: any, parentNode: OSHNode) {
@@ -230,7 +231,7 @@ export class OSHSystem {
 			items.forEach((item: any) => {
 				const newStream = new OSHDatastream(item.properties.name, item, this.id);
 				datastreamStore?.addDataStream?.(newStream);
-				this.children.push(newStream.uuid);	// Push to children
+				this.children.push(newStream.uuid); // Push to children
 				this.datastreams.push(newStream); // Push OSHDatastream object
 			});
 		}
@@ -250,7 +251,7 @@ export class OSHSystem {
 			items.forEach((item: any) => {
 				const newStream = new OSHControlStream(item.properties.name, item, this.id);
 				controlstreamStore?.addControlStream?.(newStream);
-				this.children.push(newStream.id);	// Push to children
+				this.children.push(newStream.id); // Push to children
 				this.controlstreams.push(newStream); // Push OSHControlStream object
 			});
 		}
