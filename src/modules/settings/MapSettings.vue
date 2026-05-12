@@ -14,16 +14,23 @@ const focusedMap = computed({
 	set: (val) => settingsStore.setFocusedMap(val),
 });
 
+const geoPtzIcon = computed({
+	get: () => settingsStore.geoPtzIcon,
+	set: (val) => settingsStore.setGeoPtzIcon(val),
+});
+const geoPtzIconColor = computed({
+	get: () => settingsStore.geoPtzIconColor,
+	set: (val) => settingsStore.setGeoPtzIconColor(val),
+});
+
 const enable3DTerrain = computed({
 	get: () => settingsStore.enable3DTerrain,
 	set: (val) => settingsStore.set3DTerrain(val),
 });
-
 const enable3DBuildings = computed({
 	get: () => settingsStore.enable3DBuildings,
 	set: (val) => settingsStore.set3DBuildings(val),
 });
-
 async function addIonAssetUrl() {
 	if (focusedMap.value === 'cesium' && url.value) {
 		// Check if layer already exists with the same URL
@@ -43,7 +50,6 @@ async function addIonAssetUrl() {
 		}
 	}
 }
-
 // Can add if URL is valid and Cesium map is selected
 const canAddUrl = computed(() => {
 	return focusedMap.value === 'cesium' && url.value && url.value.startsWith('http');
@@ -71,10 +77,63 @@ const canAddUrl = computed(() => {
 						</v-btn-toggle>
 					</template>
 				</v-list-item>
+				<v-divider class="ma-2">GeoPTZ</v-divider>
+				<v-list-item>
+					<v-list-item-title>Icon</v-list-item-title>
+					<template #append>
+						<v-btn-toggle
+							v-model="geoPtzIcon"
+							mandatory
+							class="ga-2 h-auto"
+						>
+							<IconButton
+								icon="mdi-target"
+								variant="text"
+								size="x-large"
+								class="iconButton"
+								value="target"
+							></IconButton>
+							<IconButton
+								icon="mdi-target-variant"
+								variant="text"
+								size="x-large"
+								class="iconButton"
+								value="target-variant"
+							></IconButton>
+						</v-btn-toggle>
+					</template>
+				</v-list-item>
+				<v-list-item>
+					<v-list-item-title>Icon Color</v-list-item-title>
+					<template #append>
+						<v-menu
+							location="start"
+							:close-on-content-click="false"
+						>
+							<template #activator="{ props }">
+								<v-card
+									v-bind="props"
+									width="24"
+									height="24"
+									rounded="circle"
+									:color="geoPtzIconColor"
+									class="cursor-pointer border-sm"
+									elevation="2"
+									:ripple="false"
+								/>
+							</template>
+							<v-color-picker
+								v-model="geoPtzIconColor"
+								mode="rgba"
+								hide-inputs
+							/>
+						</v-menu>
+					</template>
+				</v-list-item>
 				<!-- Cesium-specific Settings -->
 				<v-expand-transition>
 					<div v-if="focusedMap === 'cesium'">
-						<v-divider class="ma-2" />
+						<v-divider class="ma-2">CESIUM</v-divider>
 						<v-list-item>
 							<v-list-item-title>Enable 3D Terrain</v-list-item-title>
 							<template #append>
@@ -175,5 +234,8 @@ const canAddUrl = computed(() => {
 <style scoped>
 :deep(.layer-list .v-expansion-panel-text__wrapper) {
 	padding: 0;
+}
+.iconButton {
+	font-size: 35px;
 }
 </style>
