@@ -1,4 +1,4 @@
-import { GeoPTZCommand } from '@/components/menus/visualization-wizard/visualizations/geoptz/Descriptor';
+import { GeoPTZCommand } from '@/modules/visualization/visualizations/geoptz/Descriptor';
 import { sendCommand } from '@/lib/ControlstreamUtils';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { ISweApiControlStreamProperties } from '@/lib/VisualizationHelpers';

@@ -3,7 +3,7 @@ import { computed, ref, Ref } from 'vue';
 import {OSHControlStream, OSHDatastream, OSHVisualization} from '@/lib/OSHConnectDataStructs';
 import {useDataStreamStore} from "@/stores/datastreamstore";
 import {useControlStreamStore} from "@/stores/controlstreamstore";
-import { ViewLocation } from '@/components/menus/visualization-wizard/VisualizationRegistry';
+import { ViewLocation } from '@/modules/visualization/registry/VisualizationRegistry';
 import { WizardConfig } from './vizwizstore';
 
 export interface SerializeVisualization {

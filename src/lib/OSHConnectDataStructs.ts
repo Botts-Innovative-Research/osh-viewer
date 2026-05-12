@@ -11,7 +11,7 @@ import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { VisualizationComponents } from '@/lib/VisualizationHelpers';
 import { CONFIG_UID_BASE } from '@/composables/useConfigPersistence';
-import { ViewLocation } from '@/components/menus/visualization-wizard/VisualizationRegistry';
+import { ViewLocation } from '@/modules/visualization/registry/VisualizationRegistry';
 import { WizardConfig } from '@/stores/vizwizstore';
 
 let sharedStores: any = null;
