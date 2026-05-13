@@ -1,13 +1,25 @@
 <script setup lang="ts">
-const color = defineModel<string>({
+import { ref, watch } from 'vue';
+
+const model = defineModel<string>({
 	required: true,
 });
+const tempColor = ref(model.value);
+
+watch(model, (val: string) => {
+	tempColor.value = val;
+});
+
+function commitColor() {
+	model.value = tempColor.value;
+}
 </script>
 
 <template>
 	<v-menu
 		location="start"
 		:close-on-content-click="false"
+		@update:model-value="(open) => !open && commitColor()"
 	>
 		<template #activator="{ props }">
 			<v-card
@@ -15,14 +27,14 @@ const color = defineModel<string>({
 				width="24"
 				height="24"
 				rounded="circle"
-				:color="color"
+				:color="model"
 				class="cursor-pointer border-sm"
 				elevation="2"
 				:ripple="false"
 			/>
 		</template>
 		<v-color-picker
-			v-model="color"
+			v-model="tempColor"
 			mode="rgba"
 			hide-inputs
 		/>

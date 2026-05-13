@@ -215,6 +215,15 @@ export function useMap() {
 		},
 		{ deep: true }
 	);
+	watch([() => settingsStore.geoPtzIcon, () => settingsStore.geoPtzIconColor], () => {
+		// Rebuild viz on icon change
+		const currentGeoPtz = mapStore.selectedGeoPTZ;
+		if (!currentGeoPtz?.length) return;
+
+		// Delete and make new
+		deleteVisualizations([currentGeoPtz[0].id]);
+		addVisualization(currentGeoPtz[0]);
+	});
 
 	/* MISSION BUILDER */
 	watch(
