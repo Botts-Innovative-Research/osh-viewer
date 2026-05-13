@@ -5,13 +5,15 @@ import GeneralSettings from './GeneralSettings.vue';
 
 // Nav drawer state
 const selectedTab = ref(['general']);
+// @ts-ignore
+const appVersion = APP_VERSION;
 </script>
 
 <template>
 	<v-card>
 		<v-card-item>
 			<v-card-title>Settings</v-card-title>
-			<v-card-subtitle>Version: 1.0.0</v-card-subtitle>
+			<v-card-subtitle>Version: {{ appVersion }}</v-card-subtitle>
 		</v-card-item>
 		<v-card-text>
 			<v-row>
