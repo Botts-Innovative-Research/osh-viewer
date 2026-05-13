@@ -7,6 +7,7 @@ import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import { MapPoint } from './adapters/types';
 import { setWaypointData } from './services/missionBuilder.service';
+import { useSettingsStore } from '@/stores/settingsstore';
 
 // prettier-ignore
 // @ts-ignore
@@ -169,8 +170,8 @@ export function createGeoPTZLayer(
 		name: 'GeoPTZ',
 		label: 'GeoPTZ',
 		id: viz.id,
-		icon: `${iconBase}/icons/map/geoPtz-pin.png`,
-		iconColor: '#FF0000',
+		icon: `${iconBase}/icons/map/${useSettingsStore().geoPtzIcon}.png`,
+		iconColor: useSettingsStore().geoPtzIconColor,
 		iconSize: [32, 32],
 		iconAnchor: [16, 16],
 		labelOffset: [-16, -32],
