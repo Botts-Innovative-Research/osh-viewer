@@ -8,7 +8,7 @@ import { useMapStore } from '@/stores/mapstore';
 import { useUIStore } from '@/stores/uistore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { storeToRefs } from 'pinia';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref, watch, watchEffect } from 'vue';
 
 export function useVisualizationSidebar() {
 	// Stores
@@ -35,6 +35,27 @@ export function useVisualizationSidebar() {
 	const geoPtzVisualizations = computed<OSHVisualization[]>(() =>
 		visualizations.value.filter((viz) => viz.type === 'geoPtz')
 	);
+
+	/* Panel state */
+	const openPanels = ref<string[]>([]);
+	function handleOpenPanels() {
+		console.log('Here', openPanels.value);
+
+		if (mapVisualizations.value.length) {
+			if (!openPanels.value.includes('map')) openPanels.value.push('map');
+		} else {
+			openPanels.value = openPanels.value.filter((id: string) => id !== 'map');
+		}
+
+		if (geoPtzVisualizations.value.length) {
+			if (!openPanels.value.includes('geoptz')) openPanels.value.push('geoptz');
+		} else {
+			openPanels.value = openPanels.value.filter((id: string) => id !== 'geoptz');
+		}
+	}
+	watch([() => mapVisualizations.value, () => geoPtzVisualizations.value], () => {
+		handleOpenPanels();
+	});
 
 	/* GEOPTZ HELPERS */
 	function removeGeoPTZ(controller: OSHVisualization) {
@@ -76,11 +97,16 @@ export function useVisualizationSidebar() {
 		uiStore.openEditViz();
 	}
 
+	onMounted(() => {
+		handleOpenPanels();
+	});
+
 	return {
 		editViz,
 		panelVisualizations,
 		mapVisualizations,
 		geoPtzVisualizations,
+		openPanels,
 		selectedGeoPTZControllers,
 		removeGeoPTZ,
 		isMapLayer,

@@ -8,12 +8,15 @@ import DeleteButton from '@/components/ui/DeleteButton.vue';
 import EditVisualization from '../wizard/EditVisualization.vue';
 import { useVisualizationSidebar } from './composables/useVisualizationSidebar';
 import { useUIStore } from '@/stores/uistore';
+import { computed } from 'vue';
+import { useMapStore } from '@/stores/mapstore';
 
 const {
 	editViz,
 	panelVisualizations,
 	mapVisualizations,
 	geoPtzVisualizations,
+	openPanels,
 	selectedGeoPTZControllers,
 	removeGeoPTZ,
 	isMapLayer,
@@ -53,9 +56,13 @@ const uiStore = useUIStore();
 				eager
 				variant="accordion"
 				elevation="0"
+				v-model="openPanels"
 			>
 				<!-- MAP VISUALIZATIONS -->
-				<v-expansion-panel :disabled="mapVisualizations.length == 0">
+				<v-expansion-panel
+					:disabled="mapVisualizations.length == 0"
+					value="map"
+				>
 					<template #title>
 						<div class="panel-header">Map Visualizations</div>
 					</template>
@@ -132,7 +139,10 @@ const uiStore = useUIStore();
 					</v-expansion-panel-text>
 				</v-expansion-panel>
 				<!-- GEOPTZ VISUALIZATIONS -->
-				<v-expansion-panel :disabled="geoPtzVisualizations.length == 0">
+				<v-expansion-panel
+					:disabled="geoPtzVisualizations.length == 0"
+					value="geoptz"
+				>
 					<template #title>
 						<div class="panel-header">GeoPTZ Controllers</div>
 					</template>
