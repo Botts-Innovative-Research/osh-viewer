@@ -4,6 +4,7 @@ import { computed, ref } from 'vue';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
 import { showToast } from '@/composables/useToast';
 import { useSettingsStore } from '@/stores/settingsstore';
+import ColorPicker from '@/components/ui/ColorPicker.vue';
 
 const settingsStore = useSettingsStore();
 const mapStore = useMapStore();
@@ -106,28 +107,7 @@ const canAddUrl = computed(() => {
 				<v-list-item>
 					<v-list-item-title>Icon Color</v-list-item-title>
 					<template #append>
-						<v-menu
-							location="start"
-							:close-on-content-click="false"
-						>
-							<template #activator="{ props }">
-								<v-card
-									v-bind="props"
-									width="24"
-									height="24"
-									rounded="circle"
-									:color="geoPtzIconColor"
-									class="cursor-pointer border-sm"
-									elevation="2"
-									:ripple="false"
-								/>
-							</template>
-							<v-color-picker
-								v-model="geoPtzIconColor"
-								mode="rgba"
-								hide-inputs
-							/>
-						</v-menu>
+						<ColorPicker v-model="geoPtzIconColor"></ColorPicker>
 					</template>
 				</v-list-item>
 				<!-- Cesium-specific Settings -->
