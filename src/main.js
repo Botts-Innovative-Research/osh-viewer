@@ -2,7 +2,7 @@ import './assets/main.css';
 
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
-import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 import Toast from 'vue-toastification';
 import 'vue-toastification/dist/index.css';
 import { vuetify } from './plugins/vuetify';
@@ -35,15 +35,13 @@ app.use(Toast, {
 	icon: true,
 	rtl: false,
 	filterBeforeCreate: (toast, toasts) => {
-    if (toasts.filter(
-      t => t.type === toast.type
-    ).length !== 0) {
-      // Returning false discards the toast
-      return false;
-    }
-    // You can modify the toast if you want
-    return toast;
-  }
+		if (toasts.filter((t) => t.type === toast.type).length !== 0) {
+			// Returning false discards the toast
+			return false;
+		}
+		// You can modify the toast if you want
+		return toast;
+	},
 });
 
 app.mount('#app');

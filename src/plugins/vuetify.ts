@@ -64,5 +64,8 @@ export const vuetify = createVuetify({
 		VTooltip: {
 			openDelay: 500,
 		},
+		VAlert: {
+			rounded: 'lg',
+		},
 	},
 });

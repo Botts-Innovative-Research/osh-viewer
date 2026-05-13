@@ -1,4 +1,3 @@
-import { h, ref } from 'vue';
 import ControlFilter from 'osh-js/source/core/sweapi/control/ControlFilter';
 import Control from 'osh-js/source/core/sweapi/control/Control';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
@@ -17,19 +16,27 @@ type CommandType = {
  * @param command
  * @param auth
  */
-export function sendCommand(commandBaseUrl: string, controlStreamId: string, command: any, auth: string) {
-	console.log(`Sending command to ${commandBaseUrl}/controlstreams/${controlStreamId}/commands `, command);
+export function sendCommand(
+	commandBaseUrl: string,
+	controlStreamId: string,
+	command: any,
+	auth: string
+) {
+	console.log(
+		`Sending command to ${commandBaseUrl}/controlstreams/${controlStreamId}/commands `,
+		command
+	);
 
-    let encoded = btoa(auth)
+	let encoded = btoa(auth);
 
 	// Command sending logic
 	fetch(`${commandBaseUrl}/controlstreams/${controlStreamId}/commands`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
-            ...(auth && {'Authorization': `Basic ${encoded}`})
+			...(auth && { Authorization: `Basic ${encoded}` }),
 		},
-        mode: 'cors',
+		mode: 'cors',
 		body: JSON.stringify(command),
 	})
 		.then((response) => {
@@ -56,23 +63,21 @@ export function sendCommand(commandBaseUrl: string, controlStreamId: string, com
  * @returns
  */
 export async function fetchControlStreamSchema(controlstream: any, networkProperties: any) {
-    const props = {
+	const props = {
 		id: controlstream.id,
-		'system@id': controlstream.parentId == null ? controlstream['system@id'] : controlstream.parentId,
+		'system@id':
+			controlstream.parentId == null ? controlstream['system@id'] : controlstream.parentId,
 		name: controlstream.name,
 		type: controlstream.type,
 	};
 
 	const control = new Control(props, networkProperties);
 
-	console.log('[ControlstreamUtils] Fetching schema for controlstream:', control);
-
 	let filter = new ControlFilter();
 	return control
 		.getSchema(filter)
 		.then((schema: any) => {
 			if (schema) {
-				console.log('[ControlstreamUtils] Schema fetched:', schema);
 				// Add to store and fetch beautified command schema
 				const schemaItems = schema.parametersSchema.items
 					? schema.parametersSchema.items
@@ -135,11 +140,13 @@ export function getCommandType(schema: any, id: string) {
 			};
 			commandSchema.tilt = {
 				type: 'number',
-				constraint: schema.find((item: any) => item.name === 'tilt').constraint.intervals[0],
+				constraint: schema.find((item: any) => item.name === 'tilt').constraint
+					.intervals[0],
 			};
 			commandSchema.zoom = {
 				type: 'number',
-				constraint: schema.find((item: any) => item.name === 'zoom').constraint.intervals[0],
+				constraint: schema.find((item: any) => item.name === 'zoom').constraint
+					.intervals[0],
 			};
 		}
 		if (schema.some((item: any) => item.name === 'rpan')) {
