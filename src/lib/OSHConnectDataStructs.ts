@@ -13,6 +13,7 @@ import { VisualizationComponents } from '@/lib/VisualizationHelpers';
 import { CONFIG_UID_BASE } from '@/composables/useConfigPersistence';
 import { WizardConfig } from '@/stores/vizwizstore';
 import { ViewLocation } from '@/modules/visualization/registry/types';
+import { showToast } from '@/composables/useToast';
 
 let sharedStores: any = null;
 
@@ -36,7 +37,7 @@ export class OSHConnect {
 		this.nodeStore = stores.nodeStore;
 	}
 
-	createNode(
+	async createNode(
 		name: string,
 		host: string,
 		port: string | number,
@@ -44,10 +45,42 @@ export class OSHConnect {
 		username: string,
 		password: string,
 		tls: boolean = false
-	): OSHNode {
+	): Promise<OSHNode | null> {
 		const newNode = new OSHNode(name, host, port, endpoint, username, password, tls, this);
-		this.nodeStore.addNode(newNode);
-		return newNode;
+		const isReachable = await this.checkNodeReachable(newNode);
+		if (!isReachable) {
+			console.error('Failed to connect to node.');
+			return null;
+		} else {
+			this.nodeStore.addNode(newNode);
+			return newNode;
+		}
+	}
+
+	async checkNodeReachable(newNode: OSHNode) {
+		const endpoint = `${newNode.tls ? 'https' : 'http'}://${newNode.getEndpointUrl()}`;
+		const encoded = btoa(`${newNode.username}:${newNode.password}`);
+		const options: RequestInit = {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Basic ${encoded}`,
+			},
+			mode: 'cors',
+		};
+
+		try {
+			const response = await fetch(endpoint, options);
+			if (response.ok) {
+				return true;
+			} else {
+				showToast(`Node is not reachable.`, 'ERROR');
+				return false;
+			}
+		} catch (error) {
+			showToast(`Failed to connect to node.`, 'ERROR');
+			return false;
+		}
 	}
 
 	// Fetch all resources that are relatively static

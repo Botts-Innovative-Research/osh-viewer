@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
 import { useOSHConnectStore } from '@/stores/oshconnectstore.js';
 import { useUIStore } from '@/stores/uistore';
@@ -15,21 +15,23 @@ const nodeUser = ref('admin');
 const nodePassword = ref('admin');
 const tls = ref(false);
 
-const createNode = () => {
+async function createNode() {
 	// This function will be called when the button is clicked
-	oshconnect.createNode(
+	const result = await oshconnect.createNode(
 		nodeName.value,
 		nodeHost.value,
 		nodePort.value,
 		nodePath.value,
 		nodeUser.value,
 		nodePassword.value,
-		tls.value,
-		this
+		tls.value
 	);
-	oshconnect.fetchSlowResources();
-	cancelForm();
-};
+
+	if (result) {
+		oshconnect.fetchSlowResources();
+		cancelForm();
+	}
+}
 
 const cancelForm = () => {
 	uiStore.nodeConfigFormOpen = false;
@@ -51,7 +53,7 @@ function sanitizeAPIRoot(path) {
 		<v-card-title>Add a New Node</v-card-title>
 
 		<v-card-text>
-			<v-form @submit.prevent="createNode">
+			<v-form @submit.prevent="createNode()">
 				<v-text-field
 					label="Node Name"
 					v-model="nodeName"
