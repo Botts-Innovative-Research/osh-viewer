@@ -2,6 +2,8 @@
 import { ref } from 'vue';
 import { useOSHConnectStore } from '@/stores/oshconnectstore.js';
 import { useUIStore } from '@/stores/uistore';
+import { OSHNode } from '@/lib/OSHConnectDataStructs';
+import { showToast } from '@/composables/useToast';
 
 const oshconnect = useOSHConnectStore().getInstance();
 const uiStore = useUIStore();
@@ -27,9 +29,11 @@ async function createNode() {
 		tls.value
 	);
 
-	if (result) {
+	if (result instanceof OSHNode) {
 		oshconnect.fetchSlowResources();
 		cancelForm();
+	} else {
+		showToast(result.message ?? 'Failed to create node', 'ERROR');
 	}
 }
 

@@ -20,7 +20,7 @@ export const useNodeStore = defineStore(
 		const serializedNodes: Ref<SerializeNode[]> = ref([]);
 
 		const addNode = (node: OSHNode): any => {
-			if (checkIfNodeExists(node.name) || node.name === undefined) {
+			if (checkIfNodeNameExists(node.name) || node.name === undefined) {
 				showToast('Node already exists or name is undefined', 'ERROR');
 				return;
 			}
@@ -47,12 +47,22 @@ export const useNodeStore = defineStore(
 			return nodes.value.find((node) => node.name === name);
 		};
 
-		const checkIfNodeExists = (name: string): boolean => {
+		const checkIfNodeNameExists = (name: string): boolean => {
 			return nodes.value.some((node) => node.name === name);
 		};
 
 		const checkIfNodeEndpointExists = (host: string, port: string | number): boolean => {
-			return nodes.value.some((node) => node.host === host && node.port == port);
+			function normalizeHost(host: string): string {
+				let normalized = host.trim().toLowerCase();
+				if (normalized === 'localhost') return '127.0.0.1';
+				return normalized;
+			}
+
+			const currentHost = normalizeHost(host);
+
+			return nodes.value.some((node) => {
+				return normalizeHost(node.host) === currentHost && node.port == port;
+			});
 		};
 
 		const rehydrateNodes = async (oshConnect: OSHConnect): Promise<void> => {
@@ -89,7 +99,7 @@ export const useNodeStore = defineStore(
 			addNode,
 			removeNode,
 			getNodeByName,
-			checkIfNodeExists,
+			checkIfNodeNameExists,
 			checkIfNodeEndpointExists,
 			rehydrateNodes,
 			updateDefaultNode,

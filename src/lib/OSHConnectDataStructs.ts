@@ -13,7 +13,11 @@ import { VisualizationComponents } from '@/lib/VisualizationHelpers';
 import { CONFIG_UID_BASE } from '@/composables/useConfigPersistence';
 import { WizardConfig } from '@/stores/vizwizstore';
 import { ViewLocation } from '@/modules/visualization/registry/types';
-import { showToast } from '@/composables/useToast';
+
+export interface Result {
+	success: boolean;
+	message?: string;
+}
 
 let sharedStores: any = null;
 
@@ -45,21 +49,23 @@ export class OSHConnect {
 		username: string,
 		password: string,
 		tls: boolean = false
-	): Promise<OSHNode | null> {
+	): Promise<OSHNode | Result> {
 		const newNode = new OSHNode(name, host, port, endpoint, username, password, tls, this);
 		const isReachable = await this.checkNodeReachable(newNode);
-		if (!isReachable) {
-			console.error('Failed to connect to node.');
-			return null;
+		const nodeExists = this.checkIfNodeExists(newNode);
+		if (!isReachable.success) {
+			return isReachable;
+		} else if (!nodeExists.success) {
+			return nodeExists;
 		} else {
 			this.nodeStore.addNode(newNode);
 			return newNode;
 		}
 	}
 
-	async checkNodeReachable(newNode: OSHNode) {
-		const endpoint = `${newNode.tls ? 'https' : 'http'}://${newNode.getEndpointUrl()}`;
-		const encoded = btoa(`${newNode.username}:${newNode.password}`);
+	async checkNodeReachable(node: OSHNode): Promise<Result> {
+		const endpoint = `${node.tls ? 'https' : 'http'}://${node.getEndpointUrl()}`;
+		const encoded = btoa(`${node.username}:${node.password}`);
 		const options: RequestInit = {
 			method: 'GET',
 			headers: {
@@ -72,15 +78,31 @@ export class OSHConnect {
 		try {
 			const response = await fetch(endpoint, options);
 			if (response.ok) {
-				return true;
+				return {
+					success: true,
+				};
 			} else {
-				showToast(`Node is not reachable.`, 'ERROR');
-				return false;
+				console.error('Node is not reachable.');
+				return {
+					success: false,
+					message: 'Node is not reachable.',
+				};
 			}
 		} catch (error) {
-			showToast(`Failed to connect to node.`, 'ERROR');
-			return false;
+			console.error('Failed to connect to node:', error);
+			return {
+				success: false,
+				message: 'Failed to connect to node.',
+			};
 		}
+	}
+
+	checkIfNodeExists(node: OSHNode): Result {
+		if (this.nodeStore.checkIfNodeNameExists(node.name))
+			return { success: false, message: 'Node name already exists.' };
+		if (this.nodeStore.checkIfNodeEndpointExists(node.host, node.port))
+			return { success: false, message: 'Node endpoint already exists.' };
+		else return { success: true };
 	}
 
 	// Fetch all resources that are relatively static
