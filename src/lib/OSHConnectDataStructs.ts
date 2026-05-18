@@ -204,7 +204,8 @@ export class OSHNode {
 				if (!systemStore?.checkIfSystemExists?.(sys.properties.id)) {
 					const newSys = new OSHSystem(sys, this);
 
-					await Promise.all([
+					//@ts-ignore
+					await Promise.allSettled([
 						newSys.getDataStreams(),
 						newSys.getControlStreams(),
 						newSys.getSamplingFeatures(),
