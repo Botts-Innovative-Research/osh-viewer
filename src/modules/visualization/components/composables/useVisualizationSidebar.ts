@@ -39,8 +39,6 @@ export function useVisualizationSidebar() {
 	/* Panel state */
 	const openPanels = ref<string[]>([]);
 	function handleOpenPanels() {
-		console.log('Here', openPanels.value);
-
 		if (mapVisualizations.value.length) {
 			if (!openPanels.value.includes('map')) openPanels.value.push('map');
 		} else {

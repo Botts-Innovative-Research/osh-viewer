@@ -316,7 +316,7 @@ export function useConfigPersistence() {
 
 					for (const serializedNode of loadedNodes) {
 						if (
-							!nodeStore.checkIfNodeExists(serializedNode.name) &&
+							!nodeStore.checkIfNodeNameExists(serializedNode.name) &&
 							!nodeStore.checkIfNodeEndpointExists(
 								serializedNode.host,
 								serializedNode.port

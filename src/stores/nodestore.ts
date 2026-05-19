@@ -20,7 +20,7 @@ export const useNodeStore = defineStore(
 		const serializedNodes: Ref<SerializeNode[]> = ref([]);
 
 		const addNode = (node: OSHNode): any => {
-			if (checkIfNodeExists(node.name) || node.name === undefined) {
+			if (checkIfNodeNameExists(node.name) || node.name === undefined) {
 				showToast('Node already exists or name is undefined', 'ERROR');
 				return;
 			}
@@ -47,7 +47,7 @@ export const useNodeStore = defineStore(
 			return nodes.value.find((node) => node.name === name);
 		};
 
-		const checkIfNodeExists = (name: string): boolean => {
+		const checkIfNodeNameExists = (name: string): boolean => {
 			return nodes.value.some((node) => node.name === name);
 		};
 
@@ -89,7 +89,7 @@ export const useNodeStore = defineStore(
 			addNode,
 			removeNode,
 			getNodeByName,
-			checkIfNodeExists,
+			checkIfNodeNameExists,
 			checkIfNodeEndpointExists,
 			rehydrateNodes,
 			updateDefaultNode,

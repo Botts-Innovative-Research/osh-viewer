@@ -14,6 +14,11 @@ import { CONFIG_UID_BASE } from '@/composables/useConfigPersistence';
 import { WizardConfig } from '@/stores/vizwizstore';
 import { ViewLocation } from '@/modules/visualization/registry/types';
 
+export interface Result {
+	success: boolean;
+	message?: string;
+}
+
 let sharedStores: any = null;
 
 function getSharedStores() {
@@ -36,7 +41,7 @@ export class OSHConnect {
 		this.nodeStore = stores.nodeStore;
 	}
 
-	createNode(
+	async createNode(
 		name: string,
 		host: string,
 		port: string | number,
@@ -44,10 +49,60 @@ export class OSHConnect {
 		username: string,
 		password: string,
 		tls: boolean = false
-	): OSHNode {
+	): Promise<OSHNode | Result> {
 		const newNode = new OSHNode(name, host, port, endpoint, username, password, tls, this);
-		this.nodeStore.addNode(newNode);
-		return newNode;
+		const isReachable = await this.checkNodeReachable(newNode);
+		const nodeExists = this.checkIfNodeExists(newNode);
+		if (!isReachable.success) {
+			return isReachable;
+		} else if (!nodeExists.success) {
+			return nodeExists;
+		} else {
+			this.nodeStore.addNode(newNode);
+			return newNode;
+		}
+	}
+
+	async checkNodeReachable(node: OSHNode): Promise<Result> {
+		const endpoint = `${node.tls ? 'https' : 'http'}://${node.getEndpointUrl()}`;
+		const encoded = btoa(`${node.username}:${node.password}`);
+		const options: RequestInit = {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Basic ${encoded}`,
+			},
+			mode: 'cors',
+		};
+
+		try {
+			const response = await fetch(endpoint, options);
+			if (response.ok) {
+				return {
+					success: true,
+				};
+			} else {
+				console.error('Node is not reachable.');
+				return {
+					success: false,
+					message: 'Node is not reachable.',
+				};
+			}
+		} catch (error) {
+			console.error('Failed to connect to node:', error);
+			return {
+				success: false,
+				message: 'Failed to connect to node.',
+			};
+		}
+	}
+
+	checkIfNodeExists(node: OSHNode): Result {
+		if (this.nodeStore.checkIfNodeNameExists(node.name))
+			return { success: false, message: 'Node name already exists.' };
+		if (this.nodeStore.checkIfNodeEndpointExists(node.host, node.port))
+			return { success: false, message: 'Node endpoint already exists.' };
+		else return { success: true };
 	}
 
 	// Fetch all resources that are relatively static
@@ -149,7 +204,8 @@ export class OSHNode {
 				if (!systemStore?.checkIfSystemExists?.(sys.properties.id)) {
 					const newSys = new OSHSystem(sys, this);
 
-					await Promise.all([
+					//@ts-ignore
+					await Promise.allSettled([
 						newSys.getDataStreams(),
 						newSys.getControlStreams(),
 						newSys.getSamplingFeatures(),
