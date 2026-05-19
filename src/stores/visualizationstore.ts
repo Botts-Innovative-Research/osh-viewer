@@ -1,6 +1,11 @@
 import { defineStore } from 'pinia';
 import { computed, ref, Ref } from 'vue';
-import { OSHControlStream, OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import {
+	Geometry,
+	OSHControlStream,
+	OSHDatastream,
+	OSHVisualization,
+} from '@/lib/OSHConnectDataStructs';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { ViewLocation } from '@/modules/visualization/registry/VisualizationRegistry';
@@ -130,6 +135,11 @@ export const useVisualizationStore = defineStore(
 			console.log('[VizStore] Rehydrated visualizations:', visualizations.value.length);
 		};
 
+		const foiLayers: Ref<Geometry[]> = ref<Geometry[]>([]);
+		const addFOILayer = (geometry: Geometry) => {
+			foiLayers.value.push(geometry);
+		};
+
 		return {
 			visualizations,
 			serializedVisualizations,
@@ -144,6 +154,8 @@ export const useVisualizationStore = defineStore(
 			isMapLayerVisible,
 			layerVisibility,
 			rehydrateVisualizations,
+			foiLayers,
+			addFOILayer,
 		};
 	},
 	{ persist: { pick: ['serializedVisualizations'] } }

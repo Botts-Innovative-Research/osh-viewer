@@ -2,6 +2,7 @@ import * as Cesium from 'cesium';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
 import { CursorMode, MapAdapter, MapClickHandler, MapPoint } from './types';
 import { Ion } from 'cesium';
+import { Geometry } from '@/lib/OSHConnectDataStructs';
 
 // Showcase examples token :P
 // Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0NTkzNS02NzI0LTQwNDktODk4Zi0zZDJjOWI2NTdmYTMiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI1ODJ9.IbAajOLYnsoyKy1BOd7fY1p6GH-wwNVMdMduA2IzGjA';
@@ -59,6 +60,27 @@ export function createCesiumAdapter(): MapAdapter {
 
 	function removeLayer(layer: any) {
 		mapView.removeAllFromLayer(layer);
+	}
+
+	function addFOILayer(geometry: Geometry) {
+		console.log('Made it here');
+		mapView.viewer.entities.add({
+			name: geometry.properties.properties.name,
+			position: Cesium.Cartesian3.fromDegrees(
+				Array.isArray(geometry.coordinates[0])
+					? geometry.coordinates[0][0]
+					: geometry.coordinates[0],
+				Array.isArray(geometry.coordinates[1])
+					? geometry.coordinates[1][0]
+					: geometry.coordinates[1],
+				Array.isArray(geometry.coordinates[2])
+					? geometry.coordinates[2][0]
+					: geometry.coordinates[2]
+			),
+			billboard: {
+				image: '/icons/map/map-marker.png',
+			},
+		});
 	}
 
 	function toggleLayerVisibility(id: string, isVisible: boolean) {
@@ -312,5 +334,6 @@ export function createCesiumAdapter(): MapAdapter {
 		removeMapLayer,
 		destroyAllLayers,
 		rebuildMapLayers,
+		addFOILayer,
 	};
 }

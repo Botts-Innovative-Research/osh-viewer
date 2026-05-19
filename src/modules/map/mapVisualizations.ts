@@ -1,5 +1,5 @@
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
 import { useMapStore } from '@/stores/mapstore';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
@@ -8,6 +8,7 @@ import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import { MapPoint } from './adapters/types';
 import { setWaypointData } from './services/missionBuilder.service';
 import { useSettingsStore } from '@/stores/settingsstore';
+import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 
 // prettier-ignore
 // @ts-ignore
@@ -232,6 +233,20 @@ export async function createWaypointLayer(
 	const props = await setWaypointData(waypointLayer);
 
 	return { layer: waypointLayer, props };
+}
+export function createFOILayer(geometry: Geometry): PointMarkerLayer {
+	const pmLayer = new PointMarkerLayer({
+		name: geometry.properties.properties.name,
+		id: `foi-${randomUUID()}`,
+		defaultToTerrainElevation: true,
+		location: {
+			x: geometry.coordinates[0],
+			y: geometry.coordinates[1],
+			z: geometry.coordinates[2] || 0,
+		},
+		label: geometry.properties.properties.name,
+	});
+	return pmLayer;
 }
 
 export function rebuildMapVisualizations(oldLayers: Map<string, PointMarkerLayer | LoBLayer>) {

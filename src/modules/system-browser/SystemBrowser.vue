@@ -19,6 +19,7 @@ import NodeConfigForm from '@/components/menus/NodeConfigForm.vue';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
 import PropertiesDialog from '@/components/menus/PropertiesDialog.vue';
 import NodeIcon from '@/components/icons/node-logo.svg';
+import { useMap } from '../map/composables/useMap';
 
 const oshConnect = useOSHConnectStore().getInstance();
 const nodeStore = useNodeStore();
@@ -73,51 +74,54 @@ const fetchResources = () => {
 	oshConnect.fetchSlowResources();
 };
 
-const addFeatureMarker = (item) => {
-	const oshSystem: OSHSystem = item as OSHSystem;
+// const addFeatureMarker = (item: any) => {
+// 	const oshSystem: OSHSystem = item as OSHSystem;
 
-	for (let foi of oshSystem.samplingFeatures) {
-		const geom = new Geometry(
-			foi.properties.id,
-			foi.properties.geometry.type,
-			foi.properties.geometry.coordinates,
-			foi.properties,
-			foi.properties.bbox
-		);
+// 	for (let foi of oshSystem.samplingFeatures) {
+// 		const geom = new Geometry(
+// 			foi.properties.id,
+// 			foi.properties.geometry.type,
+// 			foi.properties.geometry.coordinates,
+// 			foi.properties,
+// 			foi.properties.bbox
+// 		);
 
-		let newViz = new OSHVisualization(
-			'featuremarker-' + randomUUID(),
-			foi.properties.properties.name,
-			'pointmarker-feature',
-			'map',
-			null
-		);
-		newViz.geometry = geom;
+// 		let newViz = new OSHVisualization(
+// 			'featuremarker-' + randomUUID(),
+// 			foi.properties.properties.name,
+// 			'pointmarker-feature',
+// 			'map',
+// 			null
+// 		);
+// 		newViz.geometry = geom;
 
-		visualizationStore.addVisualization(newViz);
-	}
-};
+// 		visualizationStore.addVisualization(newViz);
+// 	}
+// };
 
 const addAllSamplingFeaturePMs = () => {
-	systems.forEach((system) => {
-		system.samplingFeatures.forEach((feature) => {
+	systems.forEach((system: OSHSystem) => {
+		console.log(system.name, system.samplingFeatures);
+		system.samplingFeatures.forEach((foi: any) => {
+			if (!foi.properties.geometry) return;
 			const geom = new Geometry(
-				feature.properties.id,
-				feature.properties.geometry.type,
-				feature.properties.geometry.coordinates,
-				feature.properties,
-				feature.properties.bbox
+				foi.properties.id,
+				foi.properties.geometry.type ?? '',
+				foi.properties.geometry.coordinates,
+				foi.properties,
+				foi.properties.bbox
 			);
-			let newViz = new OSHVisualization(
-				'featuremarker-' + randomUUID(),
-				`${feature.properties.properties.name}`,
-				'pointmarker-feature',
-				'map',
-				null
-			);
-			newViz.geometry = geom;
-
-			visualizationStore.addVisualization(newViz);
+			// let newViz = new OSHVisualization(
+			// 	`visualization-${randomUUID()}`,
+			// 	`${foi.properties.properties.name}`,
+			// 	'pointmarker-feature',
+			// 	'map',
+			// 	null,
+			// 	undefined,
+			// 	system.id
+			// );
+			// visualizationStore.addVisualization(newViz);
+			visualizationStore.addFOILayer(geom);
 		});
 	});
 };

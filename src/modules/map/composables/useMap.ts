@@ -4,11 +4,12 @@ import { computed, onMounted, ref, watch } from 'vue';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import {
+	createFOILayer,
 	createMapVisualizations,
 	createWaypointLayer,
 	rebuildMapVisualizations,
 } from '../mapVisualizations';
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { createCesiumAdapter } from '../adapters/cesium.adapter';
 import { taskGeoPTZ } from '../services/geoPTZ.service';
@@ -156,6 +157,25 @@ export function useMap() {
 			}
 		);
 	}
+
+	/* FOI */
+	watch(
+		() => visualizationStore.foiLayers.map((v) => v),
+		(newLayers, oldLayers) => {
+			console.log('Test test test');
+			console.log(newLayers, oldLayers);
+			const addedLayers = newLayers?.filter(
+				(newLayer) => !oldLayers?.some((layer: any) => layer.id === newLayer.id)
+			);
+			console.log(addedLayers);
+			if (addedLayers) {
+				addedLayers.forEach((layer) => {
+					mapAdapter.value?.addFOILayer(layer);
+				});
+			}
+		},
+		{ deep: true, immediate: true }
+	);
 
 	/** MAP INTERACTIONS */
 	function bindMapInteractions() {
