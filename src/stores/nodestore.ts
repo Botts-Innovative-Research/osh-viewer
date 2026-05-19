@@ -52,17 +52,7 @@ export const useNodeStore = defineStore(
 		};
 
 		const checkIfNodeEndpointExists = (host: string, port: string | number): boolean => {
-			function normalizeHost(host: string): string {
-				let normalized = host.trim().toLowerCase();
-				if (normalized === 'localhost') return '127.0.0.1';
-				return normalized;
-			}
-
-			const currentHost = normalizeHost(host);
-
-			return nodes.value.some((node) => {
-				return normalizeHost(node.host) === currentHost && node.port == port;
-			});
+			return nodes.value.some((node) => node.host === host && node.port == port);
 		};
 
 		const rehydrateNodes = async (oshConnect: OSHConnect): Promise<void> => {
