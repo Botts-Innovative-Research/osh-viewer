@@ -1,8 +1,6 @@
 import LeafletView from 'osh-js/source/core/ui/view/map/LeafletView';
 import L from 'leaflet';
 import { MapAdapter, MapClickHandler, MapPoint } from './types';
-import { Geometry } from '@/lib/OSHConnectDataStructs';
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 
 export function createLeafletAdapter(): MapAdapter {
 	let mapView: LeafletView | null;
@@ -37,6 +35,7 @@ export function createLeafletAdapter(): MapAdapter {
 	function toggleLayerVisibility(id: string, isVisible: boolean) {
 		const marker = mapView.layerIdToMarkers?.[id];
 		const polyline = mapView.layerIdToPolylines?.[id];
+		const ellipse = mapView.layerIdToEllipsoids?.[id];
 
 		// Handle PM and LoB
 		if (marker) {
@@ -45,6 +44,10 @@ export function createLeafletAdapter(): MapAdapter {
 		// Handle polyline
 		if (polyline) {
 			polyline.setStyle({ opacity: isVisible ? 0.8 : 0 });
+		}
+		// Handle ellipse
+		if (ellipse) {
+			ellipse.setStyle({ opacity: isVisible ? 0.8 : 0 });
 		}
 	}
 

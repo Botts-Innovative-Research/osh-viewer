@@ -1,7 +1,7 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
+	IEllipseLayerProperties,
 	IMapViewProperties,
-	IPointMarkerLayerProperties,
 	ISweApiDataSourceProperties,
 	VisualizationComponents,
 } from '@/lib/VisualizationHelpers';
@@ -12,7 +12,7 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 import { Mode } from 'osh-js/source/core/datasource/Mode';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import { PointMarkerDescriptor } from './Descriptor';
+import { EllipseDescriptor } from './Descriptor';
 import {
 	AggregateDatastreams,
 	BuildRoleProperty,
@@ -20,34 +20,34 @@ import {
 } from '../../services/aggregation.service';
 
 export default function build() {
-	console.log('Building Point Marker Visualization...');
+	console.log('Building Ellipse Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
 
 	// Aggregate datastreams from vizwizStore
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
-	const pmResult = CreatePointMarkerViewProps(
+	const ellipseResult = CreateEllipseViewProps(
 		datastreams,
 		vizwizStore.visualizationCustomizationOptions
 	);
 	const visualizationComponents: VisualizationComponents = {
-		dataSource: pmResult.vizDatasources,
-		dataLayer: pmResult.pointMarkerLayer,
-		dataView: pmResult.mapView,
+		dataSource: ellipseResult.vizDatasources,
+		dataLayer: ellipseResult.ellipseLayer,
+		dataView: ellipseResult.mapView,
 	};
 
 	const newViz: OSHVisualization = new OSHVisualization(
 		vizwizStore.id,
 		vizwizStore.visualizationCustomizationOptions.name,
-		'pointmarker',
-		PointMarkerDescriptor.viewLocation,
+		'ellipse',
+		EllipseDescriptor.viewLocation,
 		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig)
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
 	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization
 	visualizationStore.addVisualization(newViz);
-	console.log('Created Point Marker Visualization:', newViz);
+	console.log('Created Ellipse Visualization:', newViz);
 }
 
 /**
@@ -57,24 +57,18 @@ export default function build() {
  * @param visOptions
  * @constructor
  */
-export function CreatePointMarkerViewProps(datastreams: { [key: string]: any }, visOptions: any) {
+export function CreateEllipseViewProps(datastreams: { [key: string]: any }, visOptions: any) {
 	const datastreamStore = useDataStreamStore();
 
 	// Create datasources, layer, and view
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
-	let pointMarkerLayer: IPointMarkerLayerProperties = {
+	let ellipseLayer: IEllipseLayerProperties = {
 		name: visOptions.name,
-		label: visOptions.name,
-		icon: visOptions.icon,
-		iconColor: visOptions.iconColor,
-		iconName: visOptions.iconName,
-		iconSize: [32, 32],
-		labelOffset: [-16, -32],
 	};
 	let mapView: IMapViewProperties = {
 		container: `map-container-${randomUUID()}`,
 		css: 'map-view',
-		layers: [pointMarkerLayer],
+		layers: [ellipseLayer],
 		refreshRate: 1000,
 	};
 
@@ -106,11 +100,11 @@ export function CreatePointMarkerViewProps(datastreams: { [key: string]: any }, 
 		vizDatasources.push(currentDataSource);
 	}
 
-	console.log('Created MapViewProps:', { vizDatasources, pointMarkerLayer, mapView });
+	console.log('Created MapViewProps:', { vizDatasources, ellipseLayer, mapView });
 
 	return {
 		vizDatasources,
-		pointMarkerLayer,
+		ellipseLayer,
 		mapView,
 	};
 }

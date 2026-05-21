@@ -6,6 +6,7 @@ import { TextDescriptor } from '../visualizations/text/Descriptor';
 import { VideoDescriptor } from '../visualizations/video/Descriptor';
 import { MissionDescriptor } from '@/modules/visualization/visualizations/mission/Descriptor';
 import { VisualizationDescriptor } from './types';
+import { EllipseDescriptor } from '../visualizations/ellipse/Descriptor';
 
 /**
  * Central registry for all visualizations available in the Visualization Wizard.
@@ -19,6 +20,7 @@ export const VisualizationRegistry: { [key: string]: VisualizationDescriptor } =
 	[TextDescriptor.id]: TextDescriptor,
 	[VideoDescriptor.id]: VideoDescriptor,
 	[MissionDescriptor.id]: MissionDescriptor,
+	[EllipseDescriptor.id]: EllipseDescriptor,
 };
 
 /**

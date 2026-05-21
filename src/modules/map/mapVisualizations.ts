@@ -5,6 +5,7 @@ import { useMapStore } from '@/stores/mapstore';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
+import EllipseLayer from 'osh-js/source/core/ui/layer/EllipseLayer';
 import { MapPoint } from './adapters/types';
 import { setWaypointData } from './services/missionBuilder.service';
 import { useSettingsStore } from '@/stores/settingsstore';
@@ -15,7 +16,7 @@ import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 const iconBase = import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.meta.env.VITE_VIEWER_ENDPOINT : '';
 
 export interface ICreateMapVisualizationResult {
-	vizLayer: PointMarkerLayer | LoBLayer;
+	vizLayer: PointMarkerLayer | LoBLayer | EllipseLayer;
 	dsInstances: SweApi[];
 }
 
@@ -26,6 +27,8 @@ export function createMapVisualizations(
 		return createPointMarkerLayer(viz, viz.visualizationComponents.dataSource);
 	} else if (viz.type === 'lob') {
 		return createLoBLayer(viz, viz.visualizationComponents.dataSource);
+	} else if (viz.type === 'ellipse') {
+		return createEllipseLayer(viz, viz.visualizationComponents.dataSource);
 	} else if (viz.type === 'geoPtz') {
 		return createGeoPTZLayer(viz, viz.visualizationComponents.dataSource);
 	} else {
@@ -152,6 +155,69 @@ export function createLoBLayer(
 	});
 
 	return { vizLayer: lobLayer, dsInstances };
+}
+export function createEllipseLayer(
+	viz: OSHVisualization,
+	dsArray: ISweApiDataSourceProperties[]
+): ICreateMapVisualizationResult {
+	// Ds instances created
+	let dsInstances: SweApi[] = [];
+
+	// Undefined initially
+	let getPosition: any;
+	let getSemiMajorAxis: any;
+	let getSemiMinorAxis: any;
+
+	for (const dsProps of dsArray) {
+		const dsInstance = createDatasource(dsProps);
+
+		// Check for position property
+		if (dsProps.properties.position) {
+			getPosition = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return {
+						x: rec[dsProps.properties.position.property].lon,
+						y: rec[dsProps.properties.position.property].lat,
+						z: rec[dsProps.properties.position.property].alt || 120, // Default to 120 if altitude is not provided
+					};
+				},
+			};
+		}
+		// Check for semi-major axis property
+		if (dsProps.properties.semiMajorAxis) {
+			getSemiMajorAxis = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return rec[dsProps.properties.semiMajorAxis.property];
+				},
+			};
+		}
+		// Check for semi-minor axis property
+		if (dsProps.properties.semiMinorAxis) {
+			getSemiMinorAxis = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return rec[dsProps.properties.semiMinorAxis.property];
+				},
+			};
+		}
+
+		dsInstance.connect();
+		dsInstances.push(dsInstance);
+	}
+
+	const ellipseLayer = new EllipseLayer({
+		...viz.visualizationComponents.dataLayer,
+		name: viz.name,
+		id: viz.id,
+		defaultToTerrainElevation: true,
+		dataSourceIds: dsInstances.map((ds) => ds.id),
+		...(getPosition ? { getPosition } : {}),
+		...(getSemiMajorAxis ? { getSemiMajorAxis } : {}),
+		...(getSemiMinorAxis ? { getSemiMinorAxis } : {}),
+	});
+	return { vizLayer: ellipseLayer, dsInstances };
 }
 export function createGeoPTZLayer(
 	viz: OSHVisualization,

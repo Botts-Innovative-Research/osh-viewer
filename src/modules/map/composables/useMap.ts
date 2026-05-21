@@ -3,13 +3,14 @@ import { useVisualizationStore } from '@/stores/visualizationstore';
 import { computed, onMounted, ref, watch } from 'vue';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
+import EllipseLayer from 'osh-js/source/core/ui/layer/EllipseLayer';
 import {
 	createFOIProps,
 	createMapVisualizations,
 	createWaypointLayer,
 	rebuildMapVisualizations,
 } from '../mapVisualizations';
-import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { createCesiumAdapter } from '../adapters/cesium.adapter';
 import { taskGeoPTZ } from '../services/geoPTZ.service';
@@ -30,7 +31,7 @@ export function useMap() {
 	});
 
 	// Map of visualization ID to its corresponding visualization layer instance
-	const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer>>(new Map());
+	const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer | EllipseLayer>>(new Map());
 	// List of all connected datasource instances created for map visualizations
 	const listDataSourceInstances = ref<SweApi[]>([]);
 	// Array of waypoint Pointmarkers for mission builder
@@ -203,7 +204,9 @@ export function useMap() {
 
 			const layer = mapItemLayers.value.get(newVal.id);
 			if (!layer) return;
-			const location = layer.getCurrentProps().location;
+
+			const layerProps = layer.getCurrentProps();
+			const location = layerProps.location ?? layerProps.position; // Handle location for PM/LoB and position for ellipse
 			if (!location) return;
 
 			mapAdapter.value?.flyToPoint(location);
