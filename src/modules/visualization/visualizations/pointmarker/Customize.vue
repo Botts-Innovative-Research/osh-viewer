@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
 import IconControl from '@/modules/visualization/wizard/customizations/IconControl.vue';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
-import IconColorControl from '@/modules/visualization/wizard/customizations/IconColorControl.vue';
+import ColorControl from '../../wizard/customizations/ColorControl.vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 
 // Validation: Name cannot be empty
@@ -21,5 +21,8 @@ useComponentValidation(valid, emit);
 		v-model:valid="nameValid"
 	/>
 	<icon-control></icon-control>
-	<IconColorControl></IconColorControl>
+	<ColorControl
+		roleName="iconColor"
+		label="Icon Color"
+	></ColorControl>
 </template>

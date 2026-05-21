@@ -5,9 +5,9 @@ import WeightControl from '@/modules/visualization/wizard/customizations/WeightC
 import OpacityControl from '@/modules/visualization/wizard/customizations/OpacityControl.vue';
 import DistanceKmControl from '@/modules/visualization/wizard/customizations/DistanceKmControl.vue';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
+import ColorControl from '../../wizard/customizations/ColorControl.vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
 import { computed, ref } from 'vue';
-import IconColorControl from '@/modules/visualization/wizard/customizations/IconColorControl.vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 
 // Validation: Name cannot be empty
@@ -27,7 +27,10 @@ useComponentValidation(valid, emit);
 	<icon-control></icon-control>
 	<v-row class="justify-space-between pa-4">
 		<v-col cols="auto">
-			<icon-color-control></icon-color-control>
+			<color-control
+				roleName="iconColor"
+				label="Icon Color"
+			></color-control>
 		</v-col>
 		<v-col cols="auto">
 			<line-color-control></line-color-control>

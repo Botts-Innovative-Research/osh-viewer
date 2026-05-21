@@ -326,8 +326,10 @@ export function createFOIProps(geometry: Geometry) {
 	return markerProps;
 }
 
-export function rebuildMapVisualizations(oldLayers: Map<string, PointMarkerLayer | LoBLayer>) {
-	const newLayers = new Map<string, PointMarkerLayer | LoBLayer>();
+export function rebuildMapVisualizations(
+	oldLayers: Map<string, PointMarkerLayer | LoBLayer | EllipseLayer>
+): Map<string, PointMarkerLayer | LoBLayer | EllipseLayer> {
+	const newLayers = new Map<string, PointMarkerLayer | LoBLayer | EllipseLayer>();
 
 	oldLayers.forEach((layer) => {
 		// Add new PM Layers
@@ -343,6 +345,13 @@ export function rebuildMapVisualizations(oldLayers: Map<string, PointMarkerLayer
 				...layer.properties,
 			});
 			newLayers.set(layer.properties.id, lobLayer);
+		}
+		// Add new Ellipse Layers
+		else if (layer instanceof EllipseLayer) {
+			const ellipseLayer = new EllipseLayer({
+				...layer.properties,
+			});
+			newLayers.set(layer.properties.id, ellipseLayer);
 		}
 	});
 

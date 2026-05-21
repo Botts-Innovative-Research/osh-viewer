@@ -64,6 +64,8 @@ export function CreateEllipseViewProps(datastreams: { [key: string]: any }, visO
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
 	let ellipseLayer: IEllipseLayerProperties = {
 		name: visOptions.name,
+		color: visOptions.color,
+		iconName: 'ellipse-outline', // For map visualizations list icon
 	};
 	let mapView: IMapViewProperties = {
 		container: `map-container-${randomUUID()}`,

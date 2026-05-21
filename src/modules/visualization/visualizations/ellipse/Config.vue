@@ -15,7 +15,7 @@ const checkedRoles = reactive({
 		set: (val: boolean) => vizwizStore.updateDsConfig('position', { selected: val }),
 	}),
 	semiMajorAxis: computed({
-		get: () => vizwizStore.dsConfig.semiMajorAxis?.selected ?? false,
+		get: () => vizwizStore.dsConfig.semiMajorAxis?.selected ?? true,
 		set: (val: boolean) => {
 			if (val) {
 				vizwizStore.updateDsConfig('semiMajorAxis', { selected: val });
@@ -25,7 +25,7 @@ const checkedRoles = reactive({
 		},
 	}),
 	semiMinorAxis: computed({
-		get: () => vizwizStore.dsConfig.semiMinorAxis?.selected ?? false,
+		get: () => vizwizStore.dsConfig.semiMinorAxis?.selected ?? true,
 		set: (val: boolean) => {
 			if (val) {
 				vizwizStore.updateDsConfig('semiMinorAxis', { selected: val });
@@ -36,19 +36,31 @@ const checkedRoles = reactive({
 	}),
 });
 
-// Initialize dsConfig with position selected by default when mounted
+// Initialize dsConfig with position, semiMajorAxis, and semiMinorAxis selected by default when mounted
 onMounted(() => {
 	if (!vizwizStore.dsConfig.position) {
 		vizwizStore.updateDsConfig('position', { selected: true });
 	}
+	if (!vizwizStore.dsConfig.semiMajorAxis) {
+		vizwizStore.updateDsConfig('semiMajorAxis', { selected: true });
+	}
+	if (!vizwizStore.dsConfig.semiMinorAxis) {
+		vizwizStore.updateDsConfig('semiMinorAxis', { selected: true });
+	}
 });
 
-// If dsConfig is reset, ensure position is selected by default
+// If dsConfig is reset, ensure position, semiMajorAxis, and semiMinorAxis are selected by default
 watch(
 	() => vizwizStore.dsConfig,
 	(newVal) => {
 		if (!newVal.position) {
 			vizwizStore.updateDsConfig('position', { selected: true });
+		}
+		if (!newVal.semiMajorAxis) {
+			vizwizStore.updateDsConfig('semiMajorAxis', { selected: true });
+		}
+		if (!newVal.semiMinorAxis) {
+			vizwizStore.updateDsConfig('semiMinorAxis', { selected: true });
 		}
 	},
 	{ deep: true }
@@ -88,6 +100,7 @@ useComponentValidation(valid, emit);
 		<v-checkbox
 			label="Semi-Major Axis"
 			v-model="checkedRoles.semiMajorAxis"
+			disabled
 		></v-checkbox>
 		<DataSourcePicker
 			v-if="checkedRoles.semiMajorAxis"
@@ -101,6 +114,7 @@ useComponentValidation(valid, emit);
 		<v-checkbox
 			label="Semi-Minor Axis"
 			v-model="checkedRoles.semiMinorAxis"
+			disabled
 		></v-checkbox>
 		<DataSourcePicker
 			v-if="checkedRoles.semiMinorAxis"

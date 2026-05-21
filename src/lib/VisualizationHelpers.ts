@@ -156,4 +156,6 @@ export interface IEllipseLayerProperties extends DataLayerProperties {
 	getPosition?: (rec: any) => { x: number; y: number; z: number };
 	getSemiMajorAxis?: (rec: any) => number;
 	getSemiMinorAxis?: (rec: any) => number;
+	color: any;
+	iconName: string; // Used for display in map visualizations list
 }
