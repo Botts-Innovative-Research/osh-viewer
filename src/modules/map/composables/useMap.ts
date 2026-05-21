@@ -4,7 +4,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import {
-	createFOILayer,
+	createFOIProps,
 	createMapVisualizations,
 	createWaypointLayer,
 	rebuildMapVisualizations,
@@ -80,6 +80,9 @@ export function useMap() {
 
 		// Reconnect datasources
 		connectDatasources();
+
+		// Delete all FOIs
+		visualizationStore.clearFOILayers();
 	}
 	watch(mapType, async () => {
 		await switchMap();
@@ -162,15 +165,13 @@ export function useMap() {
 	watch(
 		() => visualizationStore.foiLayers.map((v) => v),
 		(newLayers, oldLayers) => {
-			console.log('Test test test');
-			console.log(newLayers, oldLayers);
 			const addedLayers = newLayers?.filter(
 				(newLayer) => !oldLayers?.some((layer: any) => layer.id === newLayer.id)
 			);
-			console.log(addedLayers);
 			if (addedLayers) {
 				addedLayers.forEach((layer) => {
-					mapAdapter.value?.addFOILayer(layer);
+					const markerProps = createFOIProps(layer);
+					mapAdapter.value?.addFOILayer(markerProps);
 				});
 			}
 		},

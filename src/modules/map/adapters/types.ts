@@ -22,7 +22,7 @@ export interface MapAdapter {
 	destroy(): void;
 
 	addLayer(layer: any): void;
-	addFOILayer(layer: Geometry): void;
+	addFOILayer(markerProps: any): void;
 	removeLayer(layer: any): void;
 	toggleLayerVisibility(id: string, isVisible: boolean): void;
 

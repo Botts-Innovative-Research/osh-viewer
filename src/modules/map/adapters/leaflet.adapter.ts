@@ -1,6 +1,8 @@
 import LeafletView from 'osh-js/source/core/ui/view/map/LeafletView';
 import L from 'leaflet';
 import { MapAdapter, MapClickHandler, MapPoint } from './types';
+import { Geometry } from '@/lib/OSHConnectDataStructs';
+import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 
 export function createLeafletAdapter(): MapAdapter {
 	let mapView: LeafletView | null;
@@ -25,6 +27,11 @@ export function createLeafletAdapter(): MapAdapter {
 
 	function removeLayer(layer: any) {
 		mapView.removeAllFromLayer(layer);
+	}
+
+	function addFOILayer(markerProps: any) {
+		const markerEnt = mapView.addMarker(markerProps, undefined);
+		mapView.addMarkerToLayer(markerEnt, markerProps);
 	}
 
 	function toggleLayerVisibility(id: string, isVisible: boolean) {
@@ -91,5 +98,6 @@ export function createLeafletAdapter(): MapAdapter {
 		updateMarker,
 		drawMissionPath,
 		clearMissionPath,
+		addFOILayer,
 	};
 }

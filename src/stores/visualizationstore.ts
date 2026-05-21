@@ -135,9 +135,13 @@ export const useVisualizationStore = defineStore(
 			console.log('[VizStore] Rehydrated visualizations:', visualizations.value.length);
 		};
 
+		/* FOI PATCH */
 		const foiLayers: Ref<Geometry[]> = ref<Geometry[]>([]);
 		const addFOILayer = (geometry: Geometry) => {
 			foiLayers.value.push(geometry);
+		};
+		const clearFOILayers = () => {
+			foiLayers.value = [];
 		};
 
 		return {
@@ -156,6 +160,7 @@ export const useVisualizationStore = defineStore(
 			rehydrateVisualizations,
 			foiLayers,
 			addFOILayer,
+			clearFOILayers,
 		};
 	},
 	{ persist: { pick: ['serializedVisualizations'] } }

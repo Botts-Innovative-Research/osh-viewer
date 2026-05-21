@@ -318,7 +318,6 @@ export class OSHSystem {
 			samplingFeatures.push(...items);
 		}
 		this.samplingFeatures = samplingFeatures;
-		console.log('TEST HERE IS SAMPLING FEATURES:', samplingFeatures);
 		return samplingFeatures;
 	}
 

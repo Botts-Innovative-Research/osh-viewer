@@ -74,31 +74,6 @@ const fetchResources = () => {
 	oshConnect.fetchSlowResources();
 };
 
-// const addFeatureMarker = (item: any) => {
-// 	const oshSystem: OSHSystem = item as OSHSystem;
-
-// 	for (let foi of oshSystem.samplingFeatures) {
-// 		const geom = new Geometry(
-// 			foi.properties.id,
-// 			foi.properties.geometry.type,
-// 			foi.properties.geometry.coordinates,
-// 			foi.properties,
-// 			foi.properties.bbox
-// 		);
-
-// 		let newViz = new OSHVisualization(
-// 			'featuremarker-' + randomUUID(),
-// 			foi.properties.properties.name,
-// 			'pointmarker-feature',
-// 			'map',
-// 			null
-// 		);
-// 		newViz.geometry = geom;
-
-// 		visualizationStore.addVisualization(newViz);
-// 	}
-// };
-
 const addAllSamplingFeaturePMs = () => {
 	systems.forEach((system: OSHSystem) => {
 		console.log(system.name, system.samplingFeatures);
@@ -111,16 +86,6 @@ const addAllSamplingFeaturePMs = () => {
 				foi.properties,
 				foi.properties.bbox
 			);
-			// let newViz = new OSHVisualization(
-			// 	`visualization-${randomUUID()}`,
-			// 	`${foi.properties.properties.name}`,
-			// 	'pointmarker-feature',
-			// 	'map',
-			// 	null,
-			// 	undefined,
-			// 	system.id
-			// );
-			// visualizationStore.addVisualization(newViz);
 			visualizationStore.addFOILayer(geom);
 		});
 	});
@@ -160,7 +125,19 @@ const openPropertiesDialog = (item: any) => {
 						></IconButton>
 					</template>
 				</v-tooltip>
-				<v-btn @click="addAllSamplingFeaturePMs">All PMS</v-btn>
+				<v-tooltip
+					text="Create FOI pointmarkers"
+					location="bottom"
+				>
+					<template v-slot:activator="{ props }">
+						<v-btn
+							@click="addAllSamplingFeaturePMs"
+							v-bind="props"
+							prepend-icon="mdi-map-marker"
+							>All FOIs</v-btn
+						>
+					</template>
+				</v-tooltip>
 			</div>
 			<!-- Add Node -->
 			<v-btn
