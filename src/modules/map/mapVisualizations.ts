@@ -1,5 +1,5 @@
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
 import { useMapStore } from '@/stores/mapstore';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
@@ -8,6 +8,7 @@ import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import { MapPoint } from './adapters/types';
 import { setWaypointData } from './services/missionBuilder.service';
 import { useSettingsStore } from '@/stores/settingsstore';
+import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 
 // prettier-ignore
 // @ts-ignore
@@ -218,7 +219,7 @@ export async function createWaypointLayer(
 			y: waypoint.lat,
 			z: waypoint.alt || 0,
 		},
-		icon: '/icons/map/geoPtz-pin.png',
+		icon: `${iconBase}/icons/map/geoPtz-pin.png`,
 		iconSize: [32, 32],
 		iconAnchor: [16, 32],
 		label: `WP ${index + 1}`,
@@ -232,6 +233,31 @@ export async function createWaypointLayer(
 	const props = await setWaypointData(waypointLayer);
 
 	return { layer: waypointLayer, props };
+}
+export function createFOIProps(geometry: Geometry) {
+	const markerProps = {
+		location: {
+			x: Array.isArray(geometry.coordinates[0])
+				? geometry.coordinates[0][0]
+				: geometry.coordinates[0],
+			y: Array.isArray(geometry.coordinates[1])
+				? geometry.coordinates[1][0]
+				: geometry.coordinates[1],
+			z: !geometry.coordinates[2]
+				? 0
+				: Array.isArray(geometry.coordinates[2])
+					? geometry.coordinates[2][0]
+					: geometry.coordinates[2],
+		},
+		label: geometry.properties.properties.name,
+		labelOffset: [0, 0],
+		icon: `${iconBase}/icons/map/map-marker.png`,
+		iconSize: [32, 32],
+		iconAnchor: [16, 32],
+		id: geometry.id,
+		markerId: geometry.id + '-feature' + randomUUID(),
+	};
+	return markerProps;
 }
 
 export function rebuildMapVisualizations(oldLayers: Map<string, PointMarkerLayer | LoBLayer>) {

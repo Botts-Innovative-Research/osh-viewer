@@ -4,11 +4,12 @@ import { computed, onMounted, ref, watch } from 'vue';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import {
+	createFOIProps,
 	createMapVisualizations,
 	createWaypointLayer,
 	rebuildMapVisualizations,
 } from '../mapVisualizations';
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { createCesiumAdapter } from '../adapters/cesium.adapter';
 import { taskGeoPTZ } from '../services/geoPTZ.service';
@@ -79,6 +80,9 @@ export function useMap() {
 
 		// Reconnect datasources
 		connectDatasources();
+
+		// Delete all FOIs
+		visualizationStore.clearFOILayers();
 	}
 	watch(mapType, async () => {
 		await switchMap();
@@ -156,6 +160,23 @@ export function useMap() {
 			}
 		);
 	}
+
+	/* FOI */
+	watch(
+		() => visualizationStore.foiLayers.map((v) => v),
+		(newLayers, oldLayers) => {
+			const addedLayers = newLayers?.filter(
+				(newLayer) => !oldLayers?.some((layer: any) => layer.id === newLayer.id)
+			);
+			if (addedLayers) {
+				addedLayers.forEach((layer) => {
+					const markerProps = createFOIProps(layer);
+					mapAdapter.value?.addFOILayer(markerProps);
+				});
+			}
+		},
+		{ deep: true, immediate: true }
+	);
 
 	/** MAP INTERACTIONS */
 	function bindMapInteractions() {

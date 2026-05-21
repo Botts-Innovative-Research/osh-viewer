@@ -1,3 +1,4 @@
+import { Geometry } from '@/lib/OSHConnectDataStructs';
 import { MapLayer } from './cesium.adapter';
 
 export type MapClickHandler = (lat: number, lon: number, alt: number) => void;
@@ -21,6 +22,7 @@ export interface MapAdapter {
 	destroy(): void;
 
 	addLayer(layer: any): void;
+	addFOILayer(markerProps: any): void;
 	removeLayer(layer: any): void;
 	toggleLayerVisibility(id: string, isVisible: boolean): void;
 
