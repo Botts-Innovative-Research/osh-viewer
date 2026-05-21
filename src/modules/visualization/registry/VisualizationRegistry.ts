@@ -23,6 +23,8 @@ export const VisualizationRegistry: { [key: string]: VisualizationDescriptor } =
 	[EllipseDescriptor.id]: EllipseDescriptor,
 };
 
+export type VisualizationType = keyof typeof VisualizationRegistry;
+
 /**
  * Required structure for emits from visualization form components to the Visualization Wizard parent component
  * Handles validation status updates from form components to enable/disable navigation buttons and submission in the wizard

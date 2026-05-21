@@ -9,9 +9,14 @@ import { useUIStore } from '@/stores/uistore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref, watch, watchEffect } from 'vue';
+import { VisualizationRegistry, VisualizationType } from '../../registry/VisualizationRegistry';
+import { useSettingsStore } from '@/stores/settingsstore';
+import { LeafletSupportedVizTypes } from '@/modules/map/adapters/leaflet.adapter';
+import { CesiumSupportedVizTypes } from '@/modules/map/adapters/cesium.adapter';
 
 export function useVisualizationSidebar() {
 	// Stores
+	const settingsStore = useSettingsStore();
 	const uiStore = useUIStore();
 	const mapStore = useMapStore();
 	const visualizationStore = useVisualizationStore();
@@ -82,6 +87,11 @@ export function useVisualizationSidebar() {
 			mapStore.setSelectedMapItem(item);
 		}
 	}
+	function isMapLayerCompatible(type: VisualizationType) {
+		const descriptor = VisualizationRegistry[type];
+		if (!descriptor) return false;
+		return descriptor.supportedMaps?.includes(settingsStore.focusedMap);
+	}
 
 	/* VISUALIZATIONS */
 	function removeVisualization(viz: OSHVisualization) {
@@ -111,6 +121,7 @@ export function useVisualizationSidebar() {
 		isMapLayerVisible,
 		toggleMapLayerVisibility,
 		toggleSelectedMapItem,
+		isMapLayerCompatible,
 		removeVisualization,
 		openEditViz,
 	};
