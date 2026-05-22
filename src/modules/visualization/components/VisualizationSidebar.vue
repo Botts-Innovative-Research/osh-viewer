@@ -83,6 +83,7 @@ const uiStore = useUIStore();
 								<template #prepend>
 									<v-tooltip
 										text="Visualization not supported by this map type."
+										location="bottom"
 										:disabled="isMapLayerCompatible(viz.type)"
 									>
 										<template v-slot:activator="{ props }">

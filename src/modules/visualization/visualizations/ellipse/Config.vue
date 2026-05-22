@@ -34,6 +34,16 @@ const checkedRoles = reactive({
 			}
 		},
 	}),
+	ellipseId: computed({
+		get: () => vizwizStore.dsConfig.ellipseId?.selected ?? false,
+		set: (val: boolean) => {
+			if (val) {
+				vizwizStore.updateDsConfig('ellipseId', { selected: val });
+			} else {
+				delete vizwizStore.dsConfig.ellipseId;
+			}
+		},
+	}),
 });
 
 // Initialize dsConfig with position, semiMajorAxis, and semiMinorAxis selected by default when mounted
@@ -71,12 +81,14 @@ const emit = defineEmits<VisualizationComponentEmits>();
 const rolePositionValid = ref<boolean>(false);
 const roleSemiMajorAxisValid = ref<boolean>(false);
 const roleSemiMinorAxisValid = ref<boolean>(false);
+const roleEllipseIdValid = ref<boolean>(false);
 const valid = computed(() => {
 	// If role is checked, must be valid. If not checked, ignore validity
 	const positionValid = checkedRoles.position ? rolePositionValid.value : true;
 	const semiMajorAxisValid = checkedRoles.semiMajorAxis ? roleSemiMajorAxisValid.value : true;
 	const semiMinorAxisValid = checkedRoles.semiMinorAxis ? roleSemiMinorAxisValid.value : true;
-	return positionValid && semiMajorAxisValid && semiMinorAxisValid;
+	const ellipseIdValid = checkedRoles.ellipseId ? roleEllipseIdValid.value : true;
+	return positionValid && semiMajorAxisValid && semiMinorAxisValid && ellipseIdValid;
 });
 useComponentValidation(valid, emit);
 </script>
@@ -120,6 +132,19 @@ useComponentValidation(valid, emit);
 			v-if="checkedRoles.semiMinorAxis"
 			role="semiMinorAxis"
 			v-model:valid="roleSemiMinorAxisValid"
+		/>
+	</v-container>
+
+	<!-- Ellipse ID -->
+	<v-container>
+		<v-checkbox
+			label="Ellipse ID"
+			v-model="checkedRoles.ellipseId"
+		></v-checkbox>
+		<DataSourcePicker
+			v-if="checkedRoles.ellipseId"
+			role="ellipseId"
+			v-model:valid="roleEllipseIdValid"
 		/>
 	</v-container>
 </template>

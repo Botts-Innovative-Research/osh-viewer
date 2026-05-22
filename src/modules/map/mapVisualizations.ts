@@ -167,6 +167,7 @@ export function createEllipseLayer(
 	let getPosition: any;
 	let getSemiMajorAxis: any;
 	let getSemiMinorAxis: any;
+	let getEllipseId: any;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);
@@ -202,6 +203,15 @@ export function createEllipseLayer(
 				},
 			};
 		}
+		// Check for ellipse ID property
+		if (dsProps.properties.ellipseId) {
+			getEllipseId = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return rec[dsProps.properties.ellipseId.property];
+				},
+			};
+		}
 
 		dsInstance.connect();
 		dsInstances.push(dsInstance);
@@ -216,6 +226,7 @@ export function createEllipseLayer(
 		...(getPosition ? { getPosition } : {}),
 		...(getSemiMajorAxis ? { getSemiMajorAxis } : {}),
 		...(getSemiMinorAxis ? { getSemiMinorAxis } : {}),
+		...(getEllipseId ? { getEllipseId } : {}),
 	});
 	return { vizLayer: ellipseLayer, dsInstances };
 }
