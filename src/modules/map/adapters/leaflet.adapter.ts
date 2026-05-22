@@ -35,7 +35,6 @@ export function createLeafletAdapter(): MapAdapter {
 	function toggleLayerVisibility(id: string, isVisible: boolean) {
 		const marker = mapView.layerIdToMarkers?.[id];
 		const polyline = mapView.layerIdToPolylines?.[id];
-		const ellipse = mapView.layerIdToEllipsoids?.[id];
 
 		// Handle PM and LoB
 		if (marker) {
@@ -44,10 +43,6 @@ export function createLeafletAdapter(): MapAdapter {
 		// Handle polyline
 		if (polyline) {
 			polyline.setStyle({ opacity: isVisible ? 0.8 : 0 });
-		}
-		// Handle ellipse
-		if (ellipse) {
-			ellipse.setStyle({ opacity: isVisible ? 0.8 : 0 });
 		}
 	}
 

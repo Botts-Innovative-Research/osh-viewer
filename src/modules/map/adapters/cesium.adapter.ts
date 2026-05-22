@@ -86,7 +86,7 @@ export function createCesiumAdapter(): MapAdapter {
 		}
 		// Handle ellipse
 		else if (ellipse) {
-			ellipse.visible = isVisible;
+			ellipse.show = isVisible;
 		}
 
 		invalidate();
