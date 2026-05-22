@@ -1,5 +1,6 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
+	IEllipseLayerProperties,
 	ILineOfBearingLayerProperties,
 	IPointMarkerLayerProperties,
 	VisualizationLayerProperties,
@@ -69,7 +70,10 @@ export function useVisualizationSidebar() {
 	/* MAP HELPERS */
 	function isMapLayer(
 		layer: VisualizationLayerProperties | VisualizationLayerProperties[] | null
-	): layer is IPointMarkerLayerProperties | ILineOfBearingLayerProperties {
+	): layer is
+		| IPointMarkerLayerProperties
+		| ILineOfBearingLayerProperties
+		| IEllipseLayerProperties {
 		return !!layer && 'iconName' in layer;
 	}
 	function isMapLayerVisible(id: string): boolean {
@@ -84,11 +88,6 @@ export function useVisualizationSidebar() {
 		} else {
 			mapStore.setSelectedMapItem(item);
 		}
-	}
-	function isMapLayerCompatible(type: VisualizationType) {
-		const descriptor = VisualizationRegistry[type];
-		if (!descriptor) return false;
-		return descriptor.supportedMaps?.includes(settingsStore.focusedMap);
 	}
 
 	/* VISUALIZATIONS */
@@ -119,7 +118,6 @@ export function useVisualizationSidebar() {
 		isMapLayerVisible,
 		toggleMapLayerVisibility,
 		toggleSelectedMapItem,
-		isMapLayerCompatible,
 		removeVisualization,
 		openEditViz,
 	};

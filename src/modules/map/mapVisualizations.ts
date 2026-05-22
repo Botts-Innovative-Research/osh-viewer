@@ -10,6 +10,7 @@ import { MapPoint } from './adapters/types';
 import { setWaypointData } from './services/missionBuilder.service';
 import { useSettingsStore } from '@/stores/settingsstore';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+import { isMapLayerCompatible } from '../visualization/registry/VisualizationRegistry';
 
 // prettier-ignore
 // @ts-ignore
@@ -357,8 +358,8 @@ export function rebuildMapVisualizations(
 			});
 			newLayers.set(layer.properties.id, lobLayer);
 		}
-		// Add new Ellipse Layers
-		else if (layer instanceof EllipseLayer) {
+		// Add new Ellipse Layers, IF compatible with current map layer
+		else if (isMapLayerCompatible('ellipse') && layer instanceof EllipseLayer) {
 			const ellipseLayer = new EllipseLayer({
 				...layer.properties,
 			});

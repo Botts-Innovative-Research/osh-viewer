@@ -10,7 +10,7 @@ import { useVisualizationSidebar } from './composables/useVisualizationSidebar';
 import { useUIStore } from '@/stores/uistore';
 import { computed } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
-import { VisualizationType } from '../registry/VisualizationRegistry';
+import { isMapLayerCompatible, VisualizationType } from '../registry/VisualizationRegistry';
 
 const {
 	editViz,
@@ -24,7 +24,6 @@ const {
 	isMapLayerVisible,
 	toggleMapLayerVisibility,
 	toggleSelectedMapItem,
-	isMapLayerCompatible,
 	removeVisualization,
 	openEditViz,
 } = useVisualizationSidebar();
