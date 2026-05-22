@@ -38,6 +38,7 @@ export type VisualizationBuilderModule = () => void;
  * - formComponents: Array of form components to render in the visualization wizard
  * - builder: Async function that imports the visualization's Builder.ts, which contains a default export build() to construct the visualization
  * - requireCs: Optional boolean flag to indicate if the visualization requires a controlstream
+ * - supportedMaps: Optional array of supported map types, if map-related
  */
 export interface VisualizationDescriptor {
 	label: string;
@@ -48,4 +49,5 @@ export interface VisualizationDescriptor {
 	formComponents: VisualizationFormComponent[];
 	builder: () => Promise<{ default: VisualizationBuilderModule }>;
 	requireCs?: boolean; // Optional flag to indicate if the visualization requires a controlstream
+	supportedMaps?: ('cesium' | 'leaflet')[]; // If map-related, specify what maps it is supported by
 }

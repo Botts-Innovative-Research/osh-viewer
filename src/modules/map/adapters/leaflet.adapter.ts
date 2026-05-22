@@ -1,8 +1,6 @@
 import LeafletView from 'osh-js/source/core/ui/view/map/LeafletView';
 import L from 'leaflet';
 import { MapAdapter, MapClickHandler, MapPoint } from './types';
-import { Geometry } from '@/lib/OSHConnectDataStructs';
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 
 export function createLeafletAdapter(): MapAdapter {
 	let mapView: LeafletView | null;

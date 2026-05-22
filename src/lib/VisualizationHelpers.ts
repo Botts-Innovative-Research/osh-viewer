@@ -5,7 +5,8 @@ export type VisualizationLayerProperties =
 	| ICurveLayerProperties
 	| IVideoLayerProperties
 	| IPointMarkerLayerProperties
-	| ILineOfBearingLayerProperties;
+	| ILineOfBearingLayerProperties
+	| IEllipseLayerProperties;
 export type VisualizationViewProperties =
 	| IChartViewProperties
 	| IVideoViewProperties
@@ -120,7 +121,10 @@ export interface IPointMarkerLayerProperties extends DataLayerProperties {
 /* MAP VIEW */
 
 export interface IMapViewProperties extends DataViewProperties {
-	layers: IPointMarkerLayerProperties[] | ILineOfBearingLayerProperties[];
+	layers:
+		| IPointMarkerLayerProperties[]
+		| ILineOfBearingLayerProperties[]
+		| IEllipseLayerProperties[];
 	refreshRate?: number;
 }
 
@@ -145,4 +149,13 @@ export interface ILineOfBearingLayerProperties extends DataLayerProperties {
 	iconSize: number[];
 	labelOffset: number[];
 	label: string;
+}
+
+/* ELLIPSE LAYER */
+export interface IEllipseLayerProperties extends DataLayerProperties {
+	getPosition?: (rec: any) => { x: number; y: number; z: number };
+	getSemiMajorAxis?: (rec: any) => number;
+	getSemiMinorAxis?: (rec: any) => number;
+	color: any;
+	iconName: string; // Used for display in map visualizations list
 }

@@ -10,6 +10,7 @@ import { useVisualizationSidebar } from './composables/useVisualizationSidebar';
 import { useUIStore } from '@/stores/uistore';
 import { computed } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
+import { isMapLayerCompatible, VisualizationType } from '../registry/VisualizationRegistry';
 
 const {
 	editViz,
@@ -79,10 +80,26 @@ const uiStore = useUIStore();
 							>
 								<!-- Icon -->
 								<template #prepend>
-									<v-icon
-										:icon="`mdi-${isMapLayer(viz.visualizationComponents.dataLayer) ? viz.visualizationComponents.dataLayer.iconName : ''}`"
-										size="16"
-									></v-icon>
+									<v-tooltip
+										text="Visualization not supported by this map type."
+										location="bottom"
+										:disabled="isMapLayerCompatible(viz.type)"
+									>
+										<template v-slot:activator="{ props }">
+											<v-badge
+												location="top right"
+												color="warning"
+												dot
+												:model-value="!isMapLayerCompatible(viz.type)"
+												v-bind="props"
+											>
+												<v-icon
+													:icon="`mdi-${isMapLayer(viz.visualizationComponents.dataLayer) ? viz.visualizationComponents.dataLayer.iconName : ''}`"
+													size="16"
+												></v-icon>
+											</v-badge>
+										</template>
+									</v-tooltip>
 								</template>
 								<!-- Title -->
 								<template #title

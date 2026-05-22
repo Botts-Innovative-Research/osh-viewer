@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
-import IconControl from '@/modules/visualization/wizard/customizations/IconControl.vue';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
-import ColorControl from '../../wizard/customizations/ColorControl.vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
+import ColorControl from '../../wizard/customizations/ColorControl.vue';
 
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>();
@@ -17,12 +16,11 @@ useComponentValidation(valid, emit);
 
 <template>
 	<NameControl
-		role="location"
+		role="position"
 		v-model:valid="nameValid"
 	/>
-	<icon-control></icon-control>
 	<ColorControl
-		roleName="iconColor"
-		label="Icon Color"
-	></ColorControl>
+		roleName="color"
+		lable="Color"
+	/>
 </template>

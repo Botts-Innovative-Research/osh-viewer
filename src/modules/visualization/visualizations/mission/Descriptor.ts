@@ -28,4 +28,5 @@ export const MissionDescriptor: VisualizationDescriptor = {
 	formComponents: [ConfigComponent, CustomizeComponent],
 	builder: () => import('@/modules/visualization/visualizations/mission/Builder'),
 	requireCs: true, // This visualization requires a controlstream to function
+	supportedMaps: ['cesium', 'leaflet'],
 };

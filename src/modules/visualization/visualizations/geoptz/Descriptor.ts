@@ -28,6 +28,7 @@ export const GeoPtzDescriptor: VisualizationDescriptor = {
 	formComponents: [ConfigComponent, CustomizeComponent],
 	builder: () => import('@/modules/visualization/visualizations/geoptz/Builder'),
 	requireCs: true, // This visualization requires a controlstream to function
+	supportedMaps: ['cesium', 'leaflet'],
 };
 
 // Define GeoPTZ command structure
