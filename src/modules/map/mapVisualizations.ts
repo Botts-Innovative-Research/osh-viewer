@@ -29,6 +29,7 @@ export function createMapVisualizations(
 	} else if (viz.type === 'lob') {
 		return createLoBLayer(viz, viz.visualizationComponents.dataSource);
 	} else if (viz.type === 'ellipse') {
+		console.log(viz.visualizationComponents);
 		return createEllipseLayer(viz, viz.visualizationComponents.dataSource);
 	} else if (viz.type === 'geoPtz') {
 		return createGeoPTZLayer(viz, viz.visualizationComponents.dataSource);

@@ -101,8 +101,12 @@ export function useMap() {
 	watch(
 		() => visualizationStore.mapVisualizations.map((v) => v.id),
 		(newIds, oldIds) => {
-			const removedIds = oldIds?.filter((oldId) => !newIds.some((id) => id === oldId));
-			const addedIds = newIds?.filter((newId) => !oldIds?.some((id) => id === newId));
+			const removedIds = oldIds?.filter(
+				(oldId) => !newIds.some((id) => id.startsWith(oldId) || oldId.startsWith(id))
+			);
+			const addedIds = newIds?.filter(
+				(newId) => !oldIds?.some((id) => id.startsWith(newId) || newId.startsWith(id))
+			);
 
 			// Handle removed visualizations
 			if (removedIds) deleteVisualizations(removedIds);
@@ -114,6 +118,13 @@ export function useMap() {
 					.filter(Boolean) as OSHVisualization[];
 
 				newOSHVisualizations.forEach((viz: OSHVisualization) => {
+					console.log('Yes had children', viz);
+					// If child visualizations, make each child
+					if (viz.children) {
+						viz.children.map((child: OSHVisualization) => {
+							addVisualization(child);
+						});
+					}
 					addVisualization(viz);
 				});
 			}

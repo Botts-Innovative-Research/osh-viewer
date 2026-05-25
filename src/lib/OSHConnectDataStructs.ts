@@ -403,8 +403,9 @@ export class OSHVisualization {
 	parentId?: string | null;
 	datastream: OSHDatastream[] | null; // TODO: null handles "All PMS"
 	controlstream?: OSHControlStream[]; // Optional control stream
-	visualizationComponents!: VisualizationComponents;
+	visualizationComponents!: VisualizationComponents | VisualizationComponents[];
 	wizardConfig!: WizardConfig; // Store state of wizard for editing visualization
+	children: OSHVisualization[] = [];
 
 	constructor(
 		id: string,
@@ -424,12 +425,19 @@ export class OSHVisualization {
 		this.parentId = parentId;
 	}
 
-	setVisualizationComponents(components: VisualizationComponents): void {
+	setVisualizationComponents(
+		components: VisualizationComponents | VisualizationComponents[]
+	): void {
 		this.visualizationComponents = components;
 	}
 
 	setWizardConfig(config: WizardConfig): void {
 		this.wizardConfig = config;
+	}
+
+	addChildVisualization(visualizations: OSHVisualization[]) {
+		console.log('hereee');
+		this.children?.push(...visualizations);
 	}
 }
 
