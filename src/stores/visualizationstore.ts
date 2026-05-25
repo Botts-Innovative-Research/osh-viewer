@@ -6,7 +6,7 @@ import {
 	rehydrateVisualization,
 	SerializedVisualization,
 	serializeVisualization,
-} from '@/modules/visualization/services/serialization.service';
+} from '@/modules/visualization/services/visualization.serialization';
 
 export const useVisualizationStore = defineStore(
 	'visualizations',
