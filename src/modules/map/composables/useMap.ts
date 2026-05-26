@@ -17,6 +17,7 @@ import { taskGeoPTZ } from '../services/geoPTZ.service';
 import { MapAdapter } from '../adapters/types';
 import { createLeafletAdapter } from '../adapters/leaflet.adapter';
 import { useSettingsStore } from '@/stores/settingsstore';
+import { isMapLayerCompatible } from '@/modules/visualization/registry/VisualizationRegistry';
 
 export function useMap() {
 	// Stores
@@ -75,7 +76,9 @@ export function useMap() {
 		// Rebuild layers
 		const newLayers = rebuildMapVisualizations(mapItemLayers.value);
 		newLayers.forEach((layer) => {
-			mapAdapter.value?.addLayer(layer);
+			// Type is 'marker' in osh-js, pass 'pointmarker' instead
+			if (isMapLayerCompatible(layer.type === 'marker' ? 'pointmarker' : layer.type))
+				mapAdapter.value?.addLayer(layer);
 		});
 		mapItemLayers.value = newLayers;
 
@@ -138,7 +141,9 @@ export function useMap() {
 		console.log(`Created ${viz.type} Visualization:`, vizLayer);
 		listDataSourceInstances.value.push(...dsInstances); // Push dsInstances to list of all active ds
 		mapItemLayers.value.set(viz.id, vizLayer); // Store vizLayer instance for this viz.id
-		mapAdapter.value?.addLayer(vizLayer); // Add vizLayer to map
+
+		// Add layer to map, if compatible with current map type
+		if (isMapLayerCompatible(viz.type)) mapAdapter.value?.addLayer(vizLayer); // Add vizLayer to map
 	}
 	function deleteVisualizations(removedVizIds: string[]) {
 		const removedDsIds: string[] = [];
