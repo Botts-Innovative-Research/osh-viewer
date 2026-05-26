@@ -400,11 +400,12 @@ export class OSHVisualization {
 	name: string;
 	type: string;
 	viewLocation: ViewLocation; // Defines where the visualization is displayed (e.g., 'panel', 'map', 'multi')
-	parentId?: string | null;
+	parentId?: string; // Optional parent ID for child visualizations
 	datastream: OSHDatastream[] | null; // TODO: null handles "All PMS"
 	controlstream?: OSHControlStream[]; // Optional control stream
 	visualizationComponents!: VisualizationComponents;
 	wizardConfig!: WizardConfig; // Store state of wizard for editing visualization
+	children: OSHVisualization[] = []; // Child visualizations for complex visualizations
 
 	constructor(
 		id: string,
@@ -413,7 +414,7 @@ export class OSHVisualization {
 		viewLocation: ViewLocation,
 		datastream: OSHDatastream[] | null,
 		controlstream?: OSHControlStream[],
-		parentId?: string | null
+		parentId?: string | undefined
 	) {
 		this.id = id;
 		this.name = name;
@@ -430,6 +431,18 @@ export class OSHVisualization {
 
 	setWizardConfig(config: WizardConfig): void {
 		this.wizardConfig = config;
+	}
+
+	addChildVisualization(child: OSHVisualization): void {
+		this.children.push(child);
+	}
+
+	isParentVisualization(): boolean {
+		return this.children.length > 0 && this.parentId === undefined;
+	}
+
+	isChildVisualization(): boolean {
+		return this.parentId !== null && this.parentId !== undefined;
 	}
 }
 

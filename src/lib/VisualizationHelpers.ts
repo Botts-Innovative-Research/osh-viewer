@@ -40,7 +40,7 @@ export interface DataViewProperties {
 export interface VisualizationComponents {
 	dataSource: ISweApiDataSourceProperties[];
 	dataLayer: VisualizationLayerProperties | VisualizationLayerProperties[] | null;
-	dataView: VisualizationViewProperties | null;
+	dataView: VisualizationViewProperties | VisualizationViewProperties[] | null;
 	controlstream?: ISweApiControlStreamProperties[]; // Optional controlstream for visualization
 }
 

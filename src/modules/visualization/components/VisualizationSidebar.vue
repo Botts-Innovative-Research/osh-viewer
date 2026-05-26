@@ -8,9 +8,7 @@ import DeleteButton from '@/components/ui/DeleteButton.vue';
 import EditVisualization from '../wizard/EditVisualization.vue';
 import { useVisualizationSidebar } from './composables/useVisualizationSidebar';
 import { useUIStore } from '@/stores/uistore';
-import { computed } from 'vue';
-import { useMapStore } from '@/stores/mapstore';
-import { isMapLayerCompatible, VisualizationType } from '../registry/VisualizationRegistry';
+import { isMapLayerCompatible } from '../registry/VisualizationRegistry';
 
 const {
 	editViz,

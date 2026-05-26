@@ -105,7 +105,17 @@ export function useMap() {
 			const addedIds = newIds?.filter((newId) => !oldIds?.some((id) => id === newId));
 
 			// Handle removed visualizations
-			if (removedIds) deleteVisualizations(removedIds);
+			if (removedIds) {
+				for (const vizId of removedIds) {
+					const viz = visualizationStore.getVisualizationById(vizId);
+					// If parent, delete each child layer viz instead
+					if (viz?.isParentVisualization()) {
+						deleteVisualizations(viz.children.map((child) => child.id));
+					}
+					// If not parent, delete directly
+					else deleteVisualizations([vizId]);
+				}
+			}
 
 			//Handle added visualizations
 			if (addedIds) {
@@ -114,7 +124,12 @@ export function useMap() {
 					.filter(Boolean) as OSHVisualization[];
 
 				newOSHVisualizations.forEach((viz: OSHVisualization) => {
-					addVisualization(viz);
+					// If parent, add each child instead
+					if (viz.isParentVisualization()) {
+						viz.children.forEach((childViz) => addVisualization(childViz));
+					}
+					// If not parent, add directly
+					else addVisualization(viz);
 				});
 			}
 		},

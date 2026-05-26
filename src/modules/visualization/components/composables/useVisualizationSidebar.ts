@@ -10,7 +10,6 @@ import { useUIStore } from '@/stores/uistore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref, watch } from 'vue';
-import { VisualizationRegistry, VisualizationType } from '../../registry/VisualizationRegistry';
 import { useSettingsStore } from '@/stores/settingsstore';
 
 export function useVisualizationSidebar() {
@@ -30,6 +29,7 @@ export function useVisualizationSidebar() {
 		visualizations.value.filter(
 			(viz) =>
 				viz.viewLocation === 'panel' ||
+				// Filter out geoPtz viz type from "multi" viewLocation visualizations
 				(viz.viewLocation === 'multi' && viz.type !== 'geoPtz')
 		)
 	);
