@@ -1,14 +1,14 @@
 <script setup lang="ts">
 // @ts-ignore
-import VisualizationWrapper from './VisualizationWrapper.vue';
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import PanelVisualizationWrapper from './PanelVisualizationWrapper.vue';
 import GeoPTZ from '@/modules/visualization/visualizations/geoptz/GeoPTZ.vue';
-import VisualizationWizard from '../wizard/VisualizationWizard.vue';
+import VisualizationWizard from '@/modules/visualization/wizard/VisualizationWizard.vue';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
-import EditVisualization from '../wizard/EditVisualization.vue';
-import { useVisualizationSidebar } from './composables/useVisualizationSidebar';
+import EditVisualization from '@/modules/visualization/wizard/EditVisualization.vue';
+import { useVisualizationSidebar } from '../composables/useVisualizationSidebar';
 import { useUIStore } from '@/stores/uistore';
 import MapVisualizationWrapper from './MapVisualizationWrapper.vue';
+import GeoPtzWrapper from './GeoPtzWrapper.vue';
 
 const {
 	editViz,
@@ -93,52 +93,14 @@ const uiStore = useUIStore();
 								:visualizations="selectedGeoPTZControllers"
 							>
 								<template #controllers>
-									<v-select
-										label="Process"
-										v-model="selectedGeoPTZControllers"
-										:items="geoPtzVisualizations"
-										item-title="name"
-										:item-value="(item: OSHVisualization) => item"
-										chips
-										multiple
-										hide-details
-										clearable
-									>
-										<template v-slot:item="{ props, item }">
-											<v-list-item v-bind="props">
-												<template v-slot:prepend="{ isSelected }">
-													<v-checkbox-btn
-														:model-value="isSelected"
-													></v-checkbox-btn>
-												</template>
-												<!-- Actions -->
-												<template v-slot:append>
-													<v-tooltip
-														text="Edit Visualization"
-														location="bottom"
-													>
-														<template v-slot:activator="{ props }">
-															<IconButton
-																v-bind="props"
-																aria-label="Edit Visualization"
-																size="x-small"
-																variant="plain"
-																icon="mdi-pencil"
-																@click.stop="
-																	openEditViz(item.raw.id!)
-																"
-															>
-															</IconButton>
-														</template>
-													</v-tooltip>
-													<DeleteButton
-														label="Remove"
-														@delete="removeGeoPTZ(item.raw)"
-													></DeleteButton>
-												</template>
-											</v-list-item>
-										</template>
-									</v-select>
+									<GeoPtzWrapper
+										v-model:selectedGeoPTZControllers="
+											selectedGeoPTZControllers
+										"
+										:geoPtzVisualizations="geoPtzVisualizations"
+										:openEditViz="openEditViz"
+										:removeGeoPTZ="removeGeoPTZ"
+									/>
 								</template>
 							</GeoPTZ>
 						</v-sheet>
@@ -190,7 +152,7 @@ const uiStore = useUIStore();
 						</div>
 					</template>
 					<v-expansion-panel-text>
-						<VisualizationWrapper :viz="viz"> </VisualizationWrapper>
+						<PanelVisualizationWrapper :viz="viz"></PanelVisualizationWrapper>
 					</v-expansion-panel-text>
 				</v-expansion-panel>
 			</v-expansion-panels>

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { isMapLayerCompatible } from '../registry/VisualizationRegistry';
+import { isMapLayerCompatible } from '../../registry/VisualizationRegistry';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
-import { computed, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
 
 const {
