@@ -39,6 +39,7 @@ export default function build() {
 		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig)
 	);
 	pmViz.setVisualizationComponents(pmVisualizationComponents);
+
 	// LOB
 	const lobResult = CreateLobViewProps(
 		datastreams,
@@ -57,6 +58,7 @@ export default function build() {
 		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig)
 	);
 	lobViz.setVisualizationComponents(lobVisualizationComponents);
+
 	// ELLIPSE
 	const ellipseResult = CreateEllipseViewProps(
 		datastreams,
@@ -76,6 +78,7 @@ export default function build() {
 	);
 	ellipseViz.setVisualizationComponents(ellipseVisualizationComponents);
 
+	// FULL BEASTKIT VIZ
 	const newViz: OSHVisualization = new OSHVisualization(
 		vizwizStore.id,
 		vizwizStore.visualizationCustomizationOptions.name,
@@ -90,12 +93,6 @@ export default function build() {
 		ellipseVisualizationComponents,
 	]);
 	newViz.addChildVisualization([pmViz, lobViz, ellipseViz]);
-	console.log(newViz);
 	visualizationStore.addVisualization(newViz);
-
-	// visualizationStore.addVisualization(pmViz);
-	// visualizationStore.addVisualization(lobViz);
-	// visualizationStore.addVisualization(ellipseViz);
-
 	console.log('Created Beastkit Visualization:', newViz);
 }

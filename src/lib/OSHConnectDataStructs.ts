@@ -404,7 +404,7 @@ export class OSHVisualization {
 	datastream: OSHDatastream[] | null; // TODO: null handles "All PMS"
 	controlstream?: OSHControlStream[]; // Optional control stream
 	visualizationComponents!: VisualizationComponents | VisualizationComponents[];
-	wizardConfig!: WizardConfig; // Store state of wizard for editing visualization
+	wizardConfig!: WizardConfig | null; // Store state of wizard for editing visualization. Null for child visualizations
 	children: OSHVisualization[] = []; // Child visualizations for complex visualizations
 
 	constructor(
@@ -435,8 +435,8 @@ export class OSHVisualization {
 		this.wizardConfig = config;
 	}
 
-	addChildVisualization(child: OSHVisualization): void {
-		this.children.push(child);
+	addChildVisualization(children: OSHVisualization[]): void {
+		this.children.push(...children);
 	}
 
 	isParentVisualization(): boolean {
