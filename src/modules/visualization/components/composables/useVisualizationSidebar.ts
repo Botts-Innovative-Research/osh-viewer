@@ -14,7 +14,6 @@ import { useSettingsStore } from '@/stores/settingsstore';
 
 export function useVisualizationSidebar() {
 	// Stores
-	const settingsStore = useSettingsStore();
 	const uiStore = useUIStore();
 	const mapStore = useMapStore();
 	const visualizationStore = useVisualizationStore();

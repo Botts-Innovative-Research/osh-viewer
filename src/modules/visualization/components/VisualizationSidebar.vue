@@ -8,7 +8,7 @@ import DeleteButton from '@/components/ui/DeleteButton.vue';
 import EditVisualization from '../wizard/EditVisualization.vue';
 import { useVisualizationSidebar } from './composables/useVisualizationSidebar';
 import { useUIStore } from '@/stores/uistore';
-import { isMapLayerCompatible } from '../registry/VisualizationRegistry';
+import MapVisualizationWrapper from './MapVisualizationWrapper.vue';
 
 const {
 	editViz,
@@ -66,91 +66,16 @@ const uiStore = useUIStore();
 						<div class="panel-header">Map Visualizations</div>
 					</template>
 					<v-expansion-panel-text class="panel-text">
-						<v-list
-							activatable
-							density="compact"
-							select-strategy="leaf"
-						>
-							<v-list-item
-								v-for="viz in mapVisualizations"
-								:key="viz.id"
-								@click="toggleSelectedMapItem(viz)"
-							>
-								<!-- Icon -->
-								<template #prepend>
-									<v-tooltip
-										text="Visualization not supported by this map type."
-										location="bottom"
-										:disabled="isMapLayerCompatible(viz.type)"
-									>
-										<template v-slot:activator="{ props }">
-											<v-badge
-												location="top right"
-												color="warning"
-												dot
-												:model-value="!isMapLayerCompatible(viz.type)"
-												v-bind="props"
-											>
-												<v-icon
-													:icon="`mdi-${isMapLayer(viz.visualizationComponents.dataLayer) ? viz.visualizationComponents.dataLayer.iconName : ''}`"
-													size="16"
-												></v-icon>
-											</v-badge>
-										</template>
-									</v-tooltip>
-								</template>
-								<!-- Title -->
-								<template #title
-									><span
-										:style="`text-decoration: ${isMapLayerVisible(viz.id) ? '' : 'line-through'}`"
-										>{{ viz.name }}</span
-									></template
-								>
-								<!-- Actions -->
-								<template #append>
-									<div class="map-actions">
-										<v-tooltip
-											text="Toggle Visibility"
-											location="bottom"
-										>
-											<template v-slot:activator="{ props }">
-												<IconButton
-													v-bind="props"
-													aria-label="Toggle Visibility"
-													size="x-small"
-													variant="plain"
-													:icon="
-														isMapLayerVisible(viz.id)
-															? 'mdi-eye'
-															: 'mdi-eye-off'
-													"
-													@click.stop="toggleMapLayerVisibility(viz)"
-												></IconButton>
-											</template>
-										</v-tooltip>
-										<v-tooltip
-											text="Edit Visualization"
-											location="bottom"
-										>
-											<template v-slot:activator="{ props }">
-												<IconButton
-													v-bind="props"
-													aria-label="Edit Visualization"
-													size="x-small"
-													variant="plain"
-													icon="mdi-pencil"
-													@click.stop="openEditViz(viz)"
-												></IconButton>
-											</template>
-										</v-tooltip>
-										<DeleteButton
-											label="Remove"
-											@delete="removeVisualization(viz)"
-										></DeleteButton>
-									</div>
-								</template>
-							</v-list-item>
-						</v-list>
+						<MapVisualizationWrapper
+							v-for="viz in mapVisualizations"
+							:viz="viz"
+							:toggleSelectedMapItem="toggleSelectedMapItem"
+							:isMapLayer="isMapLayer"
+							:isMapLayerVisible="isMapLayerVisible"
+							:toggleMapLayerVisibility="toggleMapLayerVisibility"
+							:openEditViz="openEditViz"
+							:removeVisualization="removeVisualization"
+						/>
 					</v-expansion-panel-text>
 				</v-expansion-panel>
 				<!-- GEOPTZ VISUALIZATIONS -->

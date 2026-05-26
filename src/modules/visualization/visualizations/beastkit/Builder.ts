@@ -33,7 +33,7 @@ export default function build() {
 	};
 	const pmViz: OSHVisualization = new OSHVisualization(
 		`${vizwizStore.id}-${randomUUID()}`,
-		vizwizStore.visualizationCustomizationOptions.name,
+		`${vizwizStore.visualizationCustomizationOptions.name} - Point Marker`,
 		'pointmarker',
 		PointMarkerDescriptor.viewLocation,
 		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig)
@@ -52,7 +52,7 @@ export default function build() {
 	};
 	const lobViz: OSHVisualization = new OSHVisualization(
 		`${vizwizStore.id}-${randomUUID()}`,
-		vizwizStore.visualizationCustomizationOptions.name,
+		`${vizwizStore.visualizationCustomizationOptions.name} - LoB`,
 		'lob',
 		LobDescriptor.viewLocation,
 		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig)
@@ -71,7 +71,7 @@ export default function build() {
 	};
 	const ellipseViz: OSHVisualization = new OSHVisualization(
 		`${vizwizStore.id}-${randomUUID()}`,
-		vizwizStore.visualizationCustomizationOptions.name,
+		`${vizwizStore.visualizationCustomizationOptions.name} - Ellipse`,
 		'ellipse',
 		EllipseDescriptor.viewLocation,
 		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig)

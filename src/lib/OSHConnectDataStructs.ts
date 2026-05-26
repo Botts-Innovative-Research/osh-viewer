@@ -439,12 +439,19 @@ export class OSHVisualization {
 		this.children.push(...children);
 	}
 
+	// Determine if visualization has child visualizations
 	isParentVisualization(): boolean {
 		return this.children.length > 0 && this.parentId === undefined;
 	}
 
+	// Determine if visualization has a parent visualization (i.e., is a child visualization)
 	isChildVisualization(): boolean {
-		return this.parentId !== null && this.parentId !== undefined;
+		return this.parentId !== undefined && this.parentId !== null;
+	}
+
+	// Determine if visualization is a single visualization (i.e., has no parent and no children)
+	isSingleVisualization(): boolean {
+		return this.children.length === 0 && this.parentId === undefined;
 	}
 }
 
