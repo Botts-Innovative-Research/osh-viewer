@@ -142,7 +142,7 @@ export interface ILineOfBearingLayerProperties extends DataLayerProperties {
 	color: any;
 	weight: number;
 	opacity: number;
-	distanceKm: number;
+	length: number;
 	icon: string;
 	iconColor: string;
 	iconName: string;

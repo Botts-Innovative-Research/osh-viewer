@@ -22,10 +22,12 @@ export default function build() {
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
 	// POINTMARKER
-	const pmResult = CreatePointMarkerViewProps(
-		datastreams,
-		vizwizStore.visualizationCustomizationOptions
-	);
+	const pmResult = CreatePointMarkerViewProps(datastreams, {
+		name: vizwizStore.visualizationCustomizationOptions.name,
+		icon: vizwizStore.visualizationCustomizationOptions.icon,
+		iconColor: vizwizStore.visualizationCustomizationOptions.pmIconColor,
+		iconName: vizwizStore.visualizationCustomizationOptions.iconName,
+	});
 	const pmVisualizationComponents: VisualizationComponents = {
 		dataSource: pmResult.vizDatasources,
 		dataLayer: pmResult.pointMarkerLayer,
@@ -41,10 +43,16 @@ export default function build() {
 	pmViz.setVisualizationComponents(pmVisualizationComponents);
 
 	// LOB
-	const lobResult = CreateLobViewProps(
-		datastreams,
-		vizwizStore.visualizationCustomizationOptions
-	);
+	const lobResult = CreateLobViewProps(datastreams, {
+		name: vizwizStore.visualizationCustomizationOptions.name,
+		lineColor: vizwizStore.visualizationCustomizationOptions.lobLineColor,
+		lobWeight: vizwizStore.visualizationCustomizationOptions.lobWeight,
+		lobOpacity: vizwizStore.visualizationCustomizationOptions.lobOpacity,
+		lobDistanceKm: vizwizStore.visualizationCustomizationOptions.lobDistanceKm,
+		icon: vizwizStore.visualizationCustomizationOptions.icon,
+		iconColor: vizwizStore.visualizationCustomizationOptions.lobIconColor,
+		iconName: vizwizStore.visualizationCustomizationOptions.iconName,
+	});
 	const lobVisualizationComponents = {
 		dataSource: lobResult.vizDatasources,
 		dataLayer: lobResult.lobLayer,
@@ -60,10 +68,10 @@ export default function build() {
 	lobViz.setVisualizationComponents(lobVisualizationComponents);
 
 	// ELLIPSE
-	const ellipseResult = CreateEllipseViewProps(
-		datastreams,
-		vizwizStore.visualizationCustomizationOptions
-	);
+	const ellipseResult = CreateEllipseViewProps(datastreams, {
+		name: vizwizStore.visualizationCustomizationOptions.name,
+		ellipseColor: vizwizStore.visualizationCustomizationOptions.ellipseColor,
+	});
 	const ellipseVisualizationComponents: VisualizationComponents = {
 		dataSource: ellipseResult.vizDatasources,
 		dataLayer: ellipseResult.ellipseLayer,

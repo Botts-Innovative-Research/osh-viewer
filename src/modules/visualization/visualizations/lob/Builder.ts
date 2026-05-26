@@ -60,11 +60,12 @@ export function CreateLobViewProps(datastreams: { [key: string]: any }, visOptio
 
 	// Create datasources, layer, and view
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
+	console.log(visOptions.distanceKm, 'distanceKm in CreateLobViewProps');
 	let lobLayer: ILineOfBearingLayerProperties = {
 		color: visOptions.lineColor,
-		weight: visOptions.weight,
-		opacity: visOptions.opacity,
-		distanceKm: visOptions.distanceKm,
+		weight: visOptions.lobWeight,
+		opacity: visOptions.lobOpacity,
+		length: visOptions.lobDistanceKm * 1000, // Convert km to m
 		icon: visOptions.icon,
 		iconColor: visOptions.iconColor,
 		iconName: visOptions.iconName,

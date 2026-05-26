@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import IconControl from '@/modules/visualization/wizard/customizations/IconControl.vue';
 import LineColorControl from '@/modules/visualization/wizard/customizations/LineColorControl.vue';
-import WeightControl from '@/modules/visualization/wizard/customizations/WeightControl.vue';
-import OpacityControl from '@/modules/visualization/wizard/customizations/OpacityControl.vue';
-import DistanceKmControl from '@/modules/visualization/wizard/customizations/DistanceKmControl.vue';
+import SliderValueControl from '../../wizard/customizations/SliderValueControl.vue';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import ColorControl from '../../wizard/customizations/ColorControl.vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
@@ -36,7 +34,36 @@ useComponentValidation(valid, emit);
 			<line-color-control></line-color-control>
 		</v-col>
 	</v-row>
-	<weight-control></weight-control>
-	<opacity-control></opacity-control>
-	<distance-km-control></distance-km-control>
+	<slider-value-control
+		roleName="lobWeight"
+		label="Line Weight"
+		:min="1"
+		:max="20"
+		:step="0.5"
+		:defaultValue="10"
+		units=""
+	></slider-value-control>
+	<slider-value-control
+		roleName="lobOpacity"
+		label="Line Opacity"
+		:min="0"
+		:max="1"
+		:step="0.01"
+		:defaultValue="0.5"
+		units="%"
+		:formatter="
+			(value: number) => {
+				return `${(value * 100).toFixed(0)}%`;
+			}
+		"
+	></slider-value-control>
+	<slider-value-control
+		roleName="lobDistanceKm"
+		label="Line Distance"
+		:min="0"
+		:max="100"
+		:step="0.1"
+		:defaultValue="1"
+		units="km"
+	></slider-value-control>
 </template>
