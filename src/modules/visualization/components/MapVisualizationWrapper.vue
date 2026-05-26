@@ -2,7 +2,7 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { isMapLayerCompatible } from '../registry/VisualizationRegistry';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
 
 const {
@@ -24,13 +24,13 @@ const {
 }>();
 
 const mapStore = useMapStore();
+function isSelected(viz: OSHVisualization) {
+	if (!mapStore.selectedMapItem) return false;
+	return mapStore.selectedMapItem?.id === viz.id;
+}
 
 // Parent visualization controls
 const childrenOpen = ref(false);
-
-function isChildSelected(childViz: OSHVisualization) {
-	return mapStore.selectedMapItem?.id === childViz.id;
-}
 
 function handleParentClick(viz: OSHVisualization) {
 	toggleSelectedMapItem(viz);
@@ -38,7 +38,7 @@ function handleParentClick(viz: OSHVisualization) {
 	// Only toggle children if this is a parent visualization
 	if (!viz.isParentVisualization()) return;
 
-	if (mapStore.selectedMapItem === viz || viz.children.some((child) => isChildSelected(child))) {
+	if (mapStore.selectedMapItem === viz) {
 		childrenOpen.value = true;
 	} else {
 		childrenOpen.value = false;
@@ -61,6 +61,22 @@ function handleParentVisibilityToggle(viz: OSHVisualization) {
 		}
 	});
 }
+
+watch(
+	() => mapStore.selectedMapItem,
+	(newVal) => {
+		// If selected item is this visualization or one of its children, keep children open. Otherwise, close children.
+		if (!newVal) {
+			childrenOpen.value = false;
+			return;
+		}
+		if (newVal.id === viz.id || viz.children.some((child) => child.id === newVal.id)) {
+			childrenOpen.value = true;
+		} else {
+			childrenOpen.value = false;
+		}
+	}
+);
 </script>
 
 <template>
@@ -74,6 +90,7 @@ function handleParentVisibilityToggle(viz: OSHVisualization) {
 		<v-list-item
 			v-if="viz.isSingleVisualization()"
 			:key="viz.id"
+			:active="isSelected(viz)"
 			@click="toggleSelectedMapItem(viz)"
 		>
 			<!-- Icon -->
@@ -151,14 +168,14 @@ function handleParentVisibilityToggle(viz: OSHVisualization) {
 			v-if="viz.isParentVisualization()"
 			@mouseenter="childrenOpen = true"
 			@mouseleave="
-				mapStore.selectedMapItem === viz ||
-				viz.children.some((child) => isChildSelected(child))
+				isSelected(viz) || viz.children.some((child) => isSelected(child))
 					? (childrenOpen = true)
 					: (childrenOpen = false)
 			"
 		>
 			<v-list-item
 				:key="viz.id"
+				:active="isSelected(viz)"
 				@click="handleParentClick(viz)"
 			>
 				<!-- Icon -->
@@ -243,6 +260,7 @@ function handleParentVisibilityToggle(viz: OSHVisualization) {
 					<v-list-item
 						v-for="childViz in viz.children"
 						:key="childViz.id"
+						:active="isSelected(childViz)"
 						@click="toggleSelectedMapItem(childViz)"
 					>
 						<!-- Icon -->
