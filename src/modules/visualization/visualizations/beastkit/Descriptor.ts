@@ -4,7 +4,7 @@ import { VisualizationDescriptor, VisualizationFormComponent } from '../../regis
 export const ConfigComponentPointMarker: VisualizationFormComponent = {
 	id: 'beastkit-config-pointmarker',
 	label: 'Configure Beastkit Properties: Point Marker',
-	short: 'Configure Point Marker',
+	short: 'Point Marker',
 	component: defineAsyncComponent(
 		() => import('@/modules/visualization/visualizations/pointmarker/Config.vue')
 	),
@@ -12,7 +12,7 @@ export const ConfigComponentPointMarker: VisualizationFormComponent = {
 export const ConfigComponentLob: VisualizationFormComponent = {
 	id: 'beastkit-config-lob',
 	label: 'Configure Beastkit Properties: Line of Bearing',
-	short: 'Configure LoB',
+	short: 'LoB',
 	component: defineAsyncComponent(
 		() => import('@/modules/visualization/visualizations/lob/Config.vue')
 	),
@@ -20,7 +20,7 @@ export const ConfigComponentLob: VisualizationFormComponent = {
 export const ConfigComponentEllipse: VisualizationFormComponent = {
 	id: 'beastkit-config-ellipse',
 	label: 'Configure Beastkit Properties: Ellipse',
-	short: 'Configure Ellipse',
+	short: 'Ellipse',
 	component: defineAsyncComponent(
 		() => import('@/modules/visualization/visualizations/ellipse/Config.vue')
 	),

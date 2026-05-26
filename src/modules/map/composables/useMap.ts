@@ -109,17 +109,7 @@ export function useMap() {
 			);
 
 			// Handle removed visualizations
-			if (removedIds) {
-				for (const vizId of removedIds) {
-					const viz = visualizationStore.getVisualizationById(vizId);
-					// If parent, delete each child layer viz instead
-					if (viz?.isParentVisualization()) {
-						deleteVisualizations(viz.children.map((child) => child.id));
-					}
-					// If not parent, delete directly
-					else deleteVisualizations([vizId]);
-				}
-			}
+			if (removedIds) deleteVisualizations(removedIds);
 
 			//Handle added visualizations
 			if (addedIds) {
@@ -154,17 +144,23 @@ export function useMap() {
 		const removedDsIds: string[] = [];
 
 		for (const vizId of removedVizIds) {
-			const layer = mapItemLayers.value.get(vizId);
-			if (!layer) continue; // Skip if no layer found for this vizId
+			// Find viz layer OR all child viz layer IDs to remove
+			const layers = [...mapItemLayers.value.entries()]
+				.filter(([key]) => key.startsWith(vizId))
+				.map(([, layer]) => layer);
 
-			// Collect ds IDs
-			removedDsIds.push(...layer.dataSourceIds);
+			if (!layers) continue; // Skip if no layer found for this vizId
 
-			// Remove layer from the actual map safely
-			mapAdapter.value?.removeLayer(layer);
+			for (const layer of layers) {
+				// Collect ds IDs
+				removedDsIds.push(...layer.dataSourceIds);
 
-			// Remove layer from mapItemLayers
-			mapItemLayers.value.delete(vizId);
+				// Remove layer from the actual map safely
+				mapAdapter.value?.removeLayer(layer);
+
+				// Remove layer from mapItemLayers
+				mapItemLayers.value.delete(vizId);
+			}
 		}
 
 		// Disconnect and remove datasources
