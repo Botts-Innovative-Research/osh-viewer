@@ -3,8 +3,8 @@ import { computed, ref } from 'vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
 import IconControl from '@/modules/visualization/wizard/customizations/IconControl.vue';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
-import ColorControl from '../../wizard/customizations/ColorControl.vue';
-import LineColorControl from '@/modules/visualization/wizard/customizations/LineColorControl.vue';
+import ColorControl from '@/modules/visualization/wizard/customizations/ColorControl.vue';
+import IDColorControl from '@/modules/visualization/wizard/customizations/IdColorControl.vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 import SliderValueControl from '../../wizard/customizations/SliderValueControl.vue';
 
@@ -24,14 +24,14 @@ useComponentValidation(valid, emit);
 	/>
 	<!-- POINTMARKER -->
 	<v-divider class="ma-2">Point Marker Customizations</v-divider>
-	<icon-control></icon-control>
+	<icon-control roleName="pmIcon"></icon-control>
 	<color-control
 		roleName="pmIconColor"
 		label="Point Marker Icon Color"
 	></color-control>
 	<!-- LOB -->
 	<v-divider class="ma-2">Line of Bearing Customizations</v-divider>
-	<icon-control></icon-control>
+	<icon-control roleName="lobIcon"></icon-control>
 	<v-row class="justify-space-between pa-4">
 		<v-col cols="auto">
 			<color-control
@@ -40,7 +40,10 @@ useComponentValidation(valid, emit);
 			></color-control>
 		</v-col>
 		<v-col cols="auto">
-			<line-color-control></line-color-control>
+			<color-control
+				roleName="lobLineColor"
+				label="LoB Line Color"
+			></color-control>
 		</v-col>
 	</v-row>
 	<slider-value-control

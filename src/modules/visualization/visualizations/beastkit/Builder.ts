@@ -24,9 +24,9 @@ export default function build() {
 	// POINTMARKER
 	const pmResult = CreatePointMarkerViewProps(datastreams, {
 		name: vizwizStore.visualizationCustomizationOptions.name,
-		icon: vizwizStore.visualizationCustomizationOptions.icon,
+		icon: vizwizStore.visualizationCustomizationOptions.pmIcon,
 		iconColor: vizwizStore.visualizationCustomizationOptions.pmIconColor,
-		iconName: vizwizStore.visualizationCustomizationOptions.iconName,
+		iconName: vizwizStore.visualizationCustomizationOptions.pmIconName,
 	});
 	const pmVisualizationComponents: VisualizationComponents = {
 		dataSource: pmResult.vizDatasources,
@@ -49,9 +49,9 @@ export default function build() {
 		lobWeight: vizwizStore.visualizationCustomizationOptions.lobWeight,
 		lobOpacity: vizwizStore.visualizationCustomizationOptions.lobOpacity,
 		lobDistanceKm: vizwizStore.visualizationCustomizationOptions.lobDistanceKm,
-		icon: vizwizStore.visualizationCustomizationOptions.icon,
+		icon: vizwizStore.visualizationCustomizationOptions.lobIcon,
 		iconColor: vizwizStore.visualizationCustomizationOptions.lobIconColor,
-		iconName: vizwizStore.visualizationCustomizationOptions.iconName,
+		iconName: vizwizStore.visualizationCustomizationOptions.lobIconName,
 	});
 	const lobVisualizationComponents = {
 		dataSource: lobResult.vizDatasources,

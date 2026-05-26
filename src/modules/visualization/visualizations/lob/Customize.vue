@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import IconControl from '@/modules/visualization/wizard/customizations/IconControl.vue';
-import LineColorControl from '@/modules/visualization/wizard/customizations/LineColorControl.vue';
 import SliderValueControl from '../../wizard/customizations/SliderValueControl.vue';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import ColorControl from '../../wizard/customizations/ColorControl.vue';
+import IDColorControl from '../../wizard/customizations/IdColorControl.vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
 import { computed, ref } from 'vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
@@ -22,7 +22,7 @@ useComponentValidation(valid, emit);
 		role="origin"
 		v-model:valid="nameValid"
 	></name-control>
-	<icon-control></icon-control>
+	<icon-control roleName="icon"></icon-control>
 	<v-row class="justify-space-between pa-4">
 		<v-col cols="auto">
 			<color-control
@@ -31,7 +31,11 @@ useComponentValidation(valid, emit);
 			></color-control>
 		</v-col>
 		<v-col cols="auto">
-			<line-color-control></line-color-control>
+			<IDColorControl
+				roleName="lineColor"
+				label="Line Color"
+			>
+			</IDColorControl>
 		</v-col>
 	</v-row>
 	<slider-value-control

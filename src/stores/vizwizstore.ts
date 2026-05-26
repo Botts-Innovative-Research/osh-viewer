@@ -2,8 +2,6 @@ import { OSHControlStream, OSHDatastream } from '@/lib/OSHConnectDataStructs';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { VisualizationCustomizationOptions } from '@/lib/VisualizationHelpers';
-import { useDataStreamStore } from './datastreamstore';
-import { useControlStreamStore } from './controlstreamstore';
 import {
 	getStreamIds,
 	rehydrateControlStreams,

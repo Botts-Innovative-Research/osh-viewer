@@ -1,5 +1,6 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
+	IEllipseCustomizationOptions,
 	IEllipseLayerProperties,
 	IMapViewProperties,
 	ISweApiDataSourceProperties,
@@ -57,7 +58,10 @@ export default function build() {
  * @param visOptions
  * @constructor
  */
-export function CreateEllipseViewProps(datastreams: { [key: string]: any }, visOptions: any) {
+export function CreateEllipseViewProps(
+	datastreams: { [key: string]: any },
+	visOptions: IEllipseCustomizationOptions
+) {
 	const datastreamStore = useDataStreamStore();
 
 	// Create datasources, layer, and view
