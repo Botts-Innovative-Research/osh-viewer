@@ -2,7 +2,7 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { isMapLayerCompatible } from '../../registry/VisualizationRegistry';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
 
 const {
@@ -30,8 +30,13 @@ function isSelected(viz: OSHVisualization) {
 }
 
 // Parent visualization controls
+const parentIcon = computed(() => {
+	if (!viz.isParentVisualization()) return '';
+	if (viz.type === 'beastkit') return 'mdi-star-box-outline';
+	// Default parent icon
+	return 'mdi-folder';
+});
 const childrenOpen = ref(false);
-
 function handleParentClick(viz: OSHVisualization) {
 	toggleSelectedMapItem(viz);
 
@@ -44,7 +49,6 @@ function handleParentClick(viz: OSHVisualization) {
 		childrenOpen.value = false;
 	}
 }
-
 function handleParentVisibilityToggle(viz: OSHVisualization) {
 	toggleMapLayerVisibility(viz);
 
@@ -61,7 +65,6 @@ function handleParentVisibilityToggle(viz: OSHVisualization) {
 		}
 	});
 }
-
 watch(
 	() => mapStore.selectedMapItem,
 	(newVal) => {
@@ -110,6 +113,9 @@ watch(
 						>
 							<v-icon
 								:icon="`mdi-${isMapLayer(viz.visualizationComponents.dataLayer) ? viz.visualizationComponents.dataLayer.iconName : ''}`"
+								:color="
+									viz.visualizationComponents.dataLayer?.iconColor || 'default'
+								"
 								size="16"
 							></v-icon>
 						</v-badge>
@@ -194,7 +200,11 @@ watch(
 								v-bind="props"
 							>
 								<v-icon
-									:icon="`mdi-${isMapLayer(viz.visualizationComponents.dataLayer) ? viz.visualizationComponents.dataLayer.iconName : ''}`"
+									:icon="parentIcon"
+									:iconColor="
+										viz.visualizationComponents.dataLayer?.iconColor ||
+										'default'
+									"
 									size="16"
 								></v-icon>
 							</v-badge>
@@ -280,6 +290,10 @@ watch(
 									>
 										<v-icon
 											:icon="`mdi-${isMapLayer(childViz.visualizationComponents.dataLayer) ? childViz.visualizationComponents.dataLayer.iconName : ''}`"
+											:color="
+												childViz.visualizationComponents.dataLayer
+													?.iconColor || 'default'
+											"
 											size="16"
 										></v-icon>
 									</v-badge>
