@@ -1,6 +1,7 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
 	ISweApiDataSourceProperties,
+	IVideoCustomizationOptions,
 	IVideoLayerProperties,
 	IVideoViewProperties,
 	VisualizationComponents,
@@ -63,8 +64,7 @@ export default function build() {
  */
 export function CreateVideoViewProps(
 	datastreams: { [key: string]: any },
-	controlstreams: { [key: string]: any },
-	visOptions: any
+	visOptions: IVideoCustomizationOptions
 ) {
 	const datastreamStore = useDataStreamStore();
 

@@ -4,7 +4,6 @@ import { VisualizationComponentEmits } from '../../registry/VisualizationRegistr
 import IconControl from '@/modules/visualization/wizard/customizations/IconControl.vue';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import ColorControl from '@/modules/visualization/wizard/customizations/ColorControl.vue';
-import IDColorControl from '@/modules/visualization/wizard/customizations/IdColorControl.vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 import SliderValueControl from '../../wizard/customizations/SliderValueControl.vue';
 

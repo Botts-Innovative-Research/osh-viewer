@@ -179,3 +179,13 @@ export interface ILineOfBearingCustomizationOptions extends VisualizationCustomi
 export interface IEllipseCustomizationOptions extends VisualizationCustomizationOptions {
 	ellipseColor: string;
 }
+
+export interface IChartCustomizationOptions extends VisualizationCustomizationOptions {
+	lineColor: string;
+	backgroundColor: string;
+}
+
+export interface IVideoCustomizationOptions extends VisualizationCustomizationOptions {
+	stats: boolean;
+	time: boolean;
+}
