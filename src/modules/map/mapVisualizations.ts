@@ -242,6 +242,7 @@ export function createPolylineLayer(
 
 	// Undefined initially
 	let getLocation: any;
+	let getPolylineId: any;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);
@@ -259,6 +260,15 @@ export function createPolylineLayer(
 				},
 			};
 		}
+		// Check for polylineId property
+		if (dsProps.properties.polylineId) {
+			getPolylineId = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return rec[dsProps.properties.polylineId.property];
+				},
+			};
+		}
 
 		dsInstance.connect();
 		dsInstances.push(dsInstance);
@@ -270,6 +280,7 @@ export function createPolylineLayer(
 		id: viz.id,
 		dataSourceIds: dsInstances.map((ds) => ds.id),
 		...(getLocation ? { getLocation } : {}),
+		...(getPolylineId ? { getPolylineId } : {}),
 	});
 
 	return { vizLayer: polylineLayer, dsInstances };
