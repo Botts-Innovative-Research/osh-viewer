@@ -15,7 +15,6 @@ import { Mode } from 'osh-js/source/core/datasource/Mode';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { VideoDescriptor } from './Descriptor';
 import {
-	AggregateControlstreams,
 	AggregateDatastreams,
 	BuildRoleProperty,
 	getUsedControlstreams,
@@ -28,11 +27,9 @@ export default function build() {
 	const visualizationStore = useVisualizationStore();
 
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
-	const controlstreams = AggregateControlstreams(vizwizStore.csConfig);
 
 	const videoResult = CreateVideoViewProps(
 		datastreams,
-		controlstreams,
 		vizwizStore.visualizationCustomizationOptions
 	);
 	const visualizationComponents: VisualizationComponents = {
