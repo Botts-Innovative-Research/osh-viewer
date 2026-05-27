@@ -114,7 +114,9 @@ watch(
 							<v-icon
 								:icon="`mdi-${isMapLayer(viz.visualizationComponents.dataLayer) ? viz.visualizationComponents.dataLayer.iconName : ''}`"
 								:color="
-									viz.visualizationComponents.dataLayer?.iconColor || 'default'
+									viz.visualizationComponents.dataLayer?.iconColor ||
+									viz.visualizationComponents.dataLayer?.color ||
+									'default'
 								"
 								size="16"
 							></v-icon>
@@ -203,6 +205,7 @@ watch(
 									:icon="parentIcon"
 									:iconColor="
 										viz.visualizationComponents.dataLayer?.iconColor ||
+										viz.visualizationComponents.dataLayer?.color ||
 										'default'
 									"
 									size="16"
@@ -292,7 +295,9 @@ watch(
 											:icon="`mdi-${isMapLayer(childViz.visualizationComponents.dataLayer) ? childViz.visualizationComponents.dataLayer.iconName : ''}`"
 											:color="
 												childViz.visualizationComponents.dataLayer
-													?.iconColor || 'default'
+													?.iconColor ||
+												childViz.visualizationComponents.dataLayer?.color ||
+												'default'
 											"
 											size="16"
 										></v-icon>

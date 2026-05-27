@@ -159,6 +159,7 @@ export interface IPolylineLayerProperties extends DataLayerProperties {
 	color: any;
 	weight: number;
 	opacity: number;
+	iconName: string; // Used for display in map visualizations list
 }
 
 /**

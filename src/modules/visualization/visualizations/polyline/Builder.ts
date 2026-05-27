@@ -70,6 +70,7 @@ export function CreatePolylineViewProps(
 		color: visOptions.color,
 		weight: visOptions.weight,
 		opacity: visOptions.opacity,
+		iconName: 'vector-polyline', // For map visualizations list icon
 	};
 	let mapView: IMapViewProperties = {
 		container: `map-container-${randomUUID()}`,
