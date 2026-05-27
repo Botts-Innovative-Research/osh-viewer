@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import IconControl from '@/modules/visualization/wizard/customizations/IconControl.vue';
+import { computed, ref } from 'vue';
+import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
 import SliderValueControl from '../../wizard/customizations/SliderValueControl.vue';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import ColorControl from '../../wizard/customizations/ColorControl.vue';
-import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
-import { computed, ref } from 'vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 
 // Validation: Name cannot be empty
@@ -17,28 +16,17 @@ useComponentValidation(valid, emit);
 </script>
 
 <template>
-	<name-control
-		role="origin"
+	<NameControl
+		role="location"
 		v-model:valid="nameValid"
-	></name-control>
-	<icon-control roleName="icon"></icon-control>
-	<v-row class="justify-space-between pa-4">
-		<v-col cols="auto">
-			<color-control
-				roleName="iconColor"
-				label="Icon Color"
-			></color-control>
-		</v-col>
-		<v-col cols="auto">
-			<color-control
-				roleName="lineColor"
-				label="Line Color"
-			></color-control>
-		</v-col>
-	</v-row>
+	/>
+	<color-control
+		roleName="color"
+		label="Color"
+	></color-control>
 	<slider-value-control
-		roleName="lobWeight"
-		label="Line Weight"
+		roleName="weight"
+		label="Weight"
 		:min="1"
 		:max="20"
 		:step="0.5"
@@ -46,8 +34,8 @@ useComponentValidation(valid, emit);
 		units=""
 	></slider-value-control>
 	<slider-value-control
-		roleName="lobOpacity"
-		label="Line Opacity"
+		roleName="opacity"
+		label="Opacity"
 		:min="0"
 		:max="1"
 		:step="0.01"
@@ -58,14 +46,5 @@ useComponentValidation(valid, emit);
 				return `${(value * 100).toFixed(0)}%`;
 			}
 		"
-	></slider-value-control>
-	<slider-value-control
-		roleName="lobDistanceKm"
-		label="Line Distance"
-		:min="0"
-		:max="100"
-		:step="0.1"
-		:defaultValue="1"
-		units="km"
 	></slider-value-control>
 </template>
