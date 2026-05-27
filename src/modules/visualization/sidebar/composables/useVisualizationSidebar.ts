@@ -10,11 +10,9 @@ import { useUIStore } from '@/stores/uistore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref, watch } from 'vue';
-import { useSettingsStore } from '@/stores/settingsstore';
 
 export function useVisualizationSidebar() {
 	// Stores
-	const settingsStore = useSettingsStore();
 	const uiStore = useUIStore();
 	const mapStore = useMapStore();
 	const visualizationStore = useVisualizationStore();

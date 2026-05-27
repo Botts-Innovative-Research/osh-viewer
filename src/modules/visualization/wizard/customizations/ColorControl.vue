@@ -4,12 +4,12 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 
 const props = withDefaults(
 	defineProps<{
-		roleName?: string; // Optional prop to specify which role this control is customizing (e.g. 'iconColor', etc.). Defaults to 'color' if not provided.
-		label?: string; // Optional label for the color control, defaults to 'Color'
+		roleName: string; // Name to store in the vizwizstore
+		label: string; // Label to display above input
+		hideInputs?: boolean; // Whether to hide the RGBA input fields in the color picker
 	}>(),
 	{
-		roleName: 'color',
-		label: 'Color',
+		hideInputs: false,
 	}
 );
 
@@ -37,6 +37,7 @@ onMounted(() => {
 		style="margin: auto"
 		v-model="color"
 		mode="rgba"
+		:hide-inputs="props.hideInputs"
 	>
 	</v-color-picker>
 </template>

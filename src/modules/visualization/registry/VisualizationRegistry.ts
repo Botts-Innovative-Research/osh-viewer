@@ -8,6 +8,7 @@ import { MissionDescriptor } from '@/modules/visualization/visualizations/missio
 import { VisualizationDescriptor } from './types';
 import { EllipseDescriptor } from '../visualizations/ellipse/Descriptor';
 import { useSettingsStore } from '@/stores/settingsstore';
+import { BeastkitDescriptor } from '../visualizations/beastkit/Descriptor';
 
 /**
  * Central registry for all visualizations available in the Visualization Wizard.
@@ -22,6 +23,7 @@ export const VisualizationRegistry: { [key: string]: VisualizationDescriptor } =
 	[VideoDescriptor.id]: VideoDescriptor,
 	[MissionDescriptor.id]: MissionDescriptor,
 	[EllipseDescriptor.id]: EllipseDescriptor,
+	[BeastkitDescriptor.id]: BeastkitDescriptor,
 };
 
 export type VisualizationType = keyof typeof VisualizationRegistry;

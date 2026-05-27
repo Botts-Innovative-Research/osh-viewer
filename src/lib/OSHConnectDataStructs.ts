@@ -403,8 +403,8 @@ export class OSHVisualization {
 	parentId?: string; // Optional parent ID for child visualizations
 	datastream: OSHDatastream[] | null; // TODO: null handles "All PMS"
 	controlstream?: OSHControlStream[]; // Optional control stream
-	visualizationComponents!: VisualizationComponents;
-	wizardConfig!: WizardConfig; // Store state of wizard for editing visualization
+	visualizationComponents!: VisualizationComponents | VisualizationComponents[];
+	wizardConfig!: WizardConfig | null; // Store state of wizard for editing visualization. Null for child visualizations
 	children: OSHVisualization[] = []; // Child visualizations for complex visualizations
 
 	constructor(
@@ -425,7 +425,9 @@ export class OSHVisualization {
 		this.parentId = parentId;
 	}
 
-	setVisualizationComponents(components: VisualizationComponents): void {
+	setVisualizationComponents(
+		components: VisualizationComponents | VisualizationComponents[]
+	): void {
 		this.visualizationComponents = components;
 	}
 
@@ -433,16 +435,23 @@ export class OSHVisualization {
 		this.wizardConfig = config;
 	}
 
-	addChildVisualization(child: OSHVisualization): void {
-		this.children.push(child);
+	addChildVisualization(children: OSHVisualization[]): void {
+		this.children.push(...children);
 	}
 
+	// Determine if visualization has child visualizations
 	isParentVisualization(): boolean {
 		return this.children.length > 0 && this.parentId === undefined;
 	}
 
+	// Determine if visualization has a parent visualization (i.e., is a child visualization)
 	isChildVisualization(): boolean {
-		return this.parentId !== null && this.parentId !== undefined;
+		return this.parentId !== undefined && this.parentId !== null;
+	}
+
+	// Determine if visualization is a single visualization (i.e., has no parent and no children)
+	isSingleVisualization(): boolean {
+		return this.children.length === 0 && this.parentId === undefined;
 	}
 }
 

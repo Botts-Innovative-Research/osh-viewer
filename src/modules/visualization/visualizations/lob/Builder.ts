@@ -1,5 +1,6 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
+	ILineOfBearingCustomizationOptions,
 	ILineOfBearingLayerProperties,
 	IMapViewProperties,
 	ISweApiDataSourceProperties,
@@ -55,16 +56,19 @@ export default function build() {
  * @param dsOptions
  * @constructor
  */
-export function CreateLobViewProps(datastreams: { [key: string]: any }, visOptions: any) {
+export function CreateLobViewProps(
+	datastreams: { [key: string]: any },
+	visOptions: ILineOfBearingCustomizationOptions
+) {
 	const datastreamStore = useDataStreamStore();
 
 	// Create datasources, layer, and view
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
 	let lobLayer: ILineOfBearingLayerProperties = {
 		color: visOptions.lineColor,
-		weight: visOptions.weight,
-		opacity: visOptions.opacity,
-		distanceKm: visOptions.distanceKm,
+		weight: visOptions.lobWeight,
+		opacity: visOptions.lobOpacity,
+		length: visOptions.lobDistanceKm * 1000, // Convert km to m
 		icon: visOptions.icon,
 		iconColor: visOptions.iconColor,
 		iconName: visOptions.iconName,

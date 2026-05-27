@@ -1,5 +1,6 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
+	IEllipseCustomizationOptions,
 	IEllipseLayerProperties,
 	IMapViewProperties,
 	ISweApiDataSourceProperties,
@@ -57,14 +58,17 @@ export default function build() {
  * @param visOptions
  * @constructor
  */
-export function CreateEllipseViewProps(datastreams: { [key: string]: any }, visOptions: any) {
+export function CreateEllipseViewProps(
+	datastreams: { [key: string]: any },
+	visOptions: IEllipseCustomizationOptions
+) {
 	const datastreamStore = useDataStreamStore();
 
 	// Create datasources, layer, and view
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
 	let ellipseLayer: IEllipseLayerProperties = {
 		name: visOptions.name,
-		color: visOptions.color,
+		color: visOptions.ellipseColor,
 		iconName: 'ellipse-outline', // For map visualizations list icon
 	};
 	let mapView: IMapViewProperties = {

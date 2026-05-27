@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
-import BackgroundColorControl from '@/modules/visualization/wizard/customizations/BackgroundColorControl.vue';
-import LineColorControl from '@/modules/visualization/wizard/customizations/LineColorControl.vue';
+import IDColorControl from '@/modules/visualization/wizard/customizations/IdColorControl.vue';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import { computed, ref, watch } from 'vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
@@ -84,16 +83,21 @@ function getYLines(yConfig: any) {
 			>
 				<v-row class="justify-space-between pa-4">
 					<v-col cols="auto">
-						<LineColorControl
+						<IDColorControl
+							roleName="lineColor"
+							label="Line Color"
 							:line-id="line.property"
 							:key="line.property"
-						></LineColorControl>
+						></IDColorControl>
 					</v-col>
 					<v-col cols="auto">
-						<BackgroundColorControl
+						<IDColorControl
+							roleName="backgroundColor"
+							label="Background Color"
 							:line-id="line.property"
+							default-color="#ff0000ff"
 							:key="`bg-${line.property}`"
-						></BackgroundColorControl>
+						></IDColorControl>
 					</v-col>
 				</v-row>
 			</v-tabs-window-item>

@@ -17,6 +17,7 @@ import { taskGeoPTZ } from '../services/geoPTZ.service';
 import { MapAdapter } from '../adapters/types';
 import { createLeafletAdapter } from '../adapters/leaflet.adapter';
 import { useSettingsStore } from '@/stores/settingsstore';
+import { isMapLayerCompatible } from '@/modules/visualization/registry/VisualizationRegistry';
 
 export function useMap() {
 	// Stores
@@ -75,7 +76,9 @@ export function useMap() {
 		// Rebuild layers
 		const newLayers = rebuildMapVisualizations(mapItemLayers.value);
 		newLayers.forEach((layer) => {
-			mapAdapter.value?.addLayer(layer);
+			// Type is 'marker' in osh-js, pass 'pointmarker' instead
+			if (isMapLayerCompatible(layer.type === 'marker' ? 'pointmarker' : layer.type))
+				mapAdapter.value?.addLayer(layer);
 		});
 		mapItemLayers.value = newLayers;
 
@@ -101,21 +104,15 @@ export function useMap() {
 	watch(
 		() => visualizationStore.mapVisualizations.map((v) => v.id),
 		(newIds, oldIds) => {
-			const removedIds = oldIds?.filter((oldId) => !newIds.some((id) => id === oldId));
-			const addedIds = newIds?.filter((newId) => !oldIds?.some((id) => id === newId));
+			const removedIds = oldIds?.filter(
+				(oldId) => !newIds.some((id) => id.startsWith(oldId) || oldId.startsWith(id))
+			);
+			const addedIds = newIds?.filter(
+				(newId) => !oldIds?.some((id) => id.startsWith(newId) || newId.startsWith(id))
+			);
 
 			// Handle removed visualizations
-			if (removedIds) {
-				for (const vizId of removedIds) {
-					const viz = visualizationStore.getVisualizationById(vizId);
-					// If parent, delete each child layer viz instead
-					if (viz?.isParentVisualization()) {
-						deleteVisualizations(viz.children.map((child) => child.id));
-					}
-					// If not parent, delete directly
-					else deleteVisualizations([vizId]);
-				}
-			}
+			if (removedIds) deleteVisualizations(removedIds);
 
 			//Handle added visualizations
 			if (addedIds) {
@@ -144,23 +141,31 @@ export function useMap() {
 		console.log(`Created ${viz.type} Visualization:`, vizLayer);
 		listDataSourceInstances.value.push(...dsInstances); // Push dsInstances to list of all active ds
 		mapItemLayers.value.set(viz.id, vizLayer); // Store vizLayer instance for this viz.id
-		mapAdapter.value?.addLayer(vizLayer); // Add vizLayer to map
+
+		// Add layer to map, if compatible with current map type
+		if (isMapLayerCompatible(viz.type)) mapAdapter.value?.addLayer(vizLayer); // Add vizLayer to map
 	}
 	function deleteVisualizations(removedVizIds: string[]) {
 		const removedDsIds: string[] = [];
 
 		for (const vizId of removedVizIds) {
-			const layer = mapItemLayers.value.get(vizId);
-			if (!layer) continue; // Skip if no layer found for this vizId
+			// Find viz layer OR all child viz layer IDs to remove
+			const layers = [...mapItemLayers.value.entries()]
+				.filter(([key]) => key.startsWith(vizId))
+				.map(([, layer]) => layer);
 
-			// Collect ds IDs
-			removedDsIds.push(...layer.dataSourceIds);
+			if (!layers) continue; // Skip if no layer found for this vizId
 
-			// Remove layer from the actual map safely
-			mapAdapter.value?.removeLayer(layer);
+			for (const layer of layers) {
+				// Collect ds IDs
+				removedDsIds.push(...layer.dataSourceIds);
 
-			// Remove layer from mapItemLayers
-			mapItemLayers.value.delete(vizId);
+				// Remove layer from the actual map safely
+				mapAdapter.value?.removeLayer(layer);
+
+				// Remove layer from mapItemLayers
+				mapItemLayers.value.delete(vizId);
+			}
 		}
 
 		// Disconnect and remove datasources

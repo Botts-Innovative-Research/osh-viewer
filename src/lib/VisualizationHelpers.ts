@@ -44,12 +44,6 @@ export interface VisualizationComponents {
 	controlstream?: ISweApiControlStreamProperties[]; // Optional controlstream for visualization
 }
 
-/**
- * Visualization Customization Options
- * Defines the set of customization options for different visualization types.
- */
-export interface VisualizationCustomizationOptions {}
-
 /* DATASOURCE PROPERTIES */
 
 export interface ISweApiDataSourceProperties extends DataSourceProperties {
@@ -108,8 +102,6 @@ export interface IPointMarkerLayerProperties extends DataLayerProperties {
 	getLocation?: (rec: any) => { x: number; y: number; z: number };
 	getOrientation?: (rec: any) => { heading: number };
 	getCoordinates?: (rec: any) => { lat: number; lon: number };
-	markerColor?: string;
-	markerIcon?: string;
 	label: string;
 	icon: string;
 	iconColor: string;
@@ -142,7 +134,7 @@ export interface ILineOfBearingLayerProperties extends DataLayerProperties {
 	color: any;
 	weight: number;
 	opacity: number;
-	distanceKm: number;
+	length: number;
 	icon: string;
 	iconColor: string;
 	iconName: string;
@@ -158,4 +150,42 @@ export interface IEllipseLayerProperties extends DataLayerProperties {
 	getSemiMinorAxis?: (rec: any) => number;
 	color: any;
 	iconName: string; // Used for display in map visualizations list
+}
+
+/**
+ * Visualization Customization Options
+ * Defines the set of customization options for different visualization types.
+ */
+export interface VisualizationCustomizationOptions {
+	name: string;
+}
+
+export interface IPointMarkerCustomizationOptions extends VisualizationCustomizationOptions {
+	icon: string;
+	iconColor: string;
+	iconName: string;
+}
+
+export interface ILineOfBearingCustomizationOptions extends VisualizationCustomizationOptions {
+	icon: string;
+	iconColor: string;
+	iconName: string;
+	lobWeight: number;
+	lobOpacity: number;
+	lobDistanceKm: number;
+	lineColor: string;
+}
+
+export interface IEllipseCustomizationOptions extends VisualizationCustomizationOptions {
+	ellipseColor: string;
+}
+
+export interface IChartCustomizationOptions extends VisualizationCustomizationOptions {
+	lineColor: string;
+	backgroundColor: string;
+}
+
+export interface IVideoCustomizationOptions extends VisualizationCustomizationOptions {
+	stats: boolean;
+	time: boolean;
 }

@@ -14,7 +14,7 @@ import {
 	IVideoLayerProperties,
 	IVideoViewProperties,
 } from '@/lib/VisualizationHelpers';
-import { useVisualizationCleanup } from '../../components/composables/useVisualizationCleanup';
+import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
 
 const props = defineProps<{
 	visualization: OSHVisualization;

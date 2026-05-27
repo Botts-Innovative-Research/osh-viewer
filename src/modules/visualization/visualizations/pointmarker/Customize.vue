@@ -21,8 +21,8 @@ useComponentValidation(valid, emit);
 		v-model:valid="nameValid"
 	/>
 	<icon-control></icon-control>
-	<ColorControl
+	<color-control
 		roleName="iconColor"
 		label="Icon Color"
-	></ColorControl>
+	></color-control>
 </template>

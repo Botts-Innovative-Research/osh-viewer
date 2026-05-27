@@ -18,7 +18,7 @@ import {
 	getLatestObservation,
 } from '@/modules/visualization/services/datasource.service';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
-import { useVisualizationCleanup } from '../../components/composables/useVisualizationCleanup';
+import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
 
 // python sim_vehicle.py -v ArduCopter -f quad --console --map --location=Taiwan
 

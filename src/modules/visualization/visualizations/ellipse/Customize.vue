@@ -19,8 +19,8 @@ useComponentValidation(valid, emit);
 		role="position"
 		v-model:valid="nameValid"
 	/>
-	<ColorControl
-		roleName="color"
-		lable="Color"
+	<color-control
+		roleName="ellipseColor"
+		label="Color"
 	/>
 </template>

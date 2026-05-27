@@ -1,6 +1,7 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
 	IMapViewProperties,
+	IPointMarkerCustomizationOptions,
 	IPointMarkerLayerProperties,
 	ISweApiDataSourceProperties,
 	VisualizationComponents,
@@ -57,7 +58,10 @@ export default function build() {
  * @param visOptions
  * @constructor
  */
-export function CreatePointMarkerViewProps(datastreams: { [key: string]: any }, visOptions: any) {
+export function CreatePointMarkerViewProps(
+	datastreams: { [key: string]: any },
+	visOptions: IPointMarkerCustomizationOptions
+) {
 	const datastreamStore = useDataStreamStore();
 
 	// Create datasources, layer, and view

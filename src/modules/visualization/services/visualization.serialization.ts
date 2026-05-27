@@ -13,8 +13,8 @@ export interface SerializedVisualization {
 	parentId: string | undefined;
 	datastreamIds: string[];
 	controlstreamIds: string[];
-	visualizationComponents: VisualizationComponents;
-	wizardConfig: WizardConfig;
+	visualizationComponents: VisualizationComponents | VisualizationComponents[];
+	wizardConfig: WizardConfig | null;
 	children: SerializedVisualization[];
 }
 
@@ -49,17 +49,17 @@ export function rehydrateVisualization(serialized: SerializedVisualization): OSH
 	return viz;
 }
 
-function getStreamIds(streams: OSHDatastream[] | OSHControlStream[] | null): string[] {
+export function getStreamIds(streams: OSHDatastream[] | OSHControlStream[] | null): string[] {
 	if (!streams) return [];
 	return streams.map((stream) => stream.id);
 }
 
-function rehydrateDatastreams(ids: string[]): OSHDatastream[] {
+export function rehydrateDatastreams(ids: string[]): OSHDatastream[] {
 	const datastreamStore = useDataStreamStore();
 	return datastreamStore.getDataStreamsById(ids);
 }
 
-function rehydrateControlStreams(ids: string[]): OSHControlStream[] {
+export function rehydrateControlStreams(ids: string[]): OSHControlStream[] {
 	const controlStreamStore = useControlStreamStore();
 	return controlStreamStore.getControlStreamsById(ids);
 }
