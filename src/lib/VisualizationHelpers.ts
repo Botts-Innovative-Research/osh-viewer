@@ -116,12 +116,12 @@ export interface IMapViewProperties extends DataViewProperties {
 	layers:
 		| IPointMarkerLayerProperties[]
 		| ILineOfBearingLayerProperties[]
-		| IEllipseLayerProperties[];
+		| IEllipseLayerProperties[]
+		| IPolylineLayerProperties[];
 	refreshRate?: number;
 }
 
 /* LOB LAYER */
-
 export interface ILineOfBearingLayerProperties extends DataLayerProperties {
 	getOriginAndBearing?: {
 		dataSourceIds: string[];
@@ -150,6 +150,15 @@ export interface IEllipseLayerProperties extends DataLayerProperties {
 	getSemiMinorAxis?: (rec: any) => number;
 	color: any;
 	iconName: string; // Used for display in map visualizations list
+}
+
+/* POLYLINE LAYER */
+export interface IPolylineLayerProperties extends DataLayerProperties {
+	getLocation?: (rec: any) => { x: number; y: number; z: number }[];
+	getPolylineId?: (rec: any) => any;
+	color: any;
+	weight: number;
+	opacity: number;
 }
 
 /**
@@ -188,4 +197,10 @@ export interface IChartCustomizationOptions extends VisualizationCustomizationOp
 export interface IVideoCustomizationOptions extends VisualizationCustomizationOptions {
 	stats: boolean;
 	time: boolean;
+}
+
+export interface IPolylineCustomizationOptions extends VisualizationCustomizationOptions {
+	color: string;
+	weight: number;
+	opacity: number;
 }

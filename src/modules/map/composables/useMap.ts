@@ -4,6 +4,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import EllipseLayer from 'osh-js/source/core/ui/layer/EllipseLayer';
+import PolylineLayer from 'osh-js/source/core/ui/layer/PolylineLayer';
 import {
 	createFOIProps,
 	createMapVisualizations,
@@ -32,7 +33,9 @@ export function useMap() {
 	});
 
 	// Map of visualization ID to its corresponding visualization layer instance
-	const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer | EllipseLayer>>(new Map());
+	const mapItemLayers = ref<
+		Map<string, PointMarkerLayer | LoBLayer | EllipseLayer | PolylineLayer>
+	>(new Map());
 	// List of all connected datasource instances created for map visualizations
 	const listDataSourceInstances = ref<SweApi[]>([]);
 	// Array of waypoint Pointmarkers for mission builder
@@ -226,7 +229,7 @@ export function useMap() {
 			if (!layer) return;
 
 			const layerProps = layer.getCurrentProps();
-			const location = layerProps.location ?? layerProps.position; // Handle location for PM/LoB and position for ellipse
+			const location = layerProps.location ?? layerProps.position ?? layerProps.locations[0]; // Handle location for PM/LoB, position for ellipse, locations[0] for polyline
 			if (!location) return;
 
 			mapAdapter.value?.flyToPoint(location);
