@@ -8,7 +8,7 @@ import { MissionDescriptor } from '@/modules/visualization/visualizations/missio
 import { VisualizationDescriptor } from './types';
 import { EllipseDescriptor } from '../visualizations/ellipse/Descriptor';
 import { useSettingsStore } from '@/stores/settingsstore';
-import { BeastkitDescriptor } from '../visualizations/beastkit/Descriptor';
+import { SigIntDescriptor } from '../visualizations/sigint/Descriptor';
 import { PolylineDescriptor } from '../visualizations/polyline/Descriptor';
 
 /**
@@ -24,7 +24,7 @@ export const VisualizationRegistry: { [key: string]: VisualizationDescriptor } =
 	[VideoDescriptor.id]: VideoDescriptor,
 	[MissionDescriptor.id]: MissionDescriptor,
 	[EllipseDescriptor.id]: EllipseDescriptor,
-	[BeastkitDescriptor.id]: BeastkitDescriptor,
+	[SigIntDescriptor.id]: SigIntDescriptor,
 	[PolylineDescriptor.id]: PolylineDescriptor,
 };
 

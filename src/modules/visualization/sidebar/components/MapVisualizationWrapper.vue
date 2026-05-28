@@ -32,7 +32,7 @@ function isSelected(viz: OSHVisualization) {
 // Parent visualization controls
 const parentIcon = computed(() => {
 	if (!viz.isParentVisualization()) return '';
-	if (viz.type === 'beastkit') return 'mdi-star-box-outline';
+	if (viz.type === 'sigint') return 'mdi-star-box-outline';
 	// Default parent icon
 	return 'mdi-folder';
 });
