@@ -115,6 +115,7 @@ export function createLoBLayer(
 	// Undefined initially
 	let getOrigin: any;
 	let getBearing: any;
+	let getLobId: any;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);
@@ -143,6 +144,15 @@ export function createLoBLayer(
 				},
 			};
 		}
+		// Check for lobId property
+		if (dsProps.properties.lobId) {
+			getLobId = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return rec[dsProps.properties.lobId.property];
+				},
+			};
+		}
 
 		dsInstance.connect();
 		dsInstances.push(dsInstance);
@@ -155,6 +165,7 @@ export function createLoBLayer(
 		dataSourceIds: dsInstances.map((ds) => ds.id),
 		...(getOrigin ? { getOrigin } : {}),
 		...(getBearing ? { getBearing } : {}),
+		...(getLobId ? { getLobId } : {}),
 	});
 
 	return { vizLayer: lobLayer, dsInstances };
