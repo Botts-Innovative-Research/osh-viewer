@@ -106,6 +106,7 @@ useComponentValidation(valid, emit);
 		<DataSourcePicker
 			v-if="checkedRoles.lobId"
 			role="lobId"
+			multiple
 			v-model:valid="roleLobIdValid"
 		/>
 	</v-container>

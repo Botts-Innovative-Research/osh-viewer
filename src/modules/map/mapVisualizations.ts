@@ -11,6 +11,7 @@ import { MapPoint } from './adapters/types';
 import { setWaypointData } from './services/missionBuilder.service';
 import { useSettingsStore } from '@/stores/settingsstore';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+import { getLayerId } from './services/layerId.service';
 
 // prettier-ignore
 // @ts-ignore
@@ -84,7 +85,7 @@ export function createPointMarkerLayer(
 			getMarkerId = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
-					return rec[dsProps.properties.markerId.property];
+					return rec[getLayerId(dsProps.properties.markerId.property)];
 				},
 			};
 		}
@@ -149,7 +150,7 @@ export function createLoBLayer(
 			getLobId = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
-					return rec[dsProps.properties.lobId.property];
+					return rec[getLayerId(dsProps.properties.lobId.property)];
 				},
 			};
 		}
@@ -222,7 +223,7 @@ export function createEllipseLayer(
 			getEllipseId = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
-					return rec[dsProps.properties.ellipseId.property];
+					return rec[getLayerId(dsProps.properties.ellipseId.property)];
 				},
 			};
 		}
@@ -276,7 +277,7 @@ export function createPolylineLayer(
 			getPolylineId = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
-					return rec[dsProps.properties.polylineId.property];
+					return rec[getLayerId(dsProps.properties.polylineId.property)];
 				},
 			};
 		}
