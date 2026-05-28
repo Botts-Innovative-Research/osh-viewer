@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
+import { VisualizationComponentEmits } from '@/modules/visualization/registry/VisualizationRegistry';
 import IconControl from '@/modules/visualization/wizard/customizations/IconControl.vue';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import ColorControl from '@/modules/visualization/wizard/customizations/ColorControl.vue';
-import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
-import SliderValueControl from '../../wizard/customizations/SliderValueControl.vue';
+import { useComponentValidation } from '@/modules/visualization/wizard/composables/useComponentValidation';
+import SliderValueControl from '@/modules/visualization/wizard/customizations/SliderValueControl.vue';
+import IconVisibilityControl from '@/modules/visualization/wizard/customizations/IconVisibilityControl.vue';
 
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>();
@@ -30,6 +31,10 @@ useComponentValidation(valid, emit);
 	></color-control>
 	<!-- LOB -->
 	<v-divider class="ma-2">Line of Bearing Customizations</v-divider>
+	<icon-visibility-control
+		roleName="showLobIcon"
+		label="Show LoB Icon"
+	></icon-visibility-control>
 	<icon-control roleName="lobIcon"></icon-control>
 	<v-row class="justify-space-between pa-4">
 		<v-col cols="auto">

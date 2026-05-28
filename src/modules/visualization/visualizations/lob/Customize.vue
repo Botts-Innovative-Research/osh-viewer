@@ -6,6 +6,7 @@ import ColorControl from '../../wizard/customizations/ColorControl.vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
 import { computed, ref } from 'vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
+import IconVisibilityControl from '@/modules/visualization/wizard/customizations/IconVisibilityControl.vue';
 
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>();
@@ -21,6 +22,10 @@ useComponentValidation(valid, emit);
 		role="origin"
 		v-model:valid="nameValid"
 	></name-control>
+	<icon-visibility-control
+		roleName="showIcon"
+		label="Show Icon"
+	></icon-visibility-control>
 	<icon-control roleName="icon"></icon-control>
 	<v-row class="justify-space-between pa-4">
 		<v-col cols="auto">

@@ -52,6 +52,7 @@ export default function build() {
 		icon: vizwizStore.visualizationCustomizationOptions.lobIcon,
 		iconColor: vizwizStore.visualizationCustomizationOptions.lobIconColor,
 		iconName: vizwizStore.visualizationCustomizationOptions.lobIconName,
+		showIcon: vizwizStore.visualizationCustomizationOptions.showLobIcon,
 	});
 	const lobVisualizationComponents = {
 		dataSource: lobResult.vizDatasources,

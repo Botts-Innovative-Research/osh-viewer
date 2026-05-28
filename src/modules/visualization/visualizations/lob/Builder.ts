@@ -62,6 +62,8 @@ export function CreateLobViewProps(
 ) {
 	const datastreamStore = useDataStreamStore();
 
+	console.log('Creating LOB View Properties with options:', visOptions);
+
 	// Create datasources, layer, and view
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
 	let lobLayer: ILineOfBearingLayerProperties = {
@@ -69,9 +71,10 @@ export function CreateLobViewProps(
 		weight: visOptions.lobWeight,
 		opacity: visOptions.lobOpacity,
 		length: visOptions.lobDistanceKm * 1000, // Convert km to m
-		icon: visOptions.icon,
+		icon: visOptions.showIcon ? visOptions.icon : null,
 		iconColor: visOptions.iconColor,
 		iconName: visOptions.iconName,
+		iconOpacity: visOptions.showIcon ? 1 : 0, // Set opacity to 0 if no icon, otherwise use default opacity
 		iconSize: [32, 32],
 		labelOffset: [-16, -32],
 		label: visOptions.name,
