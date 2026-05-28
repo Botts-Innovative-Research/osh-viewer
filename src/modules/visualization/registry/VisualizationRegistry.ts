@@ -6,6 +6,10 @@ import { TextDescriptor } from '../visualizations/text/Descriptor';
 import { VideoDescriptor } from '../visualizations/video/Descriptor';
 import { MissionDescriptor } from '@/modules/visualization/visualizations/mission/Descriptor';
 import { VisualizationDescriptor } from './types';
+import { EllipseDescriptor } from '../visualizations/ellipse/Descriptor';
+import { useSettingsStore } from '@/stores/settingsstore';
+import { BeastkitDescriptor } from '../visualizations/beastkit/Descriptor';
+import { PolylineDescriptor } from '../visualizations/polyline/Descriptor';
 
 /**
  * Central registry for all visualizations available in the Visualization Wizard.
@@ -19,7 +23,12 @@ export const VisualizationRegistry: { [key: string]: VisualizationDescriptor } =
 	[TextDescriptor.id]: TextDescriptor,
 	[VideoDescriptor.id]: VideoDescriptor,
 	[MissionDescriptor.id]: MissionDescriptor,
+	[EllipseDescriptor.id]: EllipseDescriptor,
+	[BeastkitDescriptor.id]: BeastkitDescriptor,
+	[PolylineDescriptor.id]: PolylineDescriptor,
 };
+
+export type VisualizationType = keyof typeof VisualizationRegistry;
 
 /**
  * Required structure for emits from visualization form components to the Visualization Wizard parent component
@@ -27,4 +36,16 @@ export const VisualizationRegistry: { [key: string]: VisualizationDescriptor } =
  */
 export interface VisualizationComponentEmits {
 	(event: 'update:valid', value: boolean): void;
+}
+
+/**
+ * Determine if a visualization type is compatible with the currently focused map
+ * @param type
+ * @returns
+ */
+export function isMapLayerCompatible(type: VisualizationType) {
+	const settingsStore = useSettingsStore();
+	const descriptor = VisualizationRegistry[type];
+	if (!descriptor) return false;
+	return descriptor.supportedMaps?.includes(settingsStore.focusedMap);
 }

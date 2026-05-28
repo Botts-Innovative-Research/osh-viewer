@@ -61,9 +61,15 @@ export function createCesiumAdapter(): MapAdapter {
 		mapView.removeAllFromLayer(layer);
 	}
 
+	function addFOILayer(markerProps: any) {
+		const markerEnt = mapView.addMarker(markerProps, undefined);
+		mapView.addMarkerToLayer(markerEnt, markerProps);
+	}
+
 	function toggleLayerVisibility(id: string, isVisible: boolean) {
 		const marker = mapView.layerIdToMarkers?.[id];
 		const polyline = mapView.layerIdToPolylines?.[id];
+		const ellipse = mapView.layerIdToEllipsoids?.[id];
 
 		// Handle LoB
 		if (marker && polyline) {
@@ -77,6 +83,10 @@ export function createCesiumAdapter(): MapAdapter {
 		// Handle polyline
 		else if (polyline) {
 			polyline.show = isVisible;
+		}
+		// Handle ellipse
+		else if (ellipse) {
+			ellipse.show = isVisible;
 		}
 
 		invalidate();
@@ -312,5 +322,6 @@ export function createCesiumAdapter(): MapAdapter {
 		removeMapLayer,
 		destroyAllLayers,
 		rebuildMapLayers,
+		addFOILayer,
 	};
 }

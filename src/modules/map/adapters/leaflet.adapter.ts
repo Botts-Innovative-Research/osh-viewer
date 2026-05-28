@@ -27,17 +27,22 @@ export function createLeafletAdapter(): MapAdapter {
 		mapView.removeAllFromLayer(layer);
 	}
 
+	function addFOILayer(markerProps: any) {
+		const markerEnt = mapView.addMarker(markerProps, undefined);
+		mapView.addMarkerToLayer(markerEnt, markerProps);
+	}
+
 	function toggleLayerVisibility(id: string, isVisible: boolean) {
 		const marker = mapView.layerIdToMarkers?.[id];
 		const polyline = mapView.layerIdToPolylines?.[id];
 
 		// Handle PM and LoB
 		if (marker) {
-			marker.setOpacity(isVisible ? 1 : 0);
+			marker.setOpacity(isVisible ? mapView.getLayer(id).properties.iconOpacity : 0);
 		}
 		// Handle polyline
 		if (polyline) {
-			polyline.setStyle({ opacity: isVisible ? 0.8 : 0 });
+			polyline.setStyle({ opacity: isVisible ? mapView.getLayer(id).properties.opacity : 0 });
 		}
 	}
 
@@ -91,5 +96,6 @@ export function createLeafletAdapter(): MapAdapter {
 		updateMarker,
 		drawMissionPath,
 		clearMissionPath,
+		addFOILayer,
 	};
 }

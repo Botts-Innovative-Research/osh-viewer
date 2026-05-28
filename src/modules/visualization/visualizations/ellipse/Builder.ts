@@ -1,9 +1,9 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
+	IEllipseCustomizationOptions,
+	IEllipseLayerProperties,
+	IMapViewProperties,
 	ISweApiDataSourceProperties,
-	IVideoCustomizationOptions,
-	IVideoLayerProperties,
-	IVideoViewProperties,
 	VisualizationComponents,
 } from '@/lib/VisualizationHelpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
@@ -13,92 +13,88 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 import { Mode } from 'osh-js/source/core/datasource/Mode';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import { VideoDescriptor } from './Descriptor';
+import { EllipseDescriptor } from './Descriptor';
 import {
 	AggregateDatastreams,
 	BuildRoleProperty,
-	getUsedControlstreams,
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
 
 export default function build() {
-	console.log('Building Video Visualization...');
+	console.log('Building Ellipse Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
 
+	// Aggregate datastreams from vizwizStore
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
-	const videoResult = CreateVideoViewProps(
+	const ellipseResult = CreateEllipseViewProps(
 		datastreams,
 		vizwizStore.visualizationCustomizationOptions
 	);
 	const visualizationComponents: VisualizationComponents = {
-		dataSource: videoResult.vizDatasources,
-		dataLayer: videoResult.videoLayer,
-		dataView: videoResult.videoView,
+		dataSource: ellipseResult.vizDatasources,
+		dataLayer: ellipseResult.ellipseLayer,
+		dataView: ellipseResult.mapView,
 	};
 
 	const newViz: OSHVisualization = new OSHVisualization(
 		vizwizStore.id,
 		vizwizStore.visualizationCustomizationOptions.name,
-		'video',
-		VideoDescriptor.viewLocation,
-		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
-		getUsedControlstreams(vizwizStore.controlstreams, vizwizStore.csConfig)
+		'ellipse',
+		EllipseDescriptor.viewLocation,
+		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig)
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
 	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization
 	visualizationStore.addVisualization(newViz);
-	console.log('Created Video Visualization:', newViz);
+	console.log('Created Ellipse Visualization:', newViz);
 }
 
 /**
- * Creates properties for a Video View based on the provided datastream, selected property, and visualization options.
+ * Creates properties for a Map View based on the provided datastream, selected property, and visualization options.
  * @param ds
  * @param selectedProperty
  * @param visOptions
  * @constructor
  */
-export function CreateVideoViewProps(
+export function CreateEllipseViewProps(
 	datastreams: { [key: string]: any },
-	visOptions: IVideoCustomizationOptions
+	visOptions: IEllipseCustomizationOptions
 ) {
 	const datastreamStore = useDataStreamStore();
 
 	// Create datasources, layer, and view
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
-	let videoLayer: IVideoLayerProperties = {
+	let ellipseLayer: IEllipseLayerProperties = {
 		name: visOptions.name,
-		getFrameData(rec, timestamp) {
-			return;
-		},
-		getTimestamp(rec, timestamp) {
-			return;
-		},
+		color: visOptions.ellipseColor,
+		iconName: 'ellipse-outline', // For map visualizations list icon
 	};
-	let videoView: IVideoViewProperties = {
-		container: `video-container-${randomUUID()}`,
-		css: 'video-view',
-		layers: [videoLayer],
-		width: 640,
-		height: 480,
-		useWebCodecApi: true,
-		showTime: visOptions?.time,
-		showStats: visOptions?.stats,
+	let mapView: IMapViewProperties = {
+		container: `map-container-${randomUUID()}`,
+		css: 'map-view',
+		layers: [ellipseLayer],
+		refreshRate: 1000,
 	};
 
+	// Iterate through each unique datastream ID
 	for (const [dsId, entry] of Object.entries(datastreams)) {
+		// Get selected properties for each role of the datastream
 		const properties = BuildRoleProperty(entry);
 
+		// Push new ISweApiDataSourceProperties
 		const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
 		const currentDataSource: ISweApiDataSourceProperties = {
 			endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
 			resource: `/datastreams/${dsId}/observations`,
 			tls: currentOSHDatastream[0].datastream.networkProperties.tls,
 			protocol: 'ws',
+			startTime: 'now',
+			endTime: '2125-08-01T00:00:00Z',
 			mode: Mode.REAL_TIME,
-			responseFormat: 'application/swe+binary',
-			id: randomUUID(),
+			responseFormat: 'application/swe+json',
+			id: dsId,
 			properties: properties,
 			connectorOpts: {
 				username:
@@ -110,11 +106,11 @@ export function CreateVideoViewProps(
 		vizDatasources.push(currentDataSource);
 	}
 
-	console.log('Created VideoViewProps:', { vizDatasources, videoLayer, videoView });
+	console.log('Created MapViewProps:', { vizDatasources, ellipseLayer, mapView });
 
 	return {
 		vizDatasources,
-		videoLayer,
-		videoView,
+		ellipseLayer,
+		mapView,
 	};
 }

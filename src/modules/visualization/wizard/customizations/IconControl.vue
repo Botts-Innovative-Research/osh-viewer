@@ -3,6 +3,15 @@ import { ref, onMounted } from 'vue';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import RadioCards from '@/components/ui/RadioCards.vue';
 
+const props = withDefaults(
+	defineProps<{
+		roleName: string; // Name to store in the vizwizstore, default is 'icon'
+	}>(),
+	{
+		roleName: 'icon',
+	}
+);
+
 const vwStore = useVizWizStore();
 type IconItem = {
 	id: number;
@@ -27,19 +36,19 @@ const icon = ref(iconOptions[0]);
 function selectIcon(val: any) {
 	icon.value = val;
 	vwStore.updateVisualizationCustomizationOptions({
-		icon: `${iconBase}/icons/map/${val.icon}.png`,
-		iconName: val.icon,
+		[props.roleName]: `${iconBase}/icons/map/${val.icon}.png`,
+		[`${props.roleName}Name`]: val.icon,
 	});
 }
 
 onMounted(() => {
-	if (!vwStore.visualizationCustomizationOptions.icon) {
+	if (!vwStore.visualizationCustomizationOptions[props.roleName]) {
 		vwStore.updateVisualizationCustomizationOptions({
-			icon: `/icons/map/${icon.value.icon}.png`,
-			iconName: icon.value.icon,
+			[props.roleName]: `/icons/map/${icon.value.icon}.png`,
+			[`${props.roleName}Name`]: icon.value.icon,
 		});
 	} else {
-		const savedIconName = vwStore.visualizationCustomizationOptions.iconName;
+		const savedIconName = vwStore.visualizationCustomizationOptions[`${props.roleName}Name`];
 		const matchedIcon = iconOptions.find((option) => option.icon === savedIconName);
 		if (matchedIcon) {
 			icon.value = matchedIcon;

@@ -3,6 +3,7 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 //@ts-ignore
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import {
+	IChartCustomizationOptions,
 	IChartViewProperties,
 	ICurveLayerProperties,
 	ISweApiDataSourceProperties,
@@ -51,7 +52,10 @@ export default function build() {
 	console.log('Created Chart Visualization:', newViz);
 }
 
-export function CreateChartViewProps(datastreams: { [key: string]: any }, visOptions: any) {
+export function CreateChartViewProps(
+	datastreams: { [key: string]: any },
+	visOptions: IChartCustomizationOptions
+) {
 	const vizwizStore = useVizWizStore();
 	const datastreamStore = useDataStreamStore();
 

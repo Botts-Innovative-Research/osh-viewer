@@ -1,20 +1,23 @@
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
 import { useMapStore } from '@/stores/mapstore';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
+import EllipseLayer from 'osh-js/source/core/ui/layer/EllipseLayer';
+import PolylineLayer from 'osh-js/source/core/ui/layer/PolylineLayer';
 import { MapPoint } from './adapters/types';
 import { setWaypointData } from './services/missionBuilder.service';
 import { useSettingsStore } from '@/stores/settingsstore';
+import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 
 // prettier-ignore
 // @ts-ignore
 const iconBase = import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.meta.env.VITE_VIEWER_ENDPOINT : '';
 
 export interface ICreateMapVisualizationResult {
-	vizLayer: PointMarkerLayer | LoBLayer;
+	vizLayer: PointMarkerLayer | LoBLayer | EllipseLayer | PolylineLayer;
 	dsInstances: SweApi[];
 }
 
@@ -25,6 +28,10 @@ export function createMapVisualizations(
 		return createPointMarkerLayer(viz, viz.visualizationComponents.dataSource);
 	} else if (viz.type === 'lob') {
 		return createLoBLayer(viz, viz.visualizationComponents.dataSource);
+	} else if (viz.type === 'ellipse') {
+		return createEllipseLayer(viz, viz.visualizationComponents.dataSource);
+	} else if (viz.type === 'polyline') {
+		return createPolylineLayer(viz, viz.visualizationComponents.dataSource);
 	} else if (viz.type === 'geoPtz') {
 		return createGeoPTZLayer(viz, viz.visualizationComponents.dataSource);
 	} else {
@@ -152,6 +159,132 @@ export function createLoBLayer(
 
 	return { vizLayer: lobLayer, dsInstances };
 }
+export function createEllipseLayer(
+	viz: OSHVisualization,
+	dsArray: ISweApiDataSourceProperties[]
+): ICreateMapVisualizationResult {
+	// Ds instances created
+	let dsInstances: SweApi[] = [];
+
+	// Undefined initially
+	let getPosition: any;
+	let getSemiMajorAxis: any;
+	let getSemiMinorAxis: any;
+	let getEllipseId: any;
+
+	for (const dsProps of dsArray) {
+		const dsInstance = createDatasource(dsProps);
+
+		// Check for position property
+		if (dsProps.properties.position) {
+			getPosition = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return {
+						x: rec[dsProps.properties.position.property].lon,
+						y: rec[dsProps.properties.position.property].lat,
+						z: rec[dsProps.properties.position.property].alt || 120, // Default to 120 if altitude is not provided
+					};
+				},
+			};
+		}
+		// Check for semi-major axis property
+		if (dsProps.properties.semiMajorAxis) {
+			getSemiMajorAxis = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return rec[dsProps.properties.semiMajorAxis.property];
+				},
+			};
+		}
+		// Check for semi-minor axis property
+		if (dsProps.properties.semiMinorAxis) {
+			getSemiMinorAxis = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return rec[dsProps.properties.semiMinorAxis.property];
+				},
+			};
+		}
+		// Check for ellipse ID property
+		if (dsProps.properties.ellipseId) {
+			getEllipseId = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return rec[dsProps.properties.ellipseId.property];
+				},
+			};
+		}
+
+		dsInstance.connect();
+		dsInstances.push(dsInstance);
+	}
+
+	const ellipseLayer = new EllipseLayer({
+		...viz.visualizationComponents.dataLayer,
+		name: viz.name,
+		id: viz.id,
+		defaultToTerrainElevation: true,
+		dataSourceIds: dsInstances.map((ds) => ds.id),
+		...(getPosition ? { getPosition } : {}),
+		...(getSemiMajorAxis ? { getSemiMajorAxis } : {}),
+		...(getSemiMinorAxis ? { getSemiMinorAxis } : {}),
+		...(getEllipseId ? { getEllipseId } : {}),
+	});
+	return { vizLayer: ellipseLayer, dsInstances };
+}
+export function createPolylineLayer(
+	viz: OSHVisualization,
+	dsArray: ISweApiDataSourceProperties[]
+): ICreateMapVisualizationResult {
+	// Ds instances created
+	let dsInstances: SweApi[] = [];
+
+	// Undefined initially
+	let getLocation: any;
+	let getPolylineId: any;
+
+	for (const dsProps of dsArray) {
+		const dsInstance = createDatasource(dsProps);
+
+		// Check for location property
+		if (dsProps.properties.location) {
+			getLocation = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return {
+						x: rec[dsProps.properties.location.property].lon,
+						y: rec[dsProps.properties.location.property].lat,
+						z: rec[dsProps.properties.location.property].alt || 120, // Default to 120 if altitude is not provided
+					};
+				},
+			};
+		}
+		// Check for polylineId property
+		if (dsProps.properties.polylineId) {
+			getPolylineId = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return rec[dsProps.properties.polylineId.property];
+				},
+			};
+		}
+
+		dsInstance.connect();
+		dsInstances.push(dsInstance);
+	}
+
+	const polylineLayer = new PolylineLayer({
+		...viz.visualizationComponents.dataLayer,
+		name: viz.name,
+		id: viz.id,
+		dataSourceIds: dsInstances.map((ds) => ds.id),
+		...(getLocation ? { getLocation } : {}),
+		...(getPolylineId ? { getPolylineId } : {}),
+	});
+
+	return { vizLayer: polylineLayer, dsInstances };
+}
 export function createGeoPTZLayer(
 	viz: OSHVisualization,
 	dsArray: ISweApiDataSourceProperties[]
@@ -218,7 +351,7 @@ export async function createWaypointLayer(
 			y: waypoint.lat,
 			z: waypoint.alt || 0,
 		},
-		icon: '/icons/map/geoPtz-pin.png',
+		icon: `${iconBase}/icons/map/geoPtz-pin.png`,
 		iconSize: [32, 32],
 		iconAnchor: [16, 32],
 		label: `WP ${index + 1}`,
@@ -233,9 +366,36 @@ export async function createWaypointLayer(
 
 	return { layer: waypointLayer, props };
 }
+export function createFOIProps(geometry: Geometry) {
+	const markerProps = {
+		location: {
+			x: Array.isArray(geometry.coordinates[0])
+				? geometry.coordinates[0][0]
+				: geometry.coordinates[0],
+			y: Array.isArray(geometry.coordinates[1])
+				? geometry.coordinates[1][0]
+				: geometry.coordinates[1],
+			z: !geometry.coordinates[2]
+				? 0
+				: Array.isArray(geometry.coordinates[2])
+					? geometry.coordinates[2][0]
+					: geometry.coordinates[2],
+		},
+		label: geometry.properties.properties.name,
+		labelOffset: [0, 0],
+		icon: `${iconBase}/icons/map/map-marker.png`,
+		iconSize: [32, 32],
+		iconAnchor: [16, 32],
+		id: geometry.id,
+		markerId: geometry.id + '-feature' + randomUUID(),
+	};
+	return markerProps;
+}
 
-export function rebuildMapVisualizations(oldLayers: Map<string, PointMarkerLayer | LoBLayer>) {
-	const newLayers = new Map<string, PointMarkerLayer | LoBLayer>();
+export function rebuildMapVisualizations(
+	oldLayers: Map<string, PointMarkerLayer | LoBLayer | EllipseLayer | PolylineLayer>
+): Map<string, PointMarkerLayer | LoBLayer | EllipseLayer | PolylineLayer> {
+	const newLayers = new Map<string, PointMarkerLayer | LoBLayer | EllipseLayer | PolylineLayer>();
 
 	oldLayers.forEach((layer) => {
 		// Add new PM Layers
@@ -251,6 +411,20 @@ export function rebuildMapVisualizations(oldLayers: Map<string, PointMarkerLayer
 				...layer.properties,
 			});
 			newLayers.set(layer.properties.id, lobLayer);
+		}
+		// Add new Ellipse Layers
+		else if (layer instanceof EllipseLayer) {
+			const ellipseLayer = new EllipseLayer({
+				...layer.properties,
+			});
+			newLayers.set(layer.properties.id, ellipseLayer);
+		}
+		// Add new Polyline Layers
+		else if (layer instanceof PolylineLayer) {
+			const polylineLayer = new PolylineLayer({
+				...layer.properties,
+			});
+			newLayers.set(layer.properties.id, polylineLayer);
 		}
 	});
 

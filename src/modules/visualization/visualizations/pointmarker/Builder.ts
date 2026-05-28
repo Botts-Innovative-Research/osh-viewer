@@ -1,6 +1,7 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
 	IMapViewProperties,
+	IPointMarkerCustomizationOptions,
 	IPointMarkerLayerProperties,
 	ISweApiDataSourceProperties,
 	VisualizationComponents,
@@ -27,7 +28,10 @@ export default function build() {
 	// Aggregate datastreams from vizwizStore
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
-	const pmResult = CreateMapViewProps(datastreams, vizwizStore.visualizationCustomizationOptions);
+	const pmResult = CreatePointMarkerViewProps(
+		datastreams,
+		vizwizStore.visualizationCustomizationOptions
+	);
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: pmResult.vizDatasources,
 		dataLayer: pmResult.pointMarkerLayer,
@@ -54,7 +58,10 @@ export default function build() {
  * @param visOptions
  * @constructor
  */
-export function CreateMapViewProps(datastreams: { [key: string]: any }, visOptions: any) {
+export function CreatePointMarkerViewProps(
+	datastreams: { [key: string]: any },
+	visOptions: IPointMarkerCustomizationOptions
+) {
 	const datastreamStore = useDataStreamStore();
 
 	// Create datasources, layer, and view

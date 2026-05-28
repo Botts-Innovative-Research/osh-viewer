@@ -1,5 +1,6 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
+	IEllipseLayerProperties,
 	ILineOfBearingLayerProperties,
 	IPointMarkerLayerProperties,
 	VisualizationLayerProperties,
@@ -8,7 +9,7 @@ import { useMapStore } from '@/stores/mapstore';
 import { useUIStore } from '@/stores/uistore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { storeToRefs } from 'pinia';
-import { computed, onMounted, ref, watch, watchEffect } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 export function useVisualizationSidebar() {
 	// Stores
@@ -26,6 +27,7 @@ export function useVisualizationSidebar() {
 		visualizations.value.filter(
 			(viz) =>
 				viz.viewLocation === 'panel' ||
+				// Filter out geoPtz viz type from "multi" viewLocation visualizations
 				(viz.viewLocation === 'multi' && viz.type !== 'geoPtz')
 		)
 	);
@@ -39,8 +41,6 @@ export function useVisualizationSidebar() {
 	/* Panel state */
 	const openPanels = ref<string[]>([]);
 	function handleOpenPanels() {
-		console.log('Here', openPanels.value);
-
 		if (mapVisualizations.value.length) {
 			if (!openPanels.value.includes('map')) openPanels.value.push('map');
 		} else {
@@ -68,7 +68,10 @@ export function useVisualizationSidebar() {
 	/* MAP HELPERS */
 	function isMapLayer(
 		layer: VisualizationLayerProperties | VisualizationLayerProperties[] | null
-	): layer is IPointMarkerLayerProperties | ILineOfBearingLayerProperties {
+	): layer is
+		| IPointMarkerLayerProperties
+		| ILineOfBearingLayerProperties
+		| IEllipseLayerProperties {
 		return !!layer && 'iconName' in layer;
 	}
 	function isMapLayerVisible(id: string): boolean {

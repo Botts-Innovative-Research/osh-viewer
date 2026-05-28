@@ -5,7 +5,8 @@ export type VisualizationLayerProperties =
 	| ICurveLayerProperties
 	| IVideoLayerProperties
 	| IPointMarkerLayerProperties
-	| ILineOfBearingLayerProperties;
+	| ILineOfBearingLayerProperties
+	| IEllipseLayerProperties;
 export type VisualizationViewProperties =
 	| IChartViewProperties
 	| IVideoViewProperties
@@ -39,15 +40,9 @@ export interface DataViewProperties {
 export interface VisualizationComponents {
 	dataSource: ISweApiDataSourceProperties[];
 	dataLayer: VisualizationLayerProperties | VisualizationLayerProperties[] | null;
-	dataView: VisualizationViewProperties | null;
+	dataView: VisualizationViewProperties | VisualizationViewProperties[] | null;
 	controlstream?: ISweApiControlStreamProperties[]; // Optional controlstream for visualization
 }
-
-/**
- * Visualization Customization Options
- * Defines the set of customization options for different visualization types.
- */
-export interface VisualizationCustomizationOptions {}
 
 /* DATASOURCE PROPERTIES */
 
@@ -107,8 +102,6 @@ export interface IPointMarkerLayerProperties extends DataLayerProperties {
 	getLocation?: (rec: any) => { x: number; y: number; z: number };
 	getOrientation?: (rec: any) => { heading: number };
 	getCoordinates?: (rec: any) => { lat: number; lon: number };
-	markerColor?: string;
-	markerIcon?: string;
 	label: string;
 	icon: string;
 	iconColor: string;
@@ -120,12 +113,15 @@ export interface IPointMarkerLayerProperties extends DataLayerProperties {
 /* MAP VIEW */
 
 export interface IMapViewProperties extends DataViewProperties {
-	layers: IPointMarkerLayerProperties[] | ILineOfBearingLayerProperties[];
+	layers:
+		| IPointMarkerLayerProperties[]
+		| ILineOfBearingLayerProperties[]
+		| IEllipseLayerProperties[]
+		| IPolylineLayerProperties[];
 	refreshRate?: number;
 }
 
 /* LOB LAYER */
-
 export interface ILineOfBearingLayerProperties extends DataLayerProperties {
 	getOriginAndBearing?: {
 		dataSourceIds: string[];
@@ -138,11 +134,76 @@ export interface ILineOfBearingLayerProperties extends DataLayerProperties {
 	color: any;
 	weight: number;
 	opacity: number;
-	distanceKm: number;
-	icon: string;
+	length: number;
+	icon: string | null; // Allow null for optional icon
 	iconColor: string;
 	iconName: string;
 	iconSize: number[];
+	iconOpacity: number;
 	labelOffset: number[];
 	label: string;
+}
+
+/* ELLIPSE LAYER */
+export interface IEllipseLayerProperties extends DataLayerProperties {
+	getPosition?: (rec: any) => { x: number; y: number; z: number };
+	getSemiMajorAxis?: (rec: any) => number;
+	getSemiMinorAxis?: (rec: any) => number;
+	color: any;
+	iconName: string; // Used for display in map visualizations list
+}
+
+/* POLYLINE LAYER */
+export interface IPolylineLayerProperties extends DataLayerProperties {
+	getLocation?: (rec: any) => { x: number; y: number; z: number }[];
+	getPolylineId?: (rec: any) => any;
+	color: any;
+	weight: number;
+	opacity: number;
+	iconName: string; // Used for display in map visualizations list
+}
+
+/**
+ * Visualization Customization Options
+ * Defines the set of customization options for different visualization types.
+ */
+export interface VisualizationCustomizationOptions {
+	name: string;
+}
+
+export interface IPointMarkerCustomizationOptions extends VisualizationCustomizationOptions {
+	icon: string;
+	iconColor: string;
+	iconName: string;
+}
+
+export interface ILineOfBearingCustomizationOptions extends VisualizationCustomizationOptions {
+	icon: string | null; // Allow null for optional icon
+	iconColor: string;
+	iconName: string;
+	showIcon: boolean;
+	lobWeight: number;
+	lobOpacity: number;
+	lobDistanceKm: number;
+	lineColor: string;
+}
+
+export interface IEllipseCustomizationOptions extends VisualizationCustomizationOptions {
+	ellipseColor: string;
+}
+
+export interface IChartCustomizationOptions extends VisualizationCustomizationOptions {
+	lineColor: string;
+	backgroundColor: string;
+}
+
+export interface IVideoCustomizationOptions extends VisualizationCustomizationOptions {
+	stats: boolean;
+	time: boolean;
+}
+
+export interface IPolylineCustomizationOptions extends VisualizationCustomizationOptions {
+	color: string;
+	weight: number;
+	opacity: number;
 }
