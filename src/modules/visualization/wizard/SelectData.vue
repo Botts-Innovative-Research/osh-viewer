@@ -114,6 +114,7 @@ useComponentValidation(valid, emit);
 		clearable
 		validate-on="blur"
 		:rules="[(v: any) => !!v.length || 'At least one datastream must be selected']"
+		:disabled="!selectedSystems.length"
 	></v-autocomplete>
 	<!-- Select for controlstreams -->
 	<v-autocomplete
@@ -134,5 +135,6 @@ useComponentValidation(valid, emit);
 				? [(v: any) => !!v.length || 'At least one controlstream must be selected']
 				: []
 		"
+		:disabled="!selectedSystems.length"
 	></v-autocomplete>
 </template>
