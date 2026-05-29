@@ -85,7 +85,7 @@ export function createPointMarkerLayer(
 			getMarkerId = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
-					return rec[getLayerId(dsProps.properties.markerId.property)];
+					return getLayerId(rec, dsProps.properties.markerId.property);
 				},
 			};
 		}
@@ -150,7 +150,7 @@ export function createLoBLayer(
 			getLobId = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
-					return rec[getLayerId(dsProps.properties.lobId.property)];
+					return getLayerId(rec, dsProps.properties.lobId.property);
 				},
 			};
 		}
@@ -223,7 +223,7 @@ export function createEllipseLayer(
 			getEllipseId = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
-					return rec[getLayerId(dsProps.properties.ellipseId.property)];
+					return getLayerId(rec, dsProps.properties.ellipseId.property);
 				},
 			};
 		}
@@ -277,7 +277,7 @@ export function createPolylineLayer(
 			getPolylineId = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
-					return rec[getLayerId(dsProps.properties.polylineId.property)];
+					return getLayerId(rec, dsProps.properties.polylineId.property);
 				},
 			};
 		}

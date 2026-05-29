@@ -5,15 +5,19 @@
  * @param properties
  * @returns
  */
-export function getLayerId(properties: any): string {
-	if (!Array.isArray(properties)) return properties; // If it's not an array, return as is
+export function getLayerId(rec: any, properties: any): string {
+	// If single property, just return value from record
+	if (!Array.isArray(properties)) {
+		return rec[properties];
+	}
 
-	// Concatenate property names with colon delimiter
-	let layerIdProp: string = '';
-	properties.map((prop: any) => {
-		layerIdProp += prop + ':';
+	// If multiple properties, concatenate values with colon delimiter
+	let id: string = '';
+	properties.forEach((prop: any) => {
+		const value = rec[prop];
+		if (value !== null) {
+			id += `${value}:`;
+		}
 	});
-	layerIdProp = layerIdProp.slice(0, -1); // Remove trailing colon
-
-	return layerIdProp;
+	return id.slice(0, -1); // Remove trailing colon
 }
