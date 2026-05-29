@@ -106,6 +106,7 @@ useComponentValidation(valid, emit);
 			v-if="checkedRoles.markerId"
 			role="markerId"
 			v-model:valid="roleMarkerIdValid"
+			multiple
 		/>
 	</v-container>
 </template>

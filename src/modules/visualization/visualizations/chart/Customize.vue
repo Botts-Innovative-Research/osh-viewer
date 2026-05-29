@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
-import IDColorControl from '@/modules/visualization/wizard/customizations/IdColorControl.vue';
+import IDColorControl from '@/modules/visualization/wizard/customizations/IDColorControl.vue';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import { computed, ref, watch } from 'vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
@@ -87,6 +87,7 @@ function getYLines(yConfig: any) {
 							roleName="lineColor"
 							label="Line Color"
 							:line-id="line.property"
+							default-color="#ff0000"
 							:key="line.property"
 						></IDColorControl>
 					</v-col>
@@ -95,7 +96,7 @@ function getYLines(yConfig: any) {
 							roleName="backgroundColor"
 							label="Background Color"
 							:line-id="line.property"
-							default-color="#ff0000ff"
+							default-color="#ff000000"
 							:key="`bg-${line.property}`"
 						></IDColorControl>
 					</v-col>

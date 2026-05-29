@@ -18,6 +18,16 @@ const checkedRoles = reactive({
 		get: () => vizwizStore.dsConfig.bearing?.selected ?? true,
 		set: (val: boolean) => vizwizStore.updateDsConfig('bearing', { selected: val }),
 	}),
+	lobId: computed({
+		get: () => vizwizStore.dsConfig.lobId?.selected ?? false,
+		set: (val: boolean) => {
+			if (val) {
+				vizwizStore.updateDsConfig('lobId', { selected: val });
+			} else {
+				delete vizwizStore.dsConfig.lobId;
+			}
+		},
+	}),
 });
 
 // Initialize dsConfig with origin and bearing selected by default when mounted
@@ -48,11 +58,13 @@ watch(
 const emit = defineEmits<VisualizationComponentEmits>();
 const roleOriginValid = ref<boolean>(false);
 const roleBearingValid = ref<boolean>(false);
+const roleLobIdValid = ref<boolean>(false);
 const valid = computed(() => {
 	// If role is checked, must be valid. If not checked, ignore validity
 	const originValid = checkedRoles.origin ? roleOriginValid.value : true;
 	const bearingValid = checkedRoles.bearing ? roleBearingValid.value : true;
-	return originValid && bearingValid;
+	const lobIdValid = checkedRoles.lobId ? roleLobIdValid.value : true;
+	return originValid && bearingValid && lobIdValid;
 });
 useComponentValidation(valid, emit);
 </script>
@@ -82,6 +94,20 @@ useComponentValidation(valid, emit);
 			v-if="checkedRoles.bearing"
 			role="bearing"
 			v-model:valid="roleBearingValid"
+		/>
+	</v-container>
+
+	<!-- LoB ID -->
+	<v-container>
+		<v-checkbox
+			label="LoB ID"
+			v-model="checkedRoles.lobId"
+		></v-checkbox>
+		<DataSourcePicker
+			v-if="checkedRoles.lobId"
+			role="lobId"
+			multiple
+			v-model:valid="roleLobIdValid"
 		/>
 	</v-container>
 </template>

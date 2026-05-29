@@ -144,6 +144,7 @@ useComponentValidation(valid, emit);
 		<DataSourcePicker
 			v-if="checkedRoles.ellipseId"
 			role="ellipseId"
+			multiple
 			v-model:valid="roleEllipseIdValid"
 		/>
 	</v-container>

@@ -81,6 +81,7 @@ useComponentValidation(valid, emit);
 			v-if="checkedRoles.polylineId"
 			role="polylineId"
 			v-model:valid="rolePolylineIdValid"
+			multiple
 		/>
 	</v-container>
 </template>

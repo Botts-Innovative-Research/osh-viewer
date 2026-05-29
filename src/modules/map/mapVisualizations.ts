@@ -11,6 +11,7 @@ import { MapPoint } from './adapters/types';
 import { setWaypointData } from './services/missionBuilder.service';
 import { useSettingsStore } from '@/stores/settingsstore';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+import { getLayerId } from './services/layerId.service';
 
 // prettier-ignore
 // @ts-ignore
@@ -84,7 +85,7 @@ export function createPointMarkerLayer(
 			getMarkerId = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
-					return rec[dsProps.properties.markerId.property];
+					return getLayerId(rec, dsProps.properties.markerId.property);
 				},
 			};
 		}
@@ -115,6 +116,7 @@ export function createLoBLayer(
 	// Undefined initially
 	let getOrigin: any;
 	let getBearing: any;
+	let getLobId: any;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);
@@ -143,6 +145,15 @@ export function createLoBLayer(
 				},
 			};
 		}
+		// Check for lobId property
+		if (dsProps.properties.lobId) {
+			getLobId = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return getLayerId(rec, dsProps.properties.lobId.property);
+				},
+			};
+		}
 
 		dsInstance.connect();
 		dsInstances.push(dsInstance);
@@ -155,6 +166,7 @@ export function createLoBLayer(
 		dataSourceIds: dsInstances.map((ds) => ds.id),
 		...(getOrigin ? { getOrigin } : {}),
 		...(getBearing ? { getBearing } : {}),
+		...(getLobId ? { getLobId } : {}),
 	});
 
 	return { vizLayer: lobLayer, dsInstances };
@@ -211,7 +223,7 @@ export function createEllipseLayer(
 			getEllipseId = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
-					return rec[dsProps.properties.ellipseId.property];
+					return getLayerId(rec, dsProps.properties.ellipseId.property);
 				},
 			};
 		}
@@ -265,7 +277,7 @@ export function createPolylineLayer(
 			getPolylineId = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
-					return rec[dsProps.properties.polylineId.property];
+					return getLayerId(rec, dsProps.properties.polylineId.property);
 				},
 			};
 		}
