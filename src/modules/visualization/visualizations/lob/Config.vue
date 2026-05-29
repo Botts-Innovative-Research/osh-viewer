@@ -28,23 +28,23 @@ const checkedRoles = reactive({
 			}
 		},
 	}),
-	iconColor: computed({
-		get: () => vizwizStore.dsConfig.iconColor?.selected ?? false,
+	lobIconColor: computed({
+		get: () => vizwizStore.dsConfig.lobIconColor?.selected ?? false,
 		set: (val: boolean) => {
 			if (val) {
-				vizwizStore.updateDsConfig('iconColor', { selected: val });
+				vizwizStore.updateDsConfig('lobIconColor', { selected: val });
 			} else {
-				delete vizwizStore.dsConfig.iconColor;
+				delete vizwizStore.dsConfig.lobIconColor;
 			}
 		},
 	}),
-	lineColor: computed({
-		get: () => vizwizStore.dsConfig.lineColor?.selected ?? false,
+	lobLineColor: computed({
+		get: () => vizwizStore.dsConfig.lobLineColor?.selected ?? false,
 		set: (val: boolean) => {
 			if (val) {
-				vizwizStore.updateDsConfig('lineColor', { selected: val });
+				vizwizStore.updateDsConfig('lobLineColor', { selected: val });
 			} else {
-				delete vizwizStore.dsConfig.lineColor;
+				delete vizwizStore.dsConfig.lobLineColor;
 			}
 		},
 	}),
@@ -79,15 +79,15 @@ const emit = defineEmits<VisualizationComponentEmits>();
 const roleOriginValid = ref<boolean>(false);
 const roleBearingValid = ref<boolean>(false);
 const roleLobIdValid = ref<boolean>(false);
-const roleIconColorValid = ref<boolean>(false);
-const roleLineColorValid = ref<boolean>(false);
+const roleLobIconColorValid = ref<boolean>(false);
+const roleLobLineColorValid = ref<boolean>(false);
 const valid = computed(() => {
 	// If role is checked, must be valid. If not checked, ignore validity
 	const originValid = checkedRoles.origin ? roleOriginValid.value : true;
 	const bearingValid = checkedRoles.bearing ? roleBearingValid.value : true;
 	const lobIdValid = checkedRoles.lobId ? roleLobIdValid.value : true;
-	const iconColorValid = checkedRoles.iconColor ? roleIconColorValid.value : true;
-	const lineColorValid = checkedRoles.lineColor ? roleLineColorValid.value : true;
+	const iconColorValid = checkedRoles.lobIconColor ? roleLobIconColorValid.value : true;
+	const lineColorValid = checkedRoles.lobLineColor ? roleLobLineColorValid.value : true;
 	return originValid && bearingValid && lobIdValid && iconColorValid && lineColorValid;
 });
 useComponentValidation(valid, emit);
@@ -139,13 +139,13 @@ useComponentValidation(valid, emit);
 	<v-container>
 		<v-checkbox
 			label="Icon Color"
-			v-model="checkedRoles.iconColor"
+			v-model="checkedRoles.lobIconColor"
 		></v-checkbox>
 		<DataSourcePicker
-			v-if="checkedRoles.iconColor"
-			role="iconColor"
+			v-if="checkedRoles.lobIconColor"
+			role="lobIconColor"
 			multiple
-			v-model:valid="roleIconColorValid"
+			v-model:valid="roleLobIconColorValid"
 		/>
 	</v-container>
 
@@ -153,13 +153,13 @@ useComponentValidation(valid, emit);
 	<v-container>
 		<v-checkbox
 			label="Line Color"
-			v-model="checkedRoles.lineColor"
+			v-model="checkedRoles.lobLineColor"
 		></v-checkbox>
 		<DataSourcePicker
-			v-if="checkedRoles.lineColor"
-			role="lineColor"
+			v-if="checkedRoles.lobLineColor"
+			role="lobLineColor"
 			multiple
-			v-model:valid="roleLineColorValid"
+			v-model:valid="roleLobLineColorValid"
 		/>
 	</v-container>
 </template>

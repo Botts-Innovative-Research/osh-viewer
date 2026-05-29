@@ -34,13 +34,13 @@ const checkedRoles = reactive({
 			}
 		},
 	}),
-	iconColor: computed({
-		get: () => vizwizStore.dsConfig.iconColor?.selected ?? false,
+	pmIconColor: computed({
+		get: () => vizwizStore.dsConfig.pmIconColor?.selected ?? false,
 		set: (val: boolean) => {
 			if (val) {
-				vizwizStore.updateDsConfig('iconColor', { selected: val });
+				vizwizStore.updateDsConfig('pmIconColor', { selected: val });
 			} else {
-				delete vizwizStore.dsConfig.iconColor;
+				delete vizwizStore.dsConfig.pmIconColor;
 			}
 		},
 	}),
@@ -69,14 +69,14 @@ const emit = defineEmits<VisualizationComponentEmits>();
 const roleLocationValid = ref<boolean>(false);
 const roleOrientationValid = ref<boolean>(false);
 const roleMarkerIdValid = ref<boolean>(false);
-const roleIconColorValid = ref<boolean>(false);
+const rolePmIconColorValid = ref<boolean>(false);
 const valid = computed(() => {
 	// If role is checked, must be valid. If not checked, ignore validity
 	const locationValid = checkedRoles.location ? roleLocationValid.value : true;
 	const orientationValid = checkedRoles.orientation ? roleOrientationValid.value : true;
 	const markerIdValid = checkedRoles.markerId ? roleMarkerIdValid.value : true;
-	const iconColorValid = checkedRoles.iconColor ? roleIconColorValid.value : true;
-	return locationValid && orientationValid && markerIdValid && iconColorValid;
+	const pmIconColorValid = checkedRoles.pmIconColor ? rolePmIconColorValid.value : true;
+	return locationValid && orientationValid && markerIdValid && pmIconColorValid;
 });
 useComponentValidation(valid, emit);
 </script>
@@ -126,13 +126,13 @@ useComponentValidation(valid, emit);
 	<v-container>
 		<v-checkbox
 			label="Icon Color"
-			v-model="checkedRoles.iconColor"
+			v-model="checkedRoles.pmIconColor"
 		></v-checkbox>
 		<DataSourcePicker
-			v-if="checkedRoles.iconColor"
-			role="iconColor"
+			v-if="checkedRoles.pmIconColor"
+			role="pmIconColor"
 			multiple
-			v-model:valid="roleIconColorValid"
+			v-model:valid="rolePmIconColorValid"
 		/>
 	</v-container>
 </template>

@@ -92,11 +92,11 @@ export function createPointMarkerLayer(
 			};
 		}
 		// Check for iconColor property
-		if (dsProps.properties.iconColor) {
+		if (dsProps.properties.pmIconColor) {
 			getIconColor = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
-					return colorHash(getLayerId(rec, dsProps.properties.iconColor.property)).rgba;
+					return colorHash(getLayerId(rec, dsProps.properties.pmIconColor.property)).rgba;
 				},
 			};
 		}
@@ -169,20 +169,22 @@ export function createLoBLayer(
 			};
 		}
 		// Check for iconColor property
-		if (dsProps.properties.iconColor) {
+		if (dsProps.properties.lobIconColor) {
 			getIconColor = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
-					return colorHash(getLayerId(rec, dsProps.properties.iconColor.property)).rgba;
+					return colorHash(getLayerId(rec, dsProps.properties.lobIconColor.property))
+						.rgba;
 				},
 			};
 		}
 		// Check for line color property
-		if (dsProps.properties.lineColor) {
+		if (dsProps.properties.lobLineColor) {
 			getColor = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
-					return colorHash(getLayerId(rec, dsProps.properties.lineColor.property)).rgba;
+					return colorHash(getLayerId(rec, dsProps.properties.lobLineColor.property))
+						.rgba;
 				},
 			};
 		}
@@ -263,11 +265,12 @@ export function createEllipseLayer(
 			};
 		}
 		// Check for color property
-		if (dsProps.properties.color) {
+		if (dsProps.properties.ellipseColor) {
 			getColor = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
-					return colorHash(getLayerId(rec, dsProps.properties.color.property)).rgba;
+					return colorHash(getLayerId(rec, dsProps.properties.ellipseColor.property))
+						.rgba;
 				},
 			};
 		}
@@ -328,11 +331,12 @@ export function createPolylineLayer(
 			};
 		}
 		// Check for color property
-		if (dsProps.properties.color) {
+		if (dsProps.properties.polylineColor) {
 			getColor = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
-					return colorHash(getLayerId(rec, dsProps.properties.color.property)).rgba;
+					return colorHash(getLayerId(rec, dsProps.properties.polylineColor.property))
+						.rgba;
 				},
 			};
 		}

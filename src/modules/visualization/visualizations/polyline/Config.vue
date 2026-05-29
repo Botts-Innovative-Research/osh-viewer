@@ -24,13 +24,13 @@ const checkedRoles = reactive({
 			}
 		},
 	}),
-	color: computed({
-		get: () => vizwizStore.dsConfig.color?.selected ?? false,
+	polylineColor: computed({
+		get: () => vizwizStore.dsConfig.polylineColor?.selected ?? false,
 		set: (val: boolean) => {
 			if (val) {
-				vizwizStore.updateDsConfig('color', { selected: val });
+				vizwizStore.updateDsConfig('polylineColor', { selected: val });
 			} else {
-				delete vizwizStore.dsConfig.color;
+				delete vizwizStore.dsConfig.polylineColor;
 			}
 		},
 	}),
@@ -58,13 +58,13 @@ watch(
 const emit = defineEmits<VisualizationComponentEmits>();
 const roleLocationValid = ref<boolean>(false);
 const rolePolylineIdValid = ref<boolean>(false);
-const roleColorValid = ref<boolean>(false);
+const rolePolylineColorValid = ref<boolean>(false);
 const valid = computed(() => {
 	// If role is checked, must be valid. If not checked, ignore validity
 	const locationValid = checkedRoles.location ? roleLocationValid.value : true;
 	const polylineIdValid = checkedRoles.polylineId ? rolePolylineIdValid.value : true;
-	const colorValid = checkedRoles.color ? roleColorValid.value : true;
-	return locationValid && polylineIdValid && colorValid;
+	const polylineColorValid = checkedRoles.polylineColor ? rolePolylineColorValid.value : true;
+	return locationValid && polylineIdValid && polylineColorValid;
 });
 useComponentValidation(valid, emit);
 </script>
@@ -101,13 +101,13 @@ useComponentValidation(valid, emit);
 	<v-container>
 		<v-checkbox
 			label="Color"
-			v-model="checkedRoles.color"
+			v-model="checkedRoles.polylineColor"
 		></v-checkbox>
 		<DataSourcePicker
-			v-if="checkedRoles.color"
-			role="color"
+			v-if="checkedRoles.polylineColor"
+			role="polylineColor"
 			multiple
-			v-model:valid="roleColorValid"
+			v-model:valid="rolePolylineColorValid"
 		/>
 	</v-container>
 </template>

@@ -44,13 +44,13 @@ const checkedRoles = reactive({
 			}
 		},
 	}),
-	color: computed({
-		get: () => vizwizStore.dsConfig.color?.selected ?? false,
+	ellipseColor: computed({
+		get: () => vizwizStore.dsConfig.ellipseColor?.selected ?? false,
 		set: (val: boolean) => {
 			if (val) {
-				vizwizStore.updateDsConfig('color', { selected: val });
+				vizwizStore.updateDsConfig('ellipseColor', { selected: val });
 			} else {
-				delete vizwizStore.dsConfig.color;
+				delete vizwizStore.dsConfig.ellipseColor;
 			}
 		},
 	}),
@@ -92,16 +92,20 @@ const rolePositionValid = ref<boolean>(false);
 const roleSemiMajorAxisValid = ref<boolean>(false);
 const roleSemiMinorAxisValid = ref<boolean>(false);
 const roleEllipseIdValid = ref<boolean>(false);
-const roleColorValid = ref<boolean>(false);
+const roleEllipseColorValid = ref<boolean>(false);
 const valid = computed(() => {
 	// If role is checked, must be valid. If not checked, ignore validity
 	const positionValid = checkedRoles.position ? rolePositionValid.value : true;
 	const semiMajorAxisValid = checkedRoles.semiMajorAxis ? roleSemiMajorAxisValid.value : true;
 	const semiMinorAxisValid = checkedRoles.semiMinorAxis ? roleSemiMinorAxisValid.value : true;
 	const ellipseIdValid = checkedRoles.ellipseId ? roleEllipseIdValid.value : true;
-	const colorValid = checkedRoles.color ? roleColorValid.value : true;
+	const ellipseColorValid = checkedRoles.ellipseColor ? roleEllipseColorValid.value : true;
 	return (
-		positionValid && semiMajorAxisValid && semiMinorAxisValid && ellipseIdValid && colorValid
+		positionValid &&
+		semiMajorAxisValid &&
+		semiMinorAxisValid &&
+		ellipseIdValid &&
+		ellipseColorValid
 	);
 });
 useComponentValidation(valid, emit);
@@ -167,13 +171,13 @@ useComponentValidation(valid, emit);
 	<v-container>
 		<v-checkbox
 			label="Color"
-			v-model="checkedRoles.color"
+			v-model="checkedRoles.ellipseColor"
 		></v-checkbox>
 		<DataSourcePicker
-			v-if="checkedRoles.color"
-			role="color"
+			v-if="checkedRoles.ellipseColor"
+			role="ellipseColor"
 			multiple
-			v-model:valid="roleColorValid"
+			v-model:valid="roleEllipseColorValid"
 		/>
 	</v-container>
 </template>
