@@ -28,6 +28,26 @@ const checkedRoles = reactive({
 			}
 		},
 	}),
+	iconColor: computed({
+		get: () => vizwizStore.dsConfig.iconColor?.selected ?? false,
+		set: (val: boolean) => {
+			if (val) {
+				vizwizStore.updateDsConfig('iconColor', { selected: val });
+			} else {
+				delete vizwizStore.dsConfig.iconColor;
+			}
+		},
+	}),
+	lineColor: computed({
+		get: () => vizwizStore.dsConfig.lineColor?.selected ?? false,
+		set: (val: boolean) => {
+			if (val) {
+				vizwizStore.updateDsConfig('lineColor', { selected: val });
+			} else {
+				delete vizwizStore.dsConfig.lineColor;
+			}
+		},
+	}),
 });
 
 // Initialize dsConfig with origin and bearing selected by default when mounted
@@ -59,12 +79,16 @@ const emit = defineEmits<VisualizationComponentEmits>();
 const roleOriginValid = ref<boolean>(false);
 const roleBearingValid = ref<boolean>(false);
 const roleLobIdValid = ref<boolean>(false);
+const roleIconColorValid = ref<boolean>(false);
+const roleLineColorValid = ref<boolean>(false);
 const valid = computed(() => {
 	// If role is checked, must be valid. If not checked, ignore validity
 	const originValid = checkedRoles.origin ? roleOriginValid.value : true;
 	const bearingValid = checkedRoles.bearing ? roleBearingValid.value : true;
 	const lobIdValid = checkedRoles.lobId ? roleLobIdValid.value : true;
-	return originValid && bearingValid && lobIdValid;
+	const iconColorValid = checkedRoles.iconColor ? roleIconColorValid.value : true;
+	const lineColorValid = checkedRoles.lineColor ? roleLineColorValid.value : true;
+	return originValid && bearingValid && lobIdValid && iconColorValid && lineColorValid;
 });
 useComponentValidation(valid, emit);
 </script>
@@ -108,6 +132,34 @@ useComponentValidation(valid, emit);
 			role="lobId"
 			multiple
 			v-model:valid="roleLobIdValid"
+		/>
+	</v-container>
+
+	<!-- Icon Color -->
+	<v-container>
+		<v-checkbox
+			label="Icon Color"
+			v-model="checkedRoles.iconColor"
+		></v-checkbox>
+		<DataSourcePicker
+			v-if="checkedRoles.iconColor"
+			role="iconColor"
+			multiple
+			v-model:valid="roleIconColorValid"
+		/>
+	</v-container>
+
+	<!-- Line Color -->
+	<v-container>
+		<v-checkbox
+			label="Line Color"
+			v-model="checkedRoles.lineColor"
+		></v-checkbox>
+		<DataSourcePicker
+			v-if="checkedRoles.lineColor"
+			role="lineColor"
+			multiple
+			v-model:valid="roleLineColorValid"
 		/>
 	</v-container>
 </template>

@@ -12,6 +12,7 @@ import { setWaypointData } from './services/missionBuilder.service';
 import { useSettingsStore } from '@/stores/settingsstore';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { getLayerId } from './services/layerId.service';
+import { colorHash } from './services/colorId.service';
 
 // prettier-ignore
 // @ts-ignore
@@ -52,6 +53,7 @@ export function createPointMarkerLayer(
 	let getLocation: any;
 	let getOrientation: any;
 	let getMarkerId: any;
+	let getIconColor: any;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);
@@ -89,6 +91,15 @@ export function createPointMarkerLayer(
 				},
 			};
 		}
+		// Check for iconColor property
+		if (dsProps.properties.iconColor) {
+			getIconColor = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return colorHash(getLayerId(rec, dsProps.properties.iconColor.property)).rgba;
+				},
+			};
+		}
 
 		dsInstance.connect();
 		dsInstances.push(dsInstance);
@@ -103,6 +114,7 @@ export function createPointMarkerLayer(
 		...(getLocation ? { getLocation } : {}),
 		...(getOrientation ? { getOrientation } : {}),
 		...(getMarkerId ? { getMarkerId } : {}),
+		...(getIconColor ? { getIconColor } : {}),
 	});
 	return { vizLayer: pmLayer, dsInstances };
 }
@@ -117,6 +129,8 @@ export function createLoBLayer(
 	let getOrigin: any;
 	let getBearing: any;
 	let getLobId: any;
+	let getIconColor: any;
+	let getColor: any;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);
@@ -154,6 +168,24 @@ export function createLoBLayer(
 				},
 			};
 		}
+		// Check for iconColor property
+		if (dsProps.properties.iconColor) {
+			getIconColor = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return colorHash(getLayerId(rec, dsProps.properties.iconColor.property)).rgba;
+				},
+			};
+		}
+		// Check for line color property
+		if (dsProps.properties.lineColor) {
+			getColor = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return colorHash(getLayerId(rec, dsProps.properties.lineColor.property)).rgba;
+				},
+			};
+		}
 
 		dsInstance.connect();
 		dsInstances.push(dsInstance);
@@ -167,6 +199,8 @@ export function createLoBLayer(
 		...(getOrigin ? { getOrigin } : {}),
 		...(getBearing ? { getBearing } : {}),
 		...(getLobId ? { getLobId } : {}),
+		...(getIconColor ? { getIconColor } : {}),
+		...(getColor ? { getColor } : {}),
 	});
 
 	return { vizLayer: lobLayer, dsInstances };
@@ -183,6 +217,7 @@ export function createEllipseLayer(
 	let getSemiMajorAxis: any;
 	let getSemiMinorAxis: any;
 	let getEllipseId: any;
+	let getColor: any;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);
@@ -227,6 +262,15 @@ export function createEllipseLayer(
 				},
 			};
 		}
+		// Check for color property
+		if (dsProps.properties.color) {
+			getColor = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return colorHash(getLayerId(rec, dsProps.properties.color.property)).rgba;
+				},
+			};
+		}
 
 		dsInstance.connect();
 		dsInstances.push(dsInstance);
@@ -242,6 +286,7 @@ export function createEllipseLayer(
 		...(getSemiMajorAxis ? { getSemiMajorAxis } : {}),
 		...(getSemiMinorAxis ? { getSemiMinorAxis } : {}),
 		...(getEllipseId ? { getEllipseId } : {}),
+		...(getColor ? { getColor } : {}),
 	});
 	return { vizLayer: ellipseLayer, dsInstances };
 }
@@ -255,6 +300,7 @@ export function createPolylineLayer(
 	// Undefined initially
 	let getLocation: any;
 	let getPolylineId: any;
+	let getColor: any;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);
@@ -281,6 +327,15 @@ export function createPolylineLayer(
 				},
 			};
 		}
+		// Check for color property
+		if (dsProps.properties.color) {
+			getColor = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return colorHash(getLayerId(rec, dsProps.properties.color.property)).rgba;
+				},
+			};
+		}
 
 		dsInstance.connect();
 		dsInstances.push(dsInstance);
@@ -293,6 +348,7 @@ export function createPolylineLayer(
 		dataSourceIds: dsInstances.map((ds) => ds.id),
 		...(getLocation ? { getLocation } : {}),
 		...(getPolylineId ? { getPolylineId } : {}),
+		...(getColor ? { getColor } : {}),
 	});
 
 	return { vizLayer: polylineLayer, dsInstances };

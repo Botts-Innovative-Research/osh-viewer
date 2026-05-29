@@ -34,6 +34,16 @@ const checkedRoles = reactive({
 			}
 		},
 	}),
+	iconColor: computed({
+		get: () => vizwizStore.dsConfig.iconColor?.selected ?? false,
+		set: (val: boolean) => {
+			if (val) {
+				vizwizStore.updateDsConfig('iconColor', { selected: val });
+			} else {
+				delete vizwizStore.dsConfig.iconColor;
+			}
+		},
+	}),
 });
 
 // Initialize dsConfig with location selected by default when mounted
@@ -59,12 +69,14 @@ const emit = defineEmits<VisualizationComponentEmits>();
 const roleLocationValid = ref<boolean>(false);
 const roleOrientationValid = ref<boolean>(false);
 const roleMarkerIdValid = ref<boolean>(false);
+const roleIconColorValid = ref<boolean>(false);
 const valid = computed(() => {
 	// If role is checked, must be valid. If not checked, ignore validity
 	const locationValid = checkedRoles.location ? roleLocationValid.value : true;
 	const orientationValid = checkedRoles.orientation ? roleOrientationValid.value : true;
 	const markerIdValid = checkedRoles.markerId ? roleMarkerIdValid.value : true;
-	return locationValid && orientationValid && markerIdValid;
+	const iconColorValid = checkedRoles.iconColor ? roleIconColorValid.value : true;
+	return locationValid && orientationValid && markerIdValid && iconColorValid;
 });
 useComponentValidation(valid, emit);
 </script>
@@ -107,6 +119,20 @@ useComponentValidation(valid, emit);
 			role="markerId"
 			v-model:valid="roleMarkerIdValid"
 			multiple
+		/>
+	</v-container>
+
+	<!-- Color -->
+	<v-container>
+		<v-checkbox
+			label="Icon Color"
+			v-model="checkedRoles.iconColor"
+		></v-checkbox>
+		<DataSourcePicker
+			v-if="checkedRoles.iconColor"
+			role="iconColor"
+			multiple
+			v-model:valid="roleIconColorValid"
 		/>
 	</v-container>
 </template>
