@@ -79,7 +79,7 @@ export function CreateChartViewProps(
 			name: yLabels[i] + (yUoms[i] ? ` (${yUoms[i]})` : '') || `Y-Axis Data ${i + 1}`,
 			maxValues: 1000,
 			lineColor: visOptions.lineColor[yProperties[i]] || '#FF0000',
-			backgroundColor: visOptions.backgroundColor[yProperties[i]] || '#FFFFFF',
+			backgroundColor: visOptions.backgroundColor[yProperties[i]] || '#FF000000',
 			fill: true,
 			xLabel:
 				vizwizStore.dsConfig['x'].label != null

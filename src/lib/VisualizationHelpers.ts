@@ -135,10 +135,11 @@ export interface ILineOfBearingLayerProperties extends DataLayerProperties {
 	weight: number;
 	opacity: number;
 	length: number;
-	icon: string;
+	icon: string | null; // Allow null for optional icon
 	iconColor: string;
 	iconName: string;
 	iconSize: number[];
+	iconOpacity: number;
 	labelOffset: number[];
 	label: string;
 }
@@ -177,9 +178,10 @@ export interface IPointMarkerCustomizationOptions extends VisualizationCustomiza
 }
 
 export interface ILineOfBearingCustomizationOptions extends VisualizationCustomizationOptions {
-	icon: string;
+	icon: string | null; // Allow null for optional icon
 	iconColor: string;
 	iconName: string;
+	showIcon: boolean;
 	lobWeight: number;
 	lobOpacity: number;
 	lobDistanceKm: number;

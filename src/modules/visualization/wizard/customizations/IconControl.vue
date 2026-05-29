@@ -28,6 +28,9 @@ const iconOptions: IconItem[] = [
 	{ id: 6, label: 'Cellphone', icon: 'cellphone-marker' },
 	{ id: 7, label: 'Eye', icon: 'eye' },
 	{ id: 8, label: 'Drone', icon: 'quadcopter' },
+	{ id: 9, label: 'Plane', icon: 'airplane' },
+	{ id: 10, label: 'Boat', icon: 'sail-boat' },
+	{ id: 11, label: 'Car', icon: 'car' },
 ];
 const iconBase =
 	import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.meta.env.VITE_VIEWER_ENDPOINT : '';

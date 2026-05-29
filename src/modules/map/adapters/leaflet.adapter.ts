@@ -38,11 +38,11 @@ export function createLeafletAdapter(): MapAdapter {
 
 		// Handle PM and LoB
 		if (marker) {
-			marker.setOpacity(isVisible ? 1 : 0);
+			marker.setOpacity(isVisible ? mapView.getLayer(id).properties.iconOpacity : 0);
 		}
 		// Handle polyline
 		if (polyline) {
-			polyline.setStyle({ opacity: isVisible ? 0.8 : 0 });
+			polyline.setStyle({ opacity: isVisible ? mapView.getLayer(id).properties.opacity : 0 });
 		}
 	}
 

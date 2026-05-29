@@ -44,6 +44,16 @@ const checkedRoles = reactive({
 			}
 		},
 	}),
+	ellipseColor: computed({
+		get: () => vizwizStore.dsConfig.ellipseColor?.selected ?? false,
+		set: (val: boolean) => {
+			if (val) {
+				vizwizStore.updateDsConfig('ellipseColor', { selected: val });
+			} else {
+				delete vizwizStore.dsConfig.ellipseColor;
+			}
+		},
+	}),
 });
 
 // Initialize dsConfig with position, semiMajorAxis, and semiMinorAxis selected by default when mounted
@@ -82,13 +92,21 @@ const rolePositionValid = ref<boolean>(false);
 const roleSemiMajorAxisValid = ref<boolean>(false);
 const roleSemiMinorAxisValid = ref<boolean>(false);
 const roleEllipseIdValid = ref<boolean>(false);
+const roleEllipseColorValid = ref<boolean>(false);
 const valid = computed(() => {
 	// If role is checked, must be valid. If not checked, ignore validity
 	const positionValid = checkedRoles.position ? rolePositionValid.value : true;
 	const semiMajorAxisValid = checkedRoles.semiMajorAxis ? roleSemiMajorAxisValid.value : true;
 	const semiMinorAxisValid = checkedRoles.semiMinorAxis ? roleSemiMinorAxisValid.value : true;
 	const ellipseIdValid = checkedRoles.ellipseId ? roleEllipseIdValid.value : true;
-	return positionValid && semiMajorAxisValid && semiMinorAxisValid && ellipseIdValid;
+	const ellipseColorValid = checkedRoles.ellipseColor ? roleEllipseColorValid.value : true;
+	return (
+		positionValid &&
+		semiMajorAxisValid &&
+		semiMinorAxisValid &&
+		ellipseIdValid &&
+		ellipseColorValid
+	);
 });
 useComponentValidation(valid, emit);
 </script>
@@ -144,7 +162,22 @@ useComponentValidation(valid, emit);
 		<DataSourcePicker
 			v-if="checkedRoles.ellipseId"
 			role="ellipseId"
+			multiple
 			v-model:valid="roleEllipseIdValid"
+		/>
+	</v-container>
+
+	<!-- Color -->
+	<v-container>
+		<v-checkbox
+			label="Color"
+			v-model="checkedRoles.ellipseColor"
+		></v-checkbox>
+		<DataSourcePicker
+			v-if="checkedRoles.ellipseColor"
+			role="ellipseColor"
+			multiple
+			v-model:valid="roleEllipseColorValid"
 		/>
 	</v-container>
 </template>

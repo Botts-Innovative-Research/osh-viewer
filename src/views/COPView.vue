@@ -5,6 +5,7 @@ import SystemBrowser from '@/modules/system-browser/SystemBrowser.vue';
 import VisualizationSidebar from '@/modules/visualization/sidebar/components/VisualizationSidebar.vue';
 import { Splitpanes, Pane } from 'splitpanes';
 import 'splitpanes/dist/splitpanes.css';
+import MapToolStatus from '@/modules/map/components/MapToolStatus.vue';
 
 const paneSize1 = ref(localStorage.paneSize1 ?? 30); // System browser AND Visualization pane
 const paneSize2 = ref(localStorage.paneSize2 ?? 70); // Map view pane
@@ -56,6 +57,7 @@ const tab = ref('one');
 			key="map-view"
 			:size="paneSize2"
 		>
+			<MapToolStatus />
 			<MapView class="fill-height" />
 		</pane>
 	</splitpanes>

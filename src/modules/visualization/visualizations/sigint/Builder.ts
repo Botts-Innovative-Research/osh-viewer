@@ -11,10 +11,10 @@ import { CreateEllipseViewProps } from '../ellipse/Builder';
 import { PointMarkerDescriptor } from '../pointmarker/Descriptor';
 import { LobDescriptor } from '../lob/Descriptor';
 import { EllipseDescriptor } from '../ellipse/Descriptor';
-import { BeastkitDescriptor } from './Descriptor';
+import { SigIntDescriptor } from './Descriptor';
 
 export default function build() {
-	console.log('Building Beastkit Visualization...');
+	console.log('Building Sigint Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
 
@@ -52,6 +52,7 @@ export default function build() {
 		icon: vizwizStore.visualizationCustomizationOptions.lobIcon,
 		iconColor: vizwizStore.visualizationCustomizationOptions.lobIconColor,
 		iconName: vizwizStore.visualizationCustomizationOptions.lobIconName,
+		showIcon: vizwizStore.visualizationCustomizationOptions.showLobIcon,
 	});
 	const lobVisualizationComponents = {
 		dataSource: lobResult.vizDatasources,
@@ -86,12 +87,12 @@ export default function build() {
 	);
 	ellipseViz.setVisualizationComponents(ellipseVisualizationComponents);
 
-	// FULL BEASTKIT VIZ
+	// FULL SIGINT VIZ
 	const newViz: OSHVisualization = new OSHVisualization(
 		vizwizStore.id,
 		vizwizStore.visualizationCustomizationOptions.name,
-		'beastkit',
-		BeastkitDescriptor.viewLocation,
+		'sigint',
+		SigIntDescriptor.viewLocation,
 		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig)
 	);
 	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization
@@ -102,5 +103,5 @@ export default function build() {
 	]);
 	newViz.addChildVisualization([pmViz, lobViz, ellipseViz]);
 	visualizationStore.addVisualization(newViz);
-	console.log('Created Beastkit Visualization:', newViz);
+	console.log('Created SigInt Visualization:', newViz);
 }

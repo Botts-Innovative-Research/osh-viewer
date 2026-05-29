@@ -18,6 +18,36 @@ const checkedRoles = reactive({
 		get: () => vizwizStore.dsConfig.bearing?.selected ?? true,
 		set: (val: boolean) => vizwizStore.updateDsConfig('bearing', { selected: val }),
 	}),
+	lobId: computed({
+		get: () => vizwizStore.dsConfig.lobId?.selected ?? false,
+		set: (val: boolean) => {
+			if (val) {
+				vizwizStore.updateDsConfig('lobId', { selected: val });
+			} else {
+				delete vizwizStore.dsConfig.lobId;
+			}
+		},
+	}),
+	lobIconColor: computed({
+		get: () => vizwizStore.dsConfig.lobIconColor?.selected ?? false,
+		set: (val: boolean) => {
+			if (val) {
+				vizwizStore.updateDsConfig('lobIconColor', { selected: val });
+			} else {
+				delete vizwizStore.dsConfig.lobIconColor;
+			}
+		},
+	}),
+	lobLineColor: computed({
+		get: () => vizwizStore.dsConfig.lobLineColor?.selected ?? false,
+		set: (val: boolean) => {
+			if (val) {
+				vizwizStore.updateDsConfig('lobLineColor', { selected: val });
+			} else {
+				delete vizwizStore.dsConfig.lobLineColor;
+			}
+		},
+	}),
 });
 
 // Initialize dsConfig with origin and bearing selected by default when mounted
@@ -48,11 +78,17 @@ watch(
 const emit = defineEmits<VisualizationComponentEmits>();
 const roleOriginValid = ref<boolean>(false);
 const roleBearingValid = ref<boolean>(false);
+const roleLobIdValid = ref<boolean>(false);
+const roleLobIconColorValid = ref<boolean>(false);
+const roleLobLineColorValid = ref<boolean>(false);
 const valid = computed(() => {
 	// If role is checked, must be valid. If not checked, ignore validity
 	const originValid = checkedRoles.origin ? roleOriginValid.value : true;
 	const bearingValid = checkedRoles.bearing ? roleBearingValid.value : true;
-	return originValid && bearingValid;
+	const lobIdValid = checkedRoles.lobId ? roleLobIdValid.value : true;
+	const iconColorValid = checkedRoles.lobIconColor ? roleLobIconColorValid.value : true;
+	const lineColorValid = checkedRoles.lobLineColor ? roleLobLineColorValid.value : true;
+	return originValid && bearingValid && lobIdValid && iconColorValid && lineColorValid;
 });
 useComponentValidation(valid, emit);
 </script>
@@ -82,6 +118,48 @@ useComponentValidation(valid, emit);
 			v-if="checkedRoles.bearing"
 			role="bearing"
 			v-model:valid="roleBearingValid"
+		/>
+	</v-container>
+
+	<!-- LoB ID -->
+	<v-container>
+		<v-checkbox
+			label="LoB ID"
+			v-model="checkedRoles.lobId"
+		></v-checkbox>
+		<DataSourcePicker
+			v-if="checkedRoles.lobId"
+			role="lobId"
+			multiple
+			v-model:valid="roleLobIdValid"
+		/>
+	</v-container>
+
+	<!-- Icon Color -->
+	<v-container>
+		<v-checkbox
+			label="Icon Color"
+			v-model="checkedRoles.lobIconColor"
+		></v-checkbox>
+		<DataSourcePicker
+			v-if="checkedRoles.lobIconColor"
+			role="lobIconColor"
+			multiple
+			v-model:valid="roleLobIconColorValid"
+		/>
+	</v-container>
+
+	<!-- Line Color -->
+	<v-container>
+		<v-checkbox
+			label="Line Color"
+			v-model="checkedRoles.lobLineColor"
+		></v-checkbox>
+		<DataSourcePicker
+			v-if="checkedRoles.lobLineColor"
+			role="lobLineColor"
+			multiple
+			v-model:valid="roleLobLineColorValid"
 		/>
 	</v-container>
 </template>
