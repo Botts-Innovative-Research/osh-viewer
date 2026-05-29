@@ -56,7 +56,12 @@ onMounted(async () => await init());
 							v-model:valid="componentValid[index]"
 							v-bind="
 								index === 1
-									? { requireCs: VisualizationRegistry[selectedType]?.requireCs }
+									? {
+											supportsCs:
+												VisualizationRegistry[selectedType]?.supportsCs,
+											requireCs:
+												VisualizationRegistry[selectedType]?.requireCs,
+										}
 									: {}
 							"
 						/>

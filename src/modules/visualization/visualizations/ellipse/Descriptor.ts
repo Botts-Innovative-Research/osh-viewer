@@ -27,5 +27,7 @@ export const EllipseDescriptor: VisualizationDescriptor = {
 	description: 'Visualize an ellipse on the map.',
 	formComponents: [ConfigComponent, CustomizeComponent],
 	builder: () => import('@/modules/visualization/visualizations/ellipse/Builder'),
+	supportsCs: false,
+	requireCs: false,
 	supportedMaps: ['cesium'],
 };

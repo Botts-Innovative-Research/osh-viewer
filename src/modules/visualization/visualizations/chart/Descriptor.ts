@@ -27,4 +27,6 @@ export const ChartDescriptor: VisualizationDescriptor = {
 	description: 'Visualize data as a chart.',
 	formComponents: [ConfigComponent, CustomizeComponent],
 	builder: () => import('@/modules/visualization/visualizations/chart/Builder'),
+	supportsCs: false,
+	requireCs: false,
 };
