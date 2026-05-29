@@ -27,5 +27,7 @@ export const PolylineDescriptor: VisualizationDescriptor = {
 	description: 'Visualize a polyline on the map.',
 	formComponents: [ConfigComponent, CustomizeComponent],
 	builder: () => import('@/modules/visualization/visualizations/polyline/Builder'),
+	supportsCs: false,
+	requireCs: false,
 	supportedMaps: ['cesium', 'leaflet'],
 };

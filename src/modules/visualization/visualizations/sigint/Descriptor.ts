@@ -48,5 +48,7 @@ export const SigIntDescriptor: VisualizationDescriptor = {
 		CustomizeComponent,
 	],
 	builder: () => import('@/modules/visualization/visualizations/sigint/Builder'),
+	supportsCs: false,
+	requireCs: false,
 	supportedMaps: ['cesium'],
 };

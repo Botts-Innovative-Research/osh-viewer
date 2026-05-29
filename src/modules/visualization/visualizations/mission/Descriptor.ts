@@ -27,6 +27,7 @@ export const MissionDescriptor: VisualizationDescriptor = {
 	description: 'Create and manage missions for a drone.',
 	formComponents: [ConfigComponent, CustomizeComponent],
 	builder: () => import('@/modules/visualization/visualizations/mission/Builder'),
+	supportsCs: true, // This visualization requires a controlstream to function
 	requireCs: true, // This visualization requires a controlstream to function
 	supportedMaps: ['cesium', 'leaflet'],
 };

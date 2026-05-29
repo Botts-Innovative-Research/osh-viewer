@@ -8,9 +8,16 @@ import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { VisualizationComponentEmits } from '../registry/VisualizationRegistry';
 import { useComponentValidation } from './composables/useComponentValidation';
 
-const props = defineProps<{
-	requireCs?: boolean;
-}>();
+const props = withDefaults(
+	defineProps<{
+		supportsCs: boolean;
+		requireCs: boolean;
+	}>(),
+	{
+		supportsCs: true,
+		requireCs: false,
+	}
+);
 
 // Stores
 const vizwizStore = useVizWizStore();
@@ -110,6 +117,7 @@ useComponentValidation(valid, emit);
 	></v-autocomplete>
 	<!-- Select for controlstreams -->
 	<v-autocomplete
+		v-if="props.supportsCs"
 		v-model="selectedControlstreams"
 		:items="listControlstreams"
 		hint="Select one or more controlstreams"
