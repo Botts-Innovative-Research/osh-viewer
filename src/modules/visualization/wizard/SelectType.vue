@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import {
 	VisualizationComponentEmits,
 	VisualizationRegistry,
 } from '../registry/VisualizationRegistry';
 import RadioCards from '@/components/ui/RadioCards.vue';
 import { useComponentValidation } from './composables/useComponentValidation';
+import { VisualizationDescriptor } from '../registry/types';
+import { OSHLayerLabels } from '@/lib/OSHConnectDataStructs';
 
 // Update visualizationType in vizwiz store
 const vizwizStore = useVizWizStore();
@@ -26,6 +28,29 @@ function selectType(item: any) {
 	selectedType.value = item.id;
 }
 
+// Filtering
+const selectedFilters = ref<VisualizationDescriptor[]>([]);
+const filteredTypes = computed(() => {
+	// No filters selected -> show all
+	if (!selectedFilters.value.length) {
+		return visualizationTypes.value;
+	}
+
+	return visualizationTypes.value.filter((item: VisualizationDescriptor) =>
+		item.layers.some((layer) => selectedFilters.value.includes(layer))
+	);
+});
+
+watch(selectedFilters, () => {
+	// If the currently selected type is not in the filtered list, clear the selection
+	if (
+		selectedType.value &&
+		!filteredTypes.value.some((item: VisualizationDescriptor) => item.id === selectedType.value)
+	) {
+		selectedType.value = '';
+	}
+});
+
 // Validation: a type must be selected
 const emit = defineEmits<VisualizationComponentEmits>();
 const valid = computed(() => {
@@ -34,12 +59,52 @@ const valid = computed(() => {
 useComponentValidation(valid, emit);
 </script>
 <template>
-	<radio-cards
-		:items="visualizationTypes"
-		:selected-item="
-			Object.values(VisualizationRegistry).find((item) => item.id === selectedType)
-		"
-		tooltip
-		@update:value="selectType"
-	></radio-cards>
+	<v-sheet class="pa-2">
+		<v-row>
+			<h4>Filter by layer</h4>
+		</v-row>
+		<v-row>
+			<v-chip-group
+				filter
+				multiple
+				v-model="selectedFilters"
+			>
+				<v-chip
+					v-if="selectedFilters.length"
+					closable
+					elevated
+					@click:close="selectedFilters = []"
+				>
+					Clear All
+				</v-chip>
+				<v-chip
+					v-for="type in OSHLayerLabels"
+					:key="type.layer"
+					:value="type.layer"
+				>
+					{{ type.label }}
+				</v-chip>
+			</v-chip-group>
+		</v-row>
+		<v-row>
+			<v-expand-transition>
+				<div
+					class="w-100"
+					:key="selectedFilters.join(',')"
+				>
+					<radio-cards
+						:items="filteredTypes"
+						:selected-item="
+							Object.values(VisualizationRegistry).find(
+								(item: VisualizationDescriptor) => item.id === selectedType
+							)
+						"
+						tooltip
+						@update:value="selectType"
+					></radio-cards>
+				</div>
+			</v-expand-transition>
+		</v-row>
+	</v-sheet>
 </template>
+<style scoped></style>

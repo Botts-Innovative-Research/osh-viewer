@@ -24,6 +24,7 @@ export const PolylineDescriptor: VisualizationDescriptor = {
 	id: 'polyline',
 	icon: 'mdi-vector-polyline',
 	viewLocation: 'map',
+	layers: ['PolylineLayer'],
 	description: 'Visualize a polyline on the map.',
 	formComponents: [ConfigComponent, CustomizeComponent],
 	builder: () => import('@/modules/visualization/visualizations/polyline/Builder'),

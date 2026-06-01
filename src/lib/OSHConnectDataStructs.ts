@@ -476,3 +476,34 @@ export class Geometry {
 		this.bbox = bbox;
 	}
 }
+
+export type OSHLayer =
+	// | 'AudioDataLayer'
+	// | 'BinaryDataLayer'
+	// | 'CoPlanarPolygonLayer'
+	| 'CurveLayer'
+	// | 'DataLayer'
+	| 'EllipseLayer'
+	// | 'FrustumLayer'
+	// | 'ImageDrapingLayer'
+	| 'LoB'
+	| 'PointMarkerLayer'
+	// | 'PolygonLayer'
+	| 'PolylineLayer'
+	| 'VideoDataLayer';
+
+export const OSHLayerLabels: Array<{ layer: OSHLayer; label: string }> = [
+	// { layer: 'AudioDataLayer', label: 'Audio' },
+	// { layer: 'BinaryDataLayer', label: 'Binary' },
+	// { layer: 'CoPlanarPolygonLayer', label: 'Coplanar Polygon' },
+	{ layer: 'CurveLayer', label: 'Curve' },
+	// { layer: 'DataLayer', label: 'Data' },
+	// { layer: 'EllipseLayer', label: 'Ellipse' },
+	// { layer: 'FrustumLayer', label: 'Frustum' },
+	// { layer: 'ImageDrapingLayer', label: 'Image Draping' },
+	{ layer: 'LoB', label: 'Line of Bearing' },
+	{ layer: 'PointMarkerLayer', label: 'Point Marker' },
+	// { layer: 'PolygonLayer', label: 'Polygon' },
+	{ layer: 'PolylineLayer', label: 'Polyline' },
+	{ layer: 'VideoDataLayer', label: 'Video' },
+];

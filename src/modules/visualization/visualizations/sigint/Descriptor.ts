@@ -40,6 +40,7 @@ export const SigIntDescriptor: VisualizationDescriptor = {
 	id: 'sigint',
 	icon: 'mdi-star-box-outline',
 	viewLocation: 'map',
+	layers: ['PointMarkerLayer', 'LoB', 'EllipseLayer'],
 	description: 'Visualize SigInt sensor on the map.',
 	formComponents: [
 		ConfigComponentPointMarker,

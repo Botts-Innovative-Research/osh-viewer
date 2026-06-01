@@ -24,6 +24,7 @@ export const EllipseDescriptor: VisualizationDescriptor = {
 	id: 'ellipse',
 	icon: 'mdi-ellipse-outline',
 	viewLocation: 'map',
+	layers: ['EllipseLayer'],
 	description: 'Visualize an ellipse on the map.',
 	formComponents: [ConfigComponent, CustomizeComponent],
 	builder: () => import('@/modules/visualization/visualizations/ellipse/Builder'),

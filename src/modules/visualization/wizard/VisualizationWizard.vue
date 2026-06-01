@@ -50,7 +50,7 @@ onMounted(async () => await init());
 						:key="step.id"
 						:value="index + 1"
 					>
-						<h2 class="pb-2">{{ step.label }}</h2>
+						<h1 class="pb-2">{{ step.label }}</h1>
 						<component
 							:is="step.component"
 							v-model:valid="componentValid[index]"

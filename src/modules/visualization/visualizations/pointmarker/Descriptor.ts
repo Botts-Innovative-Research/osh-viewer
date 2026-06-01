@@ -24,6 +24,7 @@ export const PointMarkerDescriptor: VisualizationDescriptor = {
 	id: 'pointmarker',
 	icon: 'mdi-map-marker',
 	viewLocation: 'map',
+	layers: ['PointMarkerLayer'],
 	description: 'Visualize a point marker on the map.',
 	formComponents: [ConfigComponent, CustomizeComponent],
 	builder: () => import('@/modules/visualization/visualizations/pointmarker/Builder'),

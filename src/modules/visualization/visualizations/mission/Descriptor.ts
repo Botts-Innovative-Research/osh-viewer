@@ -24,6 +24,7 @@ export const MissionDescriptor: VisualizationDescriptor = {
 	id: 'mission',
 	icon: 'mdi-airplane-plus',
 	viewLocation: 'multi',
+	layers: ['PointMarkerLayer', 'PolylineLayer'],
 	description: 'Create and manage missions for a drone.',
 	formComponents: [ConfigComponent, CustomizeComponent],
 	builder: () => import('@/modules/visualization/visualizations/mission/Builder'),
