@@ -24,6 +24,7 @@ export const GeoPtzDescriptor: VisualizationDescriptor = {
 	id: 'geoPtz',
 	icon: 'mdi-map',
 	viewLocation: 'multi',
+	layers: ['PointMarkerLayer'],
 	description: 'Task supported sensors with LLA coordinates.',
 	formComponents: [ConfigComponent, CustomizeComponent],
 	builder: () => import('@/modules/visualization/visualizations/geoptz/Builder'),

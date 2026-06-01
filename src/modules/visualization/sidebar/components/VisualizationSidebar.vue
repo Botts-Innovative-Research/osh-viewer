@@ -4,7 +4,6 @@ import PanelVisualizationWrapper from './PanelVisualizationWrapper.vue';
 import GeoPTZ from '@/modules/visualization/visualizations/geoptz/GeoPTZ.vue';
 import VisualizationWizard from '@/modules/visualization/wizard/VisualizationWizard.vue';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
-import EditVisualization from '@/modules/visualization/wizard/EditVisualization.vue';
 import { useVisualizationSidebar } from '../composables/useVisualizationSidebar';
 import { useUIStore } from '@/stores/uistore';
 import MapVisualizationWrapper from './MapVisualizationWrapper.vue';
@@ -163,7 +162,10 @@ const uiStore = useUIStore();
 		v-model="uiStore.vizWizOpen"
 		max-width="900"
 	>
-		<VisualizationWizard />
+		<VisualizationWizard
+			mode="create"
+			:viz="undefined"
+		/>
 	</v-dialog>
 	<!-- EDIT VISUALIZATION -->
 	<v-dialog
@@ -171,7 +173,10 @@ const uiStore = useUIStore();
 		max-width="900"
 		v-if="editViz?.id"
 	>
-		<EditVisualization :viz="editViz" />
+		<VisualizationWizard
+			mode="edit"
+			:viz="editViz"
+		/>
 	</v-dialog>
 </template>
 

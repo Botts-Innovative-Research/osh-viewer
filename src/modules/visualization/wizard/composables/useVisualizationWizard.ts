@@ -13,7 +13,7 @@ import { showToast } from '@/composables/useToast';
 
 export function useVisualizationWizard(options: {
 	mode: 'create' | 'edit';
-	viz?: OSHVisualization;
+	viz: OSHVisualization | undefined;
 }) {
 	// Stores
 	const uiStore = useUIStore();

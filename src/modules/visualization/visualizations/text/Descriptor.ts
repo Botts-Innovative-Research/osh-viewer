@@ -24,6 +24,7 @@ export const TextDescriptor: VisualizationDescriptor = {
 	id: 'text',
 	icon: 'mdi-format-text',
 	viewLocation: 'panel',
+	layers: [],
 	description: 'Display selected properties from a datastream.',
 	formComponents: [ConfigComponent, CustomizeComponent],
 	builder: () => import('@/modules/visualization/visualizations/text/Builder'),
