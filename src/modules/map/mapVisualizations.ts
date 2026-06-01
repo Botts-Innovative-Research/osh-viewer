@@ -54,6 +54,7 @@ export function createPointMarkerLayer(
 	let getOrientation: any;
 	let getMarkerId: any;
 	let getIconColor: any;
+	let getLabel: any;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);
@@ -100,6 +101,20 @@ export function createPointMarkerLayer(
 				},
 			};
 		}
+		// Check for label property
+		if (dsProps.properties.pmLabel) {
+			getLabel = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					const labelValue = rec[dsProps.properties.pmLabel.property];
+					if (labelValue === undefined || labelValue === null) return '';
+					if (typeof labelValue === 'object') {
+						return JSON.stringify(labelValue);
+					}
+					return labelValue?.toString() || '';
+				},
+			};
+		}
 
 		dsInstance.connect();
 		dsInstances.push(dsInstance);
@@ -115,6 +130,7 @@ export function createPointMarkerLayer(
 		...(getOrientation ? { getOrientation } : {}),
 		...(getMarkerId ? { getMarkerId } : {}),
 		...(getIconColor ? { getIconColor } : {}),
+		...(getLabel ? { getLabel } : {}),
 	});
 	return { vizLayer: pmLayer, dsInstances };
 }
