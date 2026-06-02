@@ -69,7 +69,6 @@ const uiStore = useUIStore();
 							v-for="viz in mapVisualizations"
 							:viz="viz"
 							:toggleSelectedMapItem="toggleSelectedMapItem"
-							:isMapLayer="isMapLayer"
 							:isMapLayerVisible="isMapLayerVisible"
 							:toggleMapLayerVisibility="toggleMapLayerVisibility"
 							:openEditViz="openEditViz"

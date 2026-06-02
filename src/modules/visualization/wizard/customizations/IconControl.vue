@@ -66,5 +66,6 @@ onMounted(() => {
 		:selected-item="icon"
 		:tooltip="false"
 		@update:value="selectIcon"
+		size="small"
 	></radio-cards>
 </template>

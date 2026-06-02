@@ -101,6 +101,7 @@ useComponentValidation(valid, emit);
 						"
 						tooltip
 						@update:value="selectType"
+						size="large"
 					></radio-cards>
 				</div>
 			</v-expand-transition>

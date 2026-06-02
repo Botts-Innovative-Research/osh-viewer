@@ -7,6 +7,12 @@ import ColorControl from '@/modules/visualization/wizard/customizations/ColorCon
 import { useComponentValidation } from '@/modules/visualization/wizard/composables/useComponentValidation';
 import SliderValueControl from '@/modules/visualization/wizard/customizations/SliderValueControl.vue';
 import IconVisibilityControl from '@/modules/visualization/wizard/customizations/IconVisibilityControl.vue';
+import { useVizWizStore } from '@/stores/vizwizstore';
+
+const vizwizStore = useVizWizStore();
+const showLobIcon = computed(
+	() => vizwizStore.visualizationCustomizationOptions.showLobIcon ?? true
+);
 
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>();
@@ -35,7 +41,11 @@ useComponentValidation(valid, emit);
 		roleName="showLobIcon"
 		label="Show LoB Icon"
 	></icon-visibility-control>
-	<icon-control roleName="lobIcon"></icon-control>
+	<v-expand-transition>
+		<div v-if="showLobIcon">
+			<icon-control roleName="lobIcon"></icon-control>
+		</div>
+	</v-expand-transition>
 	<v-row class="justify-space-between pa-4">
 		<v-col cols="auto">
 			<color-control

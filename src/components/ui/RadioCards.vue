@@ -5,6 +5,7 @@ const props = defineProps<{
 	items: any[];
 	selectedItem: any;
 	tooltip: boolean;
+	size: 'small' | 'large';
 }>();
 
 const emit = defineEmits<{
@@ -36,7 +37,7 @@ function selectItem(item: any) {
 					<v-col
 						v-for="item in items"
 						:key="item.id"
-						cols="3"
+						:cols="props.size === 'small' ? 2 : 3"
 					>
 						<v-item
 							:value="item"
@@ -45,7 +46,7 @@ function selectItem(item: any) {
 							<v-card
 								:color="isSelected ? 'primary' : ''"
 								class="d-flex align-center justify-center"
-								height="150"
+								:height="props.size === 'small' ? 100 : 150"
 								@click="toggle"
 							>
 								<v-scroll-y-transition>

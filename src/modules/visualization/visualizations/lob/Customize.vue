@@ -7,6 +7,10 @@ import { VisualizationComponentEmits } from '../../registry/VisualizationRegistr
 import { computed, ref } from 'vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 import IconVisibilityControl from '@/modules/visualization/wizard/customizations/IconVisibilityControl.vue';
+import { useVizWizStore } from '@/stores/vizwizstore';
+
+const vizwizStore = useVizWizStore();
+const showIcon = computed(() => vizwizStore.visualizationCustomizationOptions.showIcon ?? true);
 
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>();
@@ -26,7 +30,14 @@ useComponentValidation(valid, emit);
 		roleName="showIcon"
 		label="Show Icon"
 	></icon-visibility-control>
-	<icon-control roleName="icon"></icon-control>
+	<v-expand-transition>
+		<div v-if="showIcon">
+			<icon-control
+				v-if="showIcon"
+				roleName="icon"
+			></icon-control>
+		</div>
+	</v-expand-transition>
 	<v-row class="justify-space-between pa-4">
 		<v-col cols="auto">
 			<color-control

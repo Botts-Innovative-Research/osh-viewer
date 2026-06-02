@@ -20,7 +20,7 @@ useComponentValidation(valid, emit);
 		role="location"
 		v-model:valid="nameValid"
 	/>
-	<icon-control></icon-control>
+	<icon-control roleName="icon"></icon-control>
 	<color-control
 		roleName="iconColor"
 		label="Icon Color"

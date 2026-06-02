@@ -35,7 +35,7 @@ export default function build() {
 
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: missionResult.vizDatasources,
-		dataLayer: null,
+		dataLayer: [],
 		dataView: null,
 		controlstream: missionResult.vizControlstreams,
 	};
