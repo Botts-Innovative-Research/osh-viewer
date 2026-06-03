@@ -72,7 +72,10 @@ useComponentValidation(valid, emit);
 							label="Icon Color"
 						></color-control>
 					</div>
-					<div v-else>
+					<div
+						v-else
+						class="pb-4"
+					>
 						<i class="text--disabled">
 							Icon is hidden. Enable "Show Icon" to customize.
 						</i>
