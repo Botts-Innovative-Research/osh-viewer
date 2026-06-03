@@ -39,7 +39,7 @@ export interface DataViewProperties {
 
 export interface VisualizationComponents {
 	dataSource: ISweApiDataSourceProperties[];
-	dataLayer: VisualizationLayerProperties | VisualizationLayerProperties[] | null;
+	dataLayer: VisualizationLayerProperties | VisualizationLayerProperties[];
 	dataView: VisualizationViewProperties | VisualizationViewProperties[] | null;
 	controlstream?: ISweApiControlStreamProperties[]; // Optional controlstream for visualization
 }
@@ -96,6 +96,17 @@ export interface IVideoViewProperties extends DataViewProperties {
 	height: number;
 }
 
+/* MAP VIEW */
+
+export interface IMapViewProperties extends DataViewProperties {
+	layers:
+		| IPointMarkerLayerProperties[]
+		| ILineOfBearingLayerProperties[]
+		| IEllipseLayerProperties[]
+		| IPolylineLayerProperties[];
+	refreshRate?: number;
+}
+
 /* POINT MARKER */
 
 export interface IPointMarkerLayerProperties extends DataLayerProperties {
@@ -108,17 +119,6 @@ export interface IPointMarkerLayerProperties extends DataLayerProperties {
 	iconName: string;
 	iconSize: number[];
 	labelOffset: number[];
-}
-
-/* MAP VIEW */
-
-export interface IMapViewProperties extends DataViewProperties {
-	layers:
-		| IPointMarkerLayerProperties[]
-		| ILineOfBearingLayerProperties[]
-		| IEllipseLayerProperties[]
-		| IPolylineLayerProperties[];
-	refreshRate?: number;
 }
 
 /* LOB LAYER */

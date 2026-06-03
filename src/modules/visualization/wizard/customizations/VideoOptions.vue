@@ -38,9 +38,11 @@ onMounted(() => {
 	<v-checkbox
 		v-model="stats"
 		label="Show Video Stats"
+		density="compact"
 	/>
 	<v-checkbox
 		v-model="time"
 		label="Show Video Time"
+		density="compact"
 	/>
 </template>

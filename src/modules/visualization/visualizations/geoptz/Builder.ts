@@ -34,7 +34,7 @@ export default function build() {
 
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: geoPtzResult.vizDatasources,
-		dataLayer: null,
+		dataLayer: [],
 		dataView: null,
 		controlstream: geoPtzResult.vizControlstreams,
 	};

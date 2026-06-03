@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { isMapLayerCompatible } from '../../registry/VisualizationRegistry';
+import { isMapLayerCompatible, VisualizationRegistry } from '../../registry/VisualizationRegistry';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
 import { computed, ref, watch } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
@@ -8,7 +8,6 @@ import { useMapStore } from '@/stores/mapstore';
 const {
 	viz,
 	toggleSelectedMapItem,
-	isMapLayer,
 	isMapLayerVisible,
 	toggleMapLayerVisibility,
 	openEditViz,
@@ -16,7 +15,6 @@ const {
 } = defineProps<{
 	viz: OSHVisualization;
 	toggleSelectedMapItem: (item: any) => void;
-	isMapLayer: (layer: any) => boolean;
 	isMapLayerVisible: (id: string) => boolean;
 	toggleMapLayerVisibility: (item: any) => void;
 	openEditViz: (viz: string | OSHVisualization) => void;
@@ -29,13 +27,55 @@ function isSelected(viz: OSHVisualization) {
 	return mapStore.selectedMapItem?.id === viz.id;
 }
 
-// Parent visualization controls
-const parentIcon = computed(() => {
-	if (!viz.isParentVisualization()) return '';
-	if (viz.type === 'sigint') return 'mdi-star-box-outline';
-	// Default parent icon
-	return 'mdi-folder';
-});
+function getIcon(viz: OSHVisualization) {
+	// Parent visualizations - use viz type icon
+	if (viz.isParentVisualization()) {
+		return VisualizationRegistry[viz.type].icon ?? 'mdi-folder';
+	}
+	// Use iconName from dataLayer
+	const iconName = viz.visualizationComponents.dataLayer.iconName;
+	if (iconName) {
+		if (viz.visualizationComponents.dataLayer.iconOpacity === 0) {
+			console.log(
+				`Visualization ${viz.name} has iconName defined but iconOpacity is set to 0. Defaulting to type icon.`
+			);
+			return VisualizationRegistry[viz.type].icon ?? 'mdi-shape';
+		}
+		return `mdi-${iconName}`;
+	}
+	// Otherwise, use viz type icon
+	else {
+		return VisualizationRegistry[viz.type].icon ?? 'mdi-shape';
+	}
+}
+function getIconColor(viz: OSHVisualization) {
+	if (viz.isParentVisualization()) {
+		return 'default';
+	}
+	// Handle visualizations that have both iconColor and color
+	if (
+		viz.visualizationComponents.dataLayer?.iconColor &&
+		viz.visualizationComponents.dataLayer?.color
+	) {
+		if (viz.visualizationComponents.dataLayer?.iconOpacity === 0) {
+			console.log(
+				`Visualization ${viz.name} has both iconColor and color defined, but iconOpacity is set to 0. Using color for icon display.`
+			);
+			return viz.visualizationComponents.dataLayer.color;
+		}
+		console.log(
+			`Visualization ${viz.name} has both iconColor and color defined. Using iconColor for icon display.`
+		);
+	}
+	// Handle remaining cases, with preference to iconColor
+	return (
+		viz.visualizationComponents.dataLayer?.iconColor ||
+		viz.visualizationComponents.dataLayer?.color ||
+		'default'
+	);
+}
+
+// Parent viz logic
 const childrenOpen = ref(false);
 function handleParentClick(viz: OSHVisualization) {
 	toggleSelectedMapItem(viz);
@@ -65,6 +105,7 @@ function handleParentVisibilityToggle(viz: OSHVisualization) {
 		}
 	});
 }
+
 watch(
 	() => mapStore.selectedMapItem,
 	(newVal) => {
@@ -112,12 +153,8 @@ watch(
 							v-bind="props"
 						>
 							<v-icon
-								:icon="`mdi-${isMapLayer(viz.visualizationComponents.dataLayer) ? viz.visualizationComponents.dataLayer.iconName : ''}`"
-								:color="
-									viz.visualizationComponents.dataLayer?.iconColor ||
-									viz.visualizationComponents.dataLayer?.color ||
-									'default'
-								"
+								:icon="getIcon(viz)"
+								:color="getIconColor(viz)"
 								size="16"
 							></v-icon>
 						</v-badge>
@@ -202,12 +239,8 @@ watch(
 								v-bind="props"
 							>
 								<v-icon
-									:icon="parentIcon"
-									:iconColor="
-										viz.visualizationComponents.dataLayer?.iconColor ||
-										viz.visualizationComponents.dataLayer?.color ||
-										'default'
-									"
+									:icon="getIcon(viz)"
+									:color="getIconColor(viz)"
 									size="16"
 								></v-icon>
 							</v-badge>
@@ -292,13 +325,8 @@ watch(
 										v-bind="props"
 									>
 										<v-icon
-											:icon="`mdi-${isMapLayer(childViz.visualizationComponents.dataLayer) ? childViz.visualizationComponents.dataLayer.iconName : ''}`"
-											:color="
-												childViz.visualizationComponents.dataLayer
-													?.iconColor ||
-												childViz.visualizationComponents.dataLayer?.color ||
-												'default'
-											"
+											:icon="getIcon(childViz)"
+											:color="getIconColor(childViz)"
 											size="16"
 										></v-icon>
 									</v-badge>

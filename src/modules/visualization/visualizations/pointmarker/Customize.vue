@@ -6,6 +6,8 @@ import NameControl from '@/modules/visualization/wizard/customizations/NameContr
 import ColorControl from '../../wizard/customizations/ColorControl.vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 
+const openPanels = ref<string[]>(['general', 'pointmarker']);
+
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>();
 const nameValid = ref<boolean>(false);
@@ -16,13 +18,48 @@ useComponentValidation(valid, emit);
 </script>
 
 <template>
-	<NameControl
-		role="location"
-		v-model:valid="nameValid"
-	/>
-	<icon-control></icon-control>
-	<color-control
-		roleName="iconColor"
-		label="Icon Color"
-	></color-control>
+	<v-expansion-panels
+		rounded="lg"
+		static
+		multiple
+		v-model="openPanels"
+	>
+		<v-expansion-panel
+			eager
+			value="general"
+		>
+			<v-expansion-panel-title>
+				General
+				<template
+					v-slot:actions
+					v-if="!nameValid"
+				>
+					<v-icon
+						color="error"
+						icon="mdi-alert-circle"
+					>
+					</v-icon>
+				</template>
+			</v-expansion-panel-title>
+			<v-expansion-panel-text>
+				<NameControl
+					role="location"
+					v-model:valid="nameValid"
+				/>
+			</v-expansion-panel-text>
+		</v-expansion-panel>
+		<v-expansion-panel
+			eager
+			title="Point Marker"
+			value="pointmarker"
+		>
+			<v-expansion-panel-text
+				><icon-control roleName="icon"></icon-control>
+				<color-control
+					roleName="iconColor"
+					label="Icon Color"
+				></color-control
+			></v-expansion-panel-text>
+		</v-expansion-panel>
+	</v-expansion-panels>
 </template>

@@ -7,6 +7,14 @@ import ColorControl from '@/modules/visualization/wizard/customizations/ColorCon
 import { useComponentValidation } from '@/modules/visualization/wizard/composables/useComponentValidation';
 import SliderValueControl from '@/modules/visualization/wizard/customizations/SliderValueControl.vue';
 import IconVisibilityControl from '@/modules/visualization/wizard/customizations/IconVisibilityControl.vue';
+import { useVizWizStore } from '@/stores/vizwizstore';
+
+const vizwizStore = useVizWizStore();
+const showLobIcon = computed(
+	() => vizwizStore.visualizationCustomizationOptions.showLobIcon ?? true
+);
+
+const openPanels = ref<string[]>(['general', 'pointmarker', 'lob', 'ellipse']);
 
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>();
@@ -18,74 +26,125 @@ useComponentValidation(valid, emit);
 </script>
 
 <template>
-	<NameControl
-		role="location"
-		v-model:valid="nameValid"
-	/>
-	<!-- POINTMARKER -->
-	<v-divider class="ma-2">Point Marker Customizations</v-divider>
-	<icon-control roleName="pmIcon"></icon-control>
-	<color-control
-		roleName="pmIconColor"
-		label="Point Marker Icon Color"
-	></color-control>
-	<!-- LOB -->
-	<v-divider class="ma-2">Line of Bearing Customizations</v-divider>
-	<icon-visibility-control
-		roleName="showLobIcon"
-		label="Show LoB Icon"
-	></icon-visibility-control>
-	<icon-control roleName="lobIcon"></icon-control>
-	<v-row class="justify-space-between pa-4">
-		<v-col cols="auto">
-			<color-control
-				roleName="lobIconColor"
-				label="LoB Icon Color"
-			></color-control>
-		</v-col>
-		<v-col cols="auto">
-			<color-control
-				roleName="lobLineColor"
-				label="LoB Line Color"
-			></color-control>
-		</v-col>
-	</v-row>
-	<slider-value-control
-		roleName="lobWeight"
-		label="LoB Line Weight"
-		:min="1"
-		:max="20"
-		:step="0.5"
-		:defaultValue="10"
-		units=""
-	></slider-value-control>
-	<slider-value-control
-		roleName="lobOpacity"
-		label="LoB Line Opacity"
-		:min="0"
-		:max="1"
-		:step="0.01"
-		:defaultValue="0.5"
-		units="%"
-		:formatter="
-			(value: number) => {
-				return `${(value * 100).toFixed(0)}%`;
-			}
-		"
-	></slider-value-control>
-	<SliderValueControl
-		roleName="lobDistanceKm"
-		label="LoB Line Distance"
-		:min="0"
-		:max="100"
-		:step="0.1"
-		:defaultValue="1"
-		units="km"
-	></SliderValueControl>
-	<!-- ELLIPSE -->
-	<v-divider class="ma-2">Ellipse Customizations</v-divider>
-	<ColorControl
-		roleName="ellipseColor"
-		label="Color"
-	/>
+	<v-expansion-panels
+		rounded="lg"
+		static
+		multiple
+		v-model="openPanels"
+	>
+		<v-expansion-panel
+			eager
+			value="general"
+		>
+			<v-expansion-panel-title>
+				General
+				<template
+					v-slot:actions
+					v-if="!nameValid"
+				>
+					<v-icon
+						color="error"
+						icon="mdi-alert-circle"
+					>
+					</v-icon>
+				</template>
+			</v-expansion-panel-title>
+			<v-expansion-panel-text>
+				<NameControl
+					role="location"
+					v-model:valid="nameValid"
+				/>
+			</v-expansion-panel-text>
+		</v-expansion-panel>
+		<v-expansion-panel
+			eager
+			title="Point Marker Customizations"
+			value="pointmarker"
+		>
+			<v-expansion-panel-text>
+				<icon-control roleName="pmIcon"></icon-control>
+				<color-control
+					roleName="pmIconColor"
+					label="Point Marker Icon Color"
+				></color-control>
+			</v-expansion-panel-text>
+		</v-expansion-panel>
+		<v-expansion-panel
+			eager
+			title="Line of Bearing Customizations"
+			value="lob"
+		>
+			<v-expansion-panel-text>
+				<icon-visibility-control
+					roleName="showLobIcon"
+					label="Show LoB Icon"
+				></icon-visibility-control>
+				<v-expand-transition>
+					<div v-if="showLobIcon">
+						<icon-control roleName="lobIcon"></icon-control>
+						<color-control
+							roleName="lobIconColor"
+							label="LoB Icon Color"
+						></color-control>
+					</div>
+					<div
+						v-else
+						class="pb-4"
+					>
+						<i class="text--disabled">
+							Icon is hidden. Enable "Show Icon" to customize.
+						</i>
+					</div>
+				</v-expand-transition>
+				<color-control
+					roleName="lobLineColor"
+					label="LoB Line Color"
+				></color-control>
+				<slider-value-control
+					roleName="lobWeight"
+					label="LoB Line Weight"
+					:min="1"
+					:max="20"
+					:step="0.5"
+					:defaultValue="10"
+					units=""
+				></slider-value-control>
+				<slider-value-control
+					roleName="lobOpacity"
+					label="LoB Line Opacity"
+					:min="0"
+					:max="1"
+					:step="0.01"
+					:defaultValue="0.5"
+					units="%"
+					:formatter="
+						(value: number) => {
+							return `${(value * 100).toFixed(0)}%`;
+						}
+					"
+				></slider-value-control>
+				<SliderValueControl
+					roleName="lobDistanceKm"
+					label="LoB Line Distance"
+					:min="0"
+					:max="100"
+					:step="0.1"
+					:defaultValue="1"
+					units="km"
+				></SliderValueControl>
+			</v-expansion-panel-text>
+		</v-expansion-panel>
+		<v-expansion-panel
+			eager
+			title="Ellipse Customizations"
+			value="ellipse"
+		>
+			<v-expansion-panel-text>
+				<ColorControl
+					roleName="ellipseColor"
+					label="Color"
+				/>
+			</v-expansion-panel-text>
+		</v-expansion-panel>
+	</v-expansion-panels>
 </template>
