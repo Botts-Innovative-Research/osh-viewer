@@ -10,6 +10,8 @@ import {Mode} from 'osh-js/source/core/datasource/Mode';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { AudioDescriptor } from "./Descriptor";
+import AudioView from "osh-js/source/core/ui/view/audio/AudioView";
+import AudioSpectrogramVisualizer from "osh-js/source/core/ui/view/audio/visualizer/spectrogram/AudioSpectrogramVisualizer";
 
 export default function build() {
 	console.log('Building Audio Visualization...');
