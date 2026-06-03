@@ -35,5 +35,6 @@ onMounted(() => {
 	<v-checkbox
 		v-model="show"
 		:label="props.label"
+		density="compact"
 	/>
 </template>
