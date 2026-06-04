@@ -1,9 +1,5 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import {
-	ISweApiControlStreamProperties,
-	ISweApiDataSourceProperties,
-} from '@/lib/VisualizationHelpers';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
@@ -19,6 +15,10 @@ import {
 } from '@/modules/visualization/services/datasource.service';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
+import {
+	ISweApiControlStreamProperties,
+	ISweApiDataSourceProperties,
+} from '../../types/datasource';
 
 // python sim_vehicle.py -v ArduCopter -f quad --console --map --location=Taiwan
 

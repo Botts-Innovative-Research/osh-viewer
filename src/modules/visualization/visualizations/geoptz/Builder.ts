@@ -1,9 +1,4 @@
 import { OSHControlStream, OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import {
-	ISweApiControlStreamProperties,
-	ISweApiDataSourceProperties,
-	VisualizationComponents,
-} from '@/lib/VisualizationHelpers';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 //@ts-ignore
@@ -17,6 +12,11 @@ import {
 	BuildRoleProperty,
 	getUsedControlstreams,
 } from '../../services/aggregation.service';
+import { VisualizationComponents } from '../../types/visualization';
+import {
+	ISweApiControlStreamProperties,
+	ISweApiDataSourceProperties,
+} from '../../types/datasource';
 
 export default function build() {
 	console.log('Building GeoPTZ Visualization...');

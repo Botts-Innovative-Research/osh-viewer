@@ -4,12 +4,8 @@ import Chart from '@/modules/visualization/visualizations/chart/Chart.vue';
 import Video from '@/modules/visualization/visualizations/video/Video.vue';
 import Text from '@/modules/visualization/visualizations/text/Text.vue';
 import MissionBuilder from '@/modules/visualization/visualizations/mission/MissionBuilder.vue';
-import {
-	IChartViewProperties,
-	ICurveLayerProperties,
-	IVideoLayerProperties,
-	IVideoViewProperties,
-} from '@/lib/VisualizationHelpers';
+import { ICurveLayerProperties, IVideoLayerProperties } from '../../types/layers';
+import { IChartViewProperties, IVideoViewProperties } from '../../types/views';
 
 const { viz, customClass = '' } = defineProps<{
 	viz: OSHVisualization;

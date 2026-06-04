@@ -1,12 +1,12 @@
 import { OSHControlStream, OSHDatastream } from '@/lib/OSHConnectDataStructs';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { VisualizationCustomizationOptions } from '@/lib/VisualizationHelpers';
 import {
 	getStreamIds,
 	rehydrateControlStreams,
 	rehydrateDatastreams,
 } from '@/modules/visualization/services/visualization.serialization';
+import { VisualizationCustomizationOptions } from '@/modules/visualization/types/customization';
 
 export interface WizardConfig {
 	id: string;

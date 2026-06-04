@@ -1,16 +1,12 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import {
-	IEllipseLayerProperties,
-	ILineOfBearingLayerProperties,
-	IPointMarkerLayerProperties,
-	IPolylineLayerProperties,
-	VisualizationLayerProperties,
-} from '@/lib/VisualizationHelpers';
+
 import { useMapStore } from '@/stores/mapstore';
 import { useUIStore } from '@/stores/uistore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref, watch } from 'vue';
+import { VisualizationLayerProperties } from '../../types/visualization';
+import { SupportedMapLayer } from '@/modules/map/supportedMapLayers';
 
 export function useVisualizationSidebar() {
 	// Stores
@@ -69,11 +65,7 @@ export function useVisualizationSidebar() {
 	/* MAP HELPERS */
 	function isMapLayer(
 		layer: VisualizationLayerProperties | VisualizationLayerProperties[] | null
-	): layer is
-		| IPointMarkerLayerProperties
-		| ILineOfBearingLayerProperties
-		| IEllipseLayerProperties
-		| IPolylineLayerProperties {
+	): layer is SupportedMapLayer {
 		return !!layer && 'iconName' in layer;
 	}
 	function isMapLayerVisible(id: string): boolean {

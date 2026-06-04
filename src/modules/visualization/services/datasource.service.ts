@@ -1,8 +1,8 @@
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import DataStream from 'osh-js/source/core/sweapi/datastream/DataStream.js';
 import ObservationFilter from 'osh-js/source/core/sweapi/observation/ObservationFilter.js';
-import { ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
 import { Ref } from 'vue';
+import { ISweApiDataSourceProperties } from '../types/datasource';
 
 /**
  * Create a SweApi datasource from given datasource properties

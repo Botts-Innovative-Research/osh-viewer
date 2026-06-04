@@ -1,5 +1,4 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { VisualizationComponents } from '@/lib/VisualizationHelpers';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 // @ts-ignore
@@ -12,6 +11,7 @@ import { PointMarkerDescriptor } from '../pointmarker/Descriptor';
 import { LobDescriptor } from '../lob/Descriptor';
 import { EllipseDescriptor } from '../ellipse/Descriptor';
 import { SigIntDescriptor } from './Descriptor';
+import { VisualizationComponents } from '../../types/visualization';
 
 export default function build() {
 	console.log('Building Sigint Visualization...');

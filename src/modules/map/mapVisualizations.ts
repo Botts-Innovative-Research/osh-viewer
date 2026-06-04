@@ -1,6 +1,5 @@
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
 import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { ISweApiDataSourceProperties } from '@/lib/VisualizationHelpers';
 import { useMapStore } from '@/stores/mapstore';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
@@ -15,6 +14,7 @@ import { getLayerId } from './services/layerId.service';
 import { colorHash } from './services/colorId.service';
 import { SupportedMapLayer } from './supportedMapLayers';
 import { getGroundAltitude } from './services/altitude.service';
+import { ISweApiDataSourceProperties } from '../visualization/types/datasource';
 
 // prettier-ignore
 // @ts-ignore

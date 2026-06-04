@@ -1,10 +1,4 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import {
-	IPolylineCustomizationOptions,
-	IPolylineLayerProperties,
-	ISweApiDataSourceProperties,
-	VisualizationComponents,
-} from '@/lib/VisualizationHelpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
@@ -16,6 +10,10 @@ import {
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
 import { PolylineDescriptor } from './Descriptor';
+import { VisualizationComponents } from '../../types/visualization';
+import { IPolylineCustomizationOptions } from '../../types/customization';
+import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IPolylineLayerProperties } from '../../types/layers';
 
 export default function build() {
 	console.log('Building Polyline Visualization...');

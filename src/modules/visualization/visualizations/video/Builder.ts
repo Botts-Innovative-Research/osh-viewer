@@ -1,11 +1,4 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import {
-	ISweApiDataSourceProperties,
-	IVideoCustomizationOptions,
-	IVideoLayerProperties,
-	IVideoViewProperties,
-	VisualizationComponents,
-} from '@/lib/VisualizationHelpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
@@ -20,6 +13,11 @@ import {
 	getUsedControlstreams,
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
+import { VisualizationComponents } from '../../types/visualization';
+import { IVideoCustomizationOptions } from '../../types/customization';
+import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IVideoLayerProperties } from '../../types/layers';
+import { IVideoViewProperties } from '../../types/views';
 
 export default function build() {
 	console.log('Building Video Visualization...');

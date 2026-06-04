@@ -1,9 +1,4 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import {
-	ILineOfBearingCustomizationOptions,
-	ILineOfBearingLayerProperties,
-	ISweApiDataSourceProperties,
-} from '@/lib/VisualizationHelpers';
 //@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
 import { useVizWizStore } from '@/stores/vizwizstore';
@@ -15,6 +10,10 @@ import {
 	BuildRoleProperty,
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
+import { ILineOfBearingCustomizationOptions } from '../../types/customization';
+import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { ILineOfBearingLayerProperties } from '../../types/layers';
+import { VisualizationComponents } from '../../types/visualization';
 
 export default function build() {
 	console.log('Building LOB Visualization...');
@@ -27,7 +26,7 @@ export default function build() {
 		datastreams,
 		vizwizStore.visualizationCustomizationOptions
 	);
-	const visualizationComponents = {
+	const visualizationComponents: VisualizationComponents = {
 		dataSource: lobResult.vizDatasources,
 		dataLayer: lobResult.lobLayer,
 	};

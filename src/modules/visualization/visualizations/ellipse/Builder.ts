@@ -1,10 +1,4 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import {
-	IEllipseCustomizationOptions,
-	IEllipseLayerProperties,
-	ISweApiDataSourceProperties,
-	VisualizationComponents,
-} from '@/lib/VisualizationHelpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
@@ -16,6 +10,10 @@ import {
 	BuildRoleProperty,
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
+import { VisualizationComponents } from '../../types/visualization';
+import { IEllipseCustomizationOptions } from '../../types/customization';
+import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IEllipseLayerProperties } from '../../types/layers';
 
 export default function build() {
 	console.log('Building Ellipse Visualization...');

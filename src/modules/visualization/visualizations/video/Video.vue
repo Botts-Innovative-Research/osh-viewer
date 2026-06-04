@@ -9,12 +9,10 @@ import PTZControl from './PTZControl.vue';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { fetchControlStreamSchema } from '@/lib/ControlstreamUtils';
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
-import {
-	ISweApiDataSourceProperties,
-	IVideoLayerProperties,
-	IVideoViewProperties,
-} from '@/lib/VisualizationHelpers';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
+import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IVideoLayerProperties } from '../../types/layers';
+import { IVideoViewProperties } from '../../types/views';
 
 const props = defineProps<{
 	visualization: OSHVisualization;

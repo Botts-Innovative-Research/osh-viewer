@@ -2,13 +2,6 @@ import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 //@ts-ignore
 import { useDataStreamStore } from '@/stores/datastreamstore';
-import {
-	IChartCustomizationOptions,
-	IChartViewProperties,
-	ICurveLayerProperties,
-	ISweApiDataSourceProperties,
-	VisualizationComponents,
-} from '@/lib/VisualizationHelpers';
 //@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
 // @ts-ignore
@@ -20,6 +13,11 @@ import {
 	BuildRoleProperty,
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
+import { VisualizationComponents } from '../../types/visualization';
+import { IChartCustomizationOptions } from '../../types/customization';
+import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { ICurveLayerProperties } from '../../types/layers';
+import { IChartViewProperties } from '../../types/views';
 
 export default function build() {
 	console.log('Building Chart Visualization...');
