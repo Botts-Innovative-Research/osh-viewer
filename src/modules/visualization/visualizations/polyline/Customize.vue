@@ -5,6 +5,11 @@ import SliderValueControl from '../../wizard/customizations/SliderValueControl.v
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import ColorControl from '../../wizard/customizations/ColorControl.vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
+import { useVizWizStore } from '@/stores/vizwizstore';
+
+const vizwizStore = useVizWizStore();
+// If polylineColor selected in Config, don't show line color select
+const showLineColor = computed(() => (vizwizStore.dsConfig.polylineColor ? false : true));
 
 const openPanels = ref<string[]>(['general', 'line']);
 
@@ -54,10 +59,23 @@ useComponentValidation(valid, emit);
 			value="line"
 		>
 			<v-expansion-panel-text>
-				<color-control
-					roleName="color"
-					label="Color"
-				></color-control>
+				<v-expand-transition>
+					<div v-if="showLineColor">
+						<color-control
+							roleName="color"
+							label="Color"
+						></color-control>
+					</div>
+					<div
+						v-else
+						class="pb-4"
+					>
+						<v-alert variant="outlined"
+							>Line color will be dynamically generated based on the selected
+							properties from the previous step.</v-alert
+						>
+					</div>
+				</v-expand-transition>
 				<slider-value-control
 					roleName="weight"
 					label="Weight"

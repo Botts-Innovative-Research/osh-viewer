@@ -4,6 +4,11 @@ import { VisualizationComponentEmits } from '../../registry/VisualizationRegistr
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 import ColorControl from '../../wizard/customizations/ColorControl.vue';
+import { useVizWizStore } from '@/stores/vizwizstore';
+
+const vizwizStore = useVizWizStore();
+// If ellipseColor selected in Config, don't show line color select
+const showColor = computed(() => (vizwizStore.dsConfig.ellipseColor ? false : true));
 
 const openPanels = ref<string[]>(['general', 'ellipse']);
 
@@ -53,10 +58,23 @@ useComponentValidation(valid, emit);
 			value="ellipse"
 		>
 			<v-expansion-panel-text>
-				<color-control
-					roleName="ellipseColor"
-					label="Color"
-				/>
+				<v-expand-transition>
+					<div v-if="showColor">
+						<color-control
+							roleName="ellipseColor"
+							label="Color"
+						/>
+					</div>
+					<div
+						v-else
+						class="pb-4"
+					>
+						<v-alert variant="outlined"
+							>Ellipse color will be dynamically generated based on the selected
+							properties from the previous step.</v-alert
+						>
+					</div>
+				</v-expand-transition>
 			</v-expansion-panel-text>
 		</v-expansion-panel>
 	</v-expansion-panels>
