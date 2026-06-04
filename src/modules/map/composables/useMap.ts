@@ -85,6 +85,9 @@ export function useMap() {
 
 		// Delete all FOIs
 		visualizationStore.clearFOILayers();
+
+		// Clear list of hidden visualizations
+		visualizationStore.clearMapLayerVisibility();
 	}
 	watch(mapType, async () => {
 		await switchMap();

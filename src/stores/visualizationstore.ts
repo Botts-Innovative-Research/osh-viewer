@@ -68,6 +68,10 @@ export const useVisualizationStore = defineStore(
 			return layerVisibility.value.get(layerId) ?? true;
 		};
 
+		const clearMapLayerVisibility = () => {
+			layerVisibility.value.clear();
+		};
+
 		const rehydrateVisualizations = (): void => {
 			if (serializedVisualizations.value.length === 0 || visualizations.value.length > 0)
 				return;
@@ -104,6 +108,7 @@ export const useVisualizationStore = defineStore(
 			getVisualizationsByType,
 			toggleMapLayerVisibility,
 			isMapLayerVisible,
+			clearMapLayerVisibility,
 			layerVisibility,
 			rehydrateVisualizations,
 			foiLayers,
