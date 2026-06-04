@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, toRaw } from 'vue';
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import VideoDataLayer from 'osh-js/source/core/ui/layer/VideoDataLayer.js';
 import { OSHControlStream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import VideoView from 'osh-js/source/core/ui/view/video/VideoView.js';

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, toRaw } from 'vue';
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+import { onMounted, ref } from 'vue';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import ChartJsView from 'osh-js/source/core/ui/view/chart/ChartJsView.js';
 import CurveLayer from 'osh-js/source/core/ui/layer/CurveLayer.js';
