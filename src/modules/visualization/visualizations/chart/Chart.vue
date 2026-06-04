@@ -18,7 +18,7 @@ const props = defineProps<{
 	chartView: IChartViewProperties;
 }>();
 
-const chartId = ref('chart-' + randomUUID());
+const chartId = ref(props.visualization.id);
 let curveLayers = ref<CurveLayer[]>([]);
 let chartView = ref<ChartJsView | null>(null);
 

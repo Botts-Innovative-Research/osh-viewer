@@ -22,14 +22,14 @@ const props = defineProps<{
 	controlstream?: OSHControlStream;
 }>();
 
-const videoDivId = ref('video-' + randomUUID());
+const videoDivId = ref(props.visualization.id);
 
 const controlstreamStore = useControlStreamStore();
 const videoView = ref<any>(null);
 const videoLayer = ref<VideoDataLayer | null>(null);
 const dsInstances: SweApi[] = [];
 
-function createVideoView(viewConfig: any) {
+function createVideoView(viewConfig: IVideoViewProperties) {
 	if (videoView.value) {
 		videoView.value.destroy?.();
 		videoView.value = null;
@@ -97,7 +97,7 @@ function initializeVideo() {
 				},
 			};
 		}
-		const viewConfig = viz.visualizationComponents.dataView;
+		const viewConfig = props.videoView;
 		createVideoView(viewConfig);
 
 		dsInstance.connect();
