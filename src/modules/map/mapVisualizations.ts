@@ -13,13 +13,14 @@ import { useSettingsStore } from '@/stores/settingsstore';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { getLayerId } from './services/layerId.service';
 import { colorHash } from './services/colorId.service';
+import { SupportedMapLayer } from './supportedMapLayers';
 
 // prettier-ignore
 // @ts-ignore
 const iconBase = import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.meta.env.VITE_VIEWER_ENDPOINT : '';
 
 export interface ICreateMapVisualizationResult {
-	vizLayer: PointMarkerLayer | LoBLayer | EllipseLayer | PolylineLayer;
+	vizLayer: SupportedMapLayer;
 	dsInstances: SweApi[];
 }
 
@@ -481,9 +482,9 @@ export function createFOIProps(geometry: Geometry) {
 }
 
 export function rebuildMapVisualizations(
-	oldLayers: Map<string, PointMarkerLayer | LoBLayer | EllipseLayer | PolylineLayer>
-): Map<string, PointMarkerLayer | LoBLayer | EllipseLayer | PolylineLayer> {
-	const newLayers = new Map<string, PointMarkerLayer | LoBLayer | EllipseLayer | PolylineLayer>();
+	oldLayers: Map<string, SupportedMapLayer>
+): Map<string, SupportedMapLayer> {
+	const newLayers = new Map<string, SupportedMapLayer>();
 
 	oldLayers.forEach((layer) => {
 		// Add new PM Layers

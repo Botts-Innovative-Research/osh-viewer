@@ -7,7 +7,6 @@ import { VideoDescriptor } from '../visualizations/video/Descriptor';
 import { MissionDescriptor } from '@/modules/visualization/visualizations/mission/Descriptor';
 import { VisualizationDescriptor } from './types';
 import { EllipseDescriptor } from '../visualizations/ellipse/Descriptor';
-import { useSettingsStore } from '@/stores/settingsstore';
 import { SigIntDescriptor } from '../visualizations/sigint/Descriptor';
 import { PolylineDescriptor } from '../visualizations/polyline/Descriptor';
 
@@ -36,16 +35,4 @@ export type VisualizationType = keyof typeof VisualizationRegistry;
  */
 export interface VisualizationComponentEmits {
 	(event: 'update:valid', value: boolean): void;
-}
-
-/**
- * Determine if a visualization type is compatible with the currently focused map
- * @param type
- * @returns
- */
-export function isMapLayerCompatible(type: VisualizationType) {
-	const settingsStore = useSettingsStore();
-	const descriptor = VisualizationRegistry[type];
-	if (!descriptor) return false;
-	return descriptor.supportedMaps?.includes(settingsStore.focusedMap);
 }

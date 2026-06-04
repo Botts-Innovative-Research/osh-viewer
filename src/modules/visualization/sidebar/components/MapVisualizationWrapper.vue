@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { isMapLayerCompatible, VisualizationRegistry } from '../../registry/VisualizationRegistry';
+import { VisualizationRegistry } from '../../registry/VisualizationRegistry';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
 import { computed, ref, watch } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
+import { isMapLayerCompatible } from '@/modules/map/supportedMapLayers';
 
 const {
 	viz,
@@ -36,9 +37,6 @@ function getIcon(viz: OSHVisualization) {
 	const iconName = viz.visualizationComponents.dataLayer.iconName;
 	if (iconName) {
 		if (viz.visualizationComponents.dataLayer.iconOpacity === 0) {
-			console.log(
-				`Visualization ${viz.name} has iconName defined but iconOpacity is set to 0. Defaulting to type icon.`
-			);
 			return VisualizationRegistry[viz.type].icon ?? 'mdi-shape';
 		}
 		return `mdi-${iconName}`;
@@ -58,14 +56,8 @@ function getIconColor(viz: OSHVisualization) {
 		viz.visualizationComponents.dataLayer?.color
 	) {
 		if (viz.visualizationComponents.dataLayer?.iconOpacity === 0) {
-			console.log(
-				`Visualization ${viz.name} has both iconColor and color defined, but iconOpacity is set to 0. Using color for icon display.`
-			);
 			return viz.visualizationComponents.dataLayer.color;
 		}
-		console.log(
-			`Visualization ${viz.name} has both iconColor and color defined. Using iconColor for icon display.`
-		);
 	}
 	// Handle remaining cases, with preference to iconColor
 	return (

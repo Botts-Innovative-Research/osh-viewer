@@ -2,9 +2,6 @@ import { useMapStore } from '@/stores/mapstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { computed, onMounted, ref, watch } from 'vue';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
-import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
-import EllipseLayer from 'osh-js/source/core/ui/layer/EllipseLayer';
-import PolylineLayer from 'osh-js/source/core/ui/layer/PolylineLayer';
 import {
 	createFOIProps,
 	createMapVisualizations,
@@ -18,7 +15,7 @@ import { taskGeoPTZ } from '../services/geoPTZ.service';
 import { MapAdapter } from '../adapters/types';
 import { createLeafletAdapter } from '../adapters/leaflet.adapter';
 import { useSettingsStore } from '@/stores/settingsstore';
-import { isMapLayerCompatible } from '@/modules/visualization/registry/VisualizationRegistry';
+import { isMapLayerCompatible, SupportedMapLayer } from '../supportedMapLayers';
 
 export function useMap() {
 	// Stores
@@ -33,9 +30,7 @@ export function useMap() {
 	});
 
 	// Map of visualization ID to its corresponding visualization layer instance
-	const mapItemLayers = ref<
-		Map<string, PointMarkerLayer | LoBLayer | EllipseLayer | PolylineLayer>
-	>(new Map());
+	const mapItemLayers = ref<Map<string, SupportedMapLayer>>(new Map());
 	// List of all connected datasource instances created for map visualizations
 	const listDataSourceInstances = ref<SweApi[]>([]);
 	// Array of waypoint Pointmarkers for mission builder
@@ -90,6 +85,9 @@ export function useMap() {
 
 		// Delete all FOIs
 		visualizationStore.clearFOILayers();
+
+		// Clear list of hidden visualizations
+		visualizationStore.clearMapLayerVisibility();
 	}
 	watch(mapType, async () => {
 		await switchMap();

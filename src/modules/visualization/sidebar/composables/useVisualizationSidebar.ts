@@ -3,6 +3,7 @@ import {
 	IEllipseLayerProperties,
 	ILineOfBearingLayerProperties,
 	IPointMarkerLayerProperties,
+	IPolylineLayerProperties,
 	VisualizationLayerProperties,
 } from '@/lib/VisualizationHelpers';
 import { useMapStore } from '@/stores/mapstore';
@@ -71,7 +72,8 @@ export function useVisualizationSidebar() {
 	): layer is
 		| IPointMarkerLayerProperties
 		| ILineOfBearingLayerProperties
-		| IEllipseLayerProperties {
+		| IEllipseLayerProperties
+		| IPolylineLayerProperties {
 		return !!layer && 'iconName' in layer;
 	}
 	function isMapLayerVisible(id: string): boolean {

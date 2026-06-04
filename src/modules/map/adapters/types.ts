@@ -1,4 +1,3 @@
-import { Geometry } from '@/lib/OSHConnectDataStructs';
 import { MapLayer } from './cesium.adapter';
 
 export type MapClickHandler = (lat: number, lon: number, alt: number) => void;
@@ -8,14 +7,6 @@ export type MapPoint = {
 	lon: number;
 	alt: number;
 };
-export const layerTypes = [
-	'layerIdToPolylines',
-	//these are not implemented yet, so u can comment them out tbh but i wouldnt remove them
-	// 'layerIdToEllipsoids',
-	// 'layerIdToPolygon',
-	// 'layerIdToFrustum',
-	// 'layerIdToDrapedImage'
-];
 
 export interface MapAdapter {
 	init(container: string): Promise<void>;
