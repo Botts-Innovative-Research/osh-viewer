@@ -1,12 +1,49 @@
+import { showToast } from '@/composables/useToast';
+import { useControlStreamStore } from '@/stores/controlstreamstore';
 import ControlFilter from 'osh-js/source/core/sweapi/control/ControlFilter';
 import Control from 'osh-js/source/core/sweapi/control/Control';
-import { useControlStreamStore } from '@/stores/controlstreamstore';
-import { showToast } from '@/composables/useToast';
 
 type CommandType = {
 	type: string;
 	details: { [key: string]: any };
 };
+
+export function mineControlObsPropsFromCS(csID: string): { cs: any; controlledProperties: any } {
+	const controlStreamStore = useControlStreamStore();
+	const cs = controlStreamStore.getControlStreamsById([csID])[0];
+
+	if (!cs) {
+		console.warn('No controlstream given');
+	}
+
+	const controlledProperties = cs.controlstream.properties.controlledProperties || [];
+
+	return { cs, controlledProperties };
+}
+
+export async function fetchCsSchema(controlstream: any): Promise<any> {
+	let checkedFormat = controlstream.properties.formats.filter(
+		(format: any) =>
+			format.includes('application/swe+json') || format.includes('application/swe+binary')
+	);
+
+	if (!checkedFormat) {
+		checkedFormat = ['application/om+json']; // Fallback to om+json which should be available always
+	}
+
+	let filter = new ControlFilter({ format: 'application/json' });
+	return controlstream
+		.getSchema(filter)
+		.then((schemaRes: any) => {
+			if (schemaRes) {
+				return schemaRes;
+			}
+		})
+		.catch((error: any) => {
+			console.error('[fetchCsSchema] Error fetching schema:', error);
+			return null;
+		});
+}
 
 /**
  * Generic function to send a command through a controlstream

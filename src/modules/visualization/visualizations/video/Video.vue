@@ -7,12 +7,12 @@ import VideoView from 'osh-js/source/core/ui/view/video/VideoView.js';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import PTZControl from './PTZControl.vue';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
-import { fetchControlStreamSchema } from '@/lib/ControlstreamUtils';
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
 import { ISweApiDataSourceProperties } from '../../types/datasource';
 import { IVideoLayerProperties } from '../../types/layers';
 import { IVideoViewProperties } from '../../types/views';
+import { fetchControlStreamSchema } from '../../services/controlstream.service';
 
 const props = defineProps<{
 	visualization: OSHVisualization;

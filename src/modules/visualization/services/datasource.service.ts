@@ -3,6 +3,49 @@ import DataStream from 'osh-js/source/core/sweapi/datastream/DataStream.js';
 import ObservationFilter from 'osh-js/source/core/sweapi/observation/ObservationFilter.js';
 import { Ref } from 'vue';
 import { ISweApiDataSourceProperties } from '../types/datasource';
+import { useDataStreamStore } from '@/stores/datastreamstore';
+import DataStreamFilter from 'osh-js/source/core/sweapi/datastream/DataStreamFilter';
+
+/**
+ * Takes datasource ID as parameter
+ * @returns
+ */
+export function mineDatasourceObsPropsFromDS(dsId: string): { ds: any; observedProps: any } {
+	const dataStreamStore = useDataStreamStore();
+	const ds = dataStreamStore.getDataStreamsById([dsId])[0];
+
+	if (!ds) {
+		console.warn('No datastream given');
+	}
+
+	const observedProps = ds.datastream.properties?.observedProperties || [];
+
+	return { ds, observedProps };
+}
+
+export async function fetchDsSchema(datastream: any): Promise<any> {
+	let checkedFormat = datastream.properties.formats.filter(
+		(format: any) =>
+			format.includes('application/swe+json') || format.includes('application/swe+binary')
+	);
+
+	if (!checkedFormat) {
+		checkedFormat = ['application/om+json']; // Fallback to om+json which should be available always
+	}
+
+	let filter = new DataStreamFilter({ obsFormat: checkedFormat[0] });
+	return datastream
+		.getSchema(filter)
+		.then((schemaRes: any) => {
+			if (schemaRes) {
+				return schemaRes;
+			}
+		})
+		.catch((error: any) => {
+			console.error('[fetchDsSchema] Error fetching schema:', error);
+			return null;
+		});
+}
 
 /**
  * Create a SweApi datasource from given datasource properties

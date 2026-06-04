@@ -4,7 +4,6 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useMapStore } from '@/stores/mapstore';
-import { sendCommand } from '@/lib/ControlstreamUtils';
 import { showToast } from '@/composables/useToast';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
@@ -19,6 +18,7 @@ import {
 	ISweApiControlStreamProperties,
 	ISweApiDataSourceProperties,
 } from '../../types/datasource';
+import { sendCommand } from '../../services/controlstream.service';
 
 // python sim_vehicle.py -v ArduCopter -f quad --console --map --location=Taiwan
 

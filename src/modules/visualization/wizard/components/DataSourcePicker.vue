@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { fetchSchema, mineDatasourceObsPropsFromDS } from '@/lib/DatasourceUtils';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { computed, onMounted, ref, watch } from 'vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
 import { useComponentValidation } from '../composables/useComponentValidation';
+import { fetchDsSchema, mineDatasourceObsPropsFromDS } from '../../services/datasource.service';
 
 const props = withDefaults(
 	defineProps<{
@@ -66,7 +66,7 @@ const dsSchema = ref<any>(null);
 // Fetch datasource observed properties
 async function fetchProps() {
 	const { ds, observedProps } = mineDatasourceObsPropsFromDS(selectedDatastream.value);
-	dsSchema.value = await fetchSchema(ds.datastream);
+	dsSchema.value = await fetchDsSchema(ds.datastream);
 
 	let isBinary = dsSchema.value.obsFormat === 'application/swe+binary';
 	if (isBinary) {
