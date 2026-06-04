@@ -14,6 +14,7 @@ import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { getLayerId } from './services/layerId.service';
 import { colorHash } from './services/colorId.service';
 import { SupportedMapLayer } from './supportedMapLayers';
+import { getGroundAltitude } from './services/altitude.service';
 
 // prettier-ignore
 // @ts-ignore
@@ -64,11 +65,15 @@ export function createPointMarkerLayer(
 		if (dsProps.properties.location) {
 			getLocation = {
 				dataSourceIds: [dsInstance.id],
-				handler: (rec: any) => {
+				handler: async (rec: any) => {
+					const lon = rec[dsProps.properties.location.property].lon;
+					const lat = rec[dsProps.properties.location.property].lat;
 					return {
-						x: rec[dsProps.properties.location.property].lon,
-						y: rec[dsProps.properties.location.property].lat,
-						z: rec[dsProps.properties.location.property].alt || 120, // Default to 120 if altitude is not provided
+						x: lon,
+						y: lat,
+						z:
+							rec[dsProps.properties.location.property].alt ||
+							(await getGroundAltitude(lon, lat)),
 					};
 				},
 			};
@@ -156,11 +161,15 @@ export function createLoBLayer(
 		if (dsProps.properties.origin) {
 			getOrigin = {
 				dataSourceIds: [dsInstance.id],
-				handler: (rec: any) => {
+				handler: async (rec: any) => {
+					const lon = rec[dsProps.properties.origin.property].lon;
+					const lat = rec[dsProps.properties.origin.property].lat;
 					return {
-						x: rec[dsProps.properties.origin.property].lon,
-						y: rec[dsProps.properties.origin.property].lat,
-						z: rec[dsProps.properties.origin.property].alt || 120, // Default to 120 if altitude is not provided
+						x: lon,
+						y: lat,
+						z:
+							rec[dsProps.properties.origin.property].alt ||
+							(await getGroundAltitude(lon, lat)),
 					};
 				},
 			};
@@ -245,11 +254,15 @@ export function createEllipseLayer(
 		if (dsProps.properties.position) {
 			getPosition = {
 				dataSourceIds: [dsInstance.id],
-				handler: (rec: any) => {
+				handler: async (rec: any) => {
+					const lon = rec[dsProps.properties.position.property].lon;
+					const lat = rec[dsProps.properties.position.property].lat;
 					return {
-						x: rec[dsProps.properties.position.property].lon,
-						y: rec[dsProps.properties.position.property].lat,
-						z: rec[dsProps.properties.position.property].alt || 120, // Default to 120 if altitude is not provided
+						x: lon,
+						y: lat,
+						z:
+							rec[dsProps.properties.position.property].alt ||
+							(await getGroundAltitude(lon, lat)),
 					};
 				},
 			};
@@ -329,11 +342,15 @@ export function createPolylineLayer(
 		if (dsProps.properties.location) {
 			getLocation = {
 				dataSourceIds: [dsInstance.id],
-				handler: (rec: any) => {
+				handler: async (rec: any) => {
+					const lon = rec[dsProps.properties.location.property].lon;
+					const lat = rec[dsProps.properties.location.property].lat;
 					return {
-						x: rec[dsProps.properties.location.property].lon,
-						y: rec[dsProps.properties.location.property].lat,
-						z: rec[dsProps.properties.location.property].alt || 120, // Default to 120 if altitude is not provided
+						x: lon,
+						y: lat,
+						z:
+							rec[dsProps.properties.location.property].alt ||
+							(await getGroundAltitude(lon, lat)),
 					};
 				},
 			};
@@ -400,12 +417,17 @@ export function createGeoPTZLayer(
 		dataSourceIds: dsInstances.map((ds) => ds.id),
 		getLocation: {
 			dataSourceIds: dsInstances.map((ds) => ds.id),
-			handler: (rec: any) => {
+			handler: async (rec: any) => {
 				if (!mapStore.currentLLA) return;
 				return {
 					x: mapStore.currentLLA?.longitude,
 					y: mapStore.currentLLA?.latitude,
-					z: mapStore.currentLLA?.altitude || 120, // Default to 120 if altitude is not provided
+					z:
+						mapStore.currentLLA?.altitude ||
+						(await getGroundAltitude(
+							mapStore.currentLLA?.longitude,
+							mapStore.currentLLA?.latitude
+						)),
 				};
 			},
 		},
@@ -438,7 +460,7 @@ export async function createWaypointLayer(
 		location: {
 			x: waypoint.lon,
 			y: waypoint.lat,
-			z: waypoint.alt || 0,
+			z: waypoint.alt || (await getGroundAltitude(waypoint.lon, waypoint.lat)),
 		},
 		icon: `${iconBase}/icons/map/geoPtz-pin.png`,
 		iconSize: [32, 32],
@@ -455,20 +477,24 @@ export async function createWaypointLayer(
 
 	return { layer: waypointLayer, props };
 }
-export function createFOIProps(geometry: Geometry) {
+export async function createFOIProps(geometry: Geometry) {
+	const lon = Array.isArray(geometry.coordinates[0])
+		? geometry.coordinates[0][0]
+		: geometry.coordinates[0];
+	const lat = Array.isArray(geometry.coordinates[1])
+		? geometry.coordinates[1][0]
+		: geometry.coordinates[1];
+	const alt = !geometry.coordinates[2]
+		? await getGroundAltitude(lon, lat)
+		: Array.isArray(geometry.coordinates[2])
+			? geometry.coordinates[2][0]
+			: geometry.coordinates[2];
+
 	const markerProps = {
 		location: {
-			x: Array.isArray(geometry.coordinates[0])
-				? geometry.coordinates[0][0]
-				: geometry.coordinates[0],
-			y: Array.isArray(geometry.coordinates[1])
-				? geometry.coordinates[1][0]
-				: geometry.coordinates[1],
-			z: !geometry.coordinates[2]
-				? 0
-				: Array.isArray(geometry.coordinates[2])
-					? geometry.coordinates[2][0]
-					: geometry.coordinates[2],
+			x: lon,
+			y: lat,
+			z: alt,
 		},
 		label: geometry.properties.properties.name,
 		labelOffset: [0, 0],
