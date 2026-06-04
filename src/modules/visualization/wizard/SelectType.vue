@@ -63,20 +63,21 @@ useComponentValidation(valid, emit);
 		<v-row>
 			<h4>Filter by layer</h4>
 		</v-row>
-		<v-row>
+		<v-row class="align-center ga-2">
+			<v-chip
+				v-if="selectedFilters.length"
+				closable
+				elevated
+				@click="selectedFilters = []"
+				@click:close="selectedFilters = []"
+			>
+				Clear All
+			</v-chip>
 			<v-chip-group
 				filter
 				multiple
 				v-model="selectedFilters"
 			>
-				<v-chip
-					v-if="selectedFilters.length"
-					closable
-					elevated
-					@click:close="selectedFilters = []"
-				>
-					Clear All
-				</v-chip>
 				<v-chip
 					v-for="type in OSHLayerLabels"
 					:key="type.layer"
