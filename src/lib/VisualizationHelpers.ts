@@ -7,10 +7,7 @@ export type VisualizationLayerProperties =
 	| IPointMarkerLayerProperties
 	| ILineOfBearingLayerProperties
 	| IEllipseLayerProperties;
-export type VisualizationViewProperties =
-	| IChartViewProperties
-	| IVideoViewProperties
-	| IMapViewProperties;
+export type VisualizationViewProperties = IChartViewProperties | IVideoViewProperties;
 
 export interface DataSourceProperties {
 	endpointUrl: string;
@@ -40,7 +37,7 @@ export interface DataViewProperties {
 export interface VisualizationComponents {
 	dataSource: ISweApiDataSourceProperties[];
 	dataLayer: VisualizationLayerProperties | VisualizationLayerProperties[];
-	dataView: VisualizationViewProperties | VisualizationViewProperties[] | null;
+	dataView?: VisualizationViewProperties | VisualizationViewProperties[];
 	controlstream?: ISweApiControlStreamProperties[]; // Optional controlstream for visualization
 }
 
@@ -94,17 +91,6 @@ export interface IVideoViewProperties extends DataViewProperties {
 	useWebCodecApi: boolean;
 	width: number;
 	height: number;
-}
-
-/* MAP VIEW */
-
-export interface IMapViewProperties extends DataViewProperties {
-	layers:
-		| IPointMarkerLayerProperties[]
-		| ILineOfBearingLayerProperties[]
-		| IEllipseLayerProperties[]
-		| IPolylineLayerProperties[];
-	refreshRate?: number;
 }
 
 /* POINT MARKER */

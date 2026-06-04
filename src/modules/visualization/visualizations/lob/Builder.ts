@@ -2,13 +2,10 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
 	ILineOfBearingCustomizationOptions,
 	ILineOfBearingLayerProperties,
-	IMapViewProperties,
 	ISweApiDataSourceProperties,
 } from '@/lib/VisualizationHelpers';
 //@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
-// @ts-ignore
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
@@ -33,7 +30,6 @@ export default function build() {
 	const visualizationComponents = {
 		dataSource: lobResult.vizDatasources,
 		dataLayer: lobResult.lobLayer,
-		dataView: lobResult.lobView,
 	};
 
 	const newViz: OSHVisualization = new OSHVisualization(
@@ -80,12 +76,6 @@ export function CreateLobViewProps(
 		label: visOptions.name,
 		name: visOptions.name,
 	};
-	const lobView: IMapViewProperties = {
-		container: `map-container-${randomUUID()}`,
-		layers: [lobLayer],
-		css: 'map-view',
-		refreshRate: 1000,
-	};
 
 	// Iterate through each unique datastream ID
 	for (const [dsId, entry] of Object.entries(datastreams)) {
@@ -115,11 +105,10 @@ export function CreateLobViewProps(
 		vizDatasources.push(currentDataSource);
 	}
 
-	console.log('Created LOBViewProperties:', { vizDatasources, lobLayer, lobView });
+	console.log('Created LOBViewProperties:', { vizDatasources, lobLayer });
 
 	return {
 		vizDatasources,
 		lobLayer,
-		lobView,
 	};
 }

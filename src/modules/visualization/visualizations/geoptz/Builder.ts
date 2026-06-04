@@ -26,16 +26,11 @@ export default function build() {
 	const datastreams = vizwizStore.datastreams;
 	const controlstreams = AggregateControlstreams(vizwizStore.csConfig);
 
-	const geoPtzResult = CreateGeoPtzViewProps(
-		datastreams[0],
-		controlstreams,
-		vizwizStore.visualizationCustomizationOptions
-	);
+	const geoPtzResult = CreateGeoPtzViewProps(datastreams[0], controlstreams);
 
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: geoPtzResult.vizDatasources,
 		dataLayer: [],
-		dataView: null,
 		controlstream: geoPtzResult.vizControlstreams,
 	};
 
@@ -55,8 +50,7 @@ export default function build() {
 
 export function CreateGeoPtzViewProps(
 	datastream: OSHDatastream,
-	controlstreams: { [key: string]: any },
-	visOptions: any
+	controlstreams: { [key: string]: any }
 ) {
 	const controlstreamStore = useControlStreamStore();
 

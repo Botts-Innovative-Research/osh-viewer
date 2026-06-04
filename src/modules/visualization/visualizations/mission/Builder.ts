@@ -27,16 +27,11 @@ export default function build() {
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 	const controlstreams = AggregateControlstreams(vizwizStore.csConfig);
 
-	const missionResult = CreateMissionViewProps(
-		datastreams,
-		controlstreams,
-		vizwizStore.visualizationCustomizationOptions
-	);
+	const missionResult = CreateMissionViewProps(datastreams, controlstreams);
 
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: missionResult.vizDatasources,
 		dataLayer: [],
-		dataView: null,
 		controlstream: missionResult.vizControlstreams,
 	};
 
@@ -56,8 +51,7 @@ export default function build() {
 
 export function CreateMissionViewProps(
 	datastreams: { [key: string]: any },
-	controlstreams: { [key: string]: any },
-	visOptions: any
+	controlstreams: { [key: string]: any }
 ) {
 	const controlstreamStore = useControlStreamStore();
 	const datastreamStore = useDataStreamStore();

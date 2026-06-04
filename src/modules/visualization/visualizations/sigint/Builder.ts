@@ -31,7 +31,6 @@ export default function build() {
 	const pmVisualizationComponents: VisualizationComponents = {
 		dataSource: pmResult.vizDatasources,
 		dataLayer: pmResult.pointMarkerLayer,
-		dataView: pmResult.mapView,
 	};
 	const pmViz: OSHVisualization = new OSHVisualization(
 		`${vizwizStore.id}-${randomUUID()}`,
@@ -57,7 +56,6 @@ export default function build() {
 	const lobVisualizationComponents = {
 		dataSource: lobResult.vizDatasources,
 		dataLayer: lobResult.lobLayer,
-		dataView: lobResult.lobView,
 	};
 	const lobViz: OSHVisualization = new OSHVisualization(
 		`${vizwizStore.id}-${randomUUID()}`,
@@ -76,7 +74,6 @@ export default function build() {
 	const ellipseVisualizationComponents: VisualizationComponents = {
 		dataSource: ellipseResult.vizDatasources,
 		dataLayer: ellipseResult.ellipseLayer,
-		dataView: ellipseResult.mapView,
 	};
 	const ellipseViz: OSHVisualization = new OSHVisualization(
 		`${vizwizStore.id}-${randomUUID()}`,

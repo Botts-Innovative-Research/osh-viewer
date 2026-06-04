@@ -1,6 +1,5 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
-	IMapViewProperties,
 	IPolylineCustomizationOptions,
 	IPolylineLayerProperties,
 	ISweApiDataSourceProperties,
@@ -11,8 +10,6 @@ import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 //@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
-// @ts-ignore
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import {
 	AggregateDatastreams,
 	BuildRoleProperty,
@@ -35,7 +32,6 @@ export default function build() {
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: pmResult.vizDatasources,
 		dataLayer: pmResult.polylineLayer,
-		dataView: pmResult.mapView,
 	};
 
 	const newViz: OSHVisualization = new OSHVisualization(
@@ -72,12 +68,6 @@ export function CreatePolylineViewProps(
 		opacity: visOptions.opacity,
 		iconName: 'vector-polyline', // For map visualizations list icon
 	};
-	let mapView: IMapViewProperties = {
-		container: `map-container-${randomUUID()}`,
-		css: 'map-view',
-		layers: [polylineLayer],
-		refreshRate: 1000,
-	};
 
 	// Iterate through each unique datastream ID
 	for (const [dsId, entry] of Object.entries(datastreams)) {
@@ -107,11 +97,10 @@ export function CreatePolylineViewProps(
 		vizDatasources.push(currentDataSource);
 	}
 
-	console.log('Created Polyline Props:', { vizDatasources, polylineLayer, mapView });
+	console.log('Created PolylineViewProps:', { vizDatasources, polylineLayer });
 
 	return {
 		vizDatasources,
 		polylineLayer,
-		mapView,
 	};
 }

@@ -1,6 +1,5 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import {
-	IMapViewProperties,
 	IPointMarkerCustomizationOptions,
 	IPointMarkerLayerProperties,
 	ISweApiDataSourceProperties,
@@ -11,8 +10,6 @@ import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 //@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
-// @ts-ignore
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { PointMarkerDescriptor } from './Descriptor';
 import {
 	AggregateDatastreams,
@@ -35,7 +32,6 @@ export default function build() {
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: pmResult.vizDatasources,
 		dataLayer: pmResult.pointMarkerLayer,
-		dataView: pmResult.mapView,
 	};
 
 	const newViz: OSHVisualization = new OSHVisualization(
@@ -75,12 +71,6 @@ export function CreatePointMarkerViewProps(
 		iconSize: [32, 32],
 		labelOffset: [-16, -32],
 	};
-	let mapView: IMapViewProperties = {
-		container: `map-container-${randomUUID()}`,
-		css: 'map-view',
-		layers: [pointMarkerLayer],
-		refreshRate: 1000,
-	};
 
 	// Iterate through each unique datastream ID
 	for (const [dsId, entry] of Object.entries(datastreams)) {
@@ -110,11 +100,10 @@ export function CreatePointMarkerViewProps(
 		vizDatasources.push(currentDataSource);
 	}
 
-	console.log('Created MapViewProps:', { vizDatasources, pointMarkerLayer, mapView });
+	console.log('Created PointMarkerViewProps:', { vizDatasources, pointMarkerLayer });
 
 	return {
 		vizDatasources,
 		pointMarkerLayer,
-		mapView,
 	};
 }
