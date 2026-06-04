@@ -1,3 +1,11 @@
+import {
+	CustomizationOptions,
+	IChartCustomizationOptions,
+	IEllipseCustomizationOptions,
+	ILineOfBearingCustomizationOptions,
+	IPointMarkerCustomizationOptions,
+	IVideoCustomizationOptions,
+} from './customization';
 import { ISweApiControlStreamProperties, ISweApiDataSourceProperties } from './datasource';
 import {
 	DataLayerProperties,
@@ -28,3 +36,11 @@ export type VisualizationViewProperties =
 	| DataViewProperties
 	| IChartViewProperties
 	| IVideoViewProperties;
+
+export type VisualizationCustomizationOptions =
+	| CustomizationOptions
+	| IPointMarkerCustomizationOptions
+	| ILineOfBearingCustomizationOptions
+	| IEllipseCustomizationOptions
+	| IChartCustomizationOptions
+	| IVideoCustomizationOptions;

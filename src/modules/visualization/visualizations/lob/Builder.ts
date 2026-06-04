@@ -71,7 +71,6 @@ export function CreateLobViewProps(
 		iconName: visOptions.iconName,
 		iconOpacity: visOptions.showIcon ? 1 : 0, // Set opacity to 0 if no icon, otherwise use default opacity
 		iconSize: [32, 32],
-		labelOffset: [-16, -32],
 		label: visOptions.name,
 		name: visOptions.name,
 	};

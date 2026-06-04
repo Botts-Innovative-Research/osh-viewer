@@ -24,26 +24,15 @@ export interface IVideoLayerProperties extends DataLayerProperties {
 }
 
 export interface IPointMarkerLayerProperties extends DataLayerProperties {
-	getLocation?: (rec: any) => { x: number; y: number; z: number };
-	getOrientation?: (rec: any) => { heading: number };
 	getCoordinates?: (rec: any) => { lat: number; lon: number };
 	label: string;
 	icon: string;
 	iconColor: string;
 	iconName: string;
 	iconSize: number[];
-	labelOffset: number[];
 }
 
 export interface ILineOfBearingLayerProperties extends DataLayerProperties {
-	getOriginAndBearing?: {
-		dataSourceIds: string[];
-		handler: (rec: any) => {
-			origin: { x: number; y: number; z: number };
-			bearing: number;
-		};
-	};
-	getPolylineId?: (rec: any) => any;
 	color: any;
 	weight: number;
 	opacity: number;
@@ -53,21 +42,15 @@ export interface ILineOfBearingLayerProperties extends DataLayerProperties {
 	iconName: string;
 	iconSize: number[];
 	iconOpacity: number;
-	labelOffset: number[];
 	label: string;
 }
 
 export interface IEllipseLayerProperties extends DataLayerProperties {
-	getPosition?: (rec: any) => { x: number; y: number; z: number };
-	getSemiMajorAxis?: (rec: any) => number;
-	getSemiMinorAxis?: (rec: any) => number;
 	color: any;
 	iconName: string; // Used for display in map visualizations list
 }
 
 export interface IPolylineLayerProperties extends DataLayerProperties {
-	getLocation?: (rec: any) => { x: number; y: number; z: number }[];
-	getPolylineId?: (rec: any) => any;
 	color: any;
 	weight: number;
 	opacity: number;

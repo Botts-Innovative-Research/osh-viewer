@@ -64,10 +64,9 @@ export function CreatePointMarkerViewProps(
 		name: visOptions.name,
 		label: visOptions.name,
 		icon: visOptions.icon,
-		iconColor: visOptions.iconColor,
+		iconColor: visOptions.iconColor || '#FF0000',
 		iconName: visOptions.iconName,
 		iconSize: [32, 32],
-		labelOffset: [-16, -32],
 	};
 
 	// Iterate through each unique datastream ID
