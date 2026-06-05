@@ -36,23 +36,34 @@ export function useVisualizationSidebar() {
 	);
 
 	/* Panel state */
-	const openPanels = ref<string[]>([]);
-	function handleOpenPanels() {
+	const openPanels = ref<string[]>([]); // Tracks map visualizations and geoptz only
+	const openPanelVisualizations = ref<string[]>([]); // Tracks panel visualizations only
+	function handleOpenMapPanels() {
 		if (mapVisualizations.value.length) {
 			if (!openPanels.value.includes('map')) openPanels.value.push('map');
 		} else {
 			openPanels.value = openPanels.value.filter((id: string) => id !== 'map');
 		}
-
+	}
+	function handleOpenGeoPTZPanel() {
 		if (geoPtzVisualizations.value.length) {
 			if (!openPanels.value.includes('geoptz')) openPanels.value.push('geoptz');
 		} else {
 			openPanels.value = openPanels.value.filter((id: string) => id !== 'geoptz');
 		}
 	}
-	watch([() => mapVisualizations.value, () => geoPtzVisualizations.value], () => {
-		handleOpenPanels();
-	});
+	watch(
+		() => mapVisualizations.value.length,
+		() => {
+			handleOpenMapPanels();
+		}
+	);
+	watch(
+		() => geoPtzVisualizations.value.length,
+		() => {
+			handleOpenGeoPTZPanel();
+		}
+	);
 
 	/* GEOPTZ HELPERS */
 	function removeGeoPTZ(controller: OSHVisualization) {
@@ -95,7 +106,9 @@ export function useVisualizationSidebar() {
 	}
 
 	onMounted(() => {
-		handleOpenPanels();
+		handleOpenMapPanels(); // Map panel only
+		handleOpenGeoPTZPanel(); // GeoPTZ panel only
+		openPanelVisualizations.value = panelVisualizations.value.map((v) => v.id);
 	});
 
 	return {
@@ -104,6 +117,7 @@ export function useVisualizationSidebar() {
 		mapVisualizations,
 		geoPtzVisualizations,
 		openPanels,
+		openPanelVisualizations,
 		selectedGeoPTZControllers,
 		removeGeoPTZ,
 		isMapLayer,

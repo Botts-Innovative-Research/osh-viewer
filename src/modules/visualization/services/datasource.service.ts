@@ -72,6 +72,20 @@ export function createDatasource(dsProps: ISweApiDataSourceProperties) {
 }
 
 /**
+ * Connects SweApi datasources
+ *
+ * @param dsInstances
+ */
+export function connectDatasources(dsInstances: Ref<SweApi[]>) {
+	const raw = dsInstances.value;
+
+	const dsList = Array.isArray(raw) ? raw : raw ? [raw] : [];
+	for (const ds of dsList) {
+		ds.connect();
+	}
+}
+
+/**
  * Disconnects SweApi datasources
  *
  * @param dsInstances
@@ -81,7 +95,6 @@ export function disconnectDatasources(dsInstances: Ref<SweApi[]>) {
 
 	const dsList = Array.isArray(raw) ? raw : raw ? [raw] : [];
 	for (const ds of dsList) {
-		console.log('[Disconnect Datasources] Disconnecting datasource:', ds);
 		ds.disconnect();
 	}
 }

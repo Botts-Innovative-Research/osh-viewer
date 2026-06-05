@@ -15,6 +15,7 @@ const {
 	mapVisualizations,
 	geoPtzVisualizations,
 	openPanels,
+	openPanelVisualizations,
 	selectedGeoPTZControllers,
 	removeGeoPTZ,
 	isMapLayerVisible,
@@ -107,7 +108,7 @@ const uiStore = useUIStore();
 			<v-divider></v-divider>
 			<!-- PANEL VISUALIZATIONS -->
 			<v-expansion-panels
-				:model-value="panelVisualizations.map((v) => v.id)"
+				v-model="openPanelVisualizations"
 				variant="accordion"
 				multiple
 				eager
