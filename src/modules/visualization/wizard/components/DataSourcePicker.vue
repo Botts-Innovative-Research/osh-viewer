@@ -25,12 +25,18 @@ const listDatastreams = computed(() => {
 // Update selected datastream for this role in vizwiz store
 const selectedDatastream = computed({
 	get: () => vizwizStore.dsConfig[props.role]?.dsId,
-	set: (val: string) => vizwizStore.updateDsConfig(props.role, { dsId: val, property: null }),
+	set: (val: string) => {
+		vizwizStore.updateDsConfig(props.role, {
+			dsId: val,
+			property: null,
+			label: null,
+			uom: null,
+		});
+	},
 });
 
 const selectedProperty = computed({
 	get: () => vizwizStore.dsConfig[props.role]?.label ?? (props.multiple ? [] : ''),
-
 	set: (val) => {
 		const fields = dsSchema.value?.recordSchema?.fields ?? [];
 
