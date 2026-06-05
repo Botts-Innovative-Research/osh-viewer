@@ -97,6 +97,7 @@ export interface IVideoViewProperties extends DataViewProperties {
 	showTime: boolean;
 	showStats: boolean;
 	useWebCodecApi: boolean;
+	is360: boolean;
 	width: number;
 	height: number;
 }
