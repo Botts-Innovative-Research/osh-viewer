@@ -17,7 +17,6 @@ const {
 	openPanels,
 	selectedGeoPTZControllers,
 	removeGeoPTZ,
-	isMapLayer,
 	isMapLayerVisible,
 	toggleMapLayerVisibility,
 	toggleSelectedMapItem,

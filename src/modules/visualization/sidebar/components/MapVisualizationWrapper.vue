@@ -22,6 +22,11 @@ const {
 	removeVisualization: (viz: OSHVisualization) => void;
 }>();
 
+const isLoading = computed(() => {
+	if (viz.isParentVisualization()) return false;
+	return !!!viz.visualizationComponents;
+});
+
 const mapStore = useMapStore();
 function isSelected(viz: OSHVisualization) {
 	if (!mapStore.selectedMapItem) return false;
@@ -116,11 +121,16 @@ watch(
 </script>
 
 <template>
+	<v-skeleton-loader
+		v-if="isLoading"
+		type="list-item-avatar"
+	/>
 	<v-list
 		activatable
 		density="compact"
 		select-strategy="leaf"
 		class="pa-0"
+		v-else
 	>
 		<!-- Single visualizations -->
 		<v-list-item
@@ -203,11 +213,13 @@ watch(
 		<!-- Parent visualizations -->
 		<div
 			v-if="viz.isParentVisualization()"
-			@mouseenter="childrenOpen = true"
-			@mouseleave="
-				isSelected(viz) || viz.children.some((child) => isSelected(child))
-					? (childrenOpen = true)
-					: (childrenOpen = false)
+			@click:selected="childrenOpen = true"
+			@click:unselected="childrenOpen = false"
+			@contextmenu="
+				(e: any) => {
+					e.preventDefault();
+					childrenOpen = !childrenOpen;
+				}
 			"
 		>
 			<v-list-item
@@ -240,12 +252,19 @@ watch(
 					</v-tooltip>
 				</template>
 				<!-- Title -->
-				<template #title
-					><span
-						:style="`text-decoration: ${isMapLayerVisible(viz.id) ? '' : 'line-through'}`"
-						>{{ viz.name }}</span
-					></template
-				>
+				<template #title>
+					<v-tooltip
+						text="Right click to view child visualizations"
+						location="bottom"
+						><template v-slot:activator="{ props }">
+							<span
+								:style="`text-decoration: ${isMapLayerVisible(viz.id) ? '' : 'line-through'}`"
+								v-bind="props"
+								>{{ viz.name }}</span
+							>
+						</template>
+					</v-tooltip>
+				</template>
 				<!-- Actions -->
 				<template #append>
 					<div class="map-actions">
