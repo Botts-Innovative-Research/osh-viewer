@@ -26,7 +26,7 @@ export default function build() {
 	const datastreams = vizwizStore.datastreams;
 	const controlstreams = AggregateControlstreams(vizwizStore.csConfig);
 
-	const geoPtzResult = CreateGeoPtzViewProps(datastreams[0], controlstreams);
+	const geoPtzResult = CreateGeoPtzVizProps(datastreams[0], controlstreams);
 
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: geoPtzResult.vizDatasources,
@@ -48,7 +48,7 @@ export default function build() {
 	console.log('Created GeoPTZ Visualization:', newViz);
 }
 
-export function CreateGeoPtzViewProps(
+export function CreateGeoPtzVizProps(
 	datastream: OSHDatastream,
 	controlstreams: { [key: string]: any }
 ) {

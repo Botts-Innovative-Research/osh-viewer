@@ -27,7 +27,7 @@ export default function build() {
 	// Aggregate datastreams from vizwizStore
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
-	const chartResult = CreateChartViewProps(
+	const chartResult = CreateChartVizProps(
 		datastreams,
 		vizwizStore.visualizationCustomizationOptions
 	);
@@ -50,7 +50,7 @@ export default function build() {
 	console.log('Created Chart Visualization:', newViz);
 }
 
-export function CreateChartViewProps(
+export function CreateChartVizProps(
 	datastreams: { [key: string]: any },
 	visOptions: IChartCustomizationOptions
 ) {
@@ -127,8 +127,6 @@ export function CreateChartViewProps(
 		};
 		vizDatasources.push(currentDataSource);
 	}
-
-	console.log('Created ChartViewProps:', { vizDatasources, curveLayers, chartView });
 
 	return {
 		vizDatasources,

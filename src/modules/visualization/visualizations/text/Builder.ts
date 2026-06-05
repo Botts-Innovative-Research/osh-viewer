@@ -23,7 +23,7 @@ export default function build() {
 
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
-	const textResult = CreateTextViewProps(
+	const textResult = CreateTextVizProps(
 		datastreams,
 		vizwizStore.visualizationCustomizationOptions
 	);
@@ -45,7 +45,7 @@ export default function build() {
 	console.log('Created Text Visualization:', newViz);
 }
 
-export function CreateTextViewProps(datastreams: { [key: string]: any }, visOptions: any) {
+export function CreateTextVizProps(datastreams: { [key: string]: any }, visOptions: any) {
 	const datastreamStore = useDataStreamStore();
 
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
@@ -80,8 +80,6 @@ export function CreateTextViewProps(datastreams: { [key: string]: any }, visOpti
 		};
 		vizDatasources.push(currentDataSource);
 	}
-
-	console.log('Created Text View Props:', { vizDatasources, dataLayer });
 
 	return {
 		vizDatasources,

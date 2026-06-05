@@ -26,7 +26,7 @@ export default function build() {
 
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
-	const videoResult = CreateVideoViewProps(
+	const videoResult = CreateVideoVizProps(
 		datastreams,
 		vizwizStore.visualizationCustomizationOptions
 	);
@@ -57,7 +57,7 @@ export default function build() {
  * @param visOptions
  * @constructor
  */
-export function CreateVideoViewProps(
+export function CreateVideoVizProps(
 	datastreams: { [key: string]: any },
 	visOptions: IVideoCustomizationOptions
 ) {
@@ -107,8 +107,6 @@ export function CreateVideoViewProps(
 		};
 		vizDatasources.push(currentDataSource);
 	}
-
-	console.log('Created VideoViewProps:', { vizDatasources, videoLayer, videoView });
 
 	return {
 		vizDatasources,

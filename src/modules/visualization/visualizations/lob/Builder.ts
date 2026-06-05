@@ -22,10 +22,7 @@ export default function build() {
 
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
-	const lobResult = CreateLobViewProps(
-		datastreams,
-		vizwizStore.visualizationCustomizationOptions
-	);
+	const lobResult = CreateLobVizProps(datastreams, vizwizStore.visualizationCustomizationOptions);
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: lobResult.vizDatasources,
 		dataLayer: lobResult.lobLayer,
@@ -41,7 +38,7 @@ export default function build() {
 	newViz.setVisualizationComponents(visualizationComponents);
 	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization
 	visualizationStore.addVisualization(newViz);
-	console.log('Created Line of Bearing Visualization:', newViz);
+	console.log('Created LOB Visualization:', newViz);
 }
 
 /**
@@ -51,13 +48,11 @@ export default function build() {
  * @param dsOptions
  * @constructor
  */
-export function CreateLobViewProps(
+export function CreateLobVizProps(
 	datastreams: { [key: string]: any },
 	visOptions: ILineOfBearingCustomizationOptions
 ) {
 	const datastreamStore = useDataStreamStore();
-
-	console.log('Creating LOB View Properties with options:', visOptions);
 
 	// Create datasources, layer, and view
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
@@ -102,8 +97,6 @@ export function CreateLobViewProps(
 		};
 		vizDatasources.push(currentDataSource);
 	}
-
-	console.log('Created LOBViewProperties:', { vizDatasources, lobLayer });
 
 	return {
 		vizDatasources,

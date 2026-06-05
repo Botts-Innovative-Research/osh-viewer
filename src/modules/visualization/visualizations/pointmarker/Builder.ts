@@ -23,7 +23,7 @@ export default function build() {
 	// Aggregate datastreams from vizwizStore
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
-	const pmResult = CreatePointMarkerViewProps(
+	const pmResult = CreatePointMarkerVizProps(
 		datastreams,
 		vizwizStore.visualizationCustomizationOptions
 	);
@@ -52,7 +52,7 @@ export default function build() {
  * @param visOptions
  * @constructor
  */
-export function CreatePointMarkerViewProps(
+export function CreatePointMarkerVizProps(
 	datastreams: { [key: string]: any },
 	visOptions: IPointMarkerCustomizationOptions
 ) {
@@ -96,8 +96,6 @@ export function CreatePointMarkerViewProps(
 		};
 		vizDatasources.push(currentDataSource);
 	}
-
-	console.log('Created PointMarkerViewProps:', { vizDatasources, pointMarkerLayer });
 
 	return {
 		vizDatasources,

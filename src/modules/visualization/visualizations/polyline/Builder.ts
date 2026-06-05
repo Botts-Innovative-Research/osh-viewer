@@ -23,7 +23,7 @@ export default function build() {
 	// Aggregate datastreams from vizwizStore
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
-	const pmResult = CreatePolylineViewProps(
+	const pmResult = CreatePolylineVizProps(
 		datastreams,
 		vizwizStore.visualizationCustomizationOptions
 	);
@@ -51,7 +51,7 @@ export default function build() {
  * @param visOptions
  * @constructor
  */
-export function CreatePolylineViewProps(
+export function CreatePolylineVizProps(
 	datastreams: { [key: string]: any },
 	visOptions: IPolylineCustomizationOptions
 ) {
@@ -94,8 +94,6 @@ export function CreatePolylineViewProps(
 		};
 		vizDatasources.push(currentDataSource);
 	}
-
-	console.log('Created PolylineViewProps:', { vizDatasources, polylineLayer });
 
 	return {
 		vizDatasources,

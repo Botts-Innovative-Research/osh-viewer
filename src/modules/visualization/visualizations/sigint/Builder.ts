@@ -4,14 +4,14 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { AggregateDatastreams, getUsedDatastreams } from '../../services/aggregation.service';
-import { CreatePointMarkerViewProps } from '../pointmarker/Builder';
-import { CreateLobViewProps } from '../lob/Builder';
-import { CreateEllipseViewProps } from '../ellipse/Builder';
 import { PointMarkerDescriptor } from '../pointmarker/Descriptor';
 import { LobDescriptor } from '../lob/Descriptor';
 import { EllipseDescriptor } from '../ellipse/Descriptor';
 import { SigIntDescriptor } from './Descriptor';
 import { VisualizationComponents } from '../../types/visualization';
+import { CreatePointMarkerVizProps } from '../pointmarker/Builder';
+import { CreateLobVizProps } from '../lob/Builder';
+import { CreateEllipseVizProps } from '../ellipse/Builder';
 
 export default function build() {
 	console.log('Building Sigint Visualization...');
@@ -22,7 +22,7 @@ export default function build() {
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
 	// POINTMARKER
-	const pmResult = CreatePointMarkerViewProps(datastreams, {
+	const pmResult = CreatePointMarkerVizProps(datastreams, {
 		name: vizwizStore.visualizationCustomizationOptions.name,
 		icon: vizwizStore.visualizationCustomizationOptions.pmIcon,
 		iconColor: vizwizStore.visualizationCustomizationOptions.pmIconColor,
@@ -42,7 +42,7 @@ export default function build() {
 	pmViz.setVisualizationComponents(pmVisualizationComponents);
 
 	// LOB
-	const lobResult = CreateLobViewProps(datastreams, {
+	const lobResult = CreateLobVizProps(datastreams, {
 		name: vizwizStore.visualizationCustomizationOptions.name,
 		lineColor: vizwizStore.visualizationCustomizationOptions.lobLineColor,
 		lobWeight: vizwizStore.visualizationCustomizationOptions.lobWeight,
@@ -67,7 +67,7 @@ export default function build() {
 	lobViz.setVisualizationComponents(lobVisualizationComponents);
 
 	// ELLIPSE
-	const ellipseResult = CreateEllipseViewProps(datastreams, {
+	const ellipseResult = CreateEllipseVizProps(datastreams, {
 		name: vizwizStore.visualizationCustomizationOptions.name,
 		ellipseColor: vizwizStore.visualizationCustomizationOptions.ellipseColor,
 	});

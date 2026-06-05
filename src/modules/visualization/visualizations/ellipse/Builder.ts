@@ -23,7 +23,7 @@ export default function build() {
 	// Aggregate datastreams from vizwizStore
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
-	const ellipseResult = CreateEllipseViewProps(
+	const ellipseResult = CreateEllipseVizProps(
 		datastreams,
 		vizwizStore.visualizationCustomizationOptions
 	);
@@ -52,7 +52,7 @@ export default function build() {
  * @param visOptions
  * @constructor
  */
-export function CreateEllipseViewProps(
+export function CreateEllipseVizProps(
 	datastreams: { [key: string]: any },
 	visOptions: IEllipseCustomizationOptions
 ) {
@@ -93,8 +93,6 @@ export function CreateEllipseViewProps(
 		};
 		vizDatasources.push(currentDataSource);
 	}
-
-	console.log('Created EllipseViewProps:', { vizDatasources, ellipseLayer });
 
 	return {
 		vizDatasources,
