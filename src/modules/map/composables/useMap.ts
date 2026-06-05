@@ -16,6 +16,10 @@ import { MapAdapter } from '../adapters/types';
 import { createLeafletAdapter } from '../adapters/leaflet.adapter';
 import { useSettingsStore } from '@/stores/settingsstore';
 import { isMapLayerCompatible, SupportedMapLayer } from '../supportedMapLayers';
+import {
+	connectDatasources as connect,
+	disconnectDatasources as disconnect,
+} from '@/modules/visualization/services/datasource.service';
 
 export function useMap() {
 	// Stores
@@ -95,10 +99,10 @@ export function useMap() {
 
 	/* DATASOURCE MANAGEMENT */
 	function connectDatasources() {
-		listDataSourceInstances.value.forEach((ds: any) => ds.connect());
+		connect(listDataSourceInstances.value);
 	}
 	function disconnectDatasources() {
-		listDataSourceInstances.value.forEach((ds: any) => ds.disconnect());
+		disconnect(listDataSourceInstances.value);
 	}
 
 	/* CREATE/DELETE VISUALIZATIONS */

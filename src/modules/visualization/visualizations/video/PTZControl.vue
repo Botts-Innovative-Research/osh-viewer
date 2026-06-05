@@ -2,8 +2,8 @@
 import { computed, ref, watch } from 'vue';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { showToast } from '@/composables/useToast';
-import { sendCommand } from '@/lib/ControlstreamUtils';
 import { Direction } from './Descriptor';
+import { sendCommand } from '../../services/controlstream.service';
 
 interface PTZControlProps {
 	commandBaseUrl: string;

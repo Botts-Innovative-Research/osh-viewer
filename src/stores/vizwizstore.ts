@@ -1,12 +1,12 @@
 import { OSHControlStream, OSHDatastream } from '@/lib/OSHConnectDataStructs';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { VisualizationCustomizationOptions } from '@/lib/VisualizationHelpers';
 import {
 	getStreamIds,
 	rehydrateControlStreams,
 	rehydrateDatastreams,
 } from '@/modules/visualization/services/visualization.serialization';
+import { VisualizationCustomizationOptions } from '@/modules/visualization/types/visualization';
 
 export interface WizardConfig {
 	id: string;
@@ -16,7 +16,7 @@ export interface WizardConfig {
 	controlstreamIds: string[];
 	dsConfig: Record<string, Record<string, any>>;
 	csConfig: Record<string, Record<string, any>>;
-	visualizationCustomizationOptions: any;
+	visualizationCustomizationOptions: VisualizationCustomizationOptions;
 }
 
 export const useVizWizStore = defineStore('vizwiz', () => {
@@ -76,9 +76,7 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 		visualizationCustomizationOptions.value = options;
 	};
 
-	const updateVisualizationCustomizationOptions = (
-		patch: Partial<VisualizationCustomizationOptions>
-	) => {
+	const updateVisualizationCustomizationOptions = (patch: Partial<any>) => {
 		visualizationCustomizationOptions.value = {
 			...visualizationCustomizationOptions.value,
 			...patch,

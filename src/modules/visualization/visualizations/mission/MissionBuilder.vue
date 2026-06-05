@@ -1,14 +1,9 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import {
-	ISweApiControlStreamProperties,
-	ISweApiDataSourceProperties,
-} from '@/lib/VisualizationHelpers';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useMapStore } from '@/stores/mapstore';
-import { sendCommand } from '@/lib/ControlstreamUtils';
 import { showToast } from '@/composables/useToast';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
@@ -19,6 +14,11 @@ import {
 } from '@/modules/visualization/services/datasource.service';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
+import {
+	ISweApiControlStreamProperties,
+	ISweApiDataSourceProperties,
+} from '../../types/datasource';
+import { sendCommand } from '../../services/controlstream.service';
 
 // python sim_vehicle.py -v ArduCopter -f quad --console --map --location=Taiwan
 

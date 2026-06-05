@@ -9,10 +9,10 @@ import { useNodeStore } from '@/stores/nodestore';
 import { useSystemStore } from '@/stores/systemstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
-import { VisualizationComponents } from '@/lib/VisualizationHelpers';
 import { CONFIG_UID_BASE } from '@/composables/useConfigPersistence';
 import { WizardConfig } from '@/stores/vizwizstore';
 import { ViewLocation } from '@/modules/visualization/registry/types';
+import { VisualizationComponents } from '@/modules/visualization/types/visualization';
 
 export interface Result {
 	success: boolean;

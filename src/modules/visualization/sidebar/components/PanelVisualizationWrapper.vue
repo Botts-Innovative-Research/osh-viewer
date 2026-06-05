@@ -4,54 +4,67 @@ import Chart from '@/modules/visualization/visualizations/chart/Chart.vue';
 import Video from '@/modules/visualization/visualizations/video/Video.vue';
 import Text from '@/modules/visualization/visualizations/text/Text.vue';
 import MissionBuilder from '@/modules/visualization/visualizations/mission/MissionBuilder.vue';
-import {
-	IChartViewProperties,
-	ICurveLayerProperties,
-	IVideoLayerProperties,
-	IVideoViewProperties,
-} from '@/lib/VisualizationHelpers';
+import { onMounted, ref } from 'vue';
 
 const { viz, customClass = '' } = defineProps<{
 	viz: OSHVisualization;
 	customClass?: string;
 }>();
+
+const isLoading = ref(true);
+
+const dataSource = ref();
+const dataLayer = ref();
+const dataView = ref();
+const controlstream = ref();
+
+onMounted(() => {
+	isLoading.value = true;
+	if (viz.isParentVisualization() || Array.isArray(viz.visualizationComponents)) return;
+	else {
+		dataSource.value = viz.visualizationComponents.dataSource;
+		dataLayer.value = viz.visualizationComponents.dataLayer;
+		dataView.value = viz.visualizationComponents.dataView;
+		controlstream.value = viz.visualizationComponents.controlstream;
+	}
+	isLoading.value = false;
+});
 </script>
 
 <template>
-	<div :class="[customClass]">
+	<v-skeleton-loader
+		type="card"
+		v-if="isLoading"
+	></v-skeleton-loader>
+	<div
+		:class="[customClass]"
+		v-else
+	>
 		<slot name="before"></slot>
 		<Chart
 			:visualization="viz"
-			:datasource="viz.visualizationComponents.dataSource"
-			:curve-layer="viz.visualizationComponents.dataLayer as ICurveLayerProperties[]"
-			:chart-view="viz.visualizationComponents.dataView as IChartViewProperties"
+			:datasource="dataSource"
+			:curve-layer="dataLayer"
+			:chart-view="dataView"
 			v-if="viz.type === 'chart'"
 		></Chart>
 		<Video
 			:visualization="viz"
-			:datasource="viz.visualizationComponents.dataSource"
-			:video-layer="viz.visualizationComponents.dataLayer as IVideoLayerProperties"
-			:video-view="viz.visualizationComponents.dataView as IVideoViewProperties"
+			:datasource="dataSource"
+			:video-layer="dataLayer"
+			:video-view="dataView"
 			:controlstream="viz.controlstream ? viz.controlstream[0] : undefined"
 			v-if="viz.type === 'video'"
 		></Video>
 		<Text
 			:visualization="viz"
-			:datasource="viz.visualizationComponents.dataSource[0]"
+			:datasource="dataSource[0]"
 			v-if="viz.type === 'text'"
 		></Text>
 		<MissionBuilder
 			:visualization="viz"
-			:datasource="
-				Array.isArray(viz.visualizationComponents.dataSource)
-					? viz.visualizationComponents.dataSource
-					: [viz.visualizationComponents.dataSource]
-			"
-			:controlstreams="
-				Array.isArray(viz.visualizationComponents.controlstream)
-					? viz.visualizationComponents.controlstream
-					: [viz.visualizationComponents.controlstream]
-			"
+			:datasource="dataSource"
+			:controlstreams="controlstream"
 			v-if="viz.type === 'mission'"
 		></MissionBuilder>
 		<slot name="after"></slot>

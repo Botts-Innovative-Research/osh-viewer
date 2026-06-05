@@ -10,9 +10,16 @@ import IconVisibilityControl from '@/modules/visualization/wizard/customizations
 import { useVizWizStore } from '@/stores/vizwizstore';
 
 const vizwizStore = useVizWizStore();
+// POINTMARKER
+const showPmIconColor = computed(() => (vizwizStore.dsConfig.pmIconColor ? false : true));
+// LOB
 const showLobIcon = computed(
 	() => vizwizStore.visualizationCustomizationOptions.showLobIcon ?? true
 );
+const showLobIconColor = computed(() => (vizwizStore.dsConfig.lobIconColor ? false : true));
+const showLobLineColor = computed(() => (vizwizStore.dsConfig.lobLineColor ? false : true));
+// ELLIPSE
+const showEllipseColor = computed(() => (vizwizStore.dsConfig.ellipseColor ? false : true));
 
 const openPanels = ref<string[]>(['general', 'pointmarker', 'lob', 'ellipse']);
 
@@ -63,10 +70,23 @@ useComponentValidation(valid, emit);
 		>
 			<v-expansion-panel-text>
 				<icon-control roleName="pmIcon"></icon-control>
-				<color-control
-					roleName="pmIconColor"
-					label="Point Marker Icon Color"
-				></color-control>
+				<v-expand-transition>
+					<div v-if="showPmIconColor">
+						<color-control
+							roleName="pmIconColor"
+							label="Point Marker Icon Color"
+						></color-control>
+					</div>
+					<div
+						v-else
+						class="pa-4"
+					>
+						<v-alert variant="outlined"
+							>Icon color will be dynamically generated based on the selected
+							properties from the previous step.</v-alert
+						>
+					</div>
+				</v-expand-transition>
 			</v-expansion-panel-text>
 		</v-expansion-panel>
 		<v-expansion-panel
@@ -82,24 +102,50 @@ useComponentValidation(valid, emit);
 				<v-expand-transition>
 					<div v-if="showLobIcon">
 						<icon-control roleName="lobIcon"></icon-control>
+						<v-expand-transition>
+							<div v-if="showLobIconColor">
+								<color-control
+									roleName="lobIconColor"
+									label="LoB Icon Color"
+								></color-control>
+							</div>
+							<div
+								v-else
+								class="pb-4"
+							>
+								<v-alert variant="outlined"
+									>Icon color will be dynamically generated based on the selected
+									properties from the previous step.</v-alert
+								>
+							</div>
+						</v-expand-transition>
+					</div>
+					<div
+						v-else
+						class="pb-4"
+					>
+						<v-alert variant="outlined"
+							>Icon is hidden. Enable "Show Icon" to customize.</v-alert
+						>
+					</div>
+				</v-expand-transition>
+				<v-expand-transition>
+					<div v-if="showLobLineColor">
 						<color-control
-							roleName="lobIconColor"
-							label="LoB Icon Color"
+							roleName="lobLineColor"
+							label="LoB Line Color"
 						></color-control>
 					</div>
 					<div
 						v-else
 						class="pb-4"
 					>
-						<i class="text--disabled">
-							Icon is hidden. Enable "Show Icon" to customize.
-						</i>
+						<v-alert variant="outlined"
+							>Line color will be dynamically generated based on the selected
+							properties from the previous step.</v-alert
+						>
 					</div>
 				</v-expand-transition>
-				<color-control
-					roleName="lobLineColor"
-					label="LoB Line Color"
-				></color-control>
 				<slider-value-control
 					roleName="lobWeight"
 					label="LoB Line Weight"
@@ -140,10 +186,23 @@ useComponentValidation(valid, emit);
 			value="ellipse"
 		>
 			<v-expansion-panel-text>
-				<ColorControl
-					roleName="ellipseColor"
-					label="Color"
-				/>
+				<v-expand-transition>
+					<div v-if="showEllipseColor">
+						<ColorControl
+							roleName="ellipseColor"
+							label="Color"
+						/>
+					</div>
+					<div
+						v-else
+						class="pb-4"
+					>
+						<v-alert variant="outlined"
+							>Ellipse color will be dynamically generated based on the selected
+							properties from the previous step.</v-alert
+						>
+					</div>
+				</v-expand-transition>
 			</v-expansion-panel-text>
 		</v-expansion-panel>
 	</v-expansion-panels>

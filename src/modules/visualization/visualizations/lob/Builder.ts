@@ -1,14 +1,6 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import {
-	ILineOfBearingCustomizationOptions,
-	ILineOfBearingLayerProperties,
-	IMapViewProperties,
-	ISweApiDataSourceProperties,
-} from '@/lib/VisualizationHelpers';
 //@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
-// @ts-ignore
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
@@ -18,6 +10,10 @@ import {
 	BuildRoleProperty,
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
+import { ILineOfBearingCustomizationOptions } from '../../types/customization';
+import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { ILineOfBearingLayerProperties } from '../../types/layers';
+import { VisualizationComponents } from '../../types/visualization';
 
 export default function build() {
 	console.log('Building LOB Visualization...');
@@ -26,14 +22,10 @@ export default function build() {
 
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
-	const lobResult = CreateLobViewProps(
-		datastreams,
-		vizwizStore.visualizationCustomizationOptions
-	);
-	const visualizationComponents = {
+	const lobResult = CreateLobVizProps(datastreams, vizwizStore.visualizationCustomizationOptions);
+	const visualizationComponents: VisualizationComponents = {
 		dataSource: lobResult.vizDatasources,
 		dataLayer: lobResult.lobLayer,
-		dataView: lobResult.lobView,
 	};
 
 	const newViz: OSHVisualization = new OSHVisualization(
@@ -46,7 +38,7 @@ export default function build() {
 	newViz.setVisualizationComponents(visualizationComponents);
 	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization
 	visualizationStore.addVisualization(newViz);
-	console.log('Created Line of Bearing Visualization:', newViz);
+	console.log('Created LOB Visualization:', newViz);
 }
 
 /**
@@ -56,13 +48,11 @@ export default function build() {
  * @param dsOptions
  * @constructor
  */
-export function CreateLobViewProps(
+export function CreateLobVizProps(
 	datastreams: { [key: string]: any },
 	visOptions: ILineOfBearingCustomizationOptions
 ) {
 	const datastreamStore = useDataStreamStore();
-
-	console.log('Creating LOB View Properties with options:', visOptions);
 
 	// Create datasources, layer, and view
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
@@ -76,15 +66,8 @@ export function CreateLobViewProps(
 		iconName: visOptions.iconName,
 		iconOpacity: visOptions.showIcon ? 1 : 0, // Set opacity to 0 if no icon, otherwise use default opacity
 		iconSize: [32, 32],
-		labelOffset: [-16, -32],
 		label: visOptions.name,
 		name: visOptions.name,
-	};
-	const lobView: IMapViewProperties = {
-		container: `map-container-${randomUUID()}`,
-		layers: [lobLayer],
-		css: 'map-view',
-		refreshRate: 1000,
 	};
 
 	// Iterate through each unique datastream ID
@@ -115,11 +98,8 @@ export function CreateLobViewProps(
 		vizDatasources.push(currentDataSource);
 	}
 
-	console.log('Created LOBViewProperties:', { vizDatasources, lobLayer, lobView });
-
 	return {
 		vizDatasources,
 		lobLayer,
-		lobView,
 	};
 }

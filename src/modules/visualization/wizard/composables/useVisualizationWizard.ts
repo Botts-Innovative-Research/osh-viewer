@@ -45,7 +45,7 @@ export function useVisualizationWizard(options: {
 				return;
 			}
 
-			vizwizStore.setWizardConfig(options.viz.wizardConfig);
+			vizwizStore.setWizardConfig(JSON.parse(JSON.stringify(options.viz.wizardConfig)));
 			selectedType.value = options.viz.type;
 			await nextTick();
 		}

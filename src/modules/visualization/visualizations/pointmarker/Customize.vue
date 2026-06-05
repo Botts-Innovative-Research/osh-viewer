@@ -5,6 +5,11 @@ import IconControl from '@/modules/visualization/wizard/customizations/IconContr
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import ColorControl from '../../wizard/customizations/ColorControl.vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
+import { useVizWizStore } from '@/stores/vizwizstore';
+
+const vizwizStore = useVizWizStore();
+// If pmIconColor selected in Config, don't show icon color select
+const showIconColor = computed(() => (vizwizStore.dsConfig.pmIconColor ? false : true));
 
 const openPanels = ref<string[]>(['general', 'pointmarker']);
 
@@ -55,11 +60,24 @@ useComponentValidation(valid, emit);
 		>
 			<v-expansion-panel-text
 				><icon-control roleName="icon"></icon-control>
-				<color-control
-					roleName="iconColor"
-					label="Icon Color"
-				></color-control
-			></v-expansion-panel-text>
+				<v-expand-transition>
+					<div v-if="showIconColor">
+						<color-control
+							roleName="iconColor"
+							label="Icon Color"
+						></color-control>
+					</div>
+					<div
+						v-else
+						class="pa-4"
+					>
+						<v-alert variant="outlined"
+							>Icon color will be dynamically generated based on the selected
+							properties from the previous step.</v-alert
+						>
+					</div>
+				</v-expand-transition>
+			</v-expansion-panel-text>
 		</v-expansion-panel>
 	</v-expansion-panels>
 </template>

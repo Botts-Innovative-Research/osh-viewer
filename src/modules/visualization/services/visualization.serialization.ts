@@ -1,9 +1,9 @@
 import { OSHControlStream, OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { VisualizationComponents } from '@/lib/VisualizationHelpers';
 import { ViewLocation } from '../registry/types';
 import { WizardConfig } from '@/stores/vizwizstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
+import { VisualizationComponents } from '../types/visualization';
 
 export interface SerializedVisualization {
 	id: string;

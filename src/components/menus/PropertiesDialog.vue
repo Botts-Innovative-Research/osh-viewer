@@ -2,11 +2,13 @@
 import { computed, ref, watch } from 'vue';
 import { OSHControlStream, OSHDatastream } from '@/lib/OSHConnectDataStructs';
 import {
-	fetchCsSchema,
-	fetchSchema,
-	mineControlObsPropsFromCS,
+	fetchDsSchema,
 	mineDatasourceObsPropsFromDS,
-} from '@/lib/DatasourceUtils';
+} from '@/modules/visualization/services/datasource.service';
+import {
+	fetchCsSchema,
+	mineControlObsPropsFromCS,
+} from '@/modules/visualization/services/controlstream.service';
 
 const props = defineProps<{
 	item: OSHDatastream | OSHControlStream;
@@ -28,7 +30,7 @@ watch(
 		if (itemType.value === 'ds') {
 			const { ds } = mineDatasourceObsPropsFromDS(item.id);
 			details.value = ds.datastream.properties;
-			const rawSchema = (await fetchSchema(ds.datastream)).recordSchema;
+			const rawSchema = (await fetchDsSchema(ds.datastream)).recordSchema;
 			schema.value = rawSchema.fields ?? rawSchema.items;
 			parentSystem.value = details.value['system@link'].uid;
 		} else if (itemType.value === 'cs') {

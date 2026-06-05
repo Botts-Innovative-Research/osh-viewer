@@ -1,9 +1,4 @@
 import { OSHControlStream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import {
-	ISweApiControlStreamProperties,
-	ISweApiDataSourceProperties,
-	VisualizationComponents,
-} from '@/lib/VisualizationHelpers';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 //@ts-ignore
@@ -18,6 +13,11 @@ import {
 	getUsedControlstreams,
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
+import { VisualizationComponents } from '../../types/visualization';
+import {
+	ISweApiControlStreamProperties,
+	ISweApiDataSourceProperties,
+} from '../../types/datasource';
 
 export default function build() {
 	console.log('Building Mission Visualization...');
@@ -27,16 +27,11 @@ export default function build() {
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 	const controlstreams = AggregateControlstreams(vizwizStore.csConfig);
 
-	const missionResult = CreateMissionViewProps(
-		datastreams,
-		controlstreams,
-		vizwizStore.visualizationCustomizationOptions
-	);
+	const missionResult = CreateMissionVizProps(datastreams, controlstreams);
 
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: missionResult.vizDatasources,
 		dataLayer: [],
-		dataView: null,
 		controlstream: missionResult.vizControlstreams,
 	};
 
@@ -54,10 +49,9 @@ export default function build() {
 	console.log('Created Mission Visualization:', newViz);
 }
 
-export function CreateMissionViewProps(
+export function CreateMissionVizProps(
 	datastreams: { [key: string]: any },
-	controlstreams: { [key: string]: any },
-	visOptions: any
+	controlstreams: { [key: string]: any }
 ) {
 	const controlstreamStore = useControlStreamStore();
 	const datastreamStore = useDataStreamStore();

@@ -11,6 +11,10 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 
 const vizwizStore = useVizWizStore();
 const showIcon = computed(() => vizwizStore.visualizationCustomizationOptions.showIcon ?? true);
+// If lobIconColor selected in Config, don't show icon color select
+const showIconColor = computed(() => (vizwizStore.dsConfig.lobIconColor ? false : true));
+// If lobLineColor selected in Config, don't show line color select
+const showLineColor = computed(() => (vizwizStore.dsConfig.lobLineColor ? false : true));
 
 const openPanels = ref<string[]>(['general', 'icon', 'line']);
 
@@ -67,18 +71,31 @@ useComponentValidation(valid, emit);
 				<v-expand-transition>
 					<div v-if="showIcon">
 						<icon-control roleName="icon"></icon-control>
-						<color-control
-							roleName="iconColor"
-							label="Icon Color"
-						></color-control>
+						<v-expand-transition>
+							<div v-if="showIconColor">
+								<color-control
+									roleName="iconColor"
+									label="Icon Color"
+								></color-control>
+							</div>
+							<div
+								v-else
+								class="pb-4"
+							>
+								<v-alert variant="outlined"
+									>Icon color will be dynamically generated based on the selected
+									properties from the previous step.</v-alert
+								>
+							</div>
+						</v-expand-transition>
 					</div>
 					<div
 						v-else
 						class="pb-4"
 					>
-						<i class="text--disabled">
-							Icon is hidden. Enable "Show Icon" to customize.
-						</i>
+						<v-alert variant="outlined"
+							>Icon is hidden. Enable "Show Icon" to customize.</v-alert
+						>
 					</div>
 				</v-expand-transition>
 			</v-expansion-panel-text>
@@ -89,10 +106,23 @@ useComponentValidation(valid, emit);
 			value="line"
 		>
 			<v-expansion-panel-text>
-				<color-control
-					roleName="lineColor"
-					label="Line Color"
-				></color-control>
+				<v-expand-transition>
+					<div v-if="showLineColor">
+						<color-control
+							roleName="lineColor"
+							label="Line Color"
+						></color-control>
+					</div>
+					<div
+						v-else
+						class="pb-4"
+					>
+						<v-alert variant="outlined"
+							>Line color will be dynamically generated based on the selected
+							properties from the previous step.</v-alert
+						>
+					</div>
+				</v-expand-transition>
 				<slider-value-control
 					roleName="lobWeight"
 					label="Line Weight"

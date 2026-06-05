@@ -2,13 +2,6 @@ import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 //@ts-ignore
 import { useDataStreamStore } from '@/stores/datastreamstore';
-import {
-	IChartCustomizationOptions,
-	IChartViewProperties,
-	ICurveLayerProperties,
-	ISweApiDataSourceProperties,
-	VisualizationComponents,
-} from '@/lib/VisualizationHelpers';
 //@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
 // @ts-ignore
@@ -20,6 +13,11 @@ import {
 	BuildRoleProperty,
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
+import { VisualizationComponents } from '../../types/visualization';
+import { IChartCustomizationOptions } from '../../types/customization';
+import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { ICurveLayerProperties } from '../../types/layers';
+import { IChartViewProperties } from '../../types/views';
 
 export default function build() {
 	console.log('Building Chart Visualization...');
@@ -29,7 +27,7 @@ export default function build() {
 	// Aggregate datastreams from vizwizStore
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
-	const chartResult = CreateChartViewProps(
+	const chartResult = CreateChartVizProps(
 		datastreams,
 		vizwizStore.visualizationCustomizationOptions
 	);
@@ -52,7 +50,7 @@ export default function build() {
 	console.log('Created Chart Visualization:', newViz);
 }
 
-export function CreateChartViewProps(
+export function CreateChartVizProps(
 	datastreams: { [key: string]: any },
 	visOptions: IChartCustomizationOptions
 ) {
@@ -129,8 +127,6 @@ export function CreateChartViewProps(
 		};
 		vizDatasources.push(currentDataSource);
 	}
-
-	console.log('Created ChartViewProps:', { vizDatasources, curveLayers, chartView });
 
 	return {
 		vizDatasources,

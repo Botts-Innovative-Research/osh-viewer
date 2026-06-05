@@ -1,10 +1,5 @@
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
-import {
-	DataLayerProperties,
-	ISweApiDataSourceProperties,
-	VisualizationComponents,
-} from '@/lib/VisualizationHelpers';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 //@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
@@ -17,6 +12,9 @@ import {
 	BuildRoleProperty,
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
+import { VisualizationComponents } from '../../types/visualization';
+import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { DataLayerProperties } from '../../types/layers';
 
 export default function build() {
 	console.log('Building Text Visualization...');
@@ -25,14 +23,13 @@ export default function build() {
 
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
-	const textResult = CreateTextViewProps(
+	const textResult = CreateTextVizProps(
 		datastreams,
 		vizwizStore.visualizationCustomizationOptions
 	);
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: textResult.vizDatasources,
 		dataLayer: textResult.dataLayer,
-		dataView: null,
 	};
 
 	const newViz = new OSHVisualization(
@@ -48,7 +45,7 @@ export default function build() {
 	console.log('Created Text Visualization:', newViz);
 }
 
-export function CreateTextViewProps(datastreams: { [key: string]: any }, visOptions: any) {
+export function CreateTextVizProps(datastreams: { [key: string]: any }, visOptions: any) {
 	const datastreamStore = useDataStreamStore();
 
 	const vizDatasources: ISweApiDataSourceProperties[] = [];
@@ -83,8 +80,6 @@ export function CreateTextViewProps(datastreams: { [key: string]: any }, visOpti
 		};
 		vizDatasources.push(currentDataSource);
 	}
-
-	console.log('Created Text View Props:', { vizDatasources, dataLayer });
 
 	return {
 		vizDatasources,

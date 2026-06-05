@@ -1,24 +1,19 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import {
-	IMapViewProperties,
-	IPolylineCustomizationOptions,
-	IPolylineLayerProperties,
-	ISweApiDataSourceProperties,
-	VisualizationComponents,
-} from '@/lib/VisualizationHelpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 //@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
-// @ts-ignore
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import {
 	AggregateDatastreams,
 	BuildRoleProperty,
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
 import { PolylineDescriptor } from './Descriptor';
+import { VisualizationComponents } from '../../types/visualization';
+import { IPolylineCustomizationOptions } from '../../types/customization';
+import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IPolylineLayerProperties } from '../../types/layers';
 
 export default function build() {
 	console.log('Building Polyline Visualization...');
@@ -28,14 +23,13 @@ export default function build() {
 	// Aggregate datastreams from vizwizStore
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
-	const pmResult = CreatePolylineViewProps(
+	const pmResult = CreatePolylineVizProps(
 		datastreams,
 		vizwizStore.visualizationCustomizationOptions
 	);
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: pmResult.vizDatasources,
 		dataLayer: pmResult.polylineLayer,
-		dataView: pmResult.mapView,
 	};
 
 	const newViz: OSHVisualization = new OSHVisualization(
@@ -57,7 +51,7 @@ export default function build() {
  * @param visOptions
  * @constructor
  */
-export function CreatePolylineViewProps(
+export function CreatePolylineVizProps(
 	datastreams: { [key: string]: any },
 	visOptions: IPolylineCustomizationOptions
 ) {
@@ -71,12 +65,6 @@ export function CreatePolylineViewProps(
 		weight: visOptions.weight,
 		opacity: visOptions.opacity,
 		iconName: 'vector-polyline', // For map visualizations list icon
-	};
-	let mapView: IMapViewProperties = {
-		container: `map-container-${randomUUID()}`,
-		css: 'map-view',
-		layers: [polylineLayer],
-		refreshRate: 1000,
 	};
 
 	// Iterate through each unique datastream ID
@@ -107,11 +95,8 @@ export function CreatePolylineViewProps(
 		vizDatasources.push(currentDataSource);
 	}
 
-	console.log('Created Polyline Props:', { vizDatasources, polylineLayer, mapView });
-
 	return {
 		vizDatasources,
 		polylineLayer,
-		mapView,
 	};
 }

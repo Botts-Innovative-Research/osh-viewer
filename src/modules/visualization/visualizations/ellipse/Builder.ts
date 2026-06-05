@@ -1,24 +1,19 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import {
-	IEllipseCustomizationOptions,
-	IEllipseLayerProperties,
-	IMapViewProperties,
-	ISweApiDataSourceProperties,
-	VisualizationComponents,
-} from '@/lib/VisualizationHelpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 //@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
-// @ts-ignore
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { EllipseDescriptor } from './Descriptor';
 import {
 	AggregateDatastreams,
 	BuildRoleProperty,
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
+import { VisualizationComponents } from '../../types/visualization';
+import { IEllipseCustomizationOptions } from '../../types/customization';
+import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IEllipseLayerProperties } from '../../types/layers';
 
 export default function build() {
 	console.log('Building Ellipse Visualization...');
@@ -28,14 +23,13 @@ export default function build() {
 	// Aggregate datastreams from vizwizStore
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
-	const ellipseResult = CreateEllipseViewProps(
+	const ellipseResult = CreateEllipseVizProps(
 		datastreams,
 		vizwizStore.visualizationCustomizationOptions
 	);
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: ellipseResult.vizDatasources,
 		dataLayer: ellipseResult.ellipseLayer,
-		dataView: ellipseResult.mapView,
 	};
 
 	const newViz: OSHVisualization = new OSHVisualization(
@@ -58,7 +52,7 @@ export default function build() {
  * @param visOptions
  * @constructor
  */
-export function CreateEllipseViewProps(
+export function CreateEllipseVizProps(
 	datastreams: { [key: string]: any },
 	visOptions: IEllipseCustomizationOptions
 ) {
@@ -70,12 +64,6 @@ export function CreateEllipseViewProps(
 		name: visOptions.name,
 		color: visOptions.ellipseColor,
 		iconName: 'ellipse-outline', // For map visualizations list icon
-	};
-	let mapView: IMapViewProperties = {
-		container: `map-container-${randomUUID()}`,
-		css: 'map-view',
-		layers: [ellipseLayer],
-		refreshRate: 1000,
 	};
 
 	// Iterate through each unique datastream ID
@@ -106,11 +94,8 @@ export function CreateEllipseViewProps(
 		vizDatasources.push(currentDataSource);
 	}
 
-	console.log('Created MapViewProps:', { vizDatasources, ellipseLayer, mapView });
-
 	return {
 		vizDatasources,
 		ellipseLayer,
-		mapView,
 	};
 }
