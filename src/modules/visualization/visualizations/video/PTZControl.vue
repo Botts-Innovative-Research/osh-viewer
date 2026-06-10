@@ -48,40 +48,100 @@ function onSend() {
 	}
 }
 
+function handleStop() {
+	const command = {
+		parameters: {
+			pan: 0,
+			tilt: 0,
+			zoom: 0,
+		},
+	};
+
+	sendCommand(props.commandBaseUrl, props.id, command, props.auth);
+}
+
 // Handle button-based movement commands for relative control
 function handleMove(direction: Direction) {
 	let command = null;
 
-	switch (direction) {
-		case 'right':
-			command = { parameters: { rpan: increment.value } };
-			break;
-		case 'left':
-			command = { parameters: { rpan: -increment.value } };
-			break;
-		case 'up':
-			command = { parameters: { rtilt: increment.value } };
-			break;
-		case 'down':
-			command = { parameters: { rtilt: -increment.value } };
-			break;
-		case 'zoomIn':
-			command = { parameters: { rzoom: increment.value } };
-			break;
-		case 'zoomOut':
-			command = { parameters: { rzoom: -increment.value } };
-			break;
-		case 'home':
-			if (presetOptions.value.includes('Home')) command = { parameters: { preset: 'Home' } };
-			else {
-				console.error('Home preset not available.');
-				showToast('Home preset is not available.', 'ERROR');
-			}
-			break;
-		default:
-			return;
-	}
+	if (hasContinuous) {
+		if (direction === 'home') {
+			command = {
+				parameters: {
+					presetGoto: '1',
+				},
+			};
+		} else {
+			let pan = 0;
+			let tilt = 0;
+			let zoom = 0;
 
+			if (direction === 'right') {
+				pan -= 10;
+			} else if (direction === 'left') {
+				pan += 10;
+			} else if (direction === 'up') {
+				tilt += 10;
+			} else if (direction === 'down') {
+				tilt -= 10;
+			} else if (direction === 'up-left') {
+				pan += 10;
+				tilt += 10;
+			} else if (direction === 'up-right') {
+				pan -= 10;
+				tilt += 10;
+			} else if (direction === 'down-left') {
+				pan += 10;
+				tilt -= 10;
+			} else if (direction === 'down-right') {
+				pan -= 10;
+				tilt -= 10;
+			} else if (direction === 'zoomIn') {
+				zoom += 10;
+			} else if (direction === 'zoomOut') {
+				zoom -= 10;
+			}
+
+			command = {
+				parameters: {
+					pan: pan,
+					tilt: tilt,
+					zoom: zoom,
+				},
+			};
+		}
+	} else {
+		switch (direction) {
+			case 'right':
+				command = { parameters: { rpan: increment.value } };
+				break;
+			case 'left':
+				command = { parameters: { rpan: -increment.value } };
+				break;
+			case 'up':
+				command = { parameters: { rtilt: increment.value } };
+				break;
+			case 'down':
+				command = { parameters: { rtilt: -increment.value } };
+				break;
+			case 'zoomIn':
+				command = { parameters: { rzoom: increment.value } };
+				break;
+			case 'zoomOut':
+				command = { parameters: { rzoom: -increment.value } };
+				break;
+			case 'home':
+				if (presetOptions.value.includes('Home'))
+					command = { parameters: { preset: 'Home' } };
+				else {
+					console.error('Home preset not available.');
+					showToast('Home preset is not available.', 'ERROR');
+				}
+				break;
+			default:
+				return;
+		}
+	}
 	if (command) {
 		console.log('PanTiltControl: Sending command', command, props.auth);
 		sendCommand(props.commandBaseUrl, props.id, command, props.auth);
@@ -90,19 +150,19 @@ function handleMove(direction: Direction) {
 
 // Used for positioning buttons in a circle
 const buttonConfig = [
-	{ dir: 'right', angle: 0, rot: 90, scale: 1 },
+	{ dir: 'right', angle: 0, rot: 90, scale: 0.75 },
 	// { dir: 'down-right', angle: 45,  rot: 135, scale: 1 },
-	{ dir: 'plus', angle: 45, rot: 135, scale: 0.65 },
-	{ dir: 'down', angle: 90, rot: 180, scale: 1 },
+	{ dir: 'plus', angle: 45, rot: 135, scale: 0.40 },
+	{ dir: 'down', angle: 90, rot: 180, scale: 0.75 },
 	// { dir: 'down-left', angle: 135, rot: 235, scale: 1 },
-	{ dir: 'minus', angle: 135, rot: 235, scale: 0.65 },
-	{ dir: 'left', angle: 180, rot: 270, scale: 1 },
+	{ dir: 'minus', angle: 135, rot: 235, scale: 0.40 },
+	{ dir: 'left', angle: 180, rot: 270, scale: 0.75 },
 	// { dir: 'up-left', angle: 225, rot: 315, scale: 1 },
-	{ dir: 'up', angle: 270, rot: 0, scale: 1 },
+	{ dir: 'up', angle: 270, rot: 0, scale: 0.75 },
 	// { dir: 'up-right', angle: 315, rot: 45, scale: 1 },
 ] as const;
-const containerSize = 200;
-const radius = 75;
+const containerSize = 150;
+const radius = 50;
 const center = containerSize / 2;
 
 /***************************** INPUT PROPERTIES *****************************/
@@ -127,6 +187,9 @@ watch(
 	{ immediate: true }
 );
 
+const hasContinuous = computed(() => {
+	return controlStreamType.value.details?.hasContinuous;
+});
 // Check if schema has relative commands
 const hasRelative = computed(() => {
 	return controlStreamType.value.details?.hasRelative;
@@ -207,7 +270,7 @@ const constraintTooltip = computed(() => {
 <template>
 	<v-container class="controlsContainer">
 		<v-sheet
-			v-if="hasRelative"
+			v-if="hasRelative || hasContinuous"
 			class="wrapper"
 		>
 			<v-container class="controlPadContainer">
@@ -223,6 +286,7 @@ const constraintTooltip = computed(() => {
 					@mousedown="
 						handleMove(dir === 'minus' ? 'zoomOut' : dir === 'plus' ? 'zoomIn' : dir)
 					"
+					@mouseup="handleStop"
 					class="button"
 					:style="{
 						left: `${center - 25 + radius * Math.cos((angle * Math.PI) / 180)}px`,
@@ -234,122 +298,122 @@ const constraintTooltip = computed(() => {
 					variant="text"
 					size="default"
 				></IconButton>
-				<IconButton
-					icon="mdi-home-circle"
-					alt="home"
-					@click="handleMove('home')"
-					class="homeButton"
-					variant="text"
-					size="default"
-					:style="{ zIndex: 1000, fontSize: '35px' }"
-				></IconButton>
+				<!--				<IconButton-->
+				<!--					icon="mdi-home-circle"-->
+				<!--					alt="home"-->
+				<!--					@click="handleMove('home')"-->
+				<!--					class="homeButton"-->
+				<!--					variant="text"-->
+				<!--					size="default"-->
+				<!--					:style="{ zIndex: 1000, fontSize: '35px' }"-->
+				<!--				></IconButton>-->
 			</v-container>
-			<v-text-field
-				v-model.number="increment"
-				type="number"
-				label="Increment"
-			/>
+			<!--			<v-text-field-->
+			<!--				v-model.number="increment"-->
+			<!--				type="number"-->
+			<!--				label="Increment"-->
+			<!--			/>-->
 		</v-sheet>
-		<v-sheet class="wrapper">
-			<v-select
-				v-model="selectedCommand"
-				:items="commandOptions"
-				label="Command Type"
-				class="w-100"
-			/>
-			<div v-if="isDataRecord">
-				<v-tooltip :text="`min: ${constraints.minPan}, max: ${constraints.maxPan}`">
-					<template #activator="{ props }">
-						<v-text-field
-							v-model.number="absPan"
-							type="number"
-							label="Pan"
-							placeholder="0.0"
-							class="w-100"
-							:min="constraints.minPan"
-							:max="constraints.maxPan"
-							v-bind="props"
-						/>
-					</template>
-				</v-tooltip>
-				<v-tooltip :text="`min: ${constraints.minTilt}, max: ${constraints.maxTilt}`">
-					<template #activator="{ props }">
-						<v-text-field
-							v-model.number="absTilt"
-							type="number"
-							label="Tilt"
-							placeholder="0.0"
-							class="w-100"
-							:min="constraints.minTilt"
-							:max="constraints.maxTilt"
-							v-bind="props"
-						/>
-					</template>
-				</v-tooltip>
-				<v-tooltip :text="`min: ${constraints.minZoom}, max: ${constraints.maxZoom}`">
-					<template #activator="{ props }">
-						<v-text-field
-							v-model.number="absZoom"
-							type="number"
-							label="Zoom"
-							placeholder="0.0"
-							class="w-100"
-							:min="constraints.minZoom"
-							:max="constraints.maxZoom"
-							v-bind="props"
-						/>
-					</template>
-				</v-tooltip>
-			</div>
-			<div v-else-if="isPreset">
-				<v-select
-					v-if="presetOptions"
-					v-model="singleValue"
-					:items="presetOptions"
-					label="Preset"
-					:placeholder="presetOptions[0]"
-					class="w-100"
-				/>
-			</div>
+		<!--		<v-sheet class="wrapper">-->
+		<!--			<v-select-->
+		<!--				v-model="selectedCommand"-->
+		<!--				:items="commandOptions"-->
+		<!--				label="Command Type"-->
+		<!--				class="w-100"-->
+		<!--			/>-->
+		<!--			<div v-if="isDataRecord && !hasContinuous">-->
+		<!--				<v-tooltip :text="`min: ${constraints.minPan}, max: ${constraints.maxPan}`">-->
+		<!--					<template #activator="{ props }">-->
+		<!--						<v-text-field-->
+		<!--							v-model.number="absPan"-->
+		<!--							type="number"-->
+		<!--							label="Pan"-->
+		<!--							placeholder="0.0"-->
+		<!--							class="w-100"-->
+		<!--							:min="constraints.minPan"-->
+		<!--							:max="constraints.maxPan"-->
+		<!--							v-bind="props"-->
+		<!--						/>-->
+		<!--					</template>-->
+		<!--				</v-tooltip>-->
+		<!--				<v-tooltip :text="`min: ${constraints.minTilt}, max: ${constraints.maxTilt}`">-->
+		<!--					<template #activator="{ props }">-->
+		<!--						<v-text-field-->
+		<!--							v-model.number="absTilt"-->
+		<!--							type="number"-->
+		<!--							label="Tilt"-->
+		<!--							placeholder="0.0"-->
+		<!--							class="w-100"-->
+		<!--							:min="constraints.minTilt"-->
+		<!--							:max="constraints.maxTilt"-->
+		<!--							v-bind="props"-->
+		<!--						/>-->
+		<!--					</template>-->
+		<!--				</v-tooltip>-->
+		<!--				<v-tooltip :text="`min: ${constraints.minZoom}, max: ${constraints.maxZoom}`">-->
+		<!--					<template #activator="{ props }">-->
+		<!--						<v-text-field-->
+		<!--							v-model.number="absZoom"-->
+		<!--							type="number"-->
+		<!--							label="Zoom"-->
+		<!--							placeholder="0.0"-->
+		<!--							class="w-100"-->
+		<!--							:min="constraints.minZoom"-->
+		<!--							:max="constraints.maxZoom"-->
+		<!--							v-bind="props"-->
+		<!--						/>-->
+		<!--					</template>-->
+		<!--				</v-tooltip>-->
+		<!--			</div>-->
+		<!--			<div v-else-if="isPreset">-->
+		<!--				<v-select-->
+		<!--					v-if="presetOptions"-->
+		<!--					v-model="singleValue"-->
+		<!--					:items="presetOptions"-->
+		<!--					label="Preset"-->
+		<!--					:placeholder="presetOptions[0]"-->
+		<!--					class="w-100"-->
+		<!--				/>-->
+		<!--			</div>-->
 
-			<div v-else>
-				<v-tooltip
-					:text="constraintTooltip"
-					:disabled="!constraintTooltip"
-				>
-					<template #activator="{ props }">
-						<v-text-field
-							v-model="singleValue"
-							type="number"
-							:label="selectedCommand"
-							placeholder="Enter value"
-							class="w-100"
-							:min="
-								selectedCommand === 'pan'
-									? constraints.minPan
-									: selectedCommand === 'tilt'
-										? constraints.minTilt
-										: constraints.minZoom
-							"
-							:max="
-								selectedCommand === 'pan'
-									? constraints.maxPan
-									: selectedCommand === 'tilt'
-										? constraints.maxTilt
-										: constraints.maxZoom
-							"
-							v-bind="props"
-						/>
-					</template>
-				</v-tooltip>
-			</div>
-			<v-btn
-				color="primary"
-				@click="onSend"
-				block
-				>Send</v-btn
-			>
-		</v-sheet>
+		<!--			<div v-else>-->
+		<!--				<v-tooltip-->
+		<!--					:text="constraintTooltip"-->
+		<!--					:disabled="!constraintTooltip"-->
+		<!--				>-->
+		<!--					<template #activator="{ props }">-->
+		<!--						<v-text-field-->
+		<!--							v-model="singleValue"-->
+		<!--							type="number"-->
+		<!--							:label="selectedCommand"-->
+		<!--							placeholder="Enter value"-->
+		<!--							class="w-100"-->
+		<!--							:min="-->
+		<!--								selectedCommand === 'pan'-->
+		<!--									? constraints.minPan-->
+		<!--									: selectedCommand === 'tilt'-->
+		<!--										? constraints.minTilt-->
+		<!--										: constraints.minZoom-->
+		<!--							"-->
+		<!--							:max="-->
+		<!--								selectedCommand === 'pan'-->
+		<!--									? constraints.maxPan-->
+		<!--									: selectedCommand === 'tilt'-->
+		<!--										? constraints.maxTilt-->
+		<!--										: constraints.maxZoom-->
+		<!--							"-->
+		<!--							v-bind="props"-->
+		<!--						/>-->
+		<!--					</template>-->
+		<!--				</v-tooltip>-->
+		<!--			</div>-->
+		<!--			<v-btn-->
+		<!--				color="primary"-->
+		<!--				@click="onSend"-->
+		<!--				block-->
+		<!--				>Send</v-btn-->
+		<!--			>-->
+		<!--		</v-sheet>-->
 	</v-container>
 </template>
 
@@ -375,8 +439,8 @@ const constraintTooltip = computed(() => {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	width: 200px;
-	height: 200px;
+	width: 150px;
+	height: 150px;
 	border-radius: 50%;
 	border: 1px solid #888;
 	margin-bottom: 5%;

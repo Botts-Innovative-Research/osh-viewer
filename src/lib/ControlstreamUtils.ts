@@ -185,6 +185,23 @@ export function getCommandType(schema: any, id: string) {
 		commandSchema.lon = { type: 'number' };
 		commandSchema.alt = { type: 'number' };
 	}
+	else if (schema.type === 'DataRecord') {
+		commandType = {
+			type: 'Continuous',
+			details: {
+				hasContinuous: true,
+				hasRelative: false,
+				hasPreset: false,
+				hasDataRecord: true,
+			},
+		};
+		commandSchema[schema.name] = {
+			type: schema.type,
+			pan: { type: 'number', constraint: schema.fields[0].constraint },
+			tilt: { type: 'number', constraint: schema.fields[1].constraint },
+			zoom: { type: 'number', constraint: schema.fields[2].constraint },
+		};
+	}
 
 	// Add to store
 	controlStreamStore.addCSSchema(id, commandType, commandSchema);
