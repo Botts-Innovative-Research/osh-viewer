@@ -60,7 +60,7 @@ function getControlstreamByRole(role: string): Controlstream | undefined {
 const missionControlStream = computed<Controlstream | undefined>(() =>
 	getControlstreamByRole('plan')
 );
-const qgcControlStream = computed<Controlstream | undefined>(() => getControlstreamByRole('qgc'));
+
 
 interface Waypoint {
 	id: string;
@@ -197,6 +197,67 @@ watch(
 	{ deep: true }
 );
 
+function buildCommandParameters(plan: any) {
+	const mission = plan.mission;
+	const geoFence = plan.geoFence ?? { circles: [], polygons: [], version: 2 };
+	const rallyPoints = plan.rallyPoints ?? { points: [], version: 2 };
+
+	return {
+		fileType: plan.fileType,
+		groundStation: plan.groundStation,
+		mission: {
+			cruiseSpeed: mission.cruiseSpeed,
+			firmwareType: mission.firmwareType,
+			globalPlanAltitudeMode: mission.globalPlanAltitudeMode,
+			hoverSpeed: mission.hoverSpeed,
+			itemsCount: mission.items.length,
+			items: mission.items.map((item: any) => ({
+				AMSLAltAboveTerrain: item.AMSLAltAboveTerrain ?? 0,
+				Altitude: item.Altitude,
+				AltitudeMode: item.AltitudeMode,
+				autoContinue: item.autoContinue,
+				command: item.command,
+				doJumpId: item.doJumpId,
+				frame: item.frame,
+				params: item.params.map((p: any) => p ?? 0),
+				type: item.type,
+			})),
+			plannedHomePosition: mission.plannedHomePosition,
+			vehicleType: mission.vehicleType,
+			version: mission.version,
+		},
+		geoFence: {
+			circlesCount: geoFence.circles.length,
+			circles: geoFence.circles.map((c: any) => ({
+				inclusion: c.inclusion ?? true,
+				latitude: c.latitude ?? c.center?.[0] ?? 0,
+				longitude: c.longitude ?? c.center?.[1] ?? 0,
+				radius: c.radius ?? 0,
+			})),
+			polygonsCount: geoFence.polygons.length,
+			polygons: geoFence.polygons.map((p: any) => ({
+				inclusion: p.inclusion ?? true,
+				vertexCount: (p.vertices ?? p.polygon ?? []).length,
+				vertices: (p.vertices ?? p.polygon ?? []).map((v: any) => ({
+					latitude: v.latitude ?? v[0] ?? 0,
+					longitude: v.longitude ?? v[1] ?? 0,
+				})),
+			})),
+			version: geoFence.version ?? 2,
+		},
+		rallyPoints: {
+			pointsCount: rallyPoints.points.length,
+			points: rallyPoints.points.map((p: any) => ({
+				latitude: p.latitude ?? p[0] ?? 0,
+				longitude: p.longitude ?? p[1] ?? 0,
+				altitude: p.altitude ?? p[2] ?? 0,
+			})),
+			version: rallyPoints.version ?? 2,
+		},
+		version: plan.version,
+	};
+}
+
 function sendMission() {
 	if (missionSource.value === 'waypoints') sendWaypoints();
 
@@ -208,12 +269,11 @@ function sendWaypoints() {
 
 	if (!plan) {
 		showToast('Cannot send empty mission', 'ERROR');
+		return;
 	}
 
 	const command = {
-		parameters: {
-			qGroundControlPlan: JSON.stringify(plan),
-		},
+		parameters: buildCommandParameters(plan),
 	};
 
 	const cs = missionControlStream.value;
@@ -241,26 +301,33 @@ function sendQGCPlanFileUpload() {
 	reader.onload = (e) => {
 		const fileContent = reader.result as string;
 
-		const cs = qgcControlStream.value;
+		const cs = missionControlStream.value;
 		if (!cs) {
 			showToast('No plan controlstream configured', 'ERROR');
 			return;
 		}
 
+		let plan: any;
+		try {
+			plan = JSON.parse(fileContent);
+		} catch (err) {
+			showToast('Invalid plan file format', 'ERROR');
+			console.error('[MissionBuilder.vue] Failed to parse plan file:', err);
+			return;
+		}
+
 		const command = {
-			parameters: {
-				qGroundControlPlan: fileContent,
-			},
+			parameters: buildCommandParameters(plan),
 		};
 
 		console.log(
 			'[MissionBuilder.vue] Sending mission file command:',
 			command,
-			qgcControlStream.value
+			missionControlStream.value
 		);
 		sendCommand(
 			commandBaseUrl.value,
-			qgcControlStream.value.id,
+			cs.id,
 			command,
 			`${csAuth.value.username}:${csAuth.value.password}`
 		);
@@ -360,11 +427,6 @@ function generateMissionControlPlan() {
 
 	return {
 		fileType: 'Plan',
-		geoFence: {
-			circles: [],
-			polygons: [],
-			version: 2,
-		},
 		groundStation: 'QGroundControl',
 		mission: {
 			cruiseSpeed: cruiseSpeed.value,
@@ -374,6 +436,11 @@ function generateMissionControlPlan() {
 			items: items,
 			plannedHomePosition: plannedHomePosition,
 			vehicleType: 2,
+			version: 2,
+		},
+		geoFence: {
+			circles: [],
+			polygons: [],
 			version: 2,
 		},
 		rallyPoints: {
@@ -775,6 +842,12 @@ useVisualizationCleanup(dsInstances);
 										/>
 									</v-col>
 								</v-row>
+							</v-expansion-panel-text>
+						</v-expansion-panel>
+
+						<v-expansion-panel title="GeoFence Settings">
+							<v-expansion-panel-text>
+
 							</v-expansion-panel-text>
 						</v-expansion-panel>
 					</v-expansion-panels>
