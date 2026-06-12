@@ -176,10 +176,13 @@ function removeWaypoint(id: string) {
 	console.log('[MissionBuilder.vue] Removed waypoint:', id);
 }
 
+const showClearConfirm = ref(false);
+
 function clearWaypoints() {
 	waypoints.value = [];
 	mapStore.clearMissionWaypoints();
 	mapStore.triggerClearWaypointMarkers();
+	showClearConfirm.value = false;
 	console.log('[MissionBuilder.vue] Cleared all waypoints');
 }
 
@@ -657,11 +660,24 @@ useVisualizationCleanup(dsInstances);
 										size="small"
 										variant="text"
 										color="error"
-										@click="clearWaypoints"
+										@click="showClearConfirm = true"
 										:disabled="waypoints.length === 0"
 									>
 										Clear All
 									</v-btn>
+									<v-dialog v-model="showClearConfirm" max-width="400">
+										<v-card>
+											<v-card-title>Clear All Waypoints</v-card-title>
+											<v-card-text>
+												Are you sure you want to clear all {{ waypoints.length }} waypoints? This action cannot be undone.
+											</v-card-text>
+											<v-card-actions>
+												<v-spacer />
+												<v-btn variant="text" @click="showClearConfirm = false">Cancel</v-btn>
+												<v-btn color="error" variant="flat" @click="clearWaypoints">Clear</v-btn>
+											</v-card-actions>
+										</v-card>
+									</v-dialog>
 								</div>
 								<v-list
 									density="compact"
