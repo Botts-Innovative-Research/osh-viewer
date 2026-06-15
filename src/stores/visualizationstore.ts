@@ -13,7 +13,7 @@ export const useVisualizationStore = defineStore(
 	() => {
 		const visualizations: Ref<OSHVisualization[]> = ref([]);
 		const serializedVisualizations: Ref<SerializedVisualization[]> = ref([]);
-		const layerVisibility: Ref<Map<string, boolean>> = ref(new Map());
+		const hiddenLayers: Ref<Set<string>> = ref(new Set());
 
 		// Filter only PANEL visualizations
 		const panelVisualizations = computed(() => {
@@ -38,9 +38,11 @@ export const useVisualizationStore = defineStore(
 		};
 
 		const removeVisualization = (visualization: OSHVisualization): void => {
-			visualizations.value = visualizations.value.filter((v) => v !== visualization);
+			visualizations.value = visualizations.value.filter(
+				(viz) => viz.id !== visualization.id && viz.parentId !== visualization.id
+			);
 			serializedVisualizations.value = serializedVisualizations.value.filter(
-				(viz) => viz.id !== visualization.id
+				(viz) => viz.id !== visualization.id && viz.parentId !== visualization.id
 			);
 		};
 
@@ -65,18 +67,22 @@ export const useVisualizationStore = defineStore(
 			return visualizations.value.filter((visualization) => visualization.type === type);
 		};
 
-		const toggleMapLayerVisibility = (layerId: string): boolean => {
-			const currentVisibility = layerVisibility.value.get(layerId) ?? true;
-			layerVisibility.value.set(layerId, !currentVisibility);
-			return !currentVisibility;
+		const toggleMapLayerVisibility = (id: string): boolean => {
+			if (hiddenLayers.value.has(id)) {
+				hiddenLayers.value.delete(id);
+			} else {
+				hiddenLayers.value.add(id);
+			}
+
+			return hiddenLayers.value.has(id);
 		};
 
-		const isMapLayerVisible = (layerId: string): boolean => {
-			return layerVisibility.value.get(layerId) ?? true;
+		const isMapLayerVisible = (id: string): boolean => {
+			return !hiddenLayers.value.has(id);
 		};
 
 		const clearMapLayerVisibility = () => {
-			layerVisibility.value.clear();
+			hiddenLayers.value = new Set();
 		};
 
 		const rehydrateVisualizations = (): void => {
@@ -116,7 +122,7 @@ export const useVisualizationStore = defineStore(
 			toggleMapLayerVisibility,
 			isMapLayerVisible,
 			clearMapLayerVisibility,
-			layerVisibility,
+			hiddenLayers,
 			rehydrateVisualizations,
 			foiLayers,
 			addFOILayer,

@@ -37,9 +37,12 @@ export default function build() {
 		`${vizwizStore.visualizationCustomizationOptions.name} - Point Marker`,
 		'pointmarker',
 		PointMarkerDescriptor.viewLocation,
-		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig)
+		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
+		undefined,
+		vizwizStore.id
 	);
 	pmViz.setVisualizationComponents(pmVisualizationComponents);
+	visualizationStore.addVisualization(pmViz);
 
 	// LOB
 	const lobResult = CreateLobVizProps(datastreams, {
@@ -62,9 +65,12 @@ export default function build() {
 		`${vizwizStore.visualizationCustomizationOptions.name} - LoB`,
 		'lob',
 		LobDescriptor.viewLocation,
-		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig)
+		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
+		undefined,
+		vizwizStore.id
 	);
 	lobViz.setVisualizationComponents(lobVisualizationComponents);
+	visualizationStore.addVisualization(lobViz);
 
 	// ELLIPSE
 	const ellipseResult = CreateEllipseVizProps(datastreams, {
@@ -80,9 +86,12 @@ export default function build() {
 		`${vizwizStore.visualizationCustomizationOptions.name} - Ellipse`,
 		'ellipse',
 		EllipseDescriptor.viewLocation,
-		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig)
+		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
+		undefined,
+		vizwizStore.id
 	);
 	ellipseViz.setVisualizationComponents(ellipseVisualizationComponents);
+	visualizationStore.addVisualization(ellipseViz);
 
 	// FULL SIGINT VIZ
 	const newViz: OSHVisualization = new OSHVisualization(

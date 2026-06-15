@@ -41,7 +41,7 @@ export function useMap() {
 	const waypointLayers = ref<PointMarkerLayer[]>([]);
 
 	// Hidden visualization IDs
-	const hiddenLayers = ref<Map<string, SupportedMapLayer>>(new Map());
+	const hiddenLayers = ref<Map<string, OSHVisualization>>(new Map());
 
 	/* MAP INITIALIZATION/DESTRUCTION/TOGGLE */
 	async function initMap() {
@@ -113,14 +113,16 @@ export function useMap() {
 		() => visualizationStore.mapVisualizations.map((v) => v.id),
 		(newIds, oldIds) => {
 			const removedIds = oldIds?.filter(
-				(oldId) => !newIds.some((id) => id.startsWith(oldId) || oldId.startsWith(id))
+				(oldId) => !newIds.some((id) => id === oldId || oldId === id)
 			);
 			const addedIds = newIds?.filter(
-				(newId) => !oldIds?.some((id) => id.startsWith(newId) || newId.startsWith(id))
+				(newId) => !oldIds?.some((id) => id === newId || newId === id)
 			);
 
 			// Handle removed visualizations
-			if (removedIds) deleteVisualizations(removedIds);
+			if (removedIds) {
+				removedIds.forEach((id: string) => deleteVisualization(id));
+			}
 
 			//Handle added visualizations
 			if (addedIds) {
@@ -129,52 +131,40 @@ export function useMap() {
 					.filter(Boolean) as OSHVisualization[];
 
 				newOSHVisualizations.forEach((viz: OSHVisualization) => {
-					// If parent, add each child instead
-					if (viz.isParentVisualization()) {
-						viz.children.forEach((childViz) => addVisualization(childViz));
-					}
-					// If not parent, add directly
-					else addVisualization(viz);
+					addVisualization(viz);
 				});
 			}
 		},
-		{ immediate: true, deep: true }
+		{ deep: true }
 	);
 	function addVisualization(viz: OSHVisualization) {
-		const result = createMapVisualizations(viz);
-		if (!result) return;
+		// If parent, skip - no layer to build
+		if (viz.isParentVisualization()) return;
+		// If not parent, add directly
+		else {
+			const result = createMapVisualizations(viz);
+			if (!result) return;
 
-		const { vizLayer, dsInstances } = result;
+			const { vizLayer, dsInstances } = result;
 
-		console.log(`Created ${viz.type} Visualization:`, vizLayer);
-		listDataSourceInstances.value.push(...dsInstances); // Push dsInstances to list of all active ds
-		mapItemLayers.value.set(viz.id, vizLayer); // Store vizLayer instance for this viz.id
+			console.log(`Created ${viz.type} Visualization:`, vizLayer);
+			listDataSourceInstances.value.push(...dsInstances); // Push dsInstances to list of all active ds
+			mapItemLayers.value.set(viz.id, vizLayer); // Store vizLayer instance for this viz.id
 
-		// Add layer to map, if compatible with current map type
-		if (isMapLayerCompatible(viz.type)) mapAdapter.value?.addLayer(vizLayer); // Add vizLayer to map
+			// Add layer to map, if compatible with current map type
+			if (isMapLayerCompatible(viz.type)) mapAdapter.value?.addLayer(vizLayer); // Add vizLayer to map
+		}
 	}
-	function deleteVisualizations(removedVizIds: string[]) {
+	async function deleteVisualization(vizId: string) {
 		const removedDsIds: string[] = [];
 
-		for (const vizId of removedVizIds) {
-			// Find viz layer OR all child viz layer IDs to remove
-			const layers = [...mapItemLayers.value.entries()]
-				.filter(([key]) => key.startsWith(vizId))
-				.map(([, layer]) => layer);
+		// Find viz layer
+		const mapLayer = mapItemLayers.value.get(vizId);
+		console.log(mapLayer);
+		if (!mapLayer) return; // Skip if no layer found for this vizId (including parent viz)
 
-			if (!layers) continue; // Skip if no layer found for this vizId
-
-			for (const layer of layers) {
-				// Collect ds IDs
-				removedDsIds.push(...layer.dataSourceIds);
-
-				// Remove layer from the actual map safely
-				mapAdapter.value?.removeLayer(layer);
-
-				// Remove layer from mapItemLayers
-				mapItemLayers.value.delete(vizId);
-			}
-		}
+		// Collect ds IDs
+		removedDsIds.push(...mapLayer.dataSourceIds);
 
 		// Disconnect and remove datasources
 		listDataSourceInstances.value = listDataSourceInstances.value.filter(
@@ -188,6 +178,12 @@ export function useMap() {
 				return true; // Keep in list
 			}
 		);
+
+		// Remove layer from the actual map safely
+		await mapAdapter.value?.removeLayer(mapLayer);
+
+		// Remove layer from mapItemLayers
+		mapItemLayers.value.delete(vizId);
 	}
 
 	/* FOI */
@@ -241,55 +237,50 @@ export function useMap() {
 		}
 	);
 	watch(
-		() => visualizationStore.layerVisibility.entries(),
-		(entries) => {
-			for (const [layerId, isVisible] of entries) {
-				console.log('Working on:', layerId, isVisible);
-				const vizLayer = visualizationStore.getVisualizationById(layerId);
-				console.log(vizLayer);
-
-				if (isVisible) {
-					if (hiddenLayers.value.has(layerId)) {
-						// Remove from hidden layers
-						hiddenLayers.value.delete(layerId);
-						// Recreate visualization
-						const vizLayer = visualizationStore.getVisualizationById(layerId);
-						console.log(vizLayer);
-						if (vizLayer) addVisualization(vizLayer);
-						else console.error('Could not find visualization to rebuild.');
-
-						console.log('Rebuilt layer layer!');
-					}
+		() => visualizationStore.hiddenLayers,
+		async () => {
+			for (const viz of visualizationStore.mapVisualizations) {
+				// Handle parent viz
+				if (viz.isParentVisualization()) {
+					viz.children.forEach(async (child: OSHVisualization) => {
+						await toggleVizVisibility(
+							child,
+							visualizationStore.isMapLayerVisible(child.id)
+						);
+					});
 				} else {
-					// Add to hidden layers
-					const vizLayer = mapItemLayers.value.get(layerId);
-					hiddenLayers.value.set(layerId, vizLayer);
-					// Delete visualization from map
-					deleteVisualizations([layerId]);
-
-					console.log('Hid layer!');
+					await toggleVizVisibility(viz, visualizationStore.isMapLayerVisible(viz.id));
 				}
+			}
 
-				console.log('Hidden:', hiddenLayers.value);
-
-				// const layer = mapItemLayers.value.get(layerId);
-				// if (!layer) continue;
-
-				// const ids: string[] = layer.getIds();
-
-				// ids.map((id: string) => {
-				// 	mapAdapter.value?.toggleLayerVisibility(id, isVisible);
-				// });
+			console.log('Hidden:', hiddenLayers.value);
+			console.log('Map Layers:', mapItemLayers.value);
+		},
+		{ deep: true }
+	);
+	async function toggleVizVisibility(viz: OSHVisualization, isVisible: boolean) {
+		// Show/rebuild visualization
+		if (isVisible) {
+			if (hiddenLayers.value.has(viz.id)) {
+				hiddenLayers.value.delete(viz.id); // Remove from hidden layers
+				addVisualization(viz); // Rebuild viz
+				console.log('Rebuilt layer!');
 			}
 		}
-	);
+		// Hide/delete visualization
+		else {
+			hiddenLayers.value.set(viz.id, viz); // Add to hidden layers
+			await deleteVisualization(viz.id); // Delete viz from map
+			console.log('Hid layer!');
+		}
+	}
 
 	/* GEOPTZ */
 	watch(
 		() => mapStore.selectedGeoPTZ,
 		(geoPtz, oldGeoPtz) => {
 			// If had value, delete
-			if (oldGeoPtz?.length) deleteVisualizations([oldGeoPtz[0].id]);
+			if (oldGeoPtz?.length) deleteVisualization(oldGeoPtz[0].id);
 			// If has a new value, create new
 			if (geoPtz?.length) addVisualization(geoPtz[0]);
 		},
@@ -301,7 +292,7 @@ export function useMap() {
 		if (!currentGeoPtz?.length) return;
 
 		// Delete and make new
-		deleteVisualizations([currentGeoPtz[0].id]);
+		deleteVisualization(currentGeoPtz[0].id);
 		addVisualization(currentGeoPtz[0]);
 	});
 

@@ -23,27 +23,14 @@ export function createLeafletAdapter(): MapAdapter {
 		mapView.addLayer(layer);
 	}
 
-	function removeLayer(layer: any) {
+	async function removeLayer(layer: any): Promise<void> {
 		mapView.removeAllFromLayer(layer);
+		return;
 	}
 
 	function addFOILayer(markerProps: any) {
 		const markerEnt = mapView.addMarker(markerProps, undefined);
 		mapView.addMarkerToLayer(markerEnt, markerProps);
-	}
-
-	function toggleLayerVisibility(id: string, isVisible: boolean) {
-		const marker = mapView.layerIdToMarkers?.[id];
-		const polyline = mapView.layerIdToPolylines?.[id];
-
-		// Handle PM and LoB
-		if (marker) {
-			marker.setOpacity(isVisible ? mapView.getLayer(id).properties.iconOpacity : 0);
-		}
-		// Handle polyline
-		if (polyline) {
-			polyline.setStyle({ opacity: isVisible ? mapView.getLayer(id).properties.opacity : 0 });
-		}
 	}
 
 	function setCursor(mode: any) {
@@ -89,7 +76,6 @@ export function createLeafletAdapter(): MapAdapter {
 		destroy,
 		addLayer,
 		removeLayer,
-		toggleLayerVisibility,
 		setCursor,
 		onClick,
 		flyToPoint,
