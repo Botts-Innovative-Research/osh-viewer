@@ -40,6 +40,9 @@ export function useMap() {
 	// Array of waypoint Pointmarkers for mission builder
 	const waypointLayers = ref<PointMarkerLayer[]>([]);
 
+	// Hidden visualization IDs
+	const hiddenLayers = ref<Map<string, SupportedMapLayer>>(new Map());
+
 	/* MAP INITIALIZATION/DESTRUCTION/TOGGLE */
 	async function initMap() {
 		if (mapType.value === 'cesium') {
@@ -241,14 +244,42 @@ export function useMap() {
 		() => visualizationStore.layerVisibility.entries(),
 		(entries) => {
 			for (const [layerId, isVisible] of entries) {
-				const layer = mapItemLayers.value.get(layerId);
-				if (!layer) continue;
+				console.log('Working on:', layerId, isVisible);
+				const vizLayer = visualizationStore.getVisualizationById(layerId);
+				console.log(vizLayer);
 
-				const ids: string[] = layer.getIds();
+				if (isVisible) {
+					if (hiddenLayers.value.has(layerId)) {
+						// Remove from hidden layers
+						hiddenLayers.value.delete(layerId);
+						// Recreate visualization
+						const vizLayer = visualizationStore.getVisualizationById(layerId);
+						console.log(vizLayer);
+						if (vizLayer) addVisualization(vizLayer);
+						else console.error('Could not find visualization to rebuild.');
 
-				ids.map((id: string) => {
-					mapAdapter.value?.toggleLayerVisibility(id, isVisible);
-				});
+						console.log('Rebuilt layer layer!');
+					}
+				} else {
+					// Add to hidden layers
+					const vizLayer = mapItemLayers.value.get(layerId);
+					hiddenLayers.value.set(layerId, vizLayer);
+					// Delete visualization from map
+					deleteVisualizations([layerId]);
+
+					console.log('Hid layer!');
+				}
+
+				console.log('Hidden:', hiddenLayers.value);
+
+				// const layer = mapItemLayers.value.get(layerId);
+				// if (!layer) continue;
+
+				// const ids: string[] = layer.getIds();
+
+				// ids.map((id: string) => {
+				// 	mapAdapter.value?.toggleLayerVisibility(id, isVisible);
+				// });
 			}
 		}
 	);

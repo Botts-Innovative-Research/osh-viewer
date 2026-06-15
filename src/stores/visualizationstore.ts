@@ -51,7 +51,14 @@ export const useVisualizationStore = defineStore(
 		};
 
 		const getVisualizationById = (id: string): OSHVisualization | undefined => {
-			return visualizations.value.find((visualization) => visualization.id === id);
+			for (const visualization of visualizations.value) {
+				if (visualization.id === id) return visualization;
+
+				const child = visualization.children.find((child) => child.id === id);
+				if (child) return child;
+			}
+
+			return undefined;
 		};
 
 		const getVisualizationsByType = (type: string): OSHVisualization[] => {
