@@ -15,7 +15,7 @@ import {
 } from '../../services/aggregation.service';
 import { VisualizationComponents } from '../../types/visualization';
 import { IVideoCustomizationOptions } from '../../types/customization';
-import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { IVideoLayerProperties } from '../../types/layers';
 import { IVideoViewProperties } from '../../types/views';
 
@@ -64,7 +64,7 @@ export function CreateVideoVizProps(
 	const datastreamStore = useDataStreamStore();
 
 	// Create datasources, layer, and view
-	const vizDatasources: ISweApiDataSourceProperties[] = [];
+	const vizDatasources: IConSysApiDataSourceProperties[] = [];
 	let videoLayer: IVideoLayerProperties = {
 		name: visOptions.name,
 		getFrameData(rec, timestamp) {
@@ -89,7 +89,7 @@ export function CreateVideoVizProps(
 		const properties = BuildRoleProperty(entry);
 
 		const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
-		const currentDataSource: ISweApiDataSourceProperties = {
+		const currentDataSource: IConSysApiDataSourceProperties = {
 			endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
 			resource: `/datastreams/${dsId}/observations`,
 			tls: currentOSHDatastream[0].datastream.networkProperties.tls,

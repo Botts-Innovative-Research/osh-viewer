@@ -9,7 +9,7 @@ import {
 	rebuildMapVisualizations,
 } from '../mapVisualizations';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import SweApi from 'osh-js/source/core/datasource/consysapi/SweApi.datasource.js';
+import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import { createCesiumAdapter } from '../adapters/cesium.adapter';
 import { taskGeoPTZ } from '../services/geoPTZ.service';
 import { MapAdapter } from '../adapters/types';
@@ -36,7 +36,7 @@ export function useMap() {
 	// Map of visualization ID to its corresponding visualization layer instance
 	const mapItemLayers = ref<Map<string, SupportedMapLayer>>(new Map());
 	// List of all connected datasource instances created for map visualizations
-	const listDataSourceInstances = ref<SweApi[]>([]);
+	const listDataSourceInstances = ref<ConSysApi[]>([]);
 	// Array of waypoint Pointmarkers for mission builder
 	const waypointLayers = ref<PointMarkerLayer[]>([]);
 
@@ -168,7 +168,7 @@ export function useMap() {
 
 		// Disconnect and remove datasources
 		listDataSourceInstances.value = listDataSourceInstances.value.filter(
-			(dsInstance: SweApi) => {
+			(dsInstance: ConSysApi) => {
 				// Find matching datasource IDs to remove
 				if (removedDsIds.includes(dsInstance.id)) {
 					console.log('Disconnecting datasource:', dsInstance.id);

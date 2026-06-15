@@ -1,5 +1,5 @@
 //@ts-ignore
-import SweApi from 'osh-js/source/core/datasource/consysapi/SweApi.datasource.js';
+import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import { onBeforeUnmount, Ref } from 'vue';
 import { disconnectDatasources } from '../../services/datasource.service';
 
@@ -8,7 +8,7 @@ import { disconnectDatasources } from '../../services/datasource.service';
  *
  * @param dsInstances
  */
-export function useVisualizationCleanup(dsInstances: Ref<SweApi[]>) {
+export function useVisualizationCleanup(dsInstances: Ref<ConSysApi[]>) {
 	onBeforeUnmount(() => {
 		disconnectDatasources(dsInstances);
 	});

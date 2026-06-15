@@ -6,7 +6,7 @@ import {
 	IPointMarkerCustomizationOptions,
 	IVideoCustomizationOptions,
 } from './customization';
-import { ISweApiControlStreamProperties, ISweApiDataSourceProperties } from './datasource';
+import { IConSysApiControlStreamProperties, IConSysApiDataSourceProperties } from './datasource';
 import {
 	DataLayerProperties,
 	ICurveLayerProperties,
@@ -18,10 +18,10 @@ import {
 import { DataViewProperties, IChartViewProperties, IVideoViewProperties } from './views';
 
 export interface VisualizationComponents {
-	dataSource: ISweApiDataSourceProperties[];
+	dataSource: IConSysApiDataSourceProperties[];
 	dataLayer: VisualizationLayerProperties | VisualizationLayerProperties[];
 	dataView?: VisualizationViewProperties | VisualizationViewProperties[];
-	controlstream?: ISweApiControlStreamProperties[]; // Optional controlstream for visualization
+	controlstream?: IConSysApiControlStreamProperties[]; // Optional controlstream for visualization
 }
 
 export type VisualizationLayerProperties =

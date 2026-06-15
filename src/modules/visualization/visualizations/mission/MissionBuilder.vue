@@ -5,7 +5,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useMapStore } from '@/stores/mapstore';
 import { showToast } from '@/composables/useToast';
-import SweApi from 'osh-js/source/core/datasource/consysapi/SweApi.datasource.js';
+import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
 import {
 	createDatasource,
@@ -15,8 +15,8 @@ import {
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
 import {
-	ISweApiControlStreamProperties,
-	ISweApiDataSourceProperties,
+	IConSysApiControlStreamProperties,
+	IConSysApiDataSourceProperties,
 } from '../../types/datasource';
 import { sendCommand } from '../../services/controlstream.service';
 
@@ -40,12 +40,12 @@ const props = defineProps({
 		default: null,
 	},
 	datasource: {
-		type: Array as () => ISweApiDataSourceProperties[],
+		type: Array as () => IConSysApiDataSourceProperties[],
 		required: true,
 		default: () => [],
 	},
 	controlstreams: {
-		type: Array as () => ISweApiControlStreamProperties[],
+		type: Array as () => IConSysApiControlStreamProperties[],
 		required: true,
 		default: () => [],
 	},
@@ -90,10 +90,10 @@ const fileInputRef = ref<any | null>(null);
 const selectedFile = ref<File | null>(null);
 const exportFilename = ref<string>('mission');
 
-const droneDatasourceLLA = ref<SweApi | null>(null);
-const droneHomeDatasource = ref<SweApi | null>(null);
-// Create SweApi instance from props.datasource if provided
-let dsInstances = ref<SweApi[]>([]);
+const droneDatasourceLLA = ref<ConSysApi | null>(null);
+const droneHomeDatasource = ref<ConSysApi | null>(null);
+// Create ConSysApi instance from props.datasource if provided
+let dsInstances = ref<ConSysApi[]>([]);
 
 let homeLocation = ref<{ lat: number; lon: number; alt: number }>({ lat: 0, lon: 0, alt: 0 });
 
@@ -482,7 +482,7 @@ function generateMissionControlPlan() {
 	};
 }
 
-function onLLAListener(dsInstance: SweApi) {
+function onLLAListener(dsInstance: ConSysApi) {
 	const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
 
 	dataBroadcastChannel.onmessage = (message) => {

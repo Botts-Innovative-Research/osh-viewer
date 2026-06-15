@@ -1,7 +1,7 @@
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
 import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { useMapStore } from '@/stores/mapstore';
-import SweApi from 'osh-js/source/core/datasource/consysapi/SweApi.datasource.js';
+import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import EllipseLayer from 'osh-js/source/core/ui/layer/EllipseLayer';
@@ -14,7 +14,7 @@ import { getLayerId } from './services/layerId.service';
 import { colorHash } from './services/colorId.service';
 import { SupportedMapLayer } from './supportedMapLayers';
 import { getGroundAltitude } from './services/altitude.service';
-import { ISweApiDataSourceProperties } from '../visualization/types/datasource';
+import { IConSysApiDataSourceProperties } from '../visualization/types/datasource';
 
 // prettier-ignore
 // @ts-ignore
@@ -22,7 +22,7 @@ const iconBase = import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.met
 
 export interface ICreateMapVisualizationResult {
 	vizLayer: SupportedMapLayer;
-	dsInstances: SweApi[];
+	dsInstances: ConSysApi[];
 }
 
 export function createMapVisualizations(
@@ -46,10 +46,10 @@ export function createMapVisualizations(
 
 export function createPointMarkerLayer(
 	viz: OSHVisualization,
-	dsArray: ISweApiDataSourceProperties[]
+	dsArray: IConSysApiDataSourceProperties[]
 ): ICreateMapVisualizationResult {
 	// Ds instances created
-	let dsInstances: SweApi[] = [];
+	let dsInstances: ConSysApi[] = [];
 
 	// Undefined initially
 	let getLocation: any;
@@ -142,10 +142,10 @@ export function createPointMarkerLayer(
 }
 export function createLoBLayer(
 	viz: OSHVisualization,
-	dsArray: ISweApiDataSourceProperties[]
+	dsArray: IConSysApiDataSourceProperties[]
 ): ICreateMapVisualizationResult {
 	// Ds instances created
-	let dsInstances: SweApi[] = [];
+	let dsInstances: ConSysApi[] = [];
 
 	// Undefined initially
 	let getOrigin: any;
@@ -235,10 +235,10 @@ export function createLoBLayer(
 }
 export function createEllipseLayer(
 	viz: OSHVisualization,
-	dsArray: ISweApiDataSourceProperties[]
+	dsArray: IConSysApiDataSourceProperties[]
 ): ICreateMapVisualizationResult {
 	// Ds instances created
-	let dsInstances: SweApi[] = [];
+	let dsInstances: ConSysApi[] = [];
 
 	// Undefined initially
 	let getPosition: any;
@@ -325,10 +325,10 @@ export function createEllipseLayer(
 }
 export function createPolylineLayer(
 	viz: OSHVisualization,
-	dsArray: ISweApiDataSourceProperties[]
+	dsArray: IConSysApiDataSourceProperties[]
 ): ICreateMapVisualizationResult {
 	// Ds instances created
-	let dsInstances: SweApi[] = [];
+	let dsInstances: ConSysApi[] = [];
 
 	// Undefined initially
 	let getLocation: any;
@@ -393,11 +393,11 @@ export function createPolylineLayer(
 }
 export function createGeoPTZLayer(
 	viz: OSHVisualization,
-	dsArray: ISweApiDataSourceProperties[]
+	dsArray: IConSysApiDataSourceProperties[]
 ): ICreateMapVisualizationResult {
 	const mapStore = useMapStore();
 	// Ds instances created
-	let dsInstances: SweApi[] = [];
+	let dsInstances: ConSysApi[] = [];
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);

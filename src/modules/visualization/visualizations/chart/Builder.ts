@@ -15,7 +15,7 @@ import {
 } from '../../services/aggregation.service';
 import { VisualizationComponents } from '../../types/visualization';
 import { IChartCustomizationOptions } from '../../types/customization';
-import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { ICurveLayerProperties } from '../../types/layers';
 import { IChartViewProperties } from '../../types/views';
 
@@ -58,7 +58,7 @@ export function CreateChartVizProps(
 	const datastreamStore = useDataStreamStore();
 
 	// Create datasources, layer, and view
-	const vizDatasources: ISweApiDataSourceProperties[] = [];
+	const vizDatasources: IConSysApiDataSourceProperties[] = [];
 	let curveLayers: ICurveLayerProperties[] = [];
 
 	// Handle multiple Y properties (for multiple curves)
@@ -107,7 +107,7 @@ export function CreateChartVizProps(
 		const properties = BuildRoleProperty(entry);
 
 		const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
-		const currentDataSource: ISweApiDataSourceProperties = {
+		const currentDataSource: IConSysApiDataSourceProperties = {
 			endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
 			resource: `/datastreams/${dsId}/observations`,
 			tls: currentOSHDatastream[0].datastream.networkProperties.tls,

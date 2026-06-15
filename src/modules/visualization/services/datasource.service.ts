@@ -1,8 +1,8 @@
-import SweApi from 'osh-js/source/core/datasource/consysapi/SweApi.datasource.js';
+import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import DataStream from 'osh-js/source/core/consysapi/datastream/DataStream.js';
 import ObservationFilter from 'osh-js/source/core/consysapi/observation/ObservationFilter.js';
 import { Ref } from 'vue';
-import { ISweApiDataSourceProperties } from '../types/datasource';
+import { IConSysApiDataSourceProperties } from '../types/datasource';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import DataStreamFilter from 'osh-js/source/core/consysapi/datastream/DataStreamFilter';
 
@@ -48,13 +48,13 @@ export async function fetchDsSchema(datastream: any): Promise<any> {
 }
 
 /**
- * Create a SweApi datasource from given datasource properties
+ * Create a ConSysApi datasource from given datasource properties
  *
- * @param dsProps - Array of datasource properties to create SweApi object
- * @returns Generated SweApi datasource instance
+ * @param dsProps - Array of datasource properties to create ConSysApi object
+ * @returns Generated ConSysApi datasource instance
  */
-export function createDatasource(dsProps: ISweApiDataSourceProperties) {
-	const dsInstance = new SweApi(dsProps.id, {
+export function createDatasource(dsProps: IConSysApiDataSourceProperties) {
+	const dsInstance = new ConSysApi(dsProps.id, {
 		endpointUrl: dsProps.endpointUrl,
 		resource: dsProps.resource,
 		tls: dsProps.tls,
@@ -72,11 +72,11 @@ export function createDatasource(dsProps: ISweApiDataSourceProperties) {
 }
 
 /**
- * Connects SweApi datasources
+ * Connects ConSysApi datasources
  *
  * @param dsInstances
  */
-export function connectDatasources(dsInstances: Ref<SweApi[]>) {
+export function connectDatasources(dsInstances: Ref<ConSysApi[]>) {
 	const raw = dsInstances.value;
 
 	const dsList = Array.isArray(raw) ? raw : raw ? [raw] : [];
@@ -86,11 +86,11 @@ export function connectDatasources(dsInstances: Ref<SweApi[]>) {
 }
 
 /**
- * Disconnects SweApi datasources
+ * Disconnects ConSysApi datasources
  *
  * @param dsInstances
  */
-export function disconnectDatasources(dsInstances: Ref<SweApi[]>) {
+export function disconnectDatasources(dsInstances: Ref<ConSysApi[]>) {
 	const raw = dsInstances.value;
 
 	const dsList = Array.isArray(raw) ? raw : raw ? [raw] : [];
