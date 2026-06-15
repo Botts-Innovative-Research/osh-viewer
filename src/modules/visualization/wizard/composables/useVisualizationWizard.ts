@@ -13,7 +13,7 @@ import { showToast } from '@/composables/useToast';
 
 export function useVisualizationWizard(options: {
 	mode: 'create' | 'edit';
-	viz?: OSHVisualization;
+	viz: OSHVisualization | undefined;
 }) {
 	// Stores
 	const uiStore = useUIStore();
@@ -38,7 +38,14 @@ export function useVisualizationWizard(options: {
 			vizwizStore.setId(`visualization-${randomUUID()}`);
 		} else if (options.mode === 'edit' && options.viz) {
 			initialConfig.value = JSON.parse(JSON.stringify(options.viz.wizardConfig));
-			vizwizStore.setWizardConfig(options.viz.wizardConfig);
+
+			if (options.viz.wizardConfig === null) {
+				console.error('Failed to retrieve initial wizard config from visualization');
+				close();
+				return;
+			}
+
+			vizwizStore.setWizardConfig(JSON.parse(JSON.stringify(options.viz.wizardConfig)));
 			selectedType.value = options.viz.type;
 			await nextTick();
 		}
@@ -103,6 +110,12 @@ export function useVisualizationWizard(options: {
 		if (options.mode === 'edit') {
 			const initial = JSON.stringify(toRaw(initialConfig.value));
 			const updated = JSON.stringify(toRaw(vizwizStore.getWizardConfig()));
+
+			if (updated === null) {
+				console.error('Failed to retrieve updated wizard config');
+				close();
+				return;
+			}
 
 			// No changes made, skip build
 			if (initial === updated) {

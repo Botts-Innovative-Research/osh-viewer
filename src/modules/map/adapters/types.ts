@@ -7,22 +7,14 @@ export type MapPoint = {
 	lon: number;
 	alt: number;
 };
-export const layerTypes = [
-	'layerIdToPolylines',
-	//these are not implemented yet, so u can comment them out tbh but i wouldnt remove them
-	// 'layerIdToEllipsoids',
-	// 'layerIdToPolygon',
-	// 'layerIdToFrustum',
-	// 'layerIdToDrapedImage'
-];
 
 export interface MapAdapter {
 	init(container: string): Promise<void>;
 	destroy(): void;
 
 	addLayer(layer: any): void;
-	removeLayer(layer: any): void;
-	toggleLayerVisibility(id: string, isVisible: boolean): void;
+	addFOILayer(markerProps: any): void;
+	removeLayer(layer: any): Promise<void>;
 
 	onClick(handler: MapClickHandler): () => void;
 	setCursor(mode: CursorMode): void;

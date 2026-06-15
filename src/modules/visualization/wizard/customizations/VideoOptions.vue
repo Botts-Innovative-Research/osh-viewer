@@ -16,7 +16,7 @@ watch(time, (val) => {
 });
 
 onMounted(() => {
-	if (!vwStore.visualizationCustomizationOptions.stats) {
+	if (!vwStore.visualizationCustomizationOptions.stats === undefined) {
 		vwStore.updateVisualizationCustomizationOptions({
 			stats: stats.value,
 		});
@@ -24,7 +24,7 @@ onMounted(() => {
 		stats.value = vwStore.visualizationCustomizationOptions.stats;
 	}
 
-	if (!vwStore.visualizationCustomizationOptions.time) {
+	if (!vwStore.visualizationCustomizationOptions.time === undefined) {
 		vwStore.updateVisualizationCustomizationOptions({
 			time: time.value,
 		});
@@ -38,9 +38,11 @@ onMounted(() => {
 	<v-checkbox
 		v-model="stats"
 		label="Show Video Stats"
+		density="compact"
 	/>
 	<v-checkbox
 		v-model="time"
 		label="Show Video Time"
+		density="compact"
 	/>
 </template>

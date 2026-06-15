@@ -1,3 +1,4 @@
+import { OSHLayer } from '@/lib/OSHConnectDataStructs';
 import { Component } from 'vue';
 
 /**
@@ -34,18 +35,24 @@ export type VisualizationBuilderModule = () => void;
  * - id: Unique identifier for the visualization (e.g. 'chart', 'geoPtz', etc.)
  * - icon: Material Design Icon name (e.g. 'mdi-chart-line', 'mdi-map-marker', etc.)
  * - viewLocation: Where the visualization should be rendered (ViewLocation type)
+ * - layers: Array of OSH layer types that this visualization contains (OSHLayer type), used for filtering
  * - description: Short description of the visualization as helper text in the UI
  * - formComponents: Array of form components to render in the visualization wizard
  * - builder: Async function that imports the visualization's Builder.ts, which contains a default export build() to construct the visualization
- * - requireCs: Optional boolean flag to indicate if the visualization requires a controlstream
+ * - supportsCs: Boolean flag to indicate if the visualization can support a controlstream if available
+ * - requireCs: Boolean flag to indicate if the visualization REQUIRES a controlstream
+ * - supportedMaps: Optional array of supported map types, if map-related
  */
 export interface VisualizationDescriptor {
 	label: string;
 	id: string;
 	icon: string;
 	viewLocation: ViewLocation;
+	layers: OSHLayer[];
 	description: string;
 	formComponents: VisualizationFormComponent[];
 	builder: () => Promise<{ default: VisualizationBuilderModule }>;
-	requireCs?: boolean; // Optional flag to indicate if the visualization requires a controlstream
+	supportsCs: boolean; // Optional flag to indicate if the visualization can support a controlstream if available
+	requireCs: boolean; // Optional flag to indicate if the visualization requires a controlstream
+	supportedMaps?: ('cesium' | 'leaflet')[]; // If map-related, specify what maps it is supported by
 }

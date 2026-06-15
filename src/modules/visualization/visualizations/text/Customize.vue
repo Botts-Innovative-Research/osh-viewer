@@ -4,6 +4,8 @@ import { VisualizationComponentEmits } from '../../registry/VisualizationRegistr
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 
+const openPanels = ref<string[]>(['general']);
+
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>();
 const nameValid = ref<boolean>(false);
@@ -14,8 +16,35 @@ useComponentValidation(valid, emit);
 </script>
 
 <template>
-	<NameControl
-		role="stream"
-		v-model:valid="nameValid"
-	/>
+	<v-expansion-panels
+		rounded="lg"
+		static
+		multiple
+		v-model="openPanels"
+	>
+		<v-expansion-panel
+			eager
+			value="general"
+		>
+			<v-expansion-panel-title>
+				General
+				<template
+					v-slot:actions
+					v-if="!nameValid"
+				>
+					<v-icon
+						color="error"
+						icon="mdi-alert-circle"
+					>
+					</v-icon>
+				</template>
+			</v-expansion-panel-title>
+			<v-expansion-panel-text>
+				<NameControl
+					role="stream"
+					v-model:valid="nameValid"
+				/>
+			</v-expansion-panel-text>
+		</v-expansion-panel>
+	</v-expansion-panels>
 </template>

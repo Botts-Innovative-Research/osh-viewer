@@ -19,10 +19,10 @@ const checkedRoles = reactive({
 		get: () => vizwizStore.dsConfig.lla?.selected ?? true,
 		set: (val: boolean) => vizwizStore.updateDsConfig('lla', { selected: val }),
 	}),
-	qgc: computed({
-		get: () => vizwizStore.csConfig.qgc?.selected ?? true,
-		set: (val: boolean) => vizwizStore.updateCsConfig('qgc', { selected: val }),
-	}),
+	// qgc: computed({
+	// 	get: () => vizwizStore.csConfig.qgc?.selected ?? true,
+	// 	set: (val: boolean) => vizwizStore.updateCsConfig('qgc', { selected: val }),
+	// }),
 	plan: computed({
 		get: () => vizwizStore.csConfig.plan?.selected ?? true,
 		set: (val: boolean) => vizwizStore.updateCsConfig('plan', { selected: val }),
@@ -55,9 +55,9 @@ const checkedRoles = reactive({
 
 // Initialize dsConfig and csConfig with selected by default when mounted
 onMounted(() => {
-	if (!vizwizStore.csConfig.qgc) {
-		vizwizStore.updateCsConfig('qgc', { selected: true });
-	}
+	// if (!vizwizStore.csConfig.qgc) {
+	// 	vizwizStore.updateCsConfig('qgc', { selected: true });
+	// }
 
 	if (!vizwizStore.csConfig.plan) {
 		vizwizStore.updateCsConfig('plan', { selected: true });
@@ -105,7 +105,7 @@ const emit = defineEmits<VisualizationComponentEmits>();
 const locationValid = ref<boolean>(false);
 const homeValid = ref<boolean>(false);
 const planValid = ref<boolean>(false);
-const qgcValid = ref<boolean>(false);
+// const qgcValid = ref<boolean>(false);
 const takeoffValid = ref<boolean>(false);
 const landValid = ref<boolean>(false);
 const pauseValid = ref<boolean>(false);
@@ -116,7 +116,7 @@ const valid = computed(() => {
 	const locationValidChecked = checkedRoles.lla ? locationValid.value : true;
 	const homeValidChecked = checkedRoles.home ? homeValid.value : true;
 	const planValidChecked = checkedRoles.plan ? planValid.value : true;
-	const qgcValidChecked = checkedRoles.qgc ? qgcValid.value : true;
+	// const qgcValidChecked = checkedRoles.qgc ? qgcValid.value : true;
 	const takeoffValidChecked = checkedRoles.takeoff ? takeoffValid.value : true;
 	const landValidChecked = checkedRoles.land ? landValid.value : true;
 	const pauseValidChecked = checkedRoles.pause ? pauseValid.value : true;
@@ -126,7 +126,7 @@ const valid = computed(() => {
 		locationValidChecked &&
 		homeValidChecked &&
 		planValidChecked &&
-		qgcValidChecked &&
+		// qgcValidChecked &&
 		takeoffValidChecked &&
 		landValidChecked &&
 		pauseValidChecked &&
@@ -179,19 +179,19 @@ useComponentValidation(valid, emit);
 		/>
 	</v-container>
 
-	<v-container>
-		<v-checkbox
-			label="QGCPlan"
-			v-model="checkedRoles.qgc"
-			disabled
-		></v-checkbox>
-		<ControlStreamPicker
-			v-if="checkedRoles.plan"
-			role="qgc"
-			:show-property-selector="false"
-			v-model:valid="qgcValid"
-		/>
-	</v-container>
+<!--	<v-container>-->
+<!--		<v-checkbox-->
+<!--			label="QGCPlan"-->
+<!--			v-model="checkedRoles.qgc"-->
+<!--			disabled-->
+<!--		></v-checkbox>-->
+<!--		<ControlStreamPicker-->
+<!--			v-if="checkedRoles.plan"-->
+<!--			role="qgc"-->
+<!--			:show-property-selector="false"-->
+<!--			v-model:valid="qgcValid"-->
+<!--		/>-->
+<!--	</v-container>-->
 
 	<v-container>
 		<v-checkbox

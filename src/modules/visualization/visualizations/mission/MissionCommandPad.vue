@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { sendCommand } from '@/lib/ControlstreamUtils';
+import { sendCommand } from '../../services/controlstream.service';
 
 const props = defineProps({
 	controlstreams: {

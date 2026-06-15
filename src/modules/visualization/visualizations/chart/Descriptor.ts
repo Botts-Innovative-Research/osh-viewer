@@ -24,7 +24,10 @@ export const ChartDescriptor: VisualizationDescriptor = {
 	id: 'chart',
 	icon: 'mdi-chart-line',
 	viewLocation: 'panel',
+	layers: ['CurveLayer'],
 	description: 'Visualize data as a chart.',
 	formComponents: [ConfigComponent, CustomizeComponent],
 	builder: () => import('@/modules/visualization/visualizations/chart/Builder'),
+	supportsCs: false,
+	requireCs: false,
 };

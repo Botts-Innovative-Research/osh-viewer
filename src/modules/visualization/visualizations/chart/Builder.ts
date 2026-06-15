@@ -2,12 +2,6 @@ import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 //@ts-ignore
 import { useDataStreamStore } from '@/stores/datastreamstore';
-import {
-	IChartViewProperties,
-	ICurveLayerProperties,
-	ISweApiDataSourceProperties,
-	VisualizationComponents,
-} from '@/lib/VisualizationHelpers';
 //@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
 // @ts-ignore
@@ -19,6 +13,11 @@ import {
 	BuildRoleProperty,
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
+import { VisualizationComponents } from '../../types/visualization';
+import { IChartCustomizationOptions } from '../../types/customization';
+import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { ICurveLayerProperties } from '../../types/layers';
+import { IChartViewProperties } from '../../types/views';
 
 export default function build() {
 	console.log('Building Chart Visualization...');
@@ -28,7 +27,7 @@ export default function build() {
 	// Aggregate datastreams from vizwizStore
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
-	const chartResult = CreateChartViewProps(
+	const chartResult = CreateChartVizProps(
 		datastreams,
 		vizwizStore.visualizationCustomizationOptions
 	);
@@ -51,7 +50,10 @@ export default function build() {
 	console.log('Created Chart Visualization:', newViz);
 }
 
-export function CreateChartViewProps(datastreams: { [key: string]: any }, visOptions: any) {
+export function CreateChartVizProps(
+	datastreams: { [key: string]: any },
+	visOptions: IChartCustomizationOptions
+) {
 	const vizwizStore = useVizWizStore();
 	const datastreamStore = useDataStreamStore();
 
@@ -75,7 +77,7 @@ export function CreateChartViewProps(datastreams: { [key: string]: any }, visOpt
 			name: yLabels[i] + (yUoms[i] ? ` (${yUoms[i]})` : '') || `Y-Axis Data ${i + 1}`,
 			maxValues: 1000,
 			lineColor: visOptions.lineColor[yProperties[i]] || '#FF0000',
-			backgroundColor: visOptions.backgroundColor[yProperties[i]] || '#FFFFFF',
+			backgroundColor: visOptions.backgroundColor[yProperties[i]] || '#FF000000',
 			fill: true,
 			xLabel:
 				vizwizStore.dsConfig['x'].label != null
@@ -125,8 +127,6 @@ export function CreateChartViewProps(datastreams: { [key: string]: any }, visOpt
 		};
 		vizDatasources.push(currentDataSource);
 	}
-
-	console.log('Created ChartViewProps:', { vizDatasources, curveLayers, chartView });
 
 	return {
 		vizDatasources,

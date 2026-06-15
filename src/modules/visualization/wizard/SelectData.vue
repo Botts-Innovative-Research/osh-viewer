@@ -8,9 +8,16 @@ import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { VisualizationComponentEmits } from '../registry/VisualizationRegistry';
 import { useComponentValidation } from './composables/useComponentValidation';
 
-const props = defineProps<{
-	requireCs?: boolean;
-}>();
+const props = withDefaults(
+	defineProps<{
+		supportsCs: boolean;
+		requireCs: boolean;
+	}>(),
+	{
+		supportsCs: true,
+		requireCs: false,
+	}
+);
 
 // Stores
 const vizwizStore = useVizWizStore();
@@ -107,9 +114,11 @@ useComponentValidation(valid, emit);
 		clearable
 		validate-on="blur"
 		:rules="[(v: any) => !!v.length || 'At least one datastream must be selected']"
+		:disabled="!selectedSystems.length"
 	></v-autocomplete>
 	<!-- Select for controlstreams -->
 	<v-autocomplete
+		v-if="props.supportsCs"
 		v-model="selectedControlstreams"
 		:items="listControlstreams"
 		hint="Select one or more controlstreams"
@@ -126,5 +135,6 @@ useComponentValidation(valid, emit);
 				? [(v: any) => !!v.length || 'At least one controlstream must be selected']
 				: []
 		"
+		:disabled="!selectedSystems.length"
 	></v-autocomplete>
 </template>

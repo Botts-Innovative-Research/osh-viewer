@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
-import BackgroundColorControl from '@/modules/visualization/wizard/customizations/BackgroundColorControl.vue';
-import LineColorControl from '@/modules/visualization/wizard/customizations/LineColorControl.vue';
+import IDColorControl from '@/modules/visualization/wizard/customizations/IDColorControl.vue';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import { computed, ref, watch } from 'vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
+
+const openPanels = ref<string[]>(['general', 'lines']);
 
 const vizwizStore = useVizWizStore();
 const defaultName = ref<string>('');
@@ -61,42 +62,82 @@ function getYLines(yConfig: any) {
 </script>
 
 <template>
-	<name-control
-		:default-name="defaultName"
-		v-model:valid="nameValid"
-	></name-control>
-	<v-sheet v-if="lines">
-		<h2>Customize Line{{ lines.length > 1 ? `s` : '' }}</h2>
-		<v-tabs v-model="selectedTab">
-			<v-tab
-				v-for="line in lines"
-				:key="line.property"
-				:value="line"
-			>
-				{{ line.label }}
-			</v-tab>
-		</v-tabs>
-		<v-tabs-window v-model="selectedTab">
-			<v-tabs-window-item
-				v-for="line in lines"
-				:key="line.property"
-				:value="line"
-			>
-				<v-row class="justify-space-between pa-4">
-					<v-col cols="auto">
-						<LineColorControl
-							:line-id="line.property"
+	<v-expansion-panels
+		rounded="lg"
+		static
+		multiple
+		v-model="openPanels"
+	>
+		<v-expansion-panel
+			eager
+			value="general"
+		>
+			<v-expansion-panel-title>
+				General
+				<template
+					v-slot:actions
+					v-if="!nameValid"
+				>
+					<v-icon
+						color="error"
+						icon="mdi-alert-circle"
+					>
+					</v-icon>
+				</template>
+			</v-expansion-panel-title>
+			<v-expansion-panel-text>
+				<name-control
+					:default-name="defaultName"
+					v-model:valid="nameValid"
+				></name-control>
+			</v-expansion-panel-text>
+		</v-expansion-panel>
+		<v-expansion-panel
+			eager
+			title="Line(s)"
+			value="lines"
+		>
+			<v-expansion-panel-text>
+				<v-sheet v-if="lines">
+					<h2>Customize Line{{ lines.length > 1 ? `s` : '' }}</h2>
+					<v-tabs v-model="selectedTab">
+						<v-tab
+							v-for="line in lines"
 							:key="line.property"
-						></LineColorControl>
-					</v-col>
-					<v-col cols="auto">
-						<BackgroundColorControl
-							:line-id="line.property"
-							:key="`bg-${line.property}`"
-						></BackgroundColorControl>
-					</v-col>
-				</v-row>
-			</v-tabs-window-item>
-		</v-tabs-window>
-	</v-sheet>
+							:value="line"
+						>
+							{{ line.label }}
+						</v-tab>
+					</v-tabs>
+					<v-tabs-window v-model="selectedTab">
+						<v-tabs-window-item
+							v-for="line in lines"
+							:key="line.property"
+							:value="line"
+						>
+							<v-row class="justify-space-between pa-4">
+								<v-col cols="auto">
+									<IDColorControl
+										roleName="lineColor"
+										label="Line Color"
+										:line-id="line.property"
+										default-color="#ff0000"
+										:key="line.property"
+									></IDColorControl>
+								</v-col>
+								<v-col cols="auto">
+									<IDColorControl
+										roleName="backgroundColor"
+										label="Background Color"
+										:line-id="line.property"
+										default-color="#ff000000"
+										:key="`bg-${line.property}`"
+									></IDColorControl>
+								</v-col>
+							</v-row>
+						</v-tabs-window-item>
+					</v-tabs-window> </v-sheet
+			></v-expansion-panel-text>
+		</v-expansion-panel>
+	</v-expansion-panels>
 </template>

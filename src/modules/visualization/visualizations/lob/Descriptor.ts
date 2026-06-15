@@ -24,7 +24,11 @@ export const LobDescriptor: VisualizationDescriptor = {
 	id: 'lob',
 	icon: 'mdi-ray-start',
 	viewLocation: 'map',
+	layers: ['LoB'],
 	description: 'Visualize a point marker with a line indicating the line of bearing (LOB).',
 	formComponents: [ConfigComponent, CustomizeComponent],
 	builder: () => import('@/modules/visualization/visualizations/lob/Builder'),
+	supportsCs: false,
+	requireCs: false,
+	supportedMaps: ['cesium', 'leaflet'],
 };

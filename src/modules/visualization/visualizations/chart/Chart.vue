@@ -1,17 +1,14 @@
 <script setup lang="ts">
-import { onMounted, ref, toRaw } from 'vue';
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+import { onMounted, ref } from 'vue';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import ChartJsView from 'osh-js/source/core/ui/view/chart/ChartJsView.js';
 import CurveLayer from 'osh-js/source/core/ui/layer/CurveLayer.js';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
-import {
-	IChartViewProperties,
-	ICurveLayerProperties,
-	ISweApiDataSourceProperties,
-} from '@/lib/VisualizationHelpers';
-import { useVisualizationCleanup } from '../../components/composables/useVisualizationCleanup';
+import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
+import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { ICurveLayerProperties } from '../../types/layers';
+import { IChartViewProperties } from '../../types/views';
 
 const props = defineProps<{
 	visualization: OSHVisualization;
@@ -20,7 +17,7 @@ const props = defineProps<{
 	chartView: IChartViewProperties;
 }>();
 
-const chartId = ref('chart-' + randomUUID());
+const chartId = ref(props.visualization.id);
 let curveLayers = ref<CurveLayer[]>([]);
 let chartView = ref<ChartJsView | null>(null);
 

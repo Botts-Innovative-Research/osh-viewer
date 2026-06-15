@@ -1,8 +1,8 @@
 import { GeoPTZCommand } from '@/modules/visualization/visualizations/geoptz/Descriptor';
-import { sendCommand } from '@/lib/ControlstreamUtils';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { ISweApiControlStreamProperties } from '@/lib/VisualizationHelpers';
 import { useMapStore } from '@/stores/mapstore';
+import { ISweApiControlStreamProperties } from '@/modules/visualization/types/datasource';
+import { sendCommand } from '@/modules/visualization/services/controlstream.service';
 
 export function taskGeoPTZ(lat: number, lon: number, alt: number) {
 	const mapStore = useMapStore();
