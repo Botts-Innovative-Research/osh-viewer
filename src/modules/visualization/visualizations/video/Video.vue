@@ -3,7 +3,7 @@ import { computed, onMounted, ref, toRaw } from 'vue';
 import VideoDataLayer from 'osh-js/source/core/ui/layer/VideoDataLayer.js';
 import { OSHControlStream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import VideoView from 'osh-js/source/core/ui/view/video/VideoView.js';
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
+import SweApi from 'osh-js/source/core/datasource/consysapi/SweApi.datasource.js';
 import PTZControl from './PTZControl.vue';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { createDatasource } from '@/modules/visualization/services/datasource.service';

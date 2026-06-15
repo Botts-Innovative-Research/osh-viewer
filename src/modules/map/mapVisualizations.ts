@@ -1,7 +1,7 @@
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
 import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { useMapStore } from '@/stores/mapstore';
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
+import SweApi from 'osh-js/source/core/datasource/consysapi/SweApi.datasource.js';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import EllipseLayer from 'osh-js/source/core/ui/layer/EllipseLayer';

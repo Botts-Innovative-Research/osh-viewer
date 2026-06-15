@@ -9,7 +9,7 @@ import {
 	rebuildMapVisualizations,
 } from '../mapVisualizations';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
+import SweApi from 'osh-js/source/core/datasource/consysapi/SweApi.datasource.js';
 import { createCesiumAdapter } from '../adapters/cesium.adapter';
 import { taskGeoPTZ } from '../services/geoPTZ.service';
 import { MapAdapter } from '../adapters/types';

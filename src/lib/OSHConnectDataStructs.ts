@@ -1,10 +1,10 @@
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import Systems from 'osh-js/source/core/sweapi/system/Systems.js';
-import SystemFilter from 'osh-js/source/core/sweapi/system/SystemFilter.js';
-import System from 'osh-js/source/core/sweapi/system/System.js';
+import Systems from 'osh-js/source/core/consysapi/system/Systems.js';
+import SystemFilter from 'osh-js/source/core/consysapi/system/SystemFilter.js';
+import System from 'osh-js/source/core/consysapi/system/System.js';
 import DataSynchronizer from 'osh-js/source/core/timesync/DataSynchronizer.js';
-import FeatureOfInterestFilter from 'osh-js/source/core/sweapi/featureofinterest/FeatureOfInterestFilter.js';
+import SamplingFeatureFilter from 'osh-js/source/core/consysapi/samplingfeature/SamplingFeatureFilter.js';
 import { useNodeStore } from '@/stores/nodestore';
 import { useSystemStore } from '@/stores/systemstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
@@ -287,7 +287,7 @@ export class OSHSystem {
 	}
 
 	async getControlStreams(): Promise<any[]> {
-		const result: any = await this.system.searchControls(undefined, 100);
+		const result: any = await this.system.searchControlStreams(undefined, 100);
 		let controlStreams: any[] = [];
 
 		const controlstreamStore = getSharedStores().controlstreamStore;
@@ -307,8 +307,8 @@ export class OSHSystem {
 	}
 
 	async getSamplingFeatures(): Promise<any[]> {
-		const result: any = await this.system.searchFeaturesOfInterest(
-			new FeatureOfInterestFilter(),
+		const result: any = await this.system.searchSamplingFeatures(
+			new SamplingFeatureFilter(),
 			100
 		);
 		let samplingFeatures: any[] = [];

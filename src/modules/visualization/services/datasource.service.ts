@@ -1,10 +1,10 @@
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
-import DataStream from 'osh-js/source/core/sweapi/datastream/DataStream.js';
-import ObservationFilter from 'osh-js/source/core/sweapi/observation/ObservationFilter.js';
+import SweApi from 'osh-js/source/core/datasource/consysapi/SweApi.datasource.js';
+import DataStream from 'osh-js/source/core/consysapi/datastream/DataStream.js';
+import ObservationFilter from 'osh-js/source/core/consysapi/observation/ObservationFilter.js';
 import { Ref } from 'vue';
 import { ISweApiDataSourceProperties } from '../types/datasource';
 import { useDataStreamStore } from '@/stores/datastreamstore';
-import DataStreamFilter from 'osh-js/source/core/sweapi/datastream/DataStreamFilter';
+import DataStreamFilter from 'osh-js/source/core/consysapi/datastream/DataStreamFilter';
 
 /**
  * Takes datasource ID as parameter

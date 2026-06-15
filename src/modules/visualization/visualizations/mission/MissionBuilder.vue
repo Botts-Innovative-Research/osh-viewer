@@ -5,7 +5,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useMapStore } from '@/stores/mapstore';
 import { showToast } from '@/composables/useToast';
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
+import SweApi from 'osh-js/source/core/datasource/consysapi/SweApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
 import {
 	createDatasource,
@@ -60,7 +60,6 @@ function getControlstreamByRole(role: string): Controlstream | undefined {
 const missionControlStream = computed<Controlstream | undefined>(() =>
 	getControlstreamByRole('plan')
 );
-
 
 interface Waypoint {
 	id: string;
@@ -694,16 +693,30 @@ useVisualizationCleanup(dsInstances);
 									>
 										Clear All
 									</v-btn>
-									<v-dialog v-model="showClearConfirm" max-width="400">
+									<v-dialog
+										v-model="showClearConfirm"
+										max-width="400"
+									>
 										<v-card>
 											<v-card-title>Clear All Waypoints</v-card-title>
 											<v-card-text>
-												Are you sure you want to clear all {{ waypoints.length }} waypoints? This action cannot be undone.
+												Are you sure you want to clear all
+												{{ waypoints.length }} waypoints? This action cannot
+												be undone.
 											</v-card-text>
 											<v-card-actions>
 												<v-spacer />
-												<v-btn variant="text" @click="showClearConfirm = false">Cancel</v-btn>
-												<v-btn color="error" variant="flat" @click="clearWaypoints">Clear</v-btn>
+												<v-btn
+													variant="text"
+													@click="showClearConfirm = false"
+													>Cancel</v-btn
+												>
+												<v-btn
+													color="error"
+													variant="flat"
+													@click="clearWaypoints"
+													>Clear</v-btn
+												>
 											</v-card-actions>
 										</v-card>
 									</v-dialog>
@@ -973,7 +986,10 @@ useVisualizationCleanup(dsInstances);
 			</v-btn>
 		</div>
 
-		<v-dialog v-model="showExportDialog" max-width="400">
+		<v-dialog
+			v-model="showExportDialog"
+			max-width="400"
+		>
 			<v-card>
 				<v-card-title>Export Mission</v-card-title>
 				<v-card-text>
@@ -988,13 +1004,26 @@ useVisualizationCleanup(dsInstances);
 				</v-card-text>
 				<v-card-actions>
 					<v-spacer />
-					<v-btn variant="text" @click="showExportDialog = false">Cancel</v-btn>
-					<v-btn color="primary" variant="flat" @click="exportMissionPlan" prepend-icon="mdi-download">Export</v-btn>
+					<v-btn
+						variant="text"
+						@click="showExportDialog = false"
+						>Cancel</v-btn
+					>
+					<v-btn
+						color="primary"
+						variant="flat"
+						@click="exportMissionPlan"
+						prepend-icon="mdi-download"
+						>Export</v-btn
+					>
 				</v-card-actions>
 			</v-card>
 		</v-dialog>
 
-		<v-dialog v-model="showMissionSummary" max-width="500">
+		<v-dialog
+			v-model="showMissionSummary"
+			max-width="500"
+		>
 			<v-card>
 				<v-card-title>Mission Summary</v-card-title>
 				<v-card-text>
@@ -1002,7 +1031,9 @@ useVisualizationCleanup(dsInstances);
 						<tbody>
 							<tr>
 								<td class="font-weight-medium">Source</td>
-								<td>{{ missionSource === 'waypoints' ? 'Waypoints' : 'Plan File' }}</td>
+								<td>
+									{{ missionSource === 'waypoints' ? 'Waypoints' : 'Plan File' }}
+								</td>
 							</tr>
 							<tr v-if="missionSource === 'waypoints'">
 								<td class="font-weight-medium">Waypoints</td>
@@ -1025,8 +1056,18 @@ useVisualizationCleanup(dsInstances);
 				</v-card-text>
 				<v-card-actions>
 					<v-spacer />
-					<v-btn variant="text" @click="showMissionSummary = false">Cancel</v-btn>
-					<v-btn color="primary" variant="flat" @click="sendMission" prepend-icon="mdi-send">Send</v-btn>
+					<v-btn
+						variant="text"
+						@click="showMissionSummary = false"
+						>Cancel</v-btn
+					>
+					<v-btn
+						color="primary"
+						variant="flat"
+						@click="sendMission"
+						prepend-icon="mdi-send"
+						>Send</v-btn
+					>
 				</v-card-actions>
 			</v-card>
 		</v-dialog>

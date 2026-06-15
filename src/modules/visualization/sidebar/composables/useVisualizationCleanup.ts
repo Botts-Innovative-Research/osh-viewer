@@ -1,5 +1,5 @@
 //@ts-ignore
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
+import SweApi from 'osh-js/source/core/datasource/consysapi/SweApi.datasource.js';
 import { onBeforeUnmount, Ref } from 'vue';
 import { disconnectDatasources } from '../../services/datasource.service';
 
