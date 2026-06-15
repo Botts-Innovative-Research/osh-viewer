@@ -60,7 +60,7 @@ function getControlstreamByRole(role: string): Controlstream | undefined {
 const missionControlStream = computed<Controlstream | undefined>(() =>
 	getControlstreamByRole('plan')
 );
-const qgcControlStream = computed<Controlstream | undefined>(() => getControlstreamByRole('qgc'));
+
 
 interface Waypoint {
 	id: string;
@@ -82,13 +82,14 @@ const waypoints = ref<Waypoint[]>([]);
 
 const latInput = ref<number>(0.0);
 const lonInput = ref<number>(0.0);
-const altInput = ref<number>(0.0);
+const altInput = ref<number>(25);
 const waypointForm = ref<any>(null);
 
 const mapStore = useMapStore();
 const isSelected = ref<boolean>(false);
 const fileInputRef = ref<any | null>(null);
 const selectedFile = ref<File | null>(null);
+const exportFilename = ref<string>('mission');
 
 const droneDatasourceLLA = ref<SweApi | null>(null);
 const droneHomeDatasource = ref<SweApi | null>(null);
@@ -131,13 +132,17 @@ watch(
 	}
 );
 
+watch(waypointAltitude, (newAlt) => {
+	altInput.value = newAlt;
+});
+
 watch(
 	() => mapStore.currentLLA,
 	(newVal) => {
 		if (isSelected.value && newVal) {
 			latInput.value = newVal.latitude;
 			lonInput.value = newVal.longitude;
-			altInput.value = newVal.altitude > 0 ? newVal.altitude : waypointAltitude.value;
+			altInput.value = waypointAltitude.value;
 			addWaypoint();
 		}
 	}
@@ -176,10 +181,37 @@ function removeWaypoint(id: string) {
 	console.log('[MissionBuilder.vue] Removed waypoint:', id);
 }
 
+const showClearConfirm = ref(false);
+const showMissionSummary = ref(false);
+function confirmSendMission() {
+	showMissionSummary.value = true;
+}
+
+const showExportDialog = ref(false);
+
+function exportMissionPlan() {
+	const plan = generateMissionControlPlan();
+	if (!plan) {
+		showToast('No waypoints to export', 'ERROR');
+		return;
+	}
+	const name = exportFilename.value.trim() || 'mission';
+	const filename = name.endsWith('.plan') ? name : name + '.plan';
+	const blob = new Blob([JSON.stringify(plan, null, 2)], { type: 'application/json' });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = filename;
+	a.click();
+	URL.revokeObjectURL(url);
+	showExportDialog.value = false;
+}
+
 function clearWaypoints() {
 	waypoints.value = [];
 	mapStore.clearMissionWaypoints();
 	mapStore.triggerClearWaypointMarkers();
+	showClearConfirm.value = false;
 	console.log('[MissionBuilder.vue] Cleared all waypoints');
 }
 
@@ -197,9 +229,70 @@ watch(
 	{ deep: true }
 );
 
-function sendMission() {
-	if (missionSource.value === 'waypoints') sendWaypoints();
+function buildCommandParameters(plan: any) {
+	const mission = plan.mission;
+	const geoFence = plan.geoFence ?? { circles: [], polygons: [], version: 2 };
+	const rallyPoints = plan.rallyPoints ?? { points: [], version: 2 };
 
+	return {
+		fileType: plan.fileType,
+		groundStation: plan.groundStation,
+		mission: {
+			cruiseSpeed: mission.cruiseSpeed,
+			firmwareType: mission.firmwareType,
+			globalPlanAltitudeMode: mission.globalPlanAltitudeMode,
+			hoverSpeed: mission.hoverSpeed,
+			itemsCount: mission.items.length,
+			items: mission.items.map((item: any) => ({
+				AMSLAltAboveTerrain: item.AMSLAltAboveTerrain ?? 0,
+				Altitude: item.Altitude,
+				AltitudeMode: item.AltitudeMode,
+				autoContinue: item.autoContinue,
+				command: item.command,
+				doJumpId: item.doJumpId,
+				frame: item.frame,
+				params: item.params.map((p: any) => p ?? 0),
+				type: item.type,
+			})),
+			plannedHomePosition: mission.plannedHomePosition,
+			vehicleType: mission.vehicleType,
+			version: mission.version,
+		},
+		geoFence: {
+			circlesCount: geoFence.circles.length,
+			circles: geoFence.circles.map((c: any) => ({
+				inclusion: c.inclusion ?? true,
+				latitude: c.latitude ?? c.center?.[0] ?? 0,
+				longitude: c.longitude ?? c.center?.[1] ?? 0,
+				radius: c.radius ?? 0,
+			})),
+			polygonsCount: geoFence.polygons.length,
+			polygons: geoFence.polygons.map((p: any) => ({
+				inclusion: p.inclusion ?? true,
+				vertexCount: (p.vertices ?? p.polygon ?? []).length,
+				vertices: (p.vertices ?? p.polygon ?? []).map((v: any) => ({
+					latitude: v.latitude ?? v[0] ?? 0,
+					longitude: v.longitude ?? v[1] ?? 0,
+				})),
+			})),
+			version: geoFence.version ?? 2,
+		},
+		rallyPoints: {
+			pointsCount: rallyPoints.points.length,
+			points: rallyPoints.points.map((p: any) => ({
+				latitude: p.latitude ?? p[0] ?? 0,
+				longitude: p.longitude ?? p[1] ?? 0,
+				altitude: p.altitude ?? p[2] ?? 0,
+			})),
+			version: rallyPoints.version ?? 2,
+		},
+		version: plan.version,
+	};
+}
+
+function sendMission() {
+	showMissionSummary.value = false;
+	if (missionSource.value === 'waypoints') sendWaypoints();
 	if (missionSource.value === 'file') sendQGCPlanFileUpload();
 }
 
@@ -208,12 +301,11 @@ function sendWaypoints() {
 
 	if (!plan) {
 		showToast('Cannot send empty mission', 'ERROR');
+		return;
 	}
 
 	const command = {
-		parameters: {
-			qGroundControlPlan: JSON.stringify(plan),
-		},
+		parameters: buildCommandParameters(plan),
 	};
 
 	const cs = missionControlStream.value;
@@ -241,26 +333,33 @@ function sendQGCPlanFileUpload() {
 	reader.onload = (e) => {
 		const fileContent = reader.result as string;
 
-		const cs = qgcControlStream.value;
+		const cs = missionControlStream.value;
 		if (!cs) {
 			showToast('No plan controlstream configured', 'ERROR');
 			return;
 		}
 
+		let plan: any;
+		try {
+			plan = JSON.parse(fileContent);
+		} catch (err) {
+			showToast('Invalid plan file format', 'ERROR');
+			console.error('[MissionBuilder.vue] Failed to parse plan file:', err);
+			return;
+		}
+
 		const command = {
-			parameters: {
-				qGroundControlPlan: fileContent,
-			},
+			parameters: buildCommandParameters(plan),
 		};
 
 		console.log(
 			'[MissionBuilder.vue] Sending mission file command:',
 			command,
-			qgcControlStream.value
+			missionControlStream.value
 		);
 		sendCommand(
 			commandBaseUrl.value,
-			qgcControlStream.value.id,
+			cs.id,
 			command,
 			`${csAuth.value.username}:${csAuth.value.password}`
 		);
@@ -360,11 +459,6 @@ function generateMissionControlPlan() {
 
 	return {
 		fileType: 'Plan',
-		geoFence: {
-			circles: [],
-			polygons: [],
-			version: 2,
-		},
 		groundStation: 'QGroundControl',
 		mission: {
 			cruiseSpeed: cruiseSpeed.value,
@@ -374,6 +468,11 @@ function generateMissionControlPlan() {
 			items: items,
 			plannedHomePosition: plannedHomePosition,
 			vehicleType: 2,
+			version: 2,
+		},
+		geoFence: {
+			circles: [],
+			polygons: [],
 			version: 2,
 		},
 		rallyPoints: {
@@ -590,11 +689,24 @@ useVisualizationCleanup(dsInstances);
 										size="small"
 										variant="text"
 										color="error"
-										@click="clearWaypoints"
+										@click="showClearConfirm = true"
 										:disabled="waypoints.length === 0"
 									>
 										Clear All
 									</v-btn>
+									<v-dialog v-model="showClearConfirm" max-width="400">
+										<v-card>
+											<v-card-title>Clear All Waypoints</v-card-title>
+											<v-card-text>
+												Are you sure you want to clear all {{ waypoints.length }} waypoints? This action cannot be undone.
+											</v-card-text>
+											<v-card-actions>
+												<v-spacer />
+												<v-btn variant="text" @click="showClearConfirm = false">Cancel</v-btn>
+												<v-btn color="error" variant="flat" @click="clearWaypoints">Clear</v-btn>
+											</v-card-actions>
+										</v-card>
+									</v-dialog>
 								</div>
 								<v-list
 									density="compact"
@@ -777,6 +889,12 @@ useVisualizationCleanup(dsInstances);
 								</v-row>
 							</v-expansion-panel-text>
 						</v-expansion-panel>
+
+						<v-expansion-panel title="GeoFence Settings">
+							<v-expansion-panel-text>
+								<v-label>Not implemented yet</v-label>
+							</v-expansion-panel-text>
+						</v-expansion-panel>
 					</v-expansion-panels>
 				</v-window-item>
 
@@ -832,18 +950,86 @@ useVisualizationCleanup(dsInstances);
 			</v-window>
 		</v-card>
 
-		<v-btn
-			color="primary"
-			block
-			@click="sendMission"
-			:disabled="
-				(missionSource === 'waypoints' && waypoints.length === 0) ||
-				(missionSource === 'file' && !selectedFile)
-			"
-			prepend-icon="mdi-send"
-		>
-			Send Mission
-		</v-btn>
+		<div class="d-flex ga-2">
+			<v-btn
+				color="primary"
+				class="flex-grow-1"
+				@click="confirmSendMission"
+				:disabled="
+					(missionSource === 'waypoints' && waypoints.length === 0) ||
+					(missionSource === 'file' && !selectedFile)
+				"
+				prepend-icon="mdi-send"
+			>
+				Send Mission
+			</v-btn>
+			<v-btn
+				variant="outlined"
+				@click="showExportDialog = true"
+				:disabled="missionSource !== 'waypoints' || waypoints.length === 0"
+				prepend-icon="mdi-download"
+			>
+				Export
+			</v-btn>
+		</div>
+
+		<v-dialog v-model="showExportDialog" max-width="400">
+			<v-card>
+				<v-card-title>Export Mission</v-card-title>
+				<v-card-text>
+					<v-text-field
+						v-model="exportFilename"
+						label="Filename"
+						suffix=".plan"
+						density="compact"
+						autofocus
+						@keyup.enter="exportMissionPlan"
+					/>
+				</v-card-text>
+				<v-card-actions>
+					<v-spacer />
+					<v-btn variant="text" @click="showExportDialog = false">Cancel</v-btn>
+					<v-btn color="primary" variant="flat" @click="exportMissionPlan" prepend-icon="mdi-download">Export</v-btn>
+				</v-card-actions>
+			</v-card>
+		</v-dialog>
+
+		<v-dialog v-model="showMissionSummary" max-width="500">
+			<v-card>
+				<v-card-title>Mission Summary</v-card-title>
+				<v-card-text>
+					<v-table density="compact">
+						<tbody>
+							<tr>
+								<td class="font-weight-medium">Source</td>
+								<td>{{ missionSource === 'waypoints' ? 'Waypoints' : 'Plan File' }}</td>
+							</tr>
+							<tr v-if="missionSource === 'waypoints'">
+								<td class="font-weight-medium">Waypoints</td>
+								<td>{{ waypoints.length }}</td>
+							</tr>
+							<tr v-if="missionSource === 'waypoints'">
+								<td class="font-weight-medium">Cruise Speed</td>
+								<td>{{ cruiseSpeed }} m/s</td>
+							</tr>
+							<tr v-if="missionSource === 'waypoints'">
+								<td class="font-weight-medium">Altitude</td>
+								<td>{{ waypointAltitude }} m</td>
+							</tr>
+							<tr v-if="missionSource === 'file' && selectedFile">
+								<td class="font-weight-medium">File</td>
+								<td>{{ selectedFile.name }}</td>
+							</tr>
+						</tbody>
+					</v-table>
+				</v-card-text>
+				<v-card-actions>
+					<v-spacer />
+					<v-btn variant="text" @click="showMissionSummary = false">Cancel</v-btn>
+					<v-btn color="primary" variant="flat" @click="sendMission" prepend-icon="mdi-send">Send</v-btn>
+				</v-card-actions>
+			</v-card>
+		</v-dialog>
 
 		<v-card>
 			<MissionCommandPad
