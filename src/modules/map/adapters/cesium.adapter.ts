@@ -18,11 +18,12 @@ export interface MapLayer {
 }
 
 export function createCesiumAdapter(): MapAdapter {
-	let mapView: CesiumView | null;
+	let mapView: typeof CesiumView | null;
 	let clickHandler: Cesium.ScreenSpaceEventHandler | null = null;
 	let renderedLayers: Map<string, any> = new Map();
 	let terrainProvider: any = null;
 	let buildingsTileset: any = null;
+	let googlePhotorealistic: any = null;
 	let flightPathPolyline: any = null;
 
 	async function init(container: string) {
@@ -30,6 +31,7 @@ export function createCesiumAdapter(): MapAdapter {
 			container,
 			autoZoomOnFirstMarker: true,
 			layers: [],
+			geocoder: Cesium.IonGeocodeProviderType.GOOGLE,
 		});
 		// Wait for Cesium to be fully ready
 		await new Promise(requestAnimationFrame);
@@ -57,39 +59,11 @@ export function createCesiumAdapter(): MapAdapter {
 		mapView.addLayer(layer);
 	}
 
-	function removeLayer(layer: any) {
+	async function removeLayer(layer: any): Promise<void> {
 		mapView.removeAllFromLayer(layer);
-	}
-
-	function addFOILayer(markerProps: any) {
-		const markerEnt = mapView.addMarker(markerProps, undefined);
-		mapView.addMarkerToLayer(markerEnt, markerProps);
-	}
-
-	function toggleLayerVisibility(id: string, isVisible: boolean) {
-		const marker = mapView.layerIdToMarkers?.[id];
-		const polyline = mapView.layerIdToPolylines?.[id];
-		const ellipse = mapView.layerIdToEllipsoids?.[id];
-
-		// Handle LoB
-		if (marker && polyline) {
-			marker.show = isVisible;
-			polyline.show = isVisible;
-		}
-		// Handle PM
-		else if (marker) {
-			marker.show = isVisible;
-		}
-		// Handle polyline
-		else if (polyline) {
-			polyline.show = isVisible;
-		}
-		// Handle ellipse
-		else if (ellipse) {
-			ellipse.show = isVisible;
-		}
-
 		invalidate();
+		await mapView.viewer.scene.postRender;
+		return;
 	}
 
 	function setCursor(mode: CursorMode) {
@@ -201,6 +175,27 @@ export function createCesiumAdapter(): MapAdapter {
 		}
 	}
 
+	async function addGooglePhotorealistic() {
+		const viewer = mapView.viewer;
+		if (!viewer) return;
+
+		if (googlePhotorealistic) {
+			if (!viewer.scene.primitives.contains(googlePhotorealistic)) {
+				viewer.scene.primitives.add(googlePhotorealistic);
+			}
+		} else {
+			googlePhotorealistic = await Cesium.createGooglePhotorealistic3DTileset();
+			viewer.scene.primitives.add(googlePhotorealistic);
+		}
+	}
+
+	function removeGooglePhotorealistic() {
+		if (googlePhotorealistic && mapView.viewer) {
+			mapView.viewer.scene.primitives.remove(googlePhotorealistic);
+			googlePhotorealistic = null;
+		}
+	}
+
 	function addMapLayer(layer: MapLayer) {
 		const viewer = mapView.viewer;
 		if (!viewer) return;
@@ -307,7 +302,6 @@ export function createCesiumAdapter(): MapAdapter {
 		destroy,
 		addLayer,
 		removeLayer,
-		toggleLayerVisibility,
 		setCursor,
 		onClick,
 		flyToPoint,
@@ -318,10 +312,11 @@ export function createCesiumAdapter(): MapAdapter {
 		removeTerrain,
 		addBuildings,
 		removeBuildings,
+		addGooglePhotorealistic,
+		removeGooglePhotorealistic,
 		addMapLayer,
 		removeMapLayer,
 		destroyAllLayers,
 		rebuildMapLayers,
-		addFOILayer,
 	};
 }

@@ -12,7 +12,7 @@ import {
 import { PolylineDescriptor } from './Descriptor';
 import { VisualizationComponents } from '../../types/visualization';
 import { IPolylineCustomizationOptions } from '../../types/customization';
-import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { IPolylineLayerProperties } from '../../types/layers';
 
 export default function build() {
@@ -58,7 +58,7 @@ export function CreatePolylineVizProps(
 	const datastreamStore = useDataStreamStore();
 
 	// Create datasources, layer, and view
-	const vizDatasources: ISweApiDataSourceProperties[] = [];
+	const vizDatasources: IConSysApiDataSourceProperties[] = [];
 	let polylineLayer: IPolylineLayerProperties = {
 		name: visOptions.name,
 		color: visOptions.color,
@@ -72,9 +72,9 @@ export function CreatePolylineVizProps(
 		// Get selected properties for each role of the datastream
 		const properties = BuildRoleProperty(entry);
 
-		// Push new ISweApiDataSourceProperties
+		// Push new IConSysApiDataSourceProperties
 		const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
-		const currentDataSource: ISweApiDataSourceProperties = {
+		const currentDataSource: IConSysApiDataSourceProperties = {
 			endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
 			resource: `/datastreams/${dsId}/observations`,
 			tls: currentOSHDatastream[0].datastream.networkProperties.tls,

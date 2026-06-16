@@ -1,38 +1,38 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
+import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import ChartJsView from 'osh-js/source/core/ui/view/chart/ChartJsView.js';
 import CurveLayer from 'osh-js/source/core/ui/layer/CurveLayer.js';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
-import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { ICurveLayerProperties } from '../../types/layers';
 import { IChartViewProperties } from '../../types/views';
 
 const props = defineProps<{
 	visualization: OSHVisualization;
-	datasource: ISweApiDataSourceProperties[];
+	datasource: IConSysApiDataSourceProperties[];
 	curveLayer: ICurveLayerProperties[];
 	chartView: IChartViewProperties;
 }>();
 
 const chartId = ref(props.visualization.id);
-let curveLayers = ref<CurveLayer[]>([]);
-let chartView = ref<ChartJsView | null>(null);
+let curveLayers = ref<(typeof CurveLayer)[]>([]);
+let chartView = ref<typeof ChartJsView | null>(null);
 
 onMounted(async () => {
 	initializeChart();
 });
 
-// Array of SweApi instances for datasources
-const dsInstances = ref<SweApi[]>([]);
+// Array of ConSysApi instances for datasources
+const dsInstances = ref<(typeof ConSysApi)[]>([]);
 
 function initializeChart() {
 	const viz = props.visualization;
 	if (!viz || viz.type !== 'chart') return;
 
-	const dsArray: ISweApiDataSourceProperties[] = props.datasource;
+	const dsArray: IConSysApiDataSourceProperties[] = props.datasource;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);

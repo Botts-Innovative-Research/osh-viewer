@@ -13,9 +13,7 @@ export interface MapAdapter {
 	destroy(): void;
 
 	addLayer(layer: any): void;
-	addFOILayer(markerProps: any): void;
-	removeLayer(layer: any): void;
-	toggleLayerVisibility(id: string, isVisible: boolean): void;
+	removeLayer(layer: any): Promise<void>;
 
 	onClick(handler: MapClickHandler): () => void;
 	setCursor(mode: CursorMode): void;
