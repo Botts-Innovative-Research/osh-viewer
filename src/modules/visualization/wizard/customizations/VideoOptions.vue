@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch, ref, onMounted } from 'vue';
+import { watch, ref, onMounted, computed } from 'vue';
 import { useVizWizStore } from '@/stores/vizwizstore';
 
 const vwStore = useVizWizStore();
@@ -71,12 +71,12 @@ onMounted(() => {
 		time.value = vwStore.visualizationCustomizationOptions.time;
 	}
 
-	if (!vwStore.visualizationCustomizationOptions.props360 === undefined) {
+	if (vwStore.visualizationCustomizationOptions.props360 === undefined) {
 		is360.value = false;
 	} else {
 		is360.value = true;
 
-		if (vwStore.visualizationCustomizationOptions.props360.projection) {
+		if (!vwStore.visualizationCustomizationOptions.props360.projection === undefined) {
 			const label = Object.keys(video360ProjectionMap).find(
 				(k) =>
 					video360ProjectionMap[k] ===
