@@ -8,7 +8,7 @@ import { disconnectDatasources } from '../../services/datasource.service';
  *
  * @param dsInstances
  */
-export function useVisualizationCleanup(dsInstances: Ref<ConSysApi[]>) {
+export function useVisualizationCleanup(dsInstances: Ref<(typeof ConSysApi)[]>) {
 	onBeforeUnmount(() => {
 		disconnectDatasources(dsInstances);
 	});

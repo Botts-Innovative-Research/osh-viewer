@@ -22,7 +22,6 @@ import {
 	disconnectDatasources as disconnect,
 } from '@/modules/visualization/services/datasource.service';
 import { getGroundAltitude } from '../services/altitude.service';
-import { ICreateMapVisualizationResult } from '../mapVisualizations';
 
 export function useMap() {
 	// Stores
@@ -39,11 +38,11 @@ export function useMap() {
 	// Map of visualization ID to its corresponding visualization layer instance
 	const mapItemLayers = ref<Map<string, SupportedMapLayer>>(new Map());
 	// List of all connected datasource instances created for map visualizations
-	const listDataSourceInstances = ref<ConSysApi[]>([]);
+	const listDataSourceInstances = ref<(typeof ConSysApi)[]>([]);
 	// Current GeoPTZ layer
-	const geoPtzLayer = ref<PointMarkerLayer | null>(null);
+	const geoPtzLayer = ref<typeof PointMarkerLayer | null>(null);
 	// Array of waypoint Pointmarkers for mission builder
-	const waypointLayers = ref<PointMarkerLayer[]>([]);
+	const waypointLayers = ref<(typeof PointMarkerLayer)[]>([]);
 
 	// Hidden visualization IDs
 	const hiddenLayers = ref<Map<string, OSHVisualization>>(new Map());
@@ -173,7 +172,7 @@ export function useMap() {
 
 		// Disconnect and remove datasources
 		listDataSourceInstances.value = listDataSourceInstances.value.filter(
-			(dsInstance: ConSysApi) => {
+			(dsInstance: typeof ConSysApi) => {
 				// Find matching datasource IDs to remove
 				if (removedDsIds.includes(dsInstance.id)) {
 					console.log('Disconnecting datasource:', dsInstance.id);

@@ -18,15 +18,15 @@ const props = defineProps<{
 }>();
 
 const chartId = ref(props.visualization.id);
-let curveLayers = ref<CurveLayer[]>([]);
-let chartView = ref<ChartJsView | null>(null);
+let curveLayers = ref<(typeof CurveLayer)[]>([]);
+let chartView = ref<typeof ChartJsView | null>(null);
 
 onMounted(async () => {
 	initializeChart();
 });
 
 // Array of ConSysApi instances for datasources
-const dsInstances = ref<ConSysApi[]>([]);
+const dsInstances = ref<(typeof ConSysApi)[]>([]);
 
 function initializeChart() {
 	const viz = props.visualization;

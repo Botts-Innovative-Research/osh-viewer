@@ -188,7 +188,7 @@ export class OSHNode {
 			connectorOpts: { username: this.username, password: this.password },
 		});
 		let retrievedSystems: any[] = [];
-		const results: System = await systems.searchSystems(new SystemFilter(), 100);
+		const results: typeof System = await systems.searchSystems(new SystemFilter(), 100);
 
 		// collect all results
 		while (results.hasNext()) {
@@ -243,7 +243,7 @@ export class OSHSystem {
 	name: string; // Name of system
 	type: string; // Type of system
 	parentId: string | null; // Parent ID, if applicable
-	system: System; // osh-js System object
+	system: typeof System; // osh-js System object
 	parentNode: OSHNode; // OSHNode parent node
 	children: string[]; // IDs of system's children (datastreams and controlstreams)
 	datastreams: OSHDatastream[] = []; // Datastreams associated with this system
@@ -355,7 +355,7 @@ export class OSHDatastream {
 		this.id = datastream.properties.id;
 	}
 
-	registerWithSynchronizer(synchronizer: DataSynchronizer): void {
+	registerWithSynchronizer(synchronizer: typeof DataSynchronizer): void {
 		synchronizer.addDataSource(this.datastream);
 	}
 

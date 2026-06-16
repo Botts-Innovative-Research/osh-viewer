@@ -18,7 +18,7 @@ export interface MapLayer {
 }
 
 export function createCesiumAdapter(): MapAdapter {
-	let mapView: CesiumView | null;
+	let mapView: typeof CesiumView | null;
 	let clickHandler: Cesium.ScreenSpaceEventHandler | null = null;
 	let renderedLayers: Map<string, any> = new Map();
 	let terrainProvider: any = null;

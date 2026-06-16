@@ -3,7 +3,7 @@ import L from 'leaflet';
 import { MapAdapter, MapClickHandler, MapPoint } from './types';
 
 export function createLeafletAdapter(): MapAdapter {
-	let mapView: LeafletView | null;
+	let mapView: typeof LeafletView | null;
 	let flightPathPolyline: any = null;
 
 	async function init(container: string) {

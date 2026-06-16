@@ -1,6 +1,5 @@
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
 import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { useMapStore } from '@/stores/mapstore';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
@@ -23,7 +22,7 @@ const iconBase = import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.met
 
 export interface ICreateMapVisualizationResult {
 	vizLayer: SupportedMapLayer;
-	dsInstances: ConSysApi[];
+	dsInstances: (typeof ConSysApi)[];
 }
 
 export async function createMapVisualizations(
@@ -48,7 +47,7 @@ export function createPointMarkerLayer(
 	dsArray: IConSysApiDataSourceProperties[]
 ): ICreateMapVisualizationResult {
 	// Ds instances created
-	let dsInstances: ConSysApi[] = [];
+	let dsInstances: (typeof ConSysApi)[] = [];
 
 	// Undefined initially
 	let getLocation: any;
@@ -144,7 +143,7 @@ export function createLoBLayer(
 	dsArray: IConSysApiDataSourceProperties[]
 ): ICreateMapVisualizationResult {
 	// Ds instances created
-	let dsInstances: ConSysApi[] = [];
+	let dsInstances: (typeof ConSysApi)[] = [];
 
 	// Undefined initially
 	let getOrigin: any;
@@ -237,7 +236,7 @@ export function createEllipseLayer(
 	dsArray: IConSysApiDataSourceProperties[]
 ): ICreateMapVisualizationResult {
 	// Ds instances created
-	let dsInstances: ConSysApi[] = [];
+	let dsInstances: (typeof ConSysApi)[] = [];
 
 	// Undefined initially
 	let getPosition: any;
@@ -327,7 +326,7 @@ export function createPolylineLayer(
 	dsArray: IConSysApiDataSourceProperties[]
 ): ICreateMapVisualizationResult {
 	// Ds instances created
-	let dsInstances: ConSysApi[] = [];
+	let dsInstances: (typeof ConSysApi)[] = [];
 
 	// Undefined initially
 	let getLocation: any;
@@ -434,7 +433,7 @@ export async function createWaypointLayer(
 	waypoint: MapPoint,
 	index: string
 ): Promise<{
-	layer: PointMarkerLayer;
+	layer: typeof PointMarkerLayer;
 	props: any;
 }> {
 	const waypointLayer = new PointMarkerLayer({

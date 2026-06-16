@@ -13,7 +13,6 @@ export interface MapAdapter {
 	destroy(): void;
 
 	addLayer(layer: any): void;
-	addFOILayer(markerProps: any): void;
 	removeLayer(layer: any): Promise<void>;
 
 	onClick(handler: MapClickHandler): () => void;

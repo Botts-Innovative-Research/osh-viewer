@@ -76,7 +76,7 @@ export function createDatasource(dsProps: IConSysApiDataSourceProperties) {
  *
  * @param dsInstances
  */
-export function connectDatasources(dsInstances: Ref<ConSysApi[]>) {
+export function connectDatasources(dsInstances: Ref<(typeof ConSysApi)[]>) {
 	const raw = dsInstances.value;
 
 	const dsList = Array.isArray(raw) ? raw : raw ? [raw] : [];
@@ -90,7 +90,7 @@ export function connectDatasources(dsInstances: Ref<ConSysApi[]>) {
  *
  * @param dsInstances
  */
-export function disconnectDatasources(dsInstances: Ref<ConSysApi[]>) {
+export function disconnectDatasources(dsInstances: Ref<(typeof ConSysApi)[]>) {
 	const raw = dsInstances.value;
 
 	const dsList = Array.isArray(raw) ? raw : raw ? [raw] : [];

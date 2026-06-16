@@ -90,10 +90,10 @@ const fileInputRef = ref<any | null>(null);
 const selectedFile = ref<File | null>(null);
 const exportFilename = ref<string>('mission');
 
-const droneDatasourceLLA = ref<ConSysApi | null>(null);
-const droneHomeDatasource = ref<ConSysApi | null>(null);
+const droneDatasourceLLA = ref<typeof ConSysApi | null>(null);
+const droneHomeDatasource = ref<typeof ConSysApi | null>(null);
 // Create ConSysApi instance from props.datasource if provided
-let dsInstances = ref<ConSysApi[]>([]);
+let dsInstances = ref<(typeof ConSysApi)[]>([]);
 
 let homeLocation = ref<{ lat: number; lon: number; alt: number }>({ lat: 0, lon: 0, alt: 0 });
 
