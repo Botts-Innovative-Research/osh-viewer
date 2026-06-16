@@ -65,6 +65,9 @@ export function useMap() {
 			if (settingsStore.enable3DBuildings) {
 				await mapAdapter.value?.addBuildings?.();
 			}
+			if (settingsStore.enableGooglePhotorealistic) {
+				await mapAdapter.value?.addGooglePhotorealistic?.();
+			}
 		} else if (mapType.value === 'leaflet') {
 			mapAdapter.value = createLeafletAdapter();
 			await mapAdapter.value?.init?.('mapContainer');
@@ -380,6 +383,18 @@ export function useMap() {
 				await mapAdapter.value.addBuildings?.();
 			} else {
 				mapAdapter.value.removeBuildings?.();
+			}
+		}
+	);
+	watch(
+		() => settingsStore.enableGooglePhotorealistic,
+		async (enabled) => {
+			if (!mapAdapter.value) return;
+
+			if (enabled) {
+				await mapAdapter.value.addGooglePhotorealistic?.();
+			} else {
+				mapAdapter.value.removeGooglePhotorealistic?.();
 			}
 		}
 	);
