@@ -28,11 +28,6 @@ export function createLeafletAdapter(): MapAdapter {
 		return;
 	}
 
-	function addFOILayer(markerProps: any) {
-		const markerEnt = mapView.addMarker(markerProps, undefined);
-		mapView.addMarkerToLayer(markerEnt, markerProps);
-	}
-
 	function setCursor(mode: any) {
 		mapView.map.getContainer().style.cursor = mode;
 	}
@@ -82,6 +77,5 @@ export function createLeafletAdapter(): MapAdapter {
 		updateMarker,
 		drawMissionPath,
 		clearMissionPath,
-		addFOILayer,
 	};
 }

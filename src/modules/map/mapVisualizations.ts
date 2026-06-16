@@ -15,6 +15,7 @@ import { colorHash } from './services/colorId.service';
 import { SupportedMapLayer } from './supportedMapLayers';
 import { getGroundAltitude } from './services/altitude.service';
 import { IConSysApiDataSourceProperties } from '../visualization/types/datasource';
+import { setLayerData } from './services/foi.service';
 
 // prettier-ignore
 // @ts-ignore
@@ -25,9 +26,9 @@ export interface ICreateMapVisualizationResult {
 	dsInstances: ConSysApi[];
 }
 
-export function createMapVisualizations(
+export async function createMapVisualizations(
 	viz: OSHVisualization
-): ICreateMapVisualizationResult | null {
+): Promise<ICreateMapVisualizationResult | null> {
 	if (viz.type === 'pointmarker') {
 		return createPointMarkerLayer(viz, viz.visualizationComponents.dataSource);
 	} else if (viz.type === 'lob') {
@@ -37,7 +38,7 @@ export function createMapVisualizations(
 	} else if (viz.type === 'polyline') {
 		return createPolylineLayer(viz, viz.visualizationComponents.dataSource);
 	} else if (viz.type === 'geoPtz') {
-		return createGeoPTZLayer(viz, viz.visualizationComponents.dataSource);
+		return await createGeoPTZLayer(viz, viz.visualizationComponents.dataSource);
 	} else {
 		console.warn(`Visualization type ${viz.type} not supported for map view`);
 		return null;
@@ -391,51 +392,33 @@ export function createPolylineLayer(
 
 	return { vizLayer: polylineLayer, dsInstances };
 }
-export function createGeoPTZLayer(
-	viz: OSHVisualization,
-	dsArray: IConSysApiDataSourceProperties[]
-): ICreateMapVisualizationResult {
-	const mapStore = useMapStore();
-	// Ds instances created
-	let dsInstances: ConSysApi[] = [];
+export async function createGeoPTZLayer(
+	location: { lat: number; lon: number; alt: number },
+	selectedGeoPTZ: OSHVisualization[]
+) {
+	const vizId = `geoptz-${randomUUID()}`;
 
-	for (const dsProps of dsArray) {
-		const dsInstance = createDatasource(dsProps);
-		dsInstance.connect();
-		dsInstances.push(dsInstance);
-	}
-
-	const pmLayer = new PointMarkerLayer({
+	const geoPtzLayer = new PointMarkerLayer({
 		name: 'GeoPTZ',
 		label: 'GeoPTZ',
-		id: viz.id,
+		id: vizId,
 		icon: `${iconBase}/icons/map/${useSettingsStore().geoPtzIcon}.png`,
 		iconColor: useSettingsStore().geoPtzIconColor,
 		iconSize: [32, 32],
 		iconAnchor: [16, 16],
 		labelOffset: [-16, -32],
-		dataSourceIds: dsInstances.map((ds) => ds.id),
-		getLocation: {
-			dataSourceIds: dsInstances.map((ds) => ds.id),
-			handler: async (rec: any) => {
-				if (!mapStore.currentLLA) return;
-				return {
-					x: mapStore.currentLLA?.longitude,
-					y: mapStore.currentLLA?.latitude,
-					z:
-						mapStore.currentLLA?.altitude ||
-						(await getGroundAltitude(
-							mapStore.currentLLA?.longitude,
-							mapStore.currentLLA?.latitude
-						)),
-				};
-			},
+		location: {
+			x: location.lon,
+			y: location.lat,
+			z: location.alt,
 		},
+		defaultToTerrainElevation: true,
+		markerId: vizId + '-geoptz' + randomUUID(),
 		getDescription: {
-			dataSourceIds: [dsInstances.map((ds) => ds.id)],
+			dataSourceIds: [],
 			handler: (rec: any) => {
 				return `
-              <div>${mapStore.selectedGeoPTZ
+              <div>${selectedGeoPTZ
 					?.map((viz: OSHVisualization) => {
 						return `${viz.name}`;
 					})
@@ -445,7 +428,9 @@ export function createGeoPTZLayer(
 		},
 	});
 
-	return { vizLayer: pmLayer, dsInstances };
+	const props = await setLayerData(geoPtzLayer);
+
+	return { layer: geoPtzLayer, props };
 }
 export async function createWaypointLayer(
 	waypoint: MapPoint,
@@ -477,7 +462,7 @@ export async function createWaypointLayer(
 
 	return { layer: waypointLayer, props };
 }
-export async function createFOIProps(geometry: Geometry) {
+export async function createFOILayer(geometry: Geometry) {
 	const lon = Array.isArray(geometry.coordinates[0])
 		? geometry.coordinates[0][0]
 		: geometry.coordinates[0];
@@ -490,21 +475,28 @@ export async function createFOIProps(geometry: Geometry) {
 			? geometry.coordinates[2][0]
 			: geometry.coordinates[2];
 
-	const markerProps = {
+	const foiLayer = new PointMarkerLayer({
+		id: geometry.id,
 		location: {
 			x: lon,
 			y: lat,
 			z: alt,
 		},
-		label: geometry.properties.properties.name,
-		labelOffset: [0, 0],
 		icon: `${iconBase}/icons/map/map-marker.png`,
 		iconSize: [32, 32],
 		iconAnchor: [16, 32],
-		id: geometry.id,
+		label: geometry.properties.properties.name,
+		labelColor: '#FFFFFF',
+		labelOutlineColor: '#000000',
+		labelSize: 14,
+		labelOffset: [0, -36],
+		defaultToTerrainElevation: true,
 		markerId: geometry.id + '-feature' + randomUUID(),
-	};
-	return markerProps;
+	});
+
+	const props = await setLayerData(foiLayer);
+
+	return { layer: foiLayer, props };
 }
 
 export function rebuildMapVisualizations(

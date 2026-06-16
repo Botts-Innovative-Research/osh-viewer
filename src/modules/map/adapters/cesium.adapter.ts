@@ -64,11 +64,6 @@ export function createCesiumAdapter(): MapAdapter {
 		return;
 	}
 
-	function addFOILayer(markerProps: any) {
-		const markerEnt = mapView.addMarker(markerProps, undefined);
-		mapView.addMarkerToLayer(markerEnt, markerProps);
-	}
-
 	function setCursor(mode: CursorMode) {
 		mapView.viewer.canvas.style.cursor = mode;
 	}
@@ -298,6 +293,5 @@ export function createCesiumAdapter(): MapAdapter {
 		removeMapLayer,
 		destroyAllLayers,
 		rebuildMapLayers,
-		addFOILayer,
 	};
 }

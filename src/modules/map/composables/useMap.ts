@@ -3,7 +3,8 @@ import { useVisualizationStore } from '@/stores/visualizationstore';
 import { computed, onMounted, ref, watch } from 'vue';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import {
-	createFOIProps,
+	createFOILayer,
+	createGeoPTZLayer,
 	createMapVisualizations,
 	createWaypointLayer,
 	rebuildMapVisualizations,
@@ -20,6 +21,7 @@ import {
 	connectDatasources as connect,
 	disconnectDatasources as disconnect,
 } from '@/modules/visualization/services/datasource.service';
+import { getGroundAltitude } from '../services/altitude.service';
 
 export function useMap() {
 	// Stores
@@ -194,9 +196,12 @@ export function useMap() {
 				(newLayer) => !oldLayers?.some((layer: any) => layer.id === newLayer.id)
 			);
 			if (addedLayers) {
-				addedLayers.forEach((layer) => {
-					const markerProps = createFOIProps(layer);
-					mapAdapter.value?.addFOILayer(markerProps);
+				addedLayers.forEach(async (layer) => {
+					const result = await createFOILayer(layer);
+					if (result) {
+						mapAdapter.value?.addLayer(result.layer);
+						if (result.props) mapAdapter.value?.updateMarker(result.props);
+					}
 				});
 			}
 		},
@@ -207,8 +212,12 @@ export function useMap() {
 	function bindMapInteractions() {
 		if (!mapAdapter.value) return;
 
-		mapAdapter.value.onClick((lat, lon, alt) => {
-			if (mapStore.isGeoPTZSelected) taskGeoPTZ(lat, lon, alt);
+		mapAdapter.value.onClick(async (lat, lon, alt) => {
+			if (mapStore.isGeoPTZSelected && mapStore.selectedGeoPTZ) {
+				const calcAlt = alt ?? (await getGroundAltitude(lon, lat)) ?? 0;
+				createGeoPTZLayer({ lon, lat, alt: calcAlt }, mapStore.selectedGeoPTZ);
+				taskGeoPTZ(lat, lon, calcAlt);
+			}
 			if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lon, 0);
 			// Add additional onClick functions
 		});
@@ -276,16 +285,6 @@ export function useMap() {
 	}
 
 	/* GEOPTZ */
-	watch(
-		() => mapStore.selectedGeoPTZ,
-		(geoPtz, oldGeoPtz) => {
-			// If had value, delete
-			if (oldGeoPtz?.length) deleteVisualization(oldGeoPtz[0].id);
-			// If has a new value, create new
-			if (geoPtz?.length) addVisualization(geoPtz[0]);
-		},
-		{ deep: true }
-	);
 	watch([() => settingsStore.geoPtzIcon, () => settingsStore.geoPtzIconColor], () => {
 		// Rebuild viz on icon change
 		const currentGeoPtz = mapStore.selectedGeoPTZ;
