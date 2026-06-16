@@ -43,6 +43,7 @@
 		"vue-draggable-plus": "^0.6.1",
 		"vue-router": "^4.6.3",
 		"vue-toastification": "^2.0.0-rc.5",
+		"vuedraggable": "^4.1.0",
 		"vuetify": "^3.10.11"
 	},
 	"devDependencies": {
