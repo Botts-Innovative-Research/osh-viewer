@@ -3,13 +3,14 @@ import { useVisualizationStore } from '@/stores/visualizationstore';
 import { computed, onMounted, ref, watch } from 'vue';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import {
-	createFOIProps,
+	createFOILayer,
+	createGeoPTZLayer,
 	createMapVisualizations,
 	createWaypointLayer,
 	rebuildMapVisualizations,
 } from '../mapVisualizations';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
+import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import { createCesiumAdapter } from '../adapters/cesium.adapter';
 import { taskGeoPTZ } from '../services/geoPTZ.service';
 import { MapAdapter } from '../adapters/types';
@@ -20,6 +21,7 @@ import {
 	connectDatasources as connect,
 	disconnectDatasources as disconnect,
 } from '@/modules/visualization/services/datasource.service';
+import { getGroundAltitude } from '../services/altitude.service';
 
 export function useMap() {
 	// Stores
@@ -36,9 +38,11 @@ export function useMap() {
 	// Map of visualization ID to its corresponding visualization layer instance
 	const mapItemLayers = ref<Map<string, SupportedMapLayer>>(new Map());
 	// List of all connected datasource instances created for map visualizations
-	const listDataSourceInstances = ref<SweApi[]>([]);
+	const listDataSourceInstances = ref<(typeof ConSysApi)[]>([]);
+	// Current GeoPTZ layer
+	const geoPtzLayer = ref<typeof PointMarkerLayer | null>(null);
 	// Array of waypoint Pointmarkers for mission builder
-	const waypointLayers = ref<PointMarkerLayer[]>([]);
+	const waypointLayers = ref<(typeof PointMarkerLayer)[]>([]);
 
 	// Hidden visualization IDs
 	const hiddenLayers = ref<Map<string, OSHVisualization>>(new Map());
@@ -130,19 +134,19 @@ export function useMap() {
 					.map((id) => visualizationStore.getVisualizationById(id))
 					.filter(Boolean) as OSHVisualization[];
 
-				newOSHVisualizations.forEach((viz: OSHVisualization) => {
-					addVisualization(viz);
+				newOSHVisualizations.forEach(async (viz: OSHVisualization) => {
+					await addVisualization(viz);
 				});
 			}
 		},
 		{ deep: true }
 	);
-	function addVisualization(viz: OSHVisualization) {
+	async function addVisualization(viz: OSHVisualization) {
 		// If parent, skip - no layer to build
 		if (viz.isParentVisualization()) return;
 		// If not parent, add directly
 		else {
-			const result = createMapVisualizations(viz);
+			const result = await createMapVisualizations(viz);
 			if (!result) return;
 
 			const { vizLayer, dsInstances } = result;
@@ -168,7 +172,7 @@ export function useMap() {
 
 		// Disconnect and remove datasources
 		listDataSourceInstances.value = listDataSourceInstances.value.filter(
-			(dsInstance: SweApi) => {
+			(dsInstance: typeof ConSysApi) => {
 				// Find matching datasource IDs to remove
 				if (removedDsIds.includes(dsInstance.id)) {
 					console.log('Disconnecting datasource:', dsInstance.id);
@@ -194,9 +198,12 @@ export function useMap() {
 				(newLayer) => !oldLayers?.some((layer: any) => layer.id === newLayer.id)
 			);
 			if (addedLayers) {
-				addedLayers.forEach((layer) => {
-					const markerProps = createFOIProps(layer);
-					mapAdapter.value?.addFOILayer(markerProps);
+				addedLayers.forEach(async (layer) => {
+					const result = await createFOILayer(layer);
+					if (result) {
+						mapAdapter.value?.addLayer(result.layer);
+						if (result.props) mapAdapter.value?.updateMarker(result.props);
+					}
 				});
 			}
 		},
@@ -207,8 +214,31 @@ export function useMap() {
 	function bindMapInteractions() {
 		if (!mapAdapter.value) return;
 
-		mapAdapter.value.onClick((lat, lon, alt) => {
-			if (mapStore.isGeoPTZSelected) taskGeoPTZ(lat, lon, alt);
+		mapAdapter.value.onClick(async (lat, lon, alt) => {
+			// GeoPTZ
+			if (mapStore.isGeoPTZSelected && mapStore.selectedGeoPTZ) {
+				// Calculate alt if needed
+				const calcAlt = alt ?? (await getGroundAltitude(lon, lat)) ?? 0;
+
+				// Create pointmarker
+				const result = await createGeoPTZLayer(
+					{ lon, lat, alt: calcAlt },
+					mapStore.selectedGeoPTZ
+				);
+				if (result) {
+					// Remove old pointmarker
+					mapAdapter.value?.removeLayer(geoPtzLayer.value);
+					geoPtzLayer.value = result.layer;
+
+					// Add new pointmarker
+					mapAdapter.value?.addLayer(geoPtzLayer.value);
+					if (result.props) mapAdapter.value?.updateMarker(result.props);
+
+					// Task GeoPTZ
+					taskGeoPTZ(lat, lon, calcAlt);
+				}
+			}
+			// Mission Planner
 			if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lon, 0);
 			// Add additional onClick functions
 		});
@@ -277,24 +307,13 @@ export function useMap() {
 
 	/* GEOPTZ */
 	watch(
-		() => mapStore.selectedGeoPTZ,
-		(geoPtz, oldGeoPtz) => {
-			// If had value, delete
-			if (oldGeoPtz?.length) deleteVisualization(oldGeoPtz[0].id);
-			// If has a new value, create new
-			if (geoPtz?.length) addVisualization(geoPtz[0]);
-		},
-		{ deep: true }
+		() => mapStore.isGeoPTZSelected,
+		(selected) => {
+			// Remove old pointmarker on selection change
+			mapAdapter.value?.removeLayer(geoPtzLayer.value);
+			geoPtzLayer.value = null;
+		}
 	);
-	watch([() => settingsStore.geoPtzIcon, () => settingsStore.geoPtzIconColor], () => {
-		// Rebuild viz on icon change
-		const currentGeoPtz = mapStore.selectedGeoPTZ;
-		if (!currentGeoPtz?.length) return;
-
-		// Delete and make new
-		deleteVisualization(currentGeoPtz[0].id);
-		addVisualization(currentGeoPtz[0]);
-	});
 
 	/* MISSION BUILDER */
 	watch(

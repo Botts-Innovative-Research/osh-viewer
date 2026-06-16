@@ -18,7 +18,7 @@ export interface MapLayer {
 }
 
 export function createCesiumAdapter(): MapAdapter {
-	let mapView: CesiumView | null;
+	let mapView: typeof CesiumView | null;
 	let clickHandler: Cesium.ScreenSpaceEventHandler | null = null;
 	let renderedLayers: Map<string, any> = new Map();
 	let terrainProvider: any = null;
@@ -62,11 +62,6 @@ export function createCesiumAdapter(): MapAdapter {
 		invalidate();
 		await mapView.viewer.scene.postRender;
 		return;
-	}
-
-	function addFOILayer(markerProps: any) {
-		const markerEnt = mapView.addMarker(markerProps, undefined);
-		mapView.addMarkerToLayer(markerEnt, markerProps);
 	}
 
 	function setCursor(mode: CursorMode) {
@@ -298,6 +293,5 @@ export function createCesiumAdapter(): MapAdapter {
 		removeMapLayer,
 		destroyAllLayers,
 		rebuildMapLayers,
-		addFOILayer,
 	};
 }

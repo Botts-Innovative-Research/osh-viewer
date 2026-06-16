@@ -1,7 +1,7 @@
 import { GeoPTZCommand } from '@/modules/visualization/visualizations/geoptz/Descriptor';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { useMapStore } from '@/stores/mapstore';
-import { ISweApiControlStreamProperties } from '@/modules/visualization/types/datasource';
+import { IConSysApiControlStreamProperties } from '@/modules/visualization/types/datasource';
 import { sendCommand } from '@/modules/visualization/services/controlstream.service';
 
 export function taskGeoPTZ(lat: number, lon: number, alt: number) {
@@ -23,8 +23,8 @@ export function sendGeoPTZCommand(selectedGeoPTZ: OSHVisualization[], command: G
 	if (selectedGeoPTZ) {
 		// Iterate thru GeoPTZ instances
 		selectedGeoPTZ.map((viz: OSHVisualization) => {
-			const controlstream: ISweApiControlStreamProperties | null = viz.visualizationComponents
-				.controlstream
+			const controlstream: IConSysApiControlStreamProperties | null = viz
+				.visualizationComponents.controlstream
 				? viz.visualizationComponents.controlstream[0]
 				: null;
 			if (controlstream) {

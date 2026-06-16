@@ -1,7 +1,6 @@
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
 import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { useMapStore } from '@/stores/mapstore';
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
+import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import EllipseLayer from 'osh-js/source/core/ui/layer/EllipseLayer';
@@ -14,7 +13,8 @@ import { getLayerId } from './services/layerId.service';
 import { colorHash } from './services/colorId.service';
 import { SupportedMapLayer } from './supportedMapLayers';
 import { getGroundAltitude } from './services/altitude.service';
-import { ISweApiDataSourceProperties } from '../visualization/types/datasource';
+import { IConSysApiDataSourceProperties } from '../visualization/types/datasource';
+import { setLayerData } from './services/foi.service';
 
 // prettier-ignore
 // @ts-ignore
@@ -22,12 +22,12 @@ const iconBase = import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.met
 
 export interface ICreateMapVisualizationResult {
 	vizLayer: SupportedMapLayer;
-	dsInstances: SweApi[];
+	dsInstances: (typeof ConSysApi)[];
 }
 
-export function createMapVisualizations(
+export async function createMapVisualizations(
 	viz: OSHVisualization
-): ICreateMapVisualizationResult | null {
+): Promise<ICreateMapVisualizationResult | null> {
 	if (viz.type === 'pointmarker') {
 		return createPointMarkerLayer(viz, viz.visualizationComponents.dataSource);
 	} else if (viz.type === 'lob') {
@@ -36,8 +36,6 @@ export function createMapVisualizations(
 		return createEllipseLayer(viz, viz.visualizationComponents.dataSource);
 	} else if (viz.type === 'polyline') {
 		return createPolylineLayer(viz, viz.visualizationComponents.dataSource);
-	} else if (viz.type === 'geoPtz') {
-		return createGeoPTZLayer(viz, viz.visualizationComponents.dataSource);
 	} else {
 		console.warn(`Visualization type ${viz.type} not supported for map view`);
 		return null;
@@ -46,10 +44,10 @@ export function createMapVisualizations(
 
 export function createPointMarkerLayer(
 	viz: OSHVisualization,
-	dsArray: ISweApiDataSourceProperties[]
+	dsArray: IConSysApiDataSourceProperties[]
 ): ICreateMapVisualizationResult {
 	// Ds instances created
-	let dsInstances: SweApi[] = [];
+	let dsInstances: (typeof ConSysApi)[] = [];
 
 	// Undefined initially
 	let getLocation: any;
@@ -142,10 +140,10 @@ export function createPointMarkerLayer(
 }
 export function createLoBLayer(
 	viz: OSHVisualization,
-	dsArray: ISweApiDataSourceProperties[]
+	dsArray: IConSysApiDataSourceProperties[]
 ): ICreateMapVisualizationResult {
 	// Ds instances created
-	let dsInstances: SweApi[] = [];
+	let dsInstances: (typeof ConSysApi)[] = [];
 
 	// Undefined initially
 	let getOrigin: any;
@@ -235,10 +233,10 @@ export function createLoBLayer(
 }
 export function createEllipseLayer(
 	viz: OSHVisualization,
-	dsArray: ISweApiDataSourceProperties[]
+	dsArray: IConSysApiDataSourceProperties[]
 ): ICreateMapVisualizationResult {
 	// Ds instances created
-	let dsInstances: SweApi[] = [];
+	let dsInstances: (typeof ConSysApi)[] = [];
 
 	// Undefined initially
 	let getPosition: any;
@@ -325,10 +323,10 @@ export function createEllipseLayer(
 }
 export function createPolylineLayer(
 	viz: OSHVisualization,
-	dsArray: ISweApiDataSourceProperties[]
+	dsArray: IConSysApiDataSourceProperties[]
 ): ICreateMapVisualizationResult {
 	// Ds instances created
-	let dsInstances: SweApi[] = [];
+	let dsInstances: (typeof ConSysApi)[] = [];
 
 	// Undefined initially
 	let getLocation: any;
@@ -391,51 +389,33 @@ export function createPolylineLayer(
 
 	return { vizLayer: polylineLayer, dsInstances };
 }
-export function createGeoPTZLayer(
-	viz: OSHVisualization,
-	dsArray: ISweApiDataSourceProperties[]
-): ICreateMapVisualizationResult {
-	const mapStore = useMapStore();
-	// Ds instances created
-	let dsInstances: SweApi[] = [];
+export async function createGeoPTZLayer(
+	location: { lat: number; lon: number; alt: number },
+	selectedGeoPTZ: OSHVisualization[]
+) {
+	const vizId = `geoptz-${randomUUID()}`;
 
-	for (const dsProps of dsArray) {
-		const dsInstance = createDatasource(dsProps);
-		dsInstance.connect();
-		dsInstances.push(dsInstance);
-	}
-
-	const pmLayer = new PointMarkerLayer({
+	const geoPtzLayer = new PointMarkerLayer({
 		name: 'GeoPTZ',
 		label: 'GeoPTZ',
-		id: viz.id,
+		id: vizId,
 		icon: `${iconBase}/icons/map/${useSettingsStore().geoPtzIcon}.png`,
 		iconColor: useSettingsStore().geoPtzIconColor,
 		iconSize: [32, 32],
 		iconAnchor: [16, 16],
 		labelOffset: [-16, -32],
-		dataSourceIds: dsInstances.map((ds) => ds.id),
-		getLocation: {
-			dataSourceIds: dsInstances.map((ds) => ds.id),
-			handler: async (rec: any) => {
-				if (!mapStore.currentLLA) return;
-				return {
-					x: mapStore.currentLLA?.longitude,
-					y: mapStore.currentLLA?.latitude,
-					z:
-						mapStore.currentLLA?.altitude ||
-						(await getGroundAltitude(
-							mapStore.currentLLA?.longitude,
-							mapStore.currentLLA?.latitude
-						)),
-				};
-			},
+		location: {
+			x: location.lon,
+			y: location.lat,
+			z: location.alt,
 		},
+		defaultToTerrainElevation: true,
+		markerId: vizId + '-geoptz' + randomUUID(),
 		getDescription: {
-			dataSourceIds: [dsInstances.map((ds) => ds.id)],
+			dataSourceIds: [],
 			handler: (rec: any) => {
 				return `
-              <div>${mapStore.selectedGeoPTZ
+              <div>${selectedGeoPTZ
 					?.map((viz: OSHVisualization) => {
 						return `${viz.name}`;
 					})
@@ -445,13 +425,15 @@ export function createGeoPTZLayer(
 		},
 	});
 
-	return { vizLayer: pmLayer, dsInstances };
+	const props = await setLayerData(geoPtzLayer);
+
+	return { layer: geoPtzLayer, props };
 }
 export async function createWaypointLayer(
 	waypoint: MapPoint,
 	index: string
 ): Promise<{
-	layer: PointMarkerLayer;
+	layer: typeof PointMarkerLayer;
 	props: any;
 }> {
 	const waypointLayer = new PointMarkerLayer({
@@ -477,7 +459,7 @@ export async function createWaypointLayer(
 
 	return { layer: waypointLayer, props };
 }
-export async function createFOIProps(geometry: Geometry) {
+export async function createFOILayer(geometry: Geometry) {
 	const lon = Array.isArray(geometry.coordinates[0])
 		? geometry.coordinates[0][0]
 		: geometry.coordinates[0];
@@ -490,21 +472,28 @@ export async function createFOIProps(geometry: Geometry) {
 			? geometry.coordinates[2][0]
 			: geometry.coordinates[2];
 
-	const markerProps = {
+	const foiLayer = new PointMarkerLayer({
+		id: geometry.id,
 		location: {
 			x: lon,
 			y: lat,
 			z: alt,
 		},
-		label: geometry.properties.properties.name,
-		labelOffset: [0, 0],
 		icon: `${iconBase}/icons/map/map-marker.png`,
 		iconSize: [32, 32],
 		iconAnchor: [16, 32],
-		id: geometry.id,
+		label: geometry.properties.properties.name,
+		labelColor: '#FFFFFF',
+		labelOutlineColor: '#000000',
+		labelSize: 14,
+		labelOffset: [0, -36],
+		defaultToTerrainElevation: true,
 		markerId: geometry.id + '-feature' + randomUUID(),
-	};
-	return markerProps;
+	});
+
+	const props = await setLayerData(foiLayer);
+
+	return { layer: foiLayer, props };
 }
 
 export function rebuildMapVisualizations(

@@ -10,16 +10,13 @@ import {
 	OSHDatastream,
 	OSHNode,
 	OSHSystem,
-	OSHVisualization,
 } from '@/lib/OSHConnectDataStructs.js';
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { Geometry } from '@/lib/OSHConnectDataStructs';
 import DeleteNodeDialog from '@/components/menus/DeleteNodeDialog.vue';
 import NodeConfigForm from '@/components/menus/NodeConfigForm.vue';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
 import PropertiesDialog from '@/components/menus/PropertiesDialog.vue';
 import NodeIcon from '@/components/icons/node-logo.svg';
-import { useMap } from '../map/composables/useMap';
 
 const oshConnect = useOSHConnectStore().getInstance();
 const nodeStore = useNodeStore();

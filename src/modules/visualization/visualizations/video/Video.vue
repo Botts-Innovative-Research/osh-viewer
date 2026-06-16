@@ -3,19 +3,19 @@ import { computed, onMounted, ref, toRaw } from 'vue';
 import VideoDataLayer from 'osh-js/source/core/ui/layer/VideoDataLayer.js';
 import { OSHControlStream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import VideoView from 'osh-js/source/core/ui/view/video/VideoView.js';
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
+import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import PTZControl from './PTZControl.vue';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
-import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { IVideoLayerProperties } from '../../types/layers';
 import { IVideoViewProperties } from '../../types/views';
 import { fetchControlStreamSchema } from '../../services/controlstream.service';
 
 const props = defineProps<{
 	visualization: OSHVisualization;
-	datasource: ISweApiDataSourceProperties[];
+	datasource: IConSysApiDataSourceProperties[];
 	videoLayer: IVideoLayerProperties;
 	videoView: IVideoViewProperties;
 	controlstream?: OSHControlStream;
@@ -26,7 +26,7 @@ const videoDivId = ref(props.visualization.id);
 const controlstreamStore = useControlStreamStore();
 const videoView = ref<any>(null);
 const videoLayer = ref<VideoDataLayer | null>(null);
-const dsInstances: SweApi[] = [];
+const dsInstances: ConSysApi[] = [];
 
 function createVideoView(viewConfig: IVideoViewProperties) {
 	if (videoView.value) {
@@ -72,7 +72,7 @@ function initializeVideo() {
 	const viz = props.visualization;
 	if (!viz || viz.type !== 'video') return;
 
-	const dsArray: ISweApiDataSourceProperties[] = props.datasource;
+	const dsArray: IConSysApiDataSourceProperties[] = props.datasource;
 
 	let getFrameData: any;
 	let getTimestamp: any;

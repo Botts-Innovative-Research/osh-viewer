@@ -14,8 +14,8 @@ import {
 } from '../../services/aggregation.service';
 import { VisualizationComponents } from '../../types/visualization';
 import {
-	ISweApiControlStreamProperties,
-	ISweApiDataSourceProperties,
+	IConSysApiControlStreamProperties,
+	IConSysApiDataSourceProperties,
 } from '../../types/datasource';
 
 export default function build() {
@@ -54,10 +54,10 @@ export function CreateGeoPtzVizProps(
 ) {
 	const controlstreamStore = useControlStreamStore();
 
-	const vizControlstreams: ISweApiControlStreamProperties[] = [];
+	const vizControlstreams: IConSysApiControlStreamProperties[] = [];
 
-	// Push new ISweApiDataSourceProperties
-	const currentDataSource: ISweApiDataSourceProperties = {
+	// Push new IConSysApiDataSourceProperties
+	const currentDataSource: IConSysApiDataSourceProperties = {
 		endpointUrl: datastream.datastream.networkProperties.endpointUrl,
 		resource: `/datastreams/${datastream.id}/observations`,
 		tls: datastream.datastream.networkProperties.tls,
@@ -79,11 +79,11 @@ export function CreateGeoPtzVizProps(
 		// Get selected properties for each role of the controlstream
 		const properties = BuildRoleProperty(entry);
 
-		// Push new ISweApiDataSourceProperties
+		// Push new IConSysApiDataSourceProperties
 		const currentOSHControlstream: OSHControlStream = controlstreamStore.getControlStreamsById([
 			csId,
 		])[0];
-		const currentControlstream: ISweApiControlStreamProperties = {
+		const currentControlstream: IConSysApiControlStreamProperties = {
 			endpointUrl: currentOSHControlstream.controlstream.networkProperties.endpointUrl,
 			tls: currentOSHControlstream.controlstream.networkProperties.tls,
 			protocol: 'ws',
