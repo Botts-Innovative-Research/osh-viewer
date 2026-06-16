@@ -57,29 +57,16 @@ export function createCesiumAdapter(): MapAdapter {
 		mapView.addLayer(layer);
 	}
 
-	function removeLayer(layer: any) {
+	async function removeLayer(layer: any): Promise<void> {
 		mapView.removeAllFromLayer(layer);
+		invalidate();
+		await mapView.viewer.scene.postRender;
+		return;
 	}
 
-	function toggleLayerVisibility(id: string, isVisible: boolean) {
-		const marker = mapView.layerIdToMarkers?.[id];
-		const polyline = mapView.layerIdToPolylines?.[id];
-
-		// Handle LoB
-		if (marker && polyline) {
-			marker.show = isVisible;
-			polyline.show = isVisible;
-		}
-		// Handle PM
-		else if (marker) {
-			marker.show = isVisible;
-		}
-		// Handle polyline
-		else if (polyline) {
-			polyline.show = isVisible;
-		}
-
-		invalidate();
+	function addFOILayer(markerProps: any) {
+		const markerEnt = mapView.addMarker(markerProps, undefined);
+		mapView.addMarkerToLayer(markerEnt, markerProps);
 	}
 
 	function setCursor(mode: CursorMode) {
@@ -297,7 +284,6 @@ export function createCesiumAdapter(): MapAdapter {
 		destroy,
 		addLayer,
 		removeLayer,
-		toggleLayerVisibility,
 		setCursor,
 		onClick,
 		flyToPoint,
@@ -312,5 +298,6 @@ export function createCesiumAdapter(): MapAdapter {
 		removeMapLayer,
 		destroyAllLayers,
 		rebuildMapLayers,
+		addFOILayer,
 	};
 }

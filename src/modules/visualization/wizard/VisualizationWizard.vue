@@ -1,9 +1,17 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { VisualizationRegistry } from '../registry/VisualizationRegistry';
 import { useVisualizationWizard } from './composables/useVisualizationWizard';
+import { onMounted } from 'vue';
+
+const props = defineProps<{
+	mode: 'create' | 'edit';
+	viz: OSHVisualization | undefined;
+}>();
 
 const {
+	init,
+	isLoading,
 	currentStep,
 	componentValid,
 	selectedType,
@@ -11,17 +19,34 @@ const {
 	stepStatus,
 	isLastStep,
 	changeStep,
-	init,
 	submit,
-} = useVisualizationWizard({ mode: 'create' });
+} = useVisualizationWizard({ mode: props.mode, viz: props.viz });
+
+function handleDataStepBinds(stepIndex: number) {
+	// If the user is on the data step (edit or create), handle binds
+	if (stepIndex === 1 && props.mode === 'create') return true;
+	else if (stepIndex === 0 && props.mode === 'edit') return true;
+	else return false;
+}
 
 onMounted(async () => await init());
 </script>
 
 <template>
-	<v-card class="pa-4">
-		<v-card-title class="text-h4 text-center">Visualization Wizard</v-card-title>
-
+	<v-card
+		class="pa-4"
+		v-if="!isLoading"
+	>
+		<v-card-title class="text-h4 text-center">{{
+			props.mode === 'create' ? 'Visualization Wizard' : 'Edit Visualization'
+		}}</v-card-title>
+		<v-card
+			v-if="props.mode === 'edit' && props.viz"
+			class="text-center"
+			color="info"
+		>
+			<v-card-title>{{ props.viz.name }}</v-card-title>
+		</v-card>
 		<v-stepper
 			v-model="currentStep"
 			class="wizard-content"
@@ -50,13 +75,18 @@ onMounted(async () => await init());
 						:key="step.id"
 						:value="index + 1"
 					>
-						<h2 class="pb-2">{{ step.label }}</h2>
+						<h1 class="pb-2">{{ step.label }}</h1>
 						<component
 							:is="step.component"
 							v-model:valid="componentValid[index]"
 							v-bind="
-								index === 1
-									? { requireCs: VisualizationRegistry[selectedType]?.requireCs }
+								handleDataStepBinds(index)
+									? {
+											supportsCs:
+												VisualizationRegistry[selectedType]?.supportsCs,
+											requireCs:
+												VisualizationRegistry[selectedType]?.requireCs,
+										}
 									: {}
 							"
 						/>

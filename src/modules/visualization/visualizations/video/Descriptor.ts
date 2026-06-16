@@ -24,9 +24,12 @@ export const VideoDescriptor: VisualizationDescriptor = {
 	id: 'video',
 	icon: 'mdi-video',
 	viewLocation: 'panel',
+	layers: ['VideoDataLayer'],
 	description: 'Display a video stream.',
 	formComponents: [ConfigComponent, CustomizeComponent],
 	builder: () => import('@/modules/visualization/visualizations/video/Builder'),
+	supportsCs: true, // Supports controlstream for PTZ commands if available
+	requireCs: false, // PTZ not required
 };
 
 // Type for PTZ command directions

@@ -34,6 +34,26 @@ const checkedRoles = reactive({
 			}
 		},
 	}),
+	pmIconColor: computed({
+		get: () => vizwizStore.dsConfig.pmIconColor?.selected ?? false,
+		set: (val: boolean) => {
+			if (val) {
+				vizwizStore.updateDsConfig('pmIconColor', { selected: val });
+			} else {
+				delete vizwizStore.dsConfig.pmIconColor;
+			}
+		},
+	}),
+	pmLabel: computed({
+		get: () => vizwizStore.dsConfig.pmLabel?.selected ?? false,
+		set: (val: boolean) => {
+			if (val) {
+				vizwizStore.updateDsConfig('pmLabel', { selected: val });
+			} else {
+				delete vizwizStore.dsConfig.pmLabel;
+			}
+		},
+	}),
 });
 
 // Initialize dsConfig with location selected by default when mounted
@@ -59,12 +79,16 @@ const emit = defineEmits<VisualizationComponentEmits>();
 const roleLocationValid = ref<boolean>(false);
 const roleOrientationValid = ref<boolean>(false);
 const roleMarkerIdValid = ref<boolean>(false);
+const rolePmIconColorValid = ref<boolean>(false);
+const rolePmLabelValid = ref<boolean>(false);
 const valid = computed(() => {
 	// If role is checked, must be valid. If not checked, ignore validity
 	const locationValid = checkedRoles.location ? roleLocationValid.value : true;
 	const orientationValid = checkedRoles.orientation ? roleOrientationValid.value : true;
 	const markerIdValid = checkedRoles.markerId ? roleMarkerIdValid.value : true;
-	return locationValid && orientationValid && markerIdValid;
+	const pmIconColorValid = checkedRoles.pmIconColor ? rolePmIconColorValid.value : true;
+	const pmLabelValid = checkedRoles.pmLabel ? rolePmLabelValid.value : true;
+	return locationValid && orientationValid && markerIdValid && pmIconColorValid && pmLabelValid;
 });
 useComponentValidation(valid, emit);
 </script>
@@ -106,6 +130,34 @@ useComponentValidation(valid, emit);
 			v-if="checkedRoles.markerId"
 			role="markerId"
 			v-model:valid="roleMarkerIdValid"
+			multiple
+		/>
+	</v-container>
+
+	<!-- Color -->
+	<v-container>
+		<v-checkbox
+			label="Icon Color"
+			v-model="checkedRoles.pmIconColor"
+		></v-checkbox>
+		<DataSourcePicker
+			v-if="checkedRoles.pmIconColor"
+			role="pmIconColor"
+			multiple
+			v-model:valid="rolePmIconColorValid"
+		/>
+	</v-container>
+
+	<!-- Label -->
+	<v-container>
+		<v-checkbox
+			label="Icon Label"
+			v-model="checkedRoles.pmLabel"
+		></v-checkbox>
+		<DataSourcePicker
+			v-if="checkedRoles.pmLabel"
+			role="pmLabel"
+			v-model:valid="rolePmLabelValid"
 		/>
 	</v-container>
 </template>

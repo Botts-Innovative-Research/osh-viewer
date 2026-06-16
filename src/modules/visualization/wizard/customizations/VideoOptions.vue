@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch, ref, computed, onMounted } from 'vue';
+import { watch, ref, onMounted } from 'vue';
 import { useVizWizStore } from '@/stores/vizwizstore';
 
 const vwStore = useVizWizStore();
@@ -55,7 +55,7 @@ watch(video360FisheyeFov, () => {
 });
 
 onMounted(() => {
-	if (!vwStore.visualizationCustomizationOptions.stats) {
+	if (!vwStore.visualizationCustomizationOptions.stats === undefined) {
 		vwStore.updateVisualizationCustomizationOptions({
 			stats: stats.value,
 		});
@@ -63,8 +63,15 @@ onMounted(() => {
 		stats.value = vwStore.visualizationCustomizationOptions.stats;
 	}
 
-	// Derive is360 from whether props360 is present in the store
-	if (!vwStore.visualizationCustomizationOptions.props360) {
+	if (!vwStore.visualizationCustomizationOptions.time === undefined) {
+		vwStore.updateVisualizationCustomizationOptions({
+			time: time.value,
+		});
+	} else {
+		time.value = vwStore.visualizationCustomizationOptions.time;
+	}
+
+	if (!vwStore.visualizationCustomizationOptions.props360 === undefined) {
 		is360.value = false;
 	} else {
 		is360.value = true;
@@ -94,14 +101,17 @@ onMounted(() => {
 	<v-checkbox
 		v-model="stats"
 		label="Show Video Stats"
+		density="compact"
 	/>
 	<v-checkbox
 		v-model="time"
 		label="Show Video Time"
+		density="compact"
 	/>
 	<v-checkbox
 		v-model="is360"
 		label="Enable 360 View"
+		density="compact"
 	/>
 	<v-autocomplete
 		v-if="is360"
@@ -116,7 +126,7 @@ onMounted(() => {
 		type="number"
 		:min="90"
 		:max="280"
-		hint="Full lens FOV in degrees. Roughly 190° for Insta360 cameras."
+		hint="Full lens FOV in degrees. Usually between 180 and 200."
 		persistent-hint
 	/>
 </template>

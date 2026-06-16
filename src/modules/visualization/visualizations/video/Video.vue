@@ -1,20 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, toRaw } from 'vue';
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import VideoDataLayer from 'osh-js/source/core/ui/layer/VideoDataLayer.js';
 import { OSHControlStream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import VideoView from 'osh-js/source/core/ui/view/video/VideoView.js';
 import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import PTZControl from './PTZControl.vue';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
-import { fetchControlStreamSchema } from '@/lib/ControlstreamUtils';
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
-import {
-	ISweApiDataSourceProperties,
-	IVideoLayerProperties,
-	IVideoViewProperties,
-} from '@/lib/VisualizationHelpers';
-import { useVisualizationCleanup } from '../../components/composables/useVisualizationCleanup';
+import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
+import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IVideoLayerProperties } from '../../types/layers';
+import { IVideoViewProperties } from '../../types/views';
+import { fetchControlStreamSchema } from '../../services/controlstream.service';
 
 const props = defineProps<{
 	visualization: OSHVisualization;
@@ -24,14 +21,14 @@ const props = defineProps<{
 	controlstream?: OSHControlStream;
 }>();
 
-const videoDivId = ref('video-' + randomUUID());
+const videoDivId = ref(props.visualization.id);
 
 const controlstreamStore = useControlStreamStore();
 const videoView = ref<any>(null);
 const videoLayer = ref<VideoDataLayer | null>(null);
 const dsInstances: SweApi[] = [];
 
-function createVideoView(viewConfig: any) {
+function createVideoView(viewConfig: IVideoViewProperties) {
 	if (videoView.value) {
 		videoView.value.destroy?.();
 		videoView.value = null;
@@ -99,7 +96,7 @@ function initializeVideo() {
 				},
 			};
 		}
-		const viewConfig = viz.visualizationComponents.dataView;
+		const viewConfig = props.videoView;
 		createVideoView(viewConfig);
 
 		dsInstance.connect();

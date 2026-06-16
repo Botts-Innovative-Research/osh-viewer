@@ -1,15 +1,13 @@
 <script setup lang="ts">
 // @ts-ignore
-import VisualizationWrapper from './VisualizationWrapper.vue';
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import PanelVisualizationWrapper from './PanelVisualizationWrapper.vue';
 import GeoPTZ from '@/modules/visualization/visualizations/geoptz/GeoPTZ.vue';
-import VisualizationWizard from '../wizard/VisualizationWizard.vue';
+import VisualizationWizard from '@/modules/visualization/wizard/VisualizationWizard.vue';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
-import EditVisualization from '../wizard/EditVisualization.vue';
-import { useVisualizationSidebar } from './composables/useVisualizationSidebar';
+import { useVisualizationSidebar } from '../composables/useVisualizationSidebar';
 import { useUIStore } from '@/stores/uistore';
-import { computed } from 'vue';
-import { useMapStore } from '@/stores/mapstore';
+import MapVisualizationWrapper from './MapVisualizationWrapper.vue';
+import GeoPtzWrapper from './GeoPtzWrapper.vue';
 
 const {
 	editViz,
@@ -17,9 +15,9 @@ const {
 	mapVisualizations,
 	geoPtzVisualizations,
 	openPanels,
+	openPanelVisualizations,
 	selectedGeoPTZControllers,
 	removeGeoPTZ,
-	isMapLayer,
 	isMapLayerVisible,
 	toggleMapLayerVisibility,
 	toggleSelectedMapItem,
@@ -67,75 +65,15 @@ const uiStore = useUIStore();
 						<div class="panel-header">Map Visualizations</div>
 					</template>
 					<v-expansion-panel-text class="panel-text">
-						<v-list
-							activatable
-							density="compact"
-							select-strategy="leaf"
-						>
-							<v-list-item
-								v-for="viz in mapVisualizations"
-								:key="viz.id"
-								@click="toggleSelectedMapItem(viz)"
-							>
-								<!-- Icon -->
-								<template #prepend>
-									<v-icon
-										:icon="`mdi-${isMapLayer(viz.visualizationComponents.dataLayer) ? viz.visualizationComponents.dataLayer.iconName : ''}`"
-										size="16"
-									></v-icon>
-								</template>
-								<!-- Title -->
-								<template #title
-									><span
-										:style="`text-decoration: ${isMapLayerVisible(viz.id) ? '' : 'line-through'}`"
-										>{{ viz.name }}</span
-									></template
-								>
-								<!-- Actions -->
-								<template #append>
-									<div class="map-actions">
-										<v-tooltip
-											text="Toggle Visibility"
-											location="bottom"
-										>
-											<template v-slot:activator="{ props }">
-												<IconButton
-													v-bind="props"
-													aria-label="Toggle Visibility"
-													size="x-small"
-													variant="plain"
-													:icon="
-														isMapLayerVisible(viz.id)
-															? 'mdi-eye'
-															: 'mdi-eye-off'
-													"
-													@click.stop="toggleMapLayerVisibility(viz)"
-												></IconButton>
-											</template>
-										</v-tooltip>
-										<v-tooltip
-											text="Edit Visualization"
-											location="bottom"
-										>
-											<template v-slot:activator="{ props }">
-												<IconButton
-													v-bind="props"
-													aria-label="Edit Visualization"
-													size="x-small"
-													variant="plain"
-													icon="mdi-pencil"
-													@click.stop="openEditViz(viz)"
-												></IconButton>
-											</template>
-										</v-tooltip>
-										<DeleteButton
-											label="Remove"
-											@delete="removeVisualization(viz)"
-										></DeleteButton>
-									</div>
-								</template>
-							</v-list-item>
-						</v-list>
+						<MapVisualizationWrapper
+							v-for="viz in mapVisualizations"
+							:viz="viz"
+							:toggleSelectedMapItem="toggleSelectedMapItem"
+							:isMapLayerVisible="isMapLayerVisible"
+							:toggleMapLayerVisibility="toggleMapLayerVisibility"
+							:openEditViz="openEditViz"
+							:removeVisualization="removeVisualization"
+						/>
 					</v-expansion-panel-text>
 				</v-expansion-panel>
 				<!-- GEOPTZ VISUALIZATIONS -->
@@ -153,52 +91,14 @@ const uiStore = useUIStore();
 								:visualizations="selectedGeoPTZControllers"
 							>
 								<template #controllers>
-									<v-select
-										label="Process"
-										v-model="selectedGeoPTZControllers"
-										:items="geoPtzVisualizations"
-										item-title="name"
-										:item-value="(item: OSHVisualization) => item"
-										chips
-										multiple
-										hide-details
-										clearable
-									>
-										<template v-slot:item="{ props, item }">
-											<v-list-item v-bind="props">
-												<template v-slot:prepend="{ isSelected }">
-													<v-checkbox-btn
-														:model-value="isSelected"
-													></v-checkbox-btn>
-												</template>
-												<!-- Actions -->
-												<template v-slot:append>
-													<v-tooltip
-														text="Edit Visualization"
-														location="bottom"
-													>
-														<template v-slot:activator="{ props }">
-															<IconButton
-																v-bind="props"
-																aria-label="Edit Visualization"
-																size="x-small"
-																variant="plain"
-																icon="mdi-pencil"
-																@click.stop="
-																	openEditViz(item.raw.id!)
-																"
-															>
-															</IconButton>
-														</template>
-													</v-tooltip>
-													<DeleteButton
-														label="Remove"
-														@delete="removeGeoPTZ(item.raw)"
-													></DeleteButton>
-												</template>
-											</v-list-item>
-										</template>
-									</v-select>
+									<GeoPtzWrapper
+										v-model:selectedGeoPTZControllers="
+											selectedGeoPTZControllers
+										"
+										:geoPtzVisualizations="geoPtzVisualizations"
+										:openEditViz="openEditViz"
+										:removeGeoPTZ="removeGeoPTZ"
+									/>
 								</template>
 							</GeoPTZ>
 						</v-sheet>
@@ -208,7 +108,7 @@ const uiStore = useUIStore();
 			<v-divider></v-divider>
 			<!-- PANEL VISUALIZATIONS -->
 			<v-expansion-panels
-				:model-value="panelVisualizations.map((v) => v.id)"
+				v-model="openPanelVisualizations"
 				variant="accordion"
 				multiple
 				eager
@@ -250,7 +150,7 @@ const uiStore = useUIStore();
 						</div>
 					</template>
 					<v-expansion-panel-text>
-						<VisualizationWrapper :viz="viz"> </VisualizationWrapper>
+						<PanelVisualizationWrapper :viz="viz"></PanelVisualizationWrapper>
 					</v-expansion-panel-text>
 				</v-expansion-panel>
 			</v-expansion-panels>
@@ -261,7 +161,10 @@ const uiStore = useUIStore();
 		v-model="uiStore.vizWizOpen"
 		max-width="900"
 	>
-		<VisualizationWizard />
+		<VisualizationWizard
+			mode="create"
+			:viz="undefined"
+		/>
 	</v-dialog>
 	<!-- EDIT VISUALIZATION -->
 	<v-dialog
@@ -269,7 +172,10 @@ const uiStore = useUIStore();
 		max-width="900"
 		v-if="editViz?.id"
 	>
-		<EditVisualization :viz="editViz" />
+		<VisualizationWizard
+			mode="edit"
+			:viz="editViz"
+		/>
 	</v-dialog>
 </template>
 

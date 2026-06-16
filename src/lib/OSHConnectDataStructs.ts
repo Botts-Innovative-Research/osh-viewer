@@ -9,10 +9,15 @@ import { useNodeStore } from '@/stores/nodestore';
 import { useSystemStore } from '@/stores/systemstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
-import { VisualizationComponents } from '@/lib/VisualizationHelpers';
 import { CONFIG_UID_BASE } from '@/composables/useConfigPersistence';
 import { WizardConfig } from '@/stores/vizwizstore';
 import { ViewLocation } from '@/modules/visualization/registry/types';
+import { VisualizationComponents } from '@/modules/visualization/types/visualization';
+
+export interface Result {
+	success: boolean;
+	message?: string;
+}
 
 let sharedStores: any = null;
 
@@ -36,7 +41,7 @@ export class OSHConnect {
 		this.nodeStore = stores.nodeStore;
 	}
 
-	createNode(
+	async createNode(
 		name: string,
 		host: string,
 		port: string | number,
@@ -44,10 +49,60 @@ export class OSHConnect {
 		username: string,
 		password: string,
 		tls: boolean = false
-	): OSHNode {
+	): Promise<OSHNode | Result> {
 		const newNode = new OSHNode(name, host, port, endpoint, username, password, tls, this);
-		this.nodeStore.addNode(newNode);
-		return newNode;
+		const isReachable = await this.checkNodeReachable(newNode);
+		const nodeExists = this.checkIfNodeExists(newNode);
+		if (!isReachable.success) {
+			return isReachable;
+		} else if (!nodeExists.success) {
+			return nodeExists;
+		} else {
+			this.nodeStore.addNode(newNode);
+			return newNode;
+		}
+	}
+
+	async checkNodeReachable(node: OSHNode): Promise<Result> {
+		const endpoint = `${node.tls ? 'https' : 'http'}://${node.getEndpointUrl()}`;
+		const encoded = btoa(`${node.username}:${node.password}`);
+		const options: RequestInit = {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Basic ${encoded}`,
+			},
+			mode: 'cors',
+		};
+
+		try {
+			const response = await fetch(endpoint, options);
+			if (response.ok) {
+				return {
+					success: true,
+				};
+			} else {
+				console.error('Node is not reachable.');
+				return {
+					success: false,
+					message: 'Node is not reachable.',
+				};
+			}
+		} catch (error) {
+			console.error('Failed to connect to node:', error);
+			return {
+				success: false,
+				message: 'Failed to connect to node.',
+			};
+		}
+	}
+
+	checkIfNodeExists(node: OSHNode): Result {
+		if (this.nodeStore.checkIfNodeNameExists(node.name))
+			return { success: false, message: 'Node name already exists.' };
+		if (this.nodeStore.checkIfNodeEndpointExists(node.host, node.port))
+			return { success: false, message: 'Node endpoint already exists.' };
+		else return { success: true };
 	}
 
 	// Fetch all resources that are relatively static
@@ -149,7 +204,8 @@ export class OSHNode {
 				if (!systemStore?.checkIfSystemExists?.(sys.properties.id)) {
 					const newSys = new OSHSystem(sys, this);
 
-					await Promise.all([
+					//@ts-ignore
+					await Promise.allSettled([
 						newSys.getDataStreams(),
 						newSys.getControlStreams(),
 						newSys.getSamplingFeatures(),
@@ -344,11 +400,12 @@ export class OSHVisualization {
 	name: string;
 	type: string;
 	viewLocation: ViewLocation; // Defines where the visualization is displayed (e.g., 'panel', 'map', 'multi')
-	parentId?: string | null;
+	parentId?: string; // Optional parent ID for child visualizations
 	datastream: OSHDatastream[] | null; // TODO: null handles "All PMS"
 	controlstream?: OSHControlStream[]; // Optional control stream
-	visualizationComponents!: VisualizationComponents;
-	wizardConfig!: WizardConfig; // Store state of wizard for editing visualization
+	visualizationComponents!: VisualizationComponents | VisualizationComponents[];
+	wizardConfig!: WizardConfig | null; // Store state of wizard for editing visualization. Null for child visualizations
+	children: OSHVisualization[] = []; // Child visualizations for complex visualizations
 
 	constructor(
 		id: string,
@@ -357,7 +414,7 @@ export class OSHVisualization {
 		viewLocation: ViewLocation,
 		datastream: OSHDatastream[] | null,
 		controlstream?: OSHControlStream[],
-		parentId?: string | null
+		parentId?: string | undefined
 	) {
 		this.id = id;
 		this.name = name;
@@ -368,12 +425,33 @@ export class OSHVisualization {
 		this.parentId = parentId;
 	}
 
-	setVisualizationComponents(components: VisualizationComponents): void {
+	setVisualizationComponents(
+		components: VisualizationComponents | VisualizationComponents[]
+	): void {
 		this.visualizationComponents = components;
 	}
 
 	setWizardConfig(config: WizardConfig): void {
 		this.wizardConfig = config;
+	}
+
+	addChildVisualization(children: OSHVisualization[]): void {
+		this.children.push(...children);
+	}
+
+	// Determine if visualization has child visualizations
+	isParentVisualization(): boolean {
+		return this.children.length > 0 && this.parentId === undefined;
+	}
+
+	// Determine if visualization has a parent visualization (i.e., is a child visualization)
+	isChildVisualization(): boolean {
+		return this.parentId !== undefined && this.parentId !== null;
+	}
+
+	// Determine if visualization is a single visualization (i.e., has no parent and no children)
+	isSingleVisualization(): boolean {
+		return this.children.length === 0 && this.parentId === undefined;
 	}
 }
 
@@ -398,3 +476,34 @@ export class Geometry {
 		this.bbox = bbox;
 	}
 }
+
+export type OSHLayer =
+	// | 'AudioDataLayer'
+	// | 'BinaryDataLayer'
+	// | 'CoPlanarPolygonLayer'
+	| 'CurveLayer'
+	// | 'DataLayer'
+	| 'EllipseLayer'
+	// | 'FrustumLayer'
+	// | 'ImageDrapingLayer'
+	| 'LoB'
+	| 'PointMarkerLayer'
+	// | 'PolygonLayer'
+	| 'PolylineLayer'
+	| 'VideoDataLayer';
+
+export const OSHLayerLabels: Array<{ layer: OSHLayer; label: string }> = [
+	// { layer: 'AudioDataLayer', label: 'Audio' },
+	// { layer: 'BinaryDataLayer', label: 'Binary' },
+	// { layer: 'CoPlanarPolygonLayer', label: 'Coplanar Polygon' },
+	{ layer: 'CurveLayer', label: 'Curve' },
+	// { layer: 'DataLayer', label: 'Data' },
+	// { layer: 'EllipseLayer', label: 'Ellipse' },
+	// { layer: 'FrustumLayer', label: 'Frustum' },
+	// { layer: 'ImageDrapingLayer', label: 'Image Draping' },
+	{ layer: 'LoB', label: 'Line of Bearing' },
+	{ layer: 'PointMarkerLayer', label: 'Point Marker' },
+	// { layer: 'PolygonLayer', label: 'Polygon' },
+	{ layer: 'PolylineLayer', label: 'Polyline' },
+	{ layer: 'VideoDataLayer', label: 'Video' },
+];

@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { fetchCsSchema, mineControlObsPropsFromCS } from '@/lib/DatasourceUtils';
-import { getCommandType } from '@/lib/ControlstreamUtils';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { computed, onMounted, ref, watch } from 'vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
 import { useComponentValidation } from '../composables/useComponentValidation';
+import {
+	fetchCsSchema,
+	getCommandType,
+	mineControlObsPropsFromCS,
+} from '../../services/controlstream.service';
 
 const props = withDefaults(
 	defineProps<{

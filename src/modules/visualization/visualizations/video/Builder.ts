@@ -1,10 +1,4 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import {
-	ISweApiDataSourceProperties,
-	IVideoLayerProperties,
-	IVideoViewProperties,
-	VisualizationComponents,
-} from '@/lib/VisualizationHelpers';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
@@ -14,12 +8,16 @@ import { Mode } from 'osh-js/source/core/datasource/Mode';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { VideoDescriptor } from './Descriptor';
 import {
-	AggregateControlstreams,
 	AggregateDatastreams,
 	BuildRoleProperty,
 	getUsedControlstreams,
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
+import { VisualizationComponents } from '../../types/visualization';
+import { IVideoCustomizationOptions } from '../../types/customization';
+import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IVideoLayerProperties } from '../../types/layers';
+import { IVideoViewProperties } from '../../types/views';
 
 export default function build() {
 	console.log('Building Video Visualization...');
@@ -27,11 +25,9 @@ export default function build() {
 	const visualizationStore = useVisualizationStore();
 
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
-	const controlstreams = AggregateControlstreams(vizwizStore.csConfig);
 
-	const videoResult = CreateVideoViewProps(
+	const videoResult = CreateVideoVizProps(
 		datastreams,
-		controlstreams,
 		vizwizStore.visualizationCustomizationOptions
 	);
 	const visualizationComponents: VisualizationComponents = {
@@ -61,10 +57,9 @@ export default function build() {
  * @param visOptions
  * @constructor
  */
-export function CreateVideoViewProps(
+export function CreateVideoVizProps(
 	datastreams: { [key: string]: any },
-	controlstreams: { [key: string]: any },
-	visOptions: any
+	visOptions: IVideoCustomizationOptions
 ) {
 	const datastreamStore = useDataStreamStore();
 
@@ -113,8 +108,6 @@ export function CreateVideoViewProps(
 		};
 		vizDatasources.push(currentDataSource);
 	}
-
-	console.log('Created VideoViewProps:', { vizDatasources, videoLayer, videoView });
 
 	return {
 		vizDatasources,

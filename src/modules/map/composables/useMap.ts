@@ -2,8 +2,8 @@ import { useMapStore } from '@/stores/mapstore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { computed, onMounted, ref, watch } from 'vue';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
-import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import {
+	createFOIProps,
 	createMapVisualizations,
 	createWaypointLayer,
 	rebuildMapVisualizations,
@@ -15,6 +15,11 @@ import { taskGeoPTZ } from '../services/geoPTZ.service';
 import { MapAdapter } from '../adapters/types';
 import { createLeafletAdapter } from '../adapters/leaflet.adapter';
 import { useSettingsStore } from '@/stores/settingsstore';
+import { isMapLayerCompatible, SupportedMapLayer } from '../supportedMapLayers';
+import {
+	connectDatasources as connect,
+	disconnectDatasources as disconnect,
+} from '@/modules/visualization/services/datasource.service';
 
 export function useMap() {
 	// Stores
@@ -29,11 +34,14 @@ export function useMap() {
 	});
 
 	// Map of visualization ID to its corresponding visualization layer instance
-	const mapItemLayers = ref<Map<string, PointMarkerLayer | LoBLayer>>(new Map());
+	const mapItemLayers = ref<Map<string, SupportedMapLayer>>(new Map());
 	// List of all connected datasource instances created for map visualizations
 	const listDataSourceInstances = ref<SweApi[]>([]);
 	// Array of waypoint Pointmarkers for mission builder
 	const waypointLayers = ref<PointMarkerLayer[]>([]);
+
+	// Hidden visualization IDs
+	const hiddenLayers = ref<Map<string, OSHVisualization>>(new Map());
 
 	/* MAP INITIALIZATION/DESTRUCTION/TOGGLE */
 	async function initMap() {
@@ -73,12 +81,20 @@ export function useMap() {
 		// Rebuild layers
 		const newLayers = rebuildMapVisualizations(mapItemLayers.value);
 		newLayers.forEach((layer) => {
-			mapAdapter.value?.addLayer(layer);
+			// Type is 'marker' in osh-js, pass 'pointmarker' instead
+			if (isMapLayerCompatible(layer.type === 'marker' ? 'pointmarker' : layer.type))
+				mapAdapter.value?.addLayer(layer);
 		});
 		mapItemLayers.value = newLayers;
 
 		// Reconnect datasources
 		connectDatasources();
+
+		// Delete all FOIs
+		visualizationStore.clearFOILayers();
+
+		// Clear list of hidden visualizations
+		visualizationStore.clearMapLayerVisibility();
 	}
 	watch(mapType, async () => {
 		await switchMap();
@@ -86,21 +102,27 @@ export function useMap() {
 
 	/* DATASOURCE MANAGEMENT */
 	function connectDatasources() {
-		listDataSourceInstances.value.forEach((ds: any) => ds.connect());
+		connect(listDataSourceInstances.value);
 	}
 	function disconnectDatasources() {
-		listDataSourceInstances.value.forEach((ds: any) => ds.disconnect());
+		disconnect(listDataSourceInstances.value);
 	}
 
 	/* CREATE/DELETE VISUALIZATIONS */
 	watch(
 		() => visualizationStore.mapVisualizations.map((v) => v.id),
 		(newIds, oldIds) => {
-			const removedIds = oldIds?.filter((oldId) => !newIds.some((id) => id === oldId));
-			const addedIds = newIds?.filter((newId) => !oldIds?.some((id) => id === newId));
+			const removedIds = oldIds?.filter(
+				(oldId) => !newIds.some((id) => id === oldId || oldId === id)
+			);
+			const addedIds = newIds?.filter(
+				(newId) => !oldIds?.some((id) => id === newId || newId === id)
+			);
 
 			// Handle removed visualizations
-			if (removedIds) deleteVisualizations(removedIds);
+			if (removedIds) {
+				removedIds.forEach((id: string) => deleteVisualization(id));
+			}
 
 			//Handle added visualizations
 			if (addedIds) {
@@ -113,35 +135,36 @@ export function useMap() {
 				});
 			}
 		},
-		{ immediate: true, deep: true }
+		{ deep: true }
 	);
 	function addVisualization(viz: OSHVisualization) {
-		const result = createMapVisualizations(viz);
-		if (!result) return;
+		// If parent, skip - no layer to build
+		if (viz.isParentVisualization()) return;
+		// If not parent, add directly
+		else {
+			const result = createMapVisualizations(viz);
+			if (!result) return;
 
-		const { vizLayer, dsInstances } = result;
+			const { vizLayer, dsInstances } = result;
 
-		console.log(`Created ${viz.type} Visualization:`, vizLayer);
-		listDataSourceInstances.value.push(...dsInstances); // Push dsInstances to list of all active ds
-		mapItemLayers.value.set(viz.id, vizLayer); // Store vizLayer instance for this viz.id
-		mapAdapter.value?.addLayer(vizLayer); // Add vizLayer to map
+			console.log(`Created ${viz.type} Visualization:`, vizLayer);
+			listDataSourceInstances.value.push(...dsInstances); // Push dsInstances to list of all active ds
+			mapItemLayers.value.set(viz.id, vizLayer); // Store vizLayer instance for this viz.id
+
+			// Add layer to map, if compatible with current map type
+			if (isMapLayerCompatible(viz.type)) mapAdapter.value?.addLayer(vizLayer); // Add vizLayer to map
+		}
 	}
-	function deleteVisualizations(removedVizIds: string[]) {
+	async function deleteVisualization(vizId: string) {
 		const removedDsIds: string[] = [];
 
-		for (const vizId of removedVizIds) {
-			const layer = mapItemLayers.value.get(vizId);
-			if (!layer) continue; // Skip if no layer found for this vizId
+		// Find viz layer
+		const mapLayer = mapItemLayers.value.get(vizId);
+		console.log(mapLayer);
+		if (!mapLayer) return; // Skip if no layer found for this vizId (including parent viz)
 
-			// Collect ds IDs
-			removedDsIds.push(...layer.dataSourceIds);
-
-			// Remove layer from the actual map safely
-			mapAdapter.value?.removeLayer(layer);
-
-			// Remove layer from mapItemLayers
-			mapItemLayers.value.delete(vizId);
-		}
+		// Collect ds IDs
+		removedDsIds.push(...mapLayer.dataSourceIds);
 
 		// Disconnect and remove datasources
 		listDataSourceInstances.value = listDataSourceInstances.value.filter(
@@ -155,7 +178,30 @@ export function useMap() {
 				return true; // Keep in list
 			}
 		);
+
+		// Remove layer from the actual map safely
+		await mapAdapter.value?.removeLayer(mapLayer);
+
+		// Remove layer from mapItemLayers
+		mapItemLayers.value.delete(vizId);
 	}
+
+	/* FOI */
+	watch(
+		() => visualizationStore.foiLayers.map((v) => v),
+		(newLayers, oldLayers) => {
+			const addedLayers = newLayers?.filter(
+				(newLayer) => !oldLayers?.some((layer: any) => layer.id === newLayer.id)
+			);
+			if (addedLayers) {
+				addedLayers.forEach((layer) => {
+					const markerProps = createFOIProps(layer);
+					mapAdapter.value?.addFOILayer(markerProps);
+				});
+			}
+		},
+		{ deep: true, immediate: true }
+	);
 
 	/** MAP INTERACTIONS */
 	function bindMapInteractions() {
@@ -182,34 +228,59 @@ export function useMap() {
 
 			const layer = mapItemLayers.value.get(newVal.id);
 			if (!layer) return;
-			const location = layer.getCurrentProps().location;
+
+			const layerProps = layer.getCurrentProps();
+			const location = layerProps.location ?? layerProps.position ?? layerProps.locations[0]; // Handle location for PM/LoB, position for ellipse, locations[0] for polyline
 			if (!location) return;
 
 			mapAdapter.value?.flyToPoint(location);
 		}
 	);
 	watch(
-		() => visualizationStore.layerVisibility.entries(),
-		(entries) => {
-			for (const [layerId, isVisible] of entries) {
-				const layer = mapItemLayers.value.get(layerId);
-				if (!layer) continue;
+		() => visualizationStore.hiddenLayers,
+		async () => {
+			for (const viz of visualizationStore.mapVisualizations) {
+				// Handle parent viz
+				if (viz.isParentVisualization()) {
+					viz.children.forEach(async (child: OSHVisualization) => {
+						await toggleVizVisibility(
+							child,
+							visualizationStore.isMapLayerVisible(child.id)
+						);
+					});
+				} else {
+					await toggleVizVisibility(viz, visualizationStore.isMapLayerVisible(viz.id));
+				}
+			}
 
-				const ids: string[] = layer.getIds();
-
-				ids.map((id: string) => {
-					mapAdapter.value?.toggleLayerVisibility(id, isVisible);
-				});
+			console.log('Hidden:', hiddenLayers.value);
+			console.log('Map Layers:', mapItemLayers.value);
+		},
+		{ deep: true }
+	);
+	async function toggleVizVisibility(viz: OSHVisualization, isVisible: boolean) {
+		// Show/rebuild visualization
+		if (isVisible) {
+			if (hiddenLayers.value.has(viz.id)) {
+				hiddenLayers.value.delete(viz.id); // Remove from hidden layers
+				addVisualization(viz); // Rebuild viz
+				console.log('Rebuilt layer!');
 			}
 		}
-	);
+		// Hide/delete visualization
+		else {
+			hiddenLayers.value.set(viz.id, viz); // Add to hidden layers
+			await deleteVisualization(viz.id); // Delete viz from map
+			console.log('Hid layer!');
+		}
+	}
 
 	/* GEOPTZ */
 	watch(
 		() => mapStore.selectedGeoPTZ,
 		(geoPtz, oldGeoPtz) => {
 			// If had value, delete
-			if (oldGeoPtz?.length) deleteVisualizations([oldGeoPtz[0].id]);
+			if (oldGeoPtz?.length) deleteVisualization(oldGeoPtz[0].id);
 			// If has a new value, create new
 			if (geoPtz?.length) addVisualization(geoPtz[0]);
 		},
@@ -221,7 +292,7 @@ export function useMap() {
 		if (!currentGeoPtz?.length) return;
 
 		// Delete and make new
-		deleteVisualizations([currentGeoPtz[0].id]);
+		deleteVisualization(currentGeoPtz[0].id);
 		addVisualization(currentGeoPtz[0]);
 	});
 

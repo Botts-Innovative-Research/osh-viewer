@@ -3,9 +3,10 @@ import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useSystemStore } from '@/stores/systemstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useOSHConnectStore } from '@/stores/oshconnectstore';
-import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { showToast } from '@/composables/useToast';
-import { OSHNode, OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { OSHNode } from '@/lib/OSHConnectDataStructs';
+import { rehydrateVisualization } from '@/modules/visualization/services/visualization.serialization';
+import { rehydrateNode } from '@/modules/visualization/services/node.serialization';
 
 export const CONFIG_UID_BASE = 'urn:osh:client:config';
 export const CONFIG_DS_NAME_BASE = 'Client Config';
@@ -29,7 +30,6 @@ export function useConfigPersistence() {
 	const systemStore = useSystemStore();
 	const datastreamStore = useDataStreamStore();
 	const oshConnectStore = useOSHConnectStore();
-	const controlstreamStore = useControlStreamStore();
 
 	function getAuthHeader(node: OSHNode): string {
 		return `Basic ${btoa(`${node.username}:${node.password}`)}`;
@@ -316,22 +316,13 @@ export function useConfigPersistence() {
 
 					for (const serializedNode of loadedNodes) {
 						if (
-							!nodeStore.checkIfNodeExists(serializedNode.name) &&
+							!nodeStore.checkIfNodeNameExists(serializedNode.name) &&
 							!nodeStore.checkIfNodeEndpointExists(
 								serializedNode.host,
 								serializedNode.port
 							)
 						) {
-							const newNode = new OSHNode(
-								serializedNode.name,
-								serializedNode.host,
-								serializedNode.port,
-								serializedNode.apiRoot,
-								serializedNode.username,
-								serializedNode.password,
-								serializedNode.tls,
-								oshConnect
-							);
+							const newNode = rehydrateNode(serializedNode, oshConnect);
 							nodeStore.addNode(newNode);
 							nodesAdded++;
 						}
@@ -342,27 +333,7 @@ export function useConfigPersistence() {
 					let visualizationsAdded = 0;
 					for (const serializedViz of loadedVisualizations) {
 						if (!visualizationStore.getVisualizationById(serializedViz.id)) {
-							const datastreams = datastreamStore.getDataStreamsById(
-								serializedViz.datastreamIds
-							);
-							const controlstreams = controlstreamStore.getControlStreamsById(
-								serializedViz.controlstreamIds
-							);
-
-							const visualization = new OSHVisualization(
-								serializedViz.id,
-								serializedViz.name,
-								serializedViz.type,
-								serializedViz.viewLocation,
-								datastreams,
-								controlstreams,
-								serializedViz.parentId
-							);
-
-							visualization.setVisualizationComponents(
-								serializedViz.visualizationComponents
-							);
-							visualization.setWizardConfig(serializedViz.wizardConfig);
+							const visualization = rehydrateVisualization(serializedViz);
 							visualizationStore.addVisualization(visualization);
 							visualizationsAdded++;
 						}

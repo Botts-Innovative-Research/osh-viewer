@@ -2,39 +2,27 @@ import { defineStore } from 'pinia';
 import { ref, Ref } from 'vue';
 import { OSHNode, OSHConnect } from '@/lib/OSHConnectDataStructs';
 import { showToast } from '@/composables/useToast';
+import {
+	rehydrateNode,
+	SerializedNode,
+	serializeNode,
+} from '@/modules/visualization/services/node.serialization';
 
-export interface SerializeNode {
-	name: string;
-	host: string;
-	port: string | number;
-	apiRoot: string;
-	username: string;
-	password: string;
-	tls: boolean;
-}
 export const useNodeStore = defineStore(
 	'nodes',
 	() => {
 		const nodes: Ref<OSHNode[]> = ref([]);
 		const defaultNodeId = ref<string | null>(null);
-		const serializedNodes: Ref<SerializeNode[]> = ref([]);
+		const serializedNodes: Ref<SerializedNode[]> = ref([]);
 
 		const addNode = (node: OSHNode): any => {
-			if (checkIfNodeExists(node.name) || node.name === undefined) {
+			if (checkIfNodeNameExists(node.name) || node.name === undefined) {
 				showToast('Node already exists or name is undefined', 'ERROR');
 				return;
 			}
 			nodes.value.push(node);
 			// Add serialized version for persistence
-			serializedNodes.value.push({
-				name: node.name,
-				host: node.host,
-				port: node.port,
-				apiRoot: node.apiRoot,
-				username: node.username,
-				password: node.password,
-				tls: node.tls,
-			});
+			serializedNodes.value.push(serializeNode(node));
 			showToast('Node created successfully', 'SUCCESS');
 		};
 
@@ -47,7 +35,7 @@ export const useNodeStore = defineStore(
 			return nodes.value.find((node) => node.name === name);
 		};
 
-		const checkIfNodeExists = (name: string): boolean => {
+		const checkIfNodeNameExists = (name: string): boolean => {
 			return nodes.value.some((node) => node.name === name);
 		};
 
@@ -59,16 +47,7 @@ export const useNodeStore = defineStore(
 			if (serializedNodes.value.length === 0 || nodes.value.length > 0) return;
 
 			for (const serialized of serializedNodes.value) {
-				const node = new OSHNode(
-					serialized.name,
-					serialized.host,
-					serialized.port,
-					serialized.apiRoot,
-					serialized.username,
-					serialized.password,
-					serialized.tls,
-					oshConnect
-				);
+				const node = rehydrateNode(serialized, oshConnect);
 				nodes.value.push(node);
 			}
 			await oshConnect.fetchSlowResources();
@@ -89,7 +68,7 @@ export const useNodeStore = defineStore(
 			addNode,
 			removeNode,
 			getNodeByName,
-			checkIfNodeExists,
+			checkIfNodeNameExists,
 			checkIfNodeEndpointExists,
 			rehydrateNodes,
 			updateDefaultNode,

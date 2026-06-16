@@ -1,9 +1,4 @@
 import { OSHControlStream, OSHDatastream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import {
-	ISweApiControlStreamProperties,
-	ISweApiDataSourceProperties,
-	VisualizationComponents,
-} from '@/lib/VisualizationHelpers';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 //@ts-ignore
@@ -17,6 +12,11 @@ import {
 	BuildRoleProperty,
 	getUsedControlstreams,
 } from '../../services/aggregation.service';
+import { VisualizationComponents } from '../../types/visualization';
+import {
+	ISweApiControlStreamProperties,
+	ISweApiDataSourceProperties,
+} from '../../types/datasource';
 
 export default function build() {
 	console.log('Building GeoPTZ Visualization...');
@@ -26,16 +26,11 @@ export default function build() {
 	const datastreams = vizwizStore.datastreams;
 	const controlstreams = AggregateControlstreams(vizwizStore.csConfig);
 
-	const geoPtzResult = CreateGeoPtzViewProps(
-		datastreams[0],
-		controlstreams,
-		vizwizStore.visualizationCustomizationOptions
-	);
+	const geoPtzResult = CreateGeoPtzVizProps(datastreams[0], controlstreams);
 
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: geoPtzResult.vizDatasources,
-		dataLayer: null,
-		dataView: null,
+		dataLayer: [],
 		controlstream: geoPtzResult.vizControlstreams,
 	};
 
@@ -53,10 +48,9 @@ export default function build() {
 	console.log('Created GeoPTZ Visualization:', newViz);
 }
 
-export function CreateGeoPtzViewProps(
+export function CreateGeoPtzVizProps(
 	datastream: OSHDatastream,
-	controlstreams: { [key: string]: any },
-	visOptions: any
+	controlstreams: { [key: string]: any }
 ) {
 	const controlstreamStore = useControlStreamStore();
 
