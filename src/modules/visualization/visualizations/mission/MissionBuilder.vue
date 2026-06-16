@@ -103,9 +103,9 @@ const fileInputRef = ref<any | null>(null);
 const selectedFile = ref<File | null>(null);
 const exportFilename = ref<string>('mission');
 
-const droneDatasourceLLA = ref<ConSysApi | null>(null);
-const droneHomeDatasource = ref<ConSysApi | null>(null);
-let dsInstances = ref<ConSysApi[]>([]);
+const droneDatasourceLLA = ref<typeof ConSysApi | null>(null);
+const droneHomeDatasource = ref<typeof ConSysApi | null>(null);
+let dsInstances = ref<typeof ConSysApi[]>([]);
 
 let homeLocation = ref<{ lat: number; lon: number; alt: number }>({ lat: 0, lon: 0, alt: 0 });
 
@@ -518,7 +518,7 @@ function generateMissionControlPlan() {
 	};
 }
 
-function onLLAListener(dsInstance: ConSysApi) {
+function onLLAListener(dsInstance: typeof ConSysApi) {
 	const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
 
 	dataBroadcastChannel.onmessage = (message) => {
