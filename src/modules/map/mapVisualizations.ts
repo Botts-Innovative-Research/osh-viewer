@@ -37,8 +37,6 @@ export async function createMapVisualizations(
 		return createEllipseLayer(viz, viz.visualizationComponents.dataSource);
 	} else if (viz.type === 'polyline') {
 		return createPolylineLayer(viz, viz.visualizationComponents.dataSource);
-	} else if (viz.type === 'geoPtz') {
-		return await createGeoPTZLayer(viz, viz.visualizationComponents.dataSource);
 	} else {
 		console.warn(`Visualization type ${viz.type} not supported for map view`);
 		return null;

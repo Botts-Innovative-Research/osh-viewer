@@ -22,6 +22,7 @@ import {
 	disconnectDatasources as disconnect,
 } from '@/modules/visualization/services/datasource.service';
 import { getGroundAltitude } from '../services/altitude.service';
+import { ICreateMapVisualizationResult } from '../mapVisualizations';
 
 export function useMap() {
 	// Stores
@@ -39,6 +40,8 @@ export function useMap() {
 	const mapItemLayers = ref<Map<string, SupportedMapLayer>>(new Map());
 	// List of all connected datasource instances created for map visualizations
 	const listDataSourceInstances = ref<ConSysApi[]>([]);
+	// Current GeoPTZ layer
+	const geoPtzLayer = ref<PointMarkerLayer | null>(null);
 	// Array of waypoint Pointmarkers for mission builder
 	const waypointLayers = ref<PointMarkerLayer[]>([]);
 
@@ -132,19 +135,19 @@ export function useMap() {
 					.map((id) => visualizationStore.getVisualizationById(id))
 					.filter(Boolean) as OSHVisualization[];
 
-				newOSHVisualizations.forEach((viz: OSHVisualization) => {
-					addVisualization(viz);
+				newOSHVisualizations.forEach(async (viz: OSHVisualization) => {
+					await addVisualization(viz);
 				});
 			}
 		},
 		{ deep: true }
 	);
-	function addVisualization(viz: OSHVisualization) {
+	async function addVisualization(viz: OSHVisualization) {
 		// If parent, skip - no layer to build
 		if (viz.isParentVisualization()) return;
 		// If not parent, add directly
 		else {
-			const result = createMapVisualizations(viz);
+			const result = await createMapVisualizations(viz);
 			if (!result) return;
 
 			const { vizLayer, dsInstances } = result;
@@ -213,11 +216,30 @@ export function useMap() {
 		if (!mapAdapter.value) return;
 
 		mapAdapter.value.onClick(async (lat, lon, alt) => {
+			// GeoPTZ
 			if (mapStore.isGeoPTZSelected && mapStore.selectedGeoPTZ) {
+				// Calculate alt if needed
 				const calcAlt = alt ?? (await getGroundAltitude(lon, lat)) ?? 0;
-				createGeoPTZLayer({ lon, lat, alt: calcAlt }, mapStore.selectedGeoPTZ);
-				taskGeoPTZ(lat, lon, calcAlt);
+
+				// Create pointmarker
+				const result = await createGeoPTZLayer(
+					{ lon, lat, alt: calcAlt },
+					mapStore.selectedGeoPTZ
+				);
+				if (result) {
+					// Remove old pointmarker
+					mapAdapter.value?.removeLayer(geoPtzLayer.value);
+					geoPtzLayer.value = result.layer;
+
+					// Add new pointmarker
+					mapAdapter.value?.addLayer(geoPtzLayer.value);
+					if (result.props) mapAdapter.value?.updateMarker(result.props);
+
+					// Task GeoPTZ
+					taskGeoPTZ(lat, lon, calcAlt);
+				}
 			}
+			// Mission Planner
 			if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lon, 0);
 			// Add additional onClick functions
 		});
@@ -285,15 +307,14 @@ export function useMap() {
 	}
 
 	/* GEOPTZ */
-	watch([() => settingsStore.geoPtzIcon, () => settingsStore.geoPtzIconColor], () => {
-		// Rebuild viz on icon change
-		const currentGeoPtz = mapStore.selectedGeoPTZ;
-		if (!currentGeoPtz?.length) return;
-
-		// Delete and make new
-		deleteVisualization(currentGeoPtz[0].id);
-		addVisualization(currentGeoPtz[0]);
-	});
+	watch(
+		() => mapStore.isGeoPTZSelected,
+		(selected) => {
+			// Remove old pointmarker on selection change
+			mapAdapter.value?.removeLayer(geoPtzLayer.value);
+			geoPtzLayer.value = null;
+		}
+	);
 
 	/* MISSION BUILDER */
 	watch(
