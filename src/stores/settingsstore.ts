@@ -2,7 +2,14 @@ import { defineStore } from 'pinia';
 import { Ref, ref } from 'vue';
 
 const persistedMapKeys = {
-	map: ['focusedMap', 'geoPtzIcon', 'geoPtzIconColor', 'enable3DTerrain', 'enable3DBuildings'],
+	map: [
+		'focusedMap',
+		'geoPtzIcon',
+		'geoPtzIconColor',
+		'enable3DTerrain',
+		'enable3DBuildings',
+		'enableGooglePhotorealistic',
+	],
 };
 
 export const useSettingsStore = defineStore(
@@ -20,7 +27,8 @@ export const useSettingsStore = defineStore(
 
 		// Cesium settings
 		const enable3DTerrain: Ref<boolean> = ref(true); // Whether to enable 3D terrain in Cesium
-		const enable3DBuildings: Ref<boolean> = ref(true); // Whether to show 3D buildings layer in Cesium
+		const enable3DBuildings: Ref<boolean> = ref(false); // Whether to show 3D buildings layer in Cesium
+		const enableGooglePhotorealistic: Ref<boolean> = ref(true); // Whether to show 3D Google Photorealistic tileset layer in Cesium
 
 		function setTheme(newTheme: 'dark' | 'light') {
 			theme.value = newTheme;
@@ -44,6 +52,10 @@ export const useSettingsStore = defineStore(
 			if (value === null) return;
 			enable3DBuildings.value = value;
 		}
+		function setGooglePhotorealistic(value: boolean | null) {
+			if (value === null) return;
+			enableGooglePhotorealistic.value = value;
+		}
 
 		return {
 			theme,
@@ -52,12 +64,14 @@ export const useSettingsStore = defineStore(
 			geoPtzIconColor,
 			enable3DTerrain,
 			enable3DBuildings,
+			enableGooglePhotorealistic,
 			setTheme,
 			setFocusedMap,
 			setGeoPtzIcon,
 			setGeoPtzIconColor,
 			set3DTerrain,
 			set3DBuildings,
+			setGooglePhotorealistic,
 		};
 	},
 	{ persist: { pick: ['theme', ...persistedMapKeys.map] } }

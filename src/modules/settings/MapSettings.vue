@@ -32,6 +32,10 @@ const enable3DBuildings = computed({
 	get: () => settingsStore.enable3DBuildings,
 	set: (val) => settingsStore.set3DBuildings(val),
 });
+const enableGooglePhotorealistic = computed({
+	get: () => settingsStore.enableGooglePhotorealistic,
+	set: (val) => settingsStore.setGooglePhotorealistic(val),
+});
 async function addIonAssetUrl() {
 	if (focusedMap.value === 'cesium' && url.value) {
 		// Check if layer already exists with the same URL
@@ -130,6 +134,19 @@ const canAddUrl = computed(() => {
 							<template #append>
 								<v-switch
 									v-model="enable3DBuildings"
+									color="primary"
+									inset
+									hide-details
+								></v-switch>
+							</template>
+						</v-list-item>
+						<v-list-item>
+							<v-list-item-title
+								>Enable 3D Google Photorealistic Tiles</v-list-item-title
+							>
+							<template #append>
+								<v-switch
+									v-model="enableGooglePhotorealistic"
 									color="primary"
 									inset
 									hide-details

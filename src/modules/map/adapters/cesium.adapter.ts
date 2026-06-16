@@ -23,6 +23,7 @@ export function createCesiumAdapter(): MapAdapter {
 	let renderedLayers: Map<string, any> = new Map();
 	let terrainProvider: any = null;
 	let buildingsTileset: any = null;
+	let googlePhotorealistic: any = null;
 	let flightPathPolyline: any = null;
 
 	async function init(container: string) {
@@ -30,6 +31,7 @@ export function createCesiumAdapter(): MapAdapter {
 			container,
 			autoZoomOnFirstMarker: true,
 			layers: [],
+			geocoder: Cesium.IonGeocodeProviderType.GOOGLE,
 		});
 		// Wait for Cesium to be fully ready
 		await new Promise(requestAnimationFrame);
@@ -173,6 +175,27 @@ export function createCesiumAdapter(): MapAdapter {
 		}
 	}
 
+	async function addGooglePhotorealistic() {
+		const viewer = mapView.viewer;
+		if (!viewer) return;
+
+		if (googlePhotorealistic) {
+			if (!viewer.scene.primitives.contains(googlePhotorealistic)) {
+				viewer.scene.primitives.add(googlePhotorealistic);
+			}
+		} else {
+			googlePhotorealistic = await Cesium.createGooglePhotorealistic3DTileset();
+			viewer.scene.primitives.add(googlePhotorealistic);
+		}
+	}
+
+	function removeGooglePhotorealistic() {
+		if (googlePhotorealistic && mapView.viewer) {
+			mapView.viewer.scene.primitives.remove(googlePhotorealistic);
+			googlePhotorealistic = null;
+		}
+	}
+
 	function addMapLayer(layer: MapLayer) {
 		const viewer = mapView.viewer;
 		if (!viewer) return;
@@ -289,6 +312,8 @@ export function createCesiumAdapter(): MapAdapter {
 		removeTerrain,
 		addBuildings,
 		removeBuildings,
+		addGooglePhotorealistic,
+		removeGooglePhotorealistic,
 		addMapLayer,
 		removeMapLayer,
 		destroyAllLayers,
