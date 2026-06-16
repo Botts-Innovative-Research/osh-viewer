@@ -3,7 +3,6 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import Chart from '@/modules/visualization/visualizations/chart/Chart.vue';
 import Video from '@/modules/visualization/visualizations/video/Video.vue';
 import Text from '@/modules/visualization/visualizations/text/Text.vue';
-import MissionBuilder from '@/modules/visualization/visualizations/mission/MissionBuilder.vue';
 import { onMounted, ref } from 'vue';
 
 const { viz, customClass = '' } = defineProps<{
@@ -61,12 +60,6 @@ onMounted(() => {
 			:datasource="dataSource[0]"
 			v-if="viz.type === 'text'"
 		></Text>
-		<MissionBuilder
-			:visualization="viz"
-			:datasource="dataSource"
-			:controlstreams="controlstream"
-			v-if="viz.type === 'mission'"
-		></MissionBuilder>
 		<slot name="after"></slot>
 		<slot name="overlay"></slot>
 	</div>

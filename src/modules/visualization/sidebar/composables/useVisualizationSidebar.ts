@@ -18,6 +18,7 @@ export function useVisualizationSidebar() {
 	// States
 	const editViz = ref<OSHVisualization | undefined>();
 	const selectedGeoPTZControllers = ref<OSHVisualization[]>([]);
+	const selectedMissionControllers = ref<OSHVisualization[]>([]);
 
 	// Sorted visualizations
 	const panelVisualizations = computed({
@@ -51,6 +52,10 @@ export function useVisualizationSidebar() {
 		visualizations.value.filter((viz) => viz.type === 'geoPtz')
 	);
 
+	const missionVisualizations = computed<OSHVisualization[]>(() =>
+		visualizations.value.filter((viz) => viz.type === 'mission')
+	);
+
 	/* Panel state */
 	const openPanels = ref<string[]>([]); // Tracks map visualizations and geoptz only
 	const openPanelVisualizations = ref<string[]>([]); // Tracks panel visualizations only
@@ -68,6 +73,14 @@ export function useVisualizationSidebar() {
 			openPanels.value = openPanels.value.filter((id: string) => id !== 'geoptz');
 		}
 	}
+
+	function handleOpenMissionPanel() {
+		if (missionVisualizations.value.length) {
+			if (!openPanels.value.includes('mission')) openPanels.value.push('mission');
+		} else {
+			openPanels.value = openPanels.value.filter((id: string) => id !== 'mission');
+		}
+	}
 	watch(
 		() => mapVisualizations.value.length,
 		() => {
@@ -81,10 +94,23 @@ export function useVisualizationSidebar() {
 		}
 	);
 
+	watch(
+		() => missionVisualizations.value.length,
+		() => {
+			handleOpenMissionPanel();
+		}
+	);
 	/* GEOPTZ HELPERS */
 	function removeGeoPTZ(controller: OSHVisualization) {
 		visualizationStore.removeVisualization(controller); // Remove from visualization store
 		selectedGeoPTZControllers.value = selectedGeoPTZControllers.value.filter(
+			(item: OSHVisualization) => item.id !== controller.id
+		); // Remove from selected list
+	}
+
+	function removeMission(controller: OSHVisualization) {
+		visualizationStore.removeVisualization(controller); // Remove from visualization store
+		selectedMissionControllers.value = selectedMissionControllers.value.filter(
 			(item: OSHVisualization) => item.id !== controller.id
 		); // Remove from selected list
 	}
@@ -124,6 +150,7 @@ export function useVisualizationSidebar() {
 	onMounted(() => {
 		handleOpenMapPanels(); // Map panel only
 		handleOpenGeoPTZPanel(); // GeoPTZ panel only
+		handleOpenMissionPanel(); // Mission Builder panel only
 		openPanelVisualizations.value = panelVisualizations.value.map((v) => v.id);
 	});
 
@@ -132,10 +159,13 @@ export function useVisualizationSidebar() {
 		panelVisualizations,
 		mapVisualizations,
 		geoPtzVisualizations,
+		missionVisualizations,
 		openPanels,
 		openPanelVisualizations,
 		selectedGeoPTZControllers,
+		selectedMissionControllers,
 		removeGeoPTZ,
+		removeMission,
 		isMapLayer,
 		isMapLayerVisible,
 		toggleMapLayerVisibility,
