@@ -16,7 +16,7 @@ import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
 import { sendCommand, fetchCsSchema, mineControlObsPropsFromCS } from '../../services/controlstream.service';
 import { VisualizationComponents } from '../../types/visualization';
-import draggable from 'vuedraggable';
+import { VueDraggable } from 'vue-draggable-plus';
 
 // python sim_vehicle.py -v ArduCopter -f quad --console --map --location=Taiwan
 
@@ -756,71 +756,70 @@ useVisualizationCleanup(dsInstances);
 											</v-card>
 										</v-dialog>
 									</div>
-									<draggable
+									<VueDraggable
 										v-if="waypoints.length > 0"
 										v-model="waypoints"
-										item-key="id"
 										handle=".drag-handle"
+										:animation="150"
 										class="waypoints-list"
 									>
-										<template #item="{ element: wp, index }">
-											<v-list-item
-												:key="wp.id"
-												class="pa-1"
-											>
-												<template v-slot:prepend>
-													<v-icon class="drag-handle mr-1" size="small">mdi-drag</v-icon>
-													<span class="text-caption mr-2">{{ index + 1 }}.</span>
-												</template>
-												<v-list-item-title class="text-body-2">
-													<v-row class="align-center">
-														<v-col cols="4">
-															<v-text-field
-																type="number"
-																label="Lat"
-																density="compact"
-																hide-details
-																v-model.number="wp.lat"
-															/>
-														</v-col>
-														<v-col cols="4">
-															<v-text-field
-																type="number"
-																label="Lon"
-																density="compact"
-																hide-details
-																v-model.number="wp.lon"
-															/>
-														</v-col>
-														<v-col cols="4">
-															<v-text-field
-																type="number"
-																label="Alt"
-																density="compact"
-																hide-details
-																v-model.number="wp.alt"
-															/>
-														</v-col>
-													</v-row>
-												</v-list-item-title>
-												<template v-slot:append>
-													<v-btn
-														icon
-														size="x-small"
-														variant="text"
-														@click="removeWaypoint(wp.id)"
+										<v-list-item
+											v-for="(wp, index) in waypoints"
+											:key="wp.id"
+											class="pa-1"
+										>
+											<template v-slot:prepend>
+												<v-icon class="drag-handle mr-1" size="small">mdi-drag</v-icon>
+												<span class="text-caption mr-2">{{ index + 1 }}.</span>
+											</template>
+											<v-list-item-title class="text-body-2">
+												<v-row class="align-center">
+													<v-col cols="4">
+														<v-text-field
+															type="number"
+															label="Lat"
+															density="compact"
+															hide-details
+															v-model.number="wp.lat"
+														/>
+													</v-col>
+													<v-col cols="4">
+														<v-text-field
+															type="number"
+															label="Lon"
+															density="compact"
+															hide-details
+															v-model.number="wp.lon"
+														/>
+													</v-col>
+													<v-col cols="4">
+														<v-text-field
+															type="number"
+															label="Alt"
+															density="compact"
+															hide-details
+															v-model.number="wp.alt"
+														/>
+													</v-col>
+												</v-row>
+											</v-list-item-title>
+											<template v-slot:append>
+												<v-btn
+													icon
+													size="x-small"
+													variant="text"
+													@click="removeWaypoint(wp.id)"
+												>
+													<v-icon size="small">mdi-close-circle</v-icon>
+													<v-tooltip
+														activator="parent"
+														location="top"
+													>Remove waypoint</v-tooltip
 													>
-														<v-icon size="small">mdi-close-circle</v-icon>
-														<v-tooltip
-															activator="parent"
-															location="top"
-														>Remove waypoint</v-tooltip
-														>
-													</v-btn>
-												</template>
-											</v-list-item>
-										</template>
-									</draggable>
+												</v-btn>
+											</template>
+										</v-list-item>
+									</VueDraggable>
 									<div
 										v-else
 										class="text-caption text-grey text-center pa-4"
