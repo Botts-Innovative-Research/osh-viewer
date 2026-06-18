@@ -26,7 +26,7 @@ export function useVisualizationSidebar() {
 			visualizations.value.filter(
 				(viz) =>
 					viz.viewLocation === 'panel' ||
-					(viz.viewLocation === 'multi' && viz.type !== 'geoPtz')
+					(viz.viewLocation === 'multi' && viz.type !== 'geoPtz' && viz.type !== 'mission')
 			),
 
 		set: (newOrder) => {
@@ -34,7 +34,7 @@ export function useVisualizationSidebar() {
 			const others = visualizations.value.filter(
 				(viz) =>
 					viz.viewLocation !== 'panel' &&
-					!(viz.viewLocation === 'multi' && viz.type !== 'geoPtz')
+					!(viz.viewLocation === 'multi' && viz.type !== 'geoPtz' && viz.type !== 'mission')
 			);
 
 			visualizations.value = [...others, ...newOrder];
