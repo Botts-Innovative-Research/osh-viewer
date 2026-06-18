@@ -20,17 +20,33 @@ export function useVisualizationSidebar() {
 	const selectedGeoPTZControllers = ref<OSHVisualization[]>([]);
 
 	// Sorted visualizations
-	const panelVisualizations = computed<OSHVisualization[]>(() =>
-		visualizations.value.filter(
-			(viz) =>
-				viz.viewLocation === 'panel' ||
-				// Filter out geoPtz viz type from "multi" viewLocation visualizations
-				(viz.viewLocation === 'multi' && viz.type !== 'geoPtz')
-		)
-	);
-	const mapVisualizations = computed<OSHVisualization[]>(() =>
-		visualizations.value.filter((viz) => viz.viewLocation === 'map')
-	);
+	const panelVisualizations = computed({
+		get: () =>
+			visualizations.value.filter(
+				(viz) =>
+					viz.viewLocation === 'panel' ||
+					(viz.viewLocation === 'multi' && viz.type !== 'geoPtz')
+			),
+
+		set: (newOrder) => {
+			// Replace only the panel/multi visualizations in the source array
+			const others = visualizations.value.filter(
+				(viz) =>
+					viz.viewLocation !== 'panel' &&
+					!(viz.viewLocation === 'multi' && viz.type !== 'geoPtz')
+			);
+
+			visualizations.value = [...others, ...newOrder];
+		},
+	});
+	const mapVisualizations = computed({
+		get: () => visualizations.value.filter((viz) => viz.viewLocation === 'map'),
+		set: (newOrder) => {
+			// Replace only the map visualizations in the source array
+			const others = visualizations.value.filter((viz) => viz.viewLocation !== 'map');
+			visualizations.value = [...others, ...newOrder];
+		},
+	});
 	const geoPtzVisualizations = computed<OSHVisualization[]>(() =>
 		visualizations.value.filter((viz) => viz.type === 'geoPtz')
 	);
