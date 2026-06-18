@@ -33,7 +33,7 @@ export const MissionConfigRoles: VisualizationConfigRole[] = [
 	{
 		role: 'takeoff',
 		label: 'Takeoff Control',
-		description: 'Select the control stream that commands the vehicle to take off and starts the mission.',
+		description: 'Select the control stream that is used to tell the vehicle to take off into the air and starts the mission.',
 		type: 'cs',
 		showPropertySelector: false,
 	},
