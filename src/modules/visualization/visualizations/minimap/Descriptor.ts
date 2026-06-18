@@ -1,5 +1,37 @@
 import { defineAsyncComponent } from 'vue';
-import { VisualizationDescriptor, VisualizationFormComponent } from '../../registry/types';
+import {
+	VisualizationConfigRole,
+	VisualizationDescriptor,
+	VisualizationFormComponent,
+} from '../../registry/types';
+import { MissionConfigRoles } from '@/modules/visualization/visualizations/mission/Descriptor';
+
+export const MiniMapConfigRoles: VisualizationConfigRole[] = [
+	{
+		role: 'location',
+		label: 'Location',
+		description: 'Select the data stream for the vehicle\'s live position.',
+		type: 'ds',
+		required: true,
+		showPropertySelector: false,
+	},
+	{
+		role: 'orientation',
+		label: 'Orientation/ Attitude',
+		description: 'Select the data stream for the direction of the vehicle\'s facing',
+		type: 'ds',
+		required: false,
+		showPropertySelector: false,
+	},
+	{
+		role: 'video',
+		label: 'Video',
+		description: 'Select the data stream for the video overlay',
+		type: 'ds',
+		required: false,
+		showPropertySelector: false,
+	},
+];
 
 export const ConfigComponent: VisualizationFormComponent = {
 	id: 'minimap-config',
@@ -8,6 +40,7 @@ export const ConfigComponent: VisualizationFormComponent = {
 	component: defineAsyncComponent(
 		() => import('@/modules/visualization/visualizations/minimap/Config.vue')
 	),
+	roles: MiniMapConfigRoles,
 };
 
 export const CustomizeComponent: VisualizationFormComponent = {
@@ -24,7 +57,7 @@ export const MiniMapDescriptor: VisualizationDescriptor = {
 	id: 'minimap',
 	icon: 'mdi-map',
 	viewLocation: 'multi',
-	layers: [],
+	layers: ['VideoDataLayer', 'PointMarkerLayer', 'PolylineLayer'],
 	description: 'A mini Cesium map view that can toggle between platform, follow and overhead views.',
 	formComponents: [
 		ConfigComponent,
