@@ -10,25 +10,27 @@ export function useConfig(configRoles: VisualizationConfigRole[]) {
 	const checkedRoles = useCheckedRoles(configRoles, vizwizStore);
 	const validRoles = useValidRoles(configRoles);
 
-	function applyRequiredDefaults(source: Record<string, any>) {
+	function applyRequiredDefaults() {
 		configRoles.forEach((config) => {
-			if (config.required && !source[config.role]) {
-				vizwizStore.updateDsConfig(config.role, { selected: true });
+			if (!config.required) return;
+
+			if (config.type === 'ds') {
+				if (!vizwizStore.dsConfig[config.role]) {
+					vizwizStore.updateDsConfig(config.role, { selected: true });
+				}
+			} else {
+				if (!vizwizStore.csConfig[config.role]) {
+					vizwizStore.updateCsConfig(config.role, { selected: true });
+				}
 			}
 		});
 	}
 
-	onMounted(() => {
-		applyRequiredDefaults(vizwizStore.dsConfig);
-	});
+	onMounted(applyRequiredDefaults);
 
-	watch(
-		() => vizwizStore.dsConfig,
-		(newVal) => {
-			applyRequiredDefaults(newVal);
-		},
-		{ deep: true }
-	);
+	watch([() => vizwizStore.dsConfig, () => vizwizStore.csConfig], applyRequiredDefaults, {
+		deep: true,
+	});
 
 	const valid = computed(() =>
 		configRoles.every((config) => {
