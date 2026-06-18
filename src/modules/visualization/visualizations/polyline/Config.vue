@@ -1,114 +1,45 @@
 <script setup lang="ts">
-import { useVizWizStore } from '@/stores/vizwizstore';
-import { ref, computed, reactive, watch, onMounted } from 'vue';
-import DataSourcePicker from '../../wizard/components/DataSourcePicker.vue';
-import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
+import type { VisualizationConfigRole } from '../../registry/types';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
+import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
+import { useConfig } from '../../wizard/composables/useConfig';
+import RoleCheckbox from '../../wizard/components/RoleCheckbox.vue';
+import DataSourcePicker from '../../wizard/components/DataSourcePicker.vue';
+import ControlStreamPicker from '../../wizard/components/ControlStreamPicker.vue';
+import { PolylineConfigRoles } from './Descriptor';
 
-// Retrieve datastreams
-const vizwizStore = useVizWizStore();
-
-// Checked status for each role
-const checkedRoles = reactive({
-	location: computed({
-		get: () => vizwizStore.dsConfig.location?.selected ?? true,
-		set: (val: boolean) => vizwizStore.updateDsConfig('location', { selected: val }),
-	}),
-	polylineId: computed({
-		get: () => vizwizStore.dsConfig.polylineId?.selected ?? false,
-		set: (val: boolean) => {
-			if (val) {
-				vizwizStore.updateDsConfig('polylineId', { selected: val });
-			} else {
-				delete vizwizStore.dsConfig.polylineId;
-			}
-		},
-	}),
-	polylineColor: computed({
-		get: () => vizwizStore.dsConfig.polylineColor?.selected ?? false,
-		set: (val: boolean) => {
-			if (val) {
-				vizwizStore.updateDsConfig('polylineColor', { selected: val });
-			} else {
-				delete vizwizStore.dsConfig.polylineColor;
-			}
-		},
-	}),
+const props = withDefaults(defineProps<{ configRoles: VisualizationConfigRole[] }>(), {
+	configRoles: () => PolylineConfigRoles,
 });
 
-// Initialize dsConfig with location selected by default when mounted
-onMounted(() => {
-	if (!vizwizStore.dsConfig.location) {
-		vizwizStore.updateDsConfig('location', { selected: true });
-	}
-});
+const { checkedRoles, validRoles, valid } = useConfig(props.configRoles);
 
-// If dsConfig is reset, ensure location is selected by default
-watch(
-	() => vizwizStore.dsConfig,
-	(newVal) => {
-		if (!newVal.location) {
-			vizwizStore.updateDsConfig('location', { selected: true });
-		}
-	},
-	{ deep: true }
-);
-
-// Validation: at least location must be selected and other selected roles must be configured
+// Validation
 const emit = defineEmits<VisualizationComponentEmits>();
-const roleLocationValid = ref<boolean>(false);
-const rolePolylineIdValid = ref<boolean>(false);
-const rolePolylineColorValid = ref<boolean>(false);
-const valid = computed(() => {
-	// If role is checked, must be valid. If not checked, ignore validity
-	const locationValid = checkedRoles.location ? roleLocationValid.value : true;
-	const polylineIdValid = checkedRoles.polylineId ? rolePolylineIdValid.value : true;
-	const polylineColorValid = checkedRoles.polylineColor ? rolePolylineColorValid.value : true;
-	return locationValid && polylineIdValid && polylineColorValid;
-});
 useComponentValidation(valid, emit);
 </script>
 <template>
-	<!-- Location -->
-	<v-container>
-		<v-checkbox
-			label="Location"
-			v-model="checkedRoles.location"
-			disabled
-		></v-checkbox>
-		<DataSourcePicker
-			v-if="checkedRoles.location"
-			role="location"
-			v-model:valid="roleLocationValid"
-		/>
-	</v-container>
-
-	<!-- Polyline ID -->
-	<v-container>
-		<v-checkbox
-			label="Polyline ID"
-			v-model="checkedRoles.polylineId"
-		></v-checkbox>
-		<DataSourcePicker
-			v-if="checkedRoles.polylineId"
-			role="polylineId"
-			v-model:valid="rolePolylineIdValid"
-			multiple
-		/>
-	</v-container>
-
-	<!-- Color -->
-	<v-container>
-		<v-checkbox
-			label="Color"
-			v-model="checkedRoles.polylineColor"
-		></v-checkbox>
-		<DataSourcePicker
-			v-if="checkedRoles.polylineColor"
-			role="polylineColor"
-			multiple
-			v-model:valid="rolePolylineColorValid"
-		/>
+	<v-container v-for="config in props.configRoles">
+		<RoleCheckbox
+			v-model="checkedRoles[config.role]"
+			:label="config.label"
+			:tooltip="config.description"
+			:disabled="config.required"
+		>
+			<DataSourcePicker
+				v-if="checkedRoles[config.role] && config.type === 'ds'"
+				:role="config.role"
+				:multiple="config.multiple"
+				v-model:valid="validRoles[config.role]"
+				:show-property-selector="config.showPropertySelector ?? true"
+			/>
+			<ControlStreamPicker
+				v-if="checkedRoles[config.role] && config.type === 'cs'"
+				:role="config.role"
+				:show-property-selector="config.showPropertySelector ?? true"
+				v-model:valid="validRoles[config.role]"
+			/>
+		</RoleCheckbox>
 	</v-container>
 </template>
 

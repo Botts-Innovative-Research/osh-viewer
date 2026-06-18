@@ -1,5 +1,20 @@
 import { defineAsyncComponent } from 'vue';
-import { VisualizationDescriptor, VisualizationFormComponent } from '../../registry/types';
+import {
+	VisualizationConfigRole,
+	VisualizationDescriptor,
+	VisualizationFormComponent,
+} from '../../registry/types';
+
+export const GeoPtzConfigRoles: VisualizationConfigRole[] = [
+	{
+		role: 'lla',
+		label: 'GeoPTZ Control',
+		description: 'Select the controlstream for the LLA-to-PTZ process.',
+		type: 'cs',
+		required: true,
+		showPropertySelector: false,
+	},
+];
 
 export const ConfigComponent: VisualizationFormComponent = {
 	id: 'geoPtz-config',
@@ -8,6 +23,7 @@ export const ConfigComponent: VisualizationFormComponent = {
 	component: defineAsyncComponent(
 		() => import('@/modules/visualization/visualizations/geoptz/Config.vue')
 	),
+	roles: GeoPtzConfigRoles,
 };
 
 export const CustomizeComponent: VisualizationFormComponent = {

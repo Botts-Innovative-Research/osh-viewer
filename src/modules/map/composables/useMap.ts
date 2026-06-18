@@ -313,7 +313,7 @@ export function useMap() {
 		() => mapStore.isGeoPTZSelected,
 		(selected) => {
 			// Remove old pointmarker on selection change
-			mapAdapter.value?.removeLayer(geoPtzLayer.value);
+			if (geoPtzLayer.value) mapAdapter.value?.removeLayer(geoPtzLayer.value);
 			geoPtzLayer.value = null;
 		}
 	);

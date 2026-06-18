@@ -1,166 +1,45 @@
 <script setup lang="ts">
-import { useVizWizStore } from '@/stores/vizwizstore';
-import { ref, computed, reactive, watch, onMounted } from 'vue';
-import DataSourcePicker from '../../wizard/components/DataSourcePicker.vue';
-import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
+import type { VisualizationConfigRole } from '../../registry/types';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
+import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
+import { useConfig } from '../../wizard/composables/useConfig';
+import RoleCheckbox from '../../wizard/components/RoleCheckbox.vue';
+import DataSourcePicker from '../../wizard/components/DataSourcePicker.vue';
+import ControlStreamPicker from '../../wizard/components/ControlStreamPicker.vue';
+import { LobConfigRoles } from './Descriptor';
 
-// Retrieve datastreams
-const vizwizStore = useVizWizStore();
-
-// Checked status for each role
-const checkedRoles = reactive({
-	origin: computed({
-		get: () => vizwizStore.dsConfig.origin?.selected ?? true,
-		set: (val: boolean) => vizwizStore.updateDsConfig('origin', { selected: val }),
-	}),
-	bearing: computed({
-		get: () => vizwizStore.dsConfig.bearing?.selected ?? true,
-		set: (val: boolean) => vizwizStore.updateDsConfig('bearing', { selected: val }),
-	}),
-	lobId: computed({
-		get: () => vizwizStore.dsConfig.lobId?.selected ?? false,
-		set: (val: boolean) => {
-			if (val) {
-				vizwizStore.updateDsConfig('lobId', { selected: val });
-			} else {
-				delete vizwizStore.dsConfig.lobId;
-			}
-		},
-	}),
-	lobIconColor: computed({
-		get: () => vizwizStore.dsConfig.lobIconColor?.selected ?? false,
-		set: (val: boolean) => {
-			if (val) {
-				vizwizStore.updateDsConfig('lobIconColor', { selected: val });
-			} else {
-				delete vizwizStore.dsConfig.lobIconColor;
-			}
-		},
-	}),
-	lobLineColor: computed({
-		get: () => vizwizStore.dsConfig.lobLineColor?.selected ?? false,
-		set: (val: boolean) => {
-			if (val) {
-				vizwizStore.updateDsConfig('lobLineColor', { selected: val });
-			} else {
-				delete vizwizStore.dsConfig.lobLineColor;
-			}
-		},
-	}),
+const props = withDefaults(defineProps<{ configRoles: VisualizationConfigRole[] }>(), {
+	configRoles: () => LobConfigRoles,
 });
 
-// Initialize dsConfig with origin and bearing selected by default when mounted
-onMounted(() => {
-	if (!vizwizStore.dsConfig.origin) {
-		vizwizStore.updateDsConfig('origin', { selected: true });
-	}
-	if (!vizwizStore.dsConfig.bearing) {
-		vizwizStore.updateDsConfig('bearing', { selected: true });
-	}
-});
+const { checkedRoles, validRoles, valid } = useConfig(props.configRoles);
 
-// If dsConfig is reset, ensure origin and bearing are selected by default
-watch(
-	() => vizwizStore.dsConfig,
-	(newVal) => {
-		if (!newVal.origin) {
-			vizwizStore.updateDsConfig('origin', { selected: true });
-		}
-		if (!newVal.bearing) {
-			vizwizStore.updateDsConfig('bearing', { selected: true });
-		}
-	},
-	{ deep: true }
-);
-
-// Validation: at least origin and bearing must be selected and configured
+// Validation
 const emit = defineEmits<VisualizationComponentEmits>();
-const roleOriginValid = ref<boolean>(false);
-const roleBearingValid = ref<boolean>(false);
-const roleLobIdValid = ref<boolean>(false);
-const roleLobIconColorValid = ref<boolean>(false);
-const roleLobLineColorValid = ref<boolean>(false);
-const valid = computed(() => {
-	// If role is checked, must be valid. If not checked, ignore validity
-	const originValid = checkedRoles.origin ? roleOriginValid.value : true;
-	const bearingValid = checkedRoles.bearing ? roleBearingValid.value : true;
-	const lobIdValid = checkedRoles.lobId ? roleLobIdValid.value : true;
-	const iconColorValid = checkedRoles.lobIconColor ? roleLobIconColorValid.value : true;
-	const lineColorValid = checkedRoles.lobLineColor ? roleLobLineColorValid.value : true;
-	return originValid && bearingValid && lobIdValid && iconColorValid && lineColorValid;
-});
 useComponentValidation(valid, emit);
 </script>
 <template>
-	<!-- Origin -->
-	<v-container>
-		<v-checkbox
-			label="Origin"
-			v-model="checkedRoles.origin"
-			disabled
-		></v-checkbox>
-		<DataSourcePicker
-			v-if="checkedRoles.origin"
-			role="origin"
-			v-model:valid="roleOriginValid"
-		/>
-	</v-container>
-
-	<!-- Bearing -->
-	<v-container>
-		<v-checkbox
-			label="Bearing"
-			v-model="checkedRoles.bearing"
-			disabled
-		></v-checkbox>
-		<DataSourcePicker
-			v-if="checkedRoles.bearing"
-			role="bearing"
-			v-model:valid="roleBearingValid"
-		/>
-	</v-container>
-
-	<!-- LoB ID -->
-	<v-container>
-		<v-checkbox
-			label="LoB ID"
-			v-model="checkedRoles.lobId"
-		></v-checkbox>
-		<DataSourcePicker
-			v-if="checkedRoles.lobId"
-			role="lobId"
-			multiple
-			v-model:valid="roleLobIdValid"
-		/>
-	</v-container>
-
-	<!-- Icon Color -->
-	<v-container>
-		<v-checkbox
-			label="Icon Color"
-			v-model="checkedRoles.lobIconColor"
-		></v-checkbox>
-		<DataSourcePicker
-			v-if="checkedRoles.lobIconColor"
-			role="lobIconColor"
-			multiple
-			v-model:valid="roleLobIconColorValid"
-		/>
-	</v-container>
-
-	<!-- Line Color -->
-	<v-container>
-		<v-checkbox
-			label="Line Color"
-			v-model="checkedRoles.lobLineColor"
-		></v-checkbox>
-		<DataSourcePicker
-			v-if="checkedRoles.lobLineColor"
-			role="lobLineColor"
-			multiple
-			v-model:valid="roleLobLineColorValid"
-		/>
+	<v-container v-for="config in props.configRoles">
+		<RoleCheckbox
+			v-model="checkedRoles[config.role]"
+			:label="config.label"
+			:tooltip="config.description"
+			:disabled="config.required"
+		>
+			<DataSourcePicker
+				v-if="checkedRoles[config.role] && config.type === 'ds'"
+				:role="config.role"
+				:multiple="config.multiple"
+				v-model:valid="validRoles[config.role]"
+				:show-property-selector="config.showPropertySelector ?? true"
+			/>
+			<ControlStreamPicker
+				v-if="checkedRoles[config.role] && config.type === 'cs'"
+				:role="config.role"
+				:show-property-selector="config.showPropertySelector ?? true"
+				v-model:valid="validRoles[config.role]"
+			/>
+		</RoleCheckbox>
 	</v-container>
 </template>
 

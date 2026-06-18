@@ -3,6 +3,7 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { VisualizationRegistry } from '../registry/VisualizationRegistry';
 import { useVisualizationWizard } from './composables/useVisualizationWizard';
 import { onMounted } from 'vue';
+import { VisualizationFormComponent } from '../registry/types';
 
 const props = defineProps<{
 	mode: 'create' | 'edit';
@@ -22,11 +23,22 @@ const {
 	submit,
 } = useVisualizationWizard({ mode: props.mode, viz: props.viz });
 
-function handleDataStepBinds(stepIndex: number) {
-	// If the user is on the data step (edit or create), handle binds
-	if (stepIndex === 1 && props.mode === 'create') return true;
-	else if (stepIndex === 0 && props.mode === 'edit') return true;
-	else return false;
+function handleStepBinds(
+	stepIndex: number,
+	selectedType: string,
+	step: VisualizationFormComponent
+) {
+	// Handle data step
+	if (stepIndex === 0) {
+		return {
+			supportsCs: VisualizationRegistry[selectedType]?.supportsCs,
+			requireCs: VisualizationRegistry[selectedType]?.requireCs,
+		};
+	}
+	// Else, pass roles as props
+	else if (step?.roles) {
+		return { configRoles: step.roles };
+	} else return;
 }
 
 onMounted(async () => await init());
@@ -80,14 +92,11 @@ onMounted(async () => await init());
 							:is="step.component"
 							v-model:valid="componentValid[index]"
 							v-bind="
-								handleDataStepBinds(index)
-									? {
-											supportsCs:
-												VisualizationRegistry[selectedType]?.supportsCs,
-											requireCs:
-												VisualizationRegistry[selectedType]?.requireCs,
-										}
-									: {}
+								handleStepBinds(
+									props.mode === 'create' ? index - 1 : index,
+									selectedType,
+									step
+								)
 							"
 						/>
 					</v-stepper-window-item>

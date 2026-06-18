@@ -1,5 +1,47 @@
 import { defineAsyncComponent } from 'vue';
-import { VisualizationDescriptor, VisualizationFormComponent } from '../../registry/types';
+import {
+	VisualizationConfigRole,
+	VisualizationDescriptor,
+	VisualizationFormComponent,
+} from '../../registry/types';
+
+export const LobConfigRoles: VisualizationConfigRole[] = [
+	{
+		role: 'origin',
+		label: 'Origin',
+		description: 'The geographical starting location of the LoB.',
+		type: 'ds',
+		required: true,
+	},
+	{
+		role: 'bearing',
+		label: 'Bearing',
+		description: 'The bearing direction of the LoB.',
+		type: 'ds',
+		required: true,
+	},
+	{
+		role: 'lobId',
+		label: 'LoB ID',
+		description: 'Select the properties to distinguish multiple LoBs.',
+		type: 'ds',
+		multiple: true,
+	},
+	{
+		role: 'lobIconColor',
+		label: 'Icon Color',
+		description: 'Icon color will be generated dynamically based on the selected properties.',
+		type: 'ds',
+		multiple: true,
+	},
+	{
+		role: 'lobLineColor',
+		label: 'Line Color',
+		description: 'Line color will be generated dynamically based on the selected properties.',
+		type: 'ds',
+		multiple: true,
+	},
+];
 
 export const ConfigComponent: VisualizationFormComponent = {
 	id: 'lob-config',
@@ -8,6 +50,7 @@ export const ConfigComponent: VisualizationFormComponent = {
 	component: defineAsyncComponent(
 		() => import('@/modules/visualization/visualizations/lob/Config.vue')
 	),
+	roles: LobConfigRoles,
 };
 
 export const CustomizeComponent: VisualizationFormComponent = {

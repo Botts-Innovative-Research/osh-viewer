@@ -1,88 +1,45 @@
 <script setup lang="ts">
-import { useVizWizStore } from '@/stores/vizwizstore';
-import { computed, reactive, watch, onMounted, ref } from 'vue';
+import type { VisualizationConfigRole } from '../../registry/types';
+import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
+import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
+import { useConfig } from '../../wizard/composables/useConfig';
+import RoleCheckbox from '../../wizard/components/RoleCheckbox.vue';
 import DataSourcePicker from '../../wizard/components/DataSourcePicker.vue';
 import ControlStreamPicker from '../../wizard/components/ControlStreamPicker.vue';
-import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
-import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
+import { VideoConfigRoles } from './Descriptor';
 
-// Retrieve datastreams
-const vizwizStore = useVizWizStore();
-
-// Checked status for each role
-const checkedRoles = reactive({
-	video: computed({
-		get: () => vizwizStore.dsConfig.video?.selected ?? true,
-		set: (val: boolean) => vizwizStore.updateDsConfig('video', { selected: val }),
-	}),
-	ptz: computed({
-		get: () => vizwizStore.csConfig.ptz?.selected ?? false,
-		set: (val: boolean) => {
-			if (val) {
-				vizwizStore.updateCsConfig('ptz', { selected: val });
-			} else {
-				delete vizwizStore.csConfig.ptz;
-			}
-		},
-	}),
+const props = withDefaults(defineProps<{ configRoles: VisualizationConfigRole[] }>(), {
+	configRoles: () => VideoConfigRoles,
 });
 
-// Initialize dsConfig with video selected by default when mounted
-onMounted(() => {
-	if (!vizwizStore.dsConfig.video) {
-		vizwizStore.updateDsConfig('video', { selected: true });
-	}
-});
+const { checkedRoles, validRoles, valid } = useConfig(props.configRoles);
 
-// If dsConfig is reset, ensure video is selected by default
-watch(
-	() => vizwizStore.dsConfig,
-	(newVal) => {
-		if (!newVal.video) {
-			vizwizStore.updateDsConfig('video', { selected: true });
-		}
-	},
-	{ deep: true }
-);
-
-// Validation: at least video must be selected and other selected roles must be configured
+// Validation
 const emit = defineEmits<VisualizationComponentEmits>();
-const roleVideoValid = ref<boolean>(false);
-const rolePtzValid = ref<boolean>(false);
-const valid = computed(() => {
-	// If role is checked, must be valid. If not checked, ignore validity
-	const videoValid = checkedRoles.video ? roleVideoValid.value : true;
-	const ptzValid = checkedRoles.ptz ? rolePtzValid.value : true;
-	return videoValid && ptzValid;
-});
 useComponentValidation(valid, emit);
 </script>
 <template>
-	<!-- Video -->
-	<v-container>
-		<v-checkbox
-			label="Video"
-			v-model="checkedRoles.video"
-			disabled
-		></v-checkbox>
-		<DataSourcePicker
-			v-if="checkedRoles.video"
-			role="video"
-			v-model:valid="roleVideoValid"
-		/>
-	</v-container>
-	<!-- PTZ -->
-	<v-container>
-		<v-checkbox
-			label="PTZ Control"
-			v-model="checkedRoles.ptz"
-		></v-checkbox>
-		<ControlStreamPicker
-			v-if="checkedRoles.ptz"
-			role="ptz"
-			:show-property-selector="false"
-			v-model:valid="rolePtzValid"
-		/>
+	<v-container v-for="config in props.configRoles">
+		<RoleCheckbox
+			v-model="checkedRoles[config.role]"
+			:label="config.label"
+			:tooltip="config.description"
+			:disabled="config.required"
+		>
+			<DataSourcePicker
+				v-if="checkedRoles[config.role] && config.type === 'ds'"
+				:role="config.role"
+				:multiple="config.multiple"
+				v-model:valid="validRoles[config.role]"
+				:show-property-selector="config.showPropertySelector ?? true"
+			/>
+			<ControlStreamPicker
+				v-if="checkedRoles[config.role] && config.type === 'cs'"
+				:role="config.role"
+				:show-property-selector="config.showPropertySelector ?? true"
+				v-model:valid="validRoles[config.role]"
+			/>
+		</RoleCheckbox>
 	</v-container>
 </template>
 
