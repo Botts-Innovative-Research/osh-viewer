@@ -51,6 +51,7 @@ export const useMapStore = defineStore(
 			setIsGeoPTZSelected(false);
 		}
 		function setIsGeoPTZSelected(val: boolean) {
+			if (val) disableWaypointSelection();
 			isGeoPTZSelected.value = val;
 			toggleMapCursorMode();
 		}
@@ -69,6 +70,7 @@ export const useMapStore = defineStore(
 			commandBaseUrl: string,
 			auth: string
 		) {
+			if (isGeoPTZSelected.value) setIsGeoPTZSelected(false);
 			selectedWaypoints.value = { controlStreamId, commandBaseUrl, auth };
 			toggleMapCursorMode();
 		}
