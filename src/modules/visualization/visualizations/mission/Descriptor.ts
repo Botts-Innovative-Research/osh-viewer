@@ -211,7 +211,7 @@ export const PointMarkerConfigRoles: VisualizationConfigRole[] = [
 export const ConfigComponent: VisualizationFormComponent = {
 	id: 'mission-config',
 	label: 'Configure Mission Builder Properties',
-	short: 'Mission',
+	short: 'Configure',
 	component: defineAsyncComponent(
 		() => import('@/modules/visualization/visualizations/mission/Config.vue')
 	),

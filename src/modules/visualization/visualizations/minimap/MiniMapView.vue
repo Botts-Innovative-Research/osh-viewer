@@ -134,13 +134,24 @@ function updateCamera() {
 
 	const cameraAlt = terrainHeight + alt;
 
-	const position = Cesium.Cartesian3.fromDegrees(lon, lat, cameraAlt);
+	const position = Cesium.Cartesian3.fromDegrees(
+		lon,
+		lat,
+		cameraAlt
+	);
 
 	const heading = Cesium.Math.toRadians(receivedOrientation.value.yaw);
+	// const heading = Cesium.Math.toRadians(
+	// 	90 - receivedOrientation.value.yaw
+	// );
 
-	const pitch = Cesium.Math.toRadians(receivedOrientation.value.pitch || 0);
+	const pitch = Cesium.Math.toRadians(
+		receivedOrientation.value.pitch || 0
+	);
 
-	const roll = Cesium.Math.toRadians(receivedOrientation.value.roll || 0);
+	const roll = Cesium.Math.toRadians(
+		receivedOrientation.value.roll || 0
+	);
 
 	switch (viewMode.value) {
 		case 'platform': {
@@ -161,7 +172,8 @@ function updateCamera() {
 				new Cesium.HeadingPitchRoll(heading, 0, 0)
 			);
 
-			viewer.camera.lookAtTransform(transform, new Cesium.Cartesian3(0, -120, 60));
+			viewer.camera.lookAtTransform(
+          transform, new Cesium.Cartesian3(0, -120, 60));
 			break;
 		}
 		case 'overhead': {
@@ -170,7 +182,10 @@ function updateCamera() {
 				new Cesium.HeadingPitchRoll(heading, 0, 0)
 			);
 
-			viewer.camera.lookAtTransform(transform, new Cesium.Cartesian3(0, 0, 250));
+			viewer.camera.lookAtTransform(
+          transform,
+          new Cesium.Cartesian3(0, 0, 250)
+      );
 			break;
 		}
 	}
@@ -233,13 +248,9 @@ onMounted(async () => {
 	addPointMarkerLayers();
 });
 
-watch(
-	[receivedLLA, receivedOrientation],
-	() => {
+watch([receivedLLA, receivedOrientation], () => {
 		updateCamera();
-	},
-	{ deep: true }
-);
+}, { deep: true });
 
 watch(viewMode, (newMode) => {
 	if (!mapView?.viewer) return;
