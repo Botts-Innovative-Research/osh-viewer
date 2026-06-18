@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import InfoTooltip from '@/components/ui/InfoTooltip.vue';
+import { ComputedRef } from 'vue';
 
 const props = defineProps<{
 	label: string; // Label for checkbox
-	disabled?: boolean; // Checkbox disabled status
 	tooltip: string; // Text content for info tooltip
+	disabled?: boolean; // Checkbox disabled status
 }>();
 const model = defineModel<boolean>();
 </script>
@@ -23,6 +24,15 @@ const model = defineModel<boolean>();
 			class="tooltip-padding"
 		>
 			<info-tooltip :content="tooltip" />
+		</v-col>
+	</v-row>
+	<v-row>
+		<v-col>
+			<v-expand-transition>
+				<div v-if="model">
+					<slot></slot>
+				</div>
+			</v-expand-transition>
 		</v-col>
 	</v-row>
 </template>

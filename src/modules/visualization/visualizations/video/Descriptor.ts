@@ -1,5 +1,26 @@
 import { defineAsyncComponent } from 'vue';
-import { VisualizationDescriptor, VisualizationFormComponent } from '../../registry/types';
+import {
+	VisualizationConfigRole,
+	VisualizationDescriptor,
+	VisualizationFormComponent,
+} from '../../registry/types';
+
+export const VideoConfigRoles: VisualizationConfigRole[] = [
+	{
+		role: 'video',
+		label: 'Video',
+		description: 'The datastream of video feed.',
+		type: 'ds',
+		required: true,
+	},
+	{
+		role: 'ptz',
+		label: 'PTZ Control',
+		description: 'The controlstream for sending PTZ commands.',
+		type: 'cs',
+		showPropertySelector: false,
+	},
+];
 
 export const ConfigComponent: VisualizationFormComponent = {
 	id: 'video-config',
@@ -8,6 +29,7 @@ export const ConfigComponent: VisualizationFormComponent = {
 	component: defineAsyncComponent(
 		() => import('@/modules/visualization/visualizations/video/Config.vue')
 	),
+	roles: VideoConfigRoles,
 };
 
 export const CustomizeComponent: VisualizationFormComponent = {

@@ -123,17 +123,19 @@ useComponentValidation(valid, emit);
 	></v-autocomplete>
 
 	<!-- Select for property -->
-	<v-autocomplete
-		v-if="showPropertySelector && dsSchema && dsSchema.recordSchema"
-		v-model="selectedProperty"
-		:items="dsSchema.recordSchema.fields"
-		label="Select property"
-		:item-title="(item: any) => item.label ?? item.name"
-		persistent-hint
-		:chips="props.multiple"
-		:item-value="(item: any) => item.label ?? item.name"
-		:multiple="props.multiple"
-	></v-autocomplete>
+	<v-expand-transition>
+		<v-autocomplete
+			v-if="showPropertySelector && dsSchema && dsSchema.recordSchema"
+			v-model="selectedProperty"
+			:items="dsSchema.recordSchema.fields"
+			label="Select property"
+			:item-title="(item: any) => item.label ?? item.name"
+			persistent-hint
+			:chips="props.multiple"
+			:item-value="(item: any) => item.label ?? item.name"
+			:multiple="props.multiple"
+		></v-autocomplete>
+	</v-expand-transition>
 </template>
 
 <style scoped></style>
