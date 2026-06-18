@@ -16,6 +16,7 @@ export type ViewLocation = 'panel' | 'map' | 'multi';
  * - short: short label for stepper header (e.g., Configure, Customize, etc.)
  * - component: the Vue component to render for this form step
  * - roles?: optional config roles to pass as props to the component
+ * - optional?: optional flag to make a step optional, will appear as a subtitle in the stepper step title
  */
 export interface VisualizationFormComponent {
 	id: string; // Standard: kebab-case, starting with visualization type (___-config, ___-customize, etc.)
@@ -23,6 +24,7 @@ export interface VisualizationFormComponent {
 	short: string; // Standard: Title Case, concise, no verbal action (Configure, Customize, etc.)
 	component: Component | null; // Vue component to render for this form step
 	roles?: VisualizationConfigRole[]; // Optional config roles
+	optional?: boolean; // Default: FALSE
 }
 
 /**

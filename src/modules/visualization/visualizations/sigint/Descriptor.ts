@@ -1,5 +1,7 @@
 import { defineAsyncComponent } from 'vue';
 import { VisualizationDescriptor, VisualizationFormComponent } from '../../registry/types';
+import { EllipseConfigRoles } from '../ellipse/Descriptor';
+import { deriveRoles } from '../../registry/roleUtils';
 
 export const ConfigComponentPointMarker: VisualizationFormComponent = {
 	id: 'sigint-config-pointmarker',
@@ -24,6 +26,8 @@ export const ConfigComponentEllipse: VisualizationFormComponent = {
 	component: defineAsyncComponent(
 		() => import('@/modules/visualization/visualizations/ellipse/Config.vue')
 	),
+	roles: deriveRoles(EllipseConfigRoles, {}, { required: false }),
+	optional: true,
 };
 
 export const CustomizeComponent: VisualizationFormComponent = {

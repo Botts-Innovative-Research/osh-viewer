@@ -75,6 +75,7 @@ onMounted(async () => await init());
 							:value="index + 1"
 							:title="step.short"
 							:color="stepStatus(index)"
+							:subtitle="step.optional ? 'Optional' : ''"
 						></v-stepper-item>
 						<v-divider v-if="index < completeSteps.length - 1"></v-divider>
 					</template>
