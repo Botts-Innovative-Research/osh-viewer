@@ -8,9 +8,13 @@ import DataSourcePicker from '../../wizard/components/DataSourcePicker.vue';
 import ControlStreamPicker from '../../wizard/components/ControlStreamPicker.vue';
 import { EllipseConfigRoles } from './Descriptor';
 
-const props = withDefaults(defineProps<{ configRoles: VisualizationConfigRole[] }>(), {
-	configRoles: () => EllipseConfigRoles,
-});
+const props = withDefaults(
+	defineProps<{ configRoles: VisualizationConfigRole[]; optional?: boolean }>(),
+	{
+		configRoles: () => EllipseConfigRoles,
+		optional: false,
+	}
+);
 
 const { checkedRoles, validRoles, valid } = useConfig(props.configRoles);
 
@@ -19,6 +23,8 @@ const emit = defineEmits<VisualizationComponentEmits>();
 useComponentValidation(valid, emit);
 </script>
 <template>
+	<v-container v-if="props.optional"> </v-container>
+
 	<v-container v-for="config in props.configRoles">
 		<RoleCheckbox
 			v-model="checkedRoles[config.role]"

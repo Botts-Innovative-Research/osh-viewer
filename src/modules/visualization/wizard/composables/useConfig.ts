@@ -14,14 +14,13 @@ export function useConfig(configRoles: VisualizationConfigRole[]) {
 		configRoles.forEach((config) => {
 			if (!config.required) return;
 
-			if (config.type === 'ds') {
-				if (!vizwizStore.dsConfig[config.role]) {
-					vizwizStore.updateDsConfig(config.role, { selected: true });
-				}
-			} else {
-				if (!vizwizStore.csConfig[config.role]) {
-					vizwizStore.updateCsConfig(config.role, { selected: true });
-				}
+			const store = config.type === 'ds' ? vizwizStore.dsConfig : vizwizStore.csConfig;
+
+			const update =
+				config.type === 'ds' ? vizwizStore.updateDsConfig : vizwizStore.updateCsConfig;
+
+			if (!store[config.role]) {
+				update(config.role, { selected: true });
 			}
 		});
 	}
