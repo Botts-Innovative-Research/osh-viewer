@@ -4,6 +4,7 @@ import {
 	VisualizationDescriptor,
 	VisualizationFormComponent,
 } from '../../registry/types';
+import { MiniMapConfigRoles } from '@/modules/visualization/visualizations/minimap/Descriptor';
 
 export const MissionConfigRoles: VisualizationConfigRole[] = [
 	{
@@ -146,6 +147,7 @@ export const ConfigComponentMiniMap: VisualizationFormComponent = {
 	component: defineAsyncComponent(
 		() => import('@/modules/visualization/visualizations/minimap/Config.vue')
 	),
+	roles: MiniMapConfigRoles
 };
 
 export const CustomizeComponent: VisualizationFormComponent = {

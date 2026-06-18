@@ -74,7 +74,7 @@ interface LLAData {
 }
 
 const minimapViz = computed(() =>
-	props.visualization?.children?.find((c: OSHVisualization) => c.type === 'minimap') ?? null
+	activeVisualization.value?.children?.find((c: OSHVisualization) => c.type === 'minimap') ?? null
 );
 
 

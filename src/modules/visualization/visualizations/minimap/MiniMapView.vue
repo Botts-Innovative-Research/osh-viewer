@@ -3,16 +3,14 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import * as Cesium from 'cesium';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import {
 	createDatasource,
 } from '@/modules/visualization/services/datasource.service';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
-import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { getGroundAltitude } from '@/modules/map/services/altitude.service';
-
-// @ts-ignore
+import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 
 const props = defineProps({
 	visualization: {
@@ -21,7 +19,7 @@ const props = defineProps({
 		default: null,
 	},
 	datasource: {
-		type: Array as () => ISweApiDataSourceProperties[],
+		type: Array as () => IConSysApiDataSourceProperties[],
 		required: true,
 		default: () => [],
 	},
@@ -42,9 +40,9 @@ interface OrientationData {
 const receivedLLA = ref<LLAData>({ lat: 0, lon: 0, alt: 0 });
 const receivedOrientation = ref<OrientationData>({ yaw: 0, pitch: 0, roll: 0 });
 
-let dsInstances = ref<SweApi[]>([]);
+let dsInstances = ref<typeof ConSysApi[]>([]);
 
-let mapView: CesiumView | null = null;
+let mapView: typeof CesiumView | null = null;
 const minimapContainerId = `minimap-${Date.now()}`;
 
 const viewMode = ref<'platform' | 'follow' | 'overhead'>('follow');
@@ -55,7 +53,6 @@ let lastSampledLat = 0;
 let lastSampledLon = 0;
 
 async function updateTerrainHeight(lon: number, lat: number) {
-	// Only re-sample when the drone moves > ~50 m
 	const dLat = lat - lastSampledLat;
 	const dLon = lon - lastSampledLon;
 	if (Math.abs(dLat) < 0.0005 && Math.abs(dLon) < 0.0005) return;
@@ -67,7 +64,7 @@ async function updateTerrainHeight(lon: number, lat: number) {
 	if (height !== null) terrainHeight = height;
 }
 
-function onLLAListener(dsInstance: SweApi) {
+function onLLAListener(dsInstance: typeof ConSysApi) {
 	const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
 
 	dataBroadcastChannel.onmessage = (message) => {
@@ -85,7 +82,7 @@ function onLLAListener(dsInstance: SweApi) {
 	};
 }
 
-function onOrientationListener(dsInstance: SweApi) {
+function onOrientationListener(dsInstance: typeof ConSysApi) {
 	const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
 
 	dataBroadcastChannel.onmessage = (message) => {
@@ -105,9 +102,7 @@ function onOrientationListener(dsInstance: SweApi) {
 	};
 }
 
-//yaw = turn left/right
-// pitch = nose up/down
-// roll = bank left/right
+
 function updateCamera() {
 	if (!mapView?.viewer) return;
 
@@ -128,7 +123,7 @@ function updateCamera() {
 	);
 
 	const heading = Cesium.Math.toRadians(
-		90 - receivedOrientation.value.yaw
+		receivedOrientation.value.yaw
 	);
 
 	const pitch = Cesium.Math.toRadians(
@@ -140,13 +135,7 @@ function updateCamera() {
 	);
 
 	switch (viewMode.value) {
-
-		//
-		// PLATFORM VIEW — true first-person, full 6-DOF
-		// Camera sits at the drone and looks where it looks.
-		//
 		case 'platform': {
-			// Release any previous lookAt lock
 			viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
 
 			viewer.camera.setView({
@@ -159,10 +148,6 @@ function updateCamera() {
 			});
 			break;
 		}
-
-		//
-		// FOLLOW VIEW — 3rd-person chase camera
-		//
 		case 'follow': {
 			const transform =
 				Cesium.Transforms.headingPitchRollToFixedFrame(
@@ -176,11 +161,6 @@ function updateCamera() {
 			);
 			break;
 		}
-
-		//
-		// OVERHEAD VIEW — top-down, rotated to match heading
-		// so the drone always appears to face "up" on screen.
-		//
 		case 'overhead': {
 			const transform =
 				Cesium.Transforms.headingPitchRollToFixedFrame(
@@ -188,7 +168,6 @@ function updateCamera() {
 					new Cesium.HeadingPitchRoll(heading, 0, 0)
 				);
 
-			// Offset straight up (+Z) in the heading-aligned frame
 			viewer.camera.lookAtTransform(
 				transform,
 				new Cesium.Cartesian3(0, 0, 250)
