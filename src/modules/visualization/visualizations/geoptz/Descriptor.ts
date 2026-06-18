@@ -38,7 +38,7 @@ export const CustomizeComponent: VisualizationFormComponent = {
 export const GeoPtzDescriptor: VisualizationDescriptor = {
 	label: 'GeoPTZ',
 	id: 'geoPtz',
-	icon: 'mdi-map',
+	icon: 'mdi-camera-marker',
 	viewLocation: 'multi',
 	layers: ['PointMarkerLayer'],
 	description: 'Task supported sensors with LLA coordinates.',

@@ -4,6 +4,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
+import PanelVisualizationWrapper from '../../sidebar/components/PanelVisualizationWrapper.vue';
 import PlanMission from './PlanMission.vue';
 import {
 	createDatasource,
@@ -71,6 +72,11 @@ interface LLAData {
 	lon: number;
 	alt: number;
 }
+
+const minimapViz = computed(() =>
+	props.visualization?.children?.find((c: OSHVisualization) => c.type === 'minimap') ?? null
+);
+
 
 const receivedLLA = ref<LLAData>({ lat: 0, lon: 0, alt: 0 });
 const mapStore = useMapStore();
@@ -191,11 +197,32 @@ const hasCommandPad = computed(
 		</v-row>
 		<v-divider v-if="!noController"></v-divider>
 
+		<v-card v-if="minimapViewActive && minimapViz" class="minimap-card">
+			<div class="d-flex align-center justify-space-between px-2 pt-1">
+				<span class="text-caption font-weight-medium">Mini Map</span>
+			</div>
+			<PanelVisualizationWrapper :viz="minimapViz" />
+		</v-card>
 		<v-card
 			v-if="!noController"
 			class="telemetry-card"
 		>
-			<v-card-text>Live Telemetry</v-card-text>
+			<div class="d-flex align-center justify-space-between px-4 pt-2">
+
+				<v-card-text class="pa-0">Live Telemetry</v-card-text>
+				<v-btn
+					:color="minimapViewActive ? 'primary' : 'grey'"
+					variant="text"
+					density="compact"
+					@click="minimapViewActive = !minimapViewActive"
+					:prepend-icon="minimapViewActive ? 'mdi-eye' : 'mdi-eye-outline'"
+				>
+					Mini Map
+					<v-tooltip activator="parent" location="top">
+						{{ minimapViewActive ? 'Hide mini map' : 'Show mini map' }}
+					</v-tooltip>
+				</v-btn>
+			</div>
 			<v-row density="comfortable">
 				<v-col
 					cols="12"
@@ -260,4 +287,9 @@ const hasCommandPad = computed(
 	</v-container>
 </template>
 
-<style scoped></style>
+<style scoped>
+.minimap-card {
+	height: 300px;
+	overflow: hidden;
+}
+</style>
