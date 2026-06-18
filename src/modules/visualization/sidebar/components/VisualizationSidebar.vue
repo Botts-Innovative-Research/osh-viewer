@@ -8,6 +8,8 @@ import { useVisualizationSidebar } from '../composables/useVisualizationSidebar'
 import { useUIStore } from '@/stores/uistore';
 import MapVisualizationWrapper from './MapVisualizationWrapper.vue';
 import GeoPtzWrapper from './GeoPtzWrapper.vue';
+import MissionWrapper from '@/modules/visualization/sidebar/components/MissionWrapper.vue';
+import MissionBuilder from '@/modules/visualization/visualizations/mission/MissionBuilder.vue';
 import { VueDraggable } from 'vue-draggable-plus';
 
 const {
@@ -19,6 +21,9 @@ const {
 	openPanelVisualizations,
 	selectedGeoPTZControllers,
 	removeGeoPTZ,
+	missionVisualizations,
+	selectedMissionControllers,
+	removeMission,
 	isMapLayerVisible,
 	toggleMapLayerVisibility,
 	toggleSelectedMapItem,
@@ -110,6 +115,34 @@ const uiStore = useUIStore();
 									/>
 								</template>
 							</GeoPTZ>
+						</v-sheet>
+					</v-expansion-panel-text>
+				</v-expansion-panel>
+<!--				Mission Builder Visualizations-->
+				<v-expansion-panel
+					:disabled="missionVisualizations.length == 0"
+					value="mission"
+				>
+					<template #title>
+						<div class="panel-header">Mission Builder Controllers</div>
+					</template>
+					<v-expansion-panel-text>
+						<v-sheet>
+							<MissionBuilder
+								v-if="selectedMissionControllers"
+								:visualizations="selectedMissionControllers"
+							>
+								<template #controllers>
+									<MissionWrapper
+										v-model:selectedMissionControllers="
+											selectedMissionControllers
+										"
+										:missionVisualizations="missionVisualizations"
+										:openEditViz="openEditViz"
+										:removeMission="removeMission"
+									/>
+								</template>
+							</MissionBuilder>
 						</v-sheet>
 					</v-expansion-panel-text>
 				</v-expansion-panel>
