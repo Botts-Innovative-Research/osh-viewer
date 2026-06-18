@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useMapStore } from '@/stores/mapstore';
