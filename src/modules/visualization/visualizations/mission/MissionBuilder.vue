@@ -7,6 +7,7 @@ import { useMapStore } from '@/stores/mapstore';
 import { showToast } from '@/composables/useToast';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
+import PanelVisualizationWrapper from '../../sidebar/components/PanelVisualizationWrapper.vue';
 import {
 	createDatasource,
 	disconnectDatasources,
@@ -74,6 +75,7 @@ const missionControlStream = computed<Controlstream | undefined>(() =>
 
 const noController = computed(() => props.visualizations.length === 0);
 
+
 interface Waypoint {
 	id: string;
 	lat: number;
@@ -87,6 +89,10 @@ interface LLAData {
 	alt: number;
 }
 
+const minimapViz = computed(() =>
+	props.visualization?.children?.find((c: OSHVisualization) => c.type === 'minimap') ?? null
+);
+
 const missionSource = ref<'waypoints' | 'file'>('waypoints');
 
 const receivedLLA = ref<LLAData>({ lat: 0, lon: 0, alt: 0 });
@@ -94,7 +100,7 @@ const waypoints = ref<Waypoint[]>([]);
 
 const latInput = ref<number>(0.0);
 const lonInput = ref<number>(0.0);
-const altInput = ref<number>(25);
+const altInput = ref<number>(25.0);
 const waypointForm = ref<any>(null);
 
 const mapStore = useMapStore();
@@ -111,7 +117,7 @@ let homeLocation = ref<{ lat: number; lon: number; alt: number }>({ lat: 0, lon:
 
 const cruiseSpeed = ref<number>(15);
 const hoverSpeed = ref<number>(5);
-const waypointAltitude = ref<number>(25);
+const waypointAltitude = ref<number>(25.0);
 const altitudeMode = ref<number>(1);
 const autoContinue = ref<boolean>(true);
 const amslAltAboveTerrain = ref<number | null>(null);
@@ -195,6 +201,7 @@ function removeWaypoint(id: string) {
 const showClearConfirm = ref(false);
 
 const showMissionSummary = ref(false);
+const minimapViewActive = ref(false);
 
 function confirmSendMission() {
 	showMissionSummary.value = true;
@@ -604,22 +611,53 @@ useVisualizationCleanup(dsInstances);
 			class="pa-0 d-flex flex-column"
 			v-if="!noController"
 		>
+      <v-card v-if="minimapViewActive && minimapViz" class="minimap-card">
+        <div class="d-flex align-center justify-space-between px-2 pt-1">
+          <span class="text-caption font-weight-medium">Mini Map</span>
+        </div>
+        <PanelVisualizationWrapper :viz="minimapViz" />
+      </v-card>
 			<v-card class="telemetry-card">
-				<v-card-text>Live Telemetry</v-card-text>
-				<v-row dense>
+        <div class="d-flex align-center justify-space-between px-4 pt-2">
+
+          <v-card-text class="pa-0">Live Telemetry</v-card-text>
+          <v-btn
+              :color="minimapViewActive ? 'primary' : 'grey'"
+              variant="text"
+              density="compact"
+              @click="minimapViewActive = !minimapViewActive"
+              :prepend-icon="minimapViewActive ? 'mdi-eye' : 'mdi-eye-outline'"
+          >
+            Mini Map
+            <v-tooltip activator="parent" location="top">
+              {{ minimapViewActive ? 'Hide mini map' : 'Show mini map' }}
+            </v-tooltip>
+          </v-btn>
+        </div>
+				<v-row
+            dense
+        >
 					<v-col
 						cols="12"
 						md="4"
 					>
-						<v-card-subtitle>Latitude</v-card-subtitle>
-						<v-card-title>{{ receivedLLA.lat.toFixed(6) }}</v-card-title>
+						<v-card-subtitle>
+              Latitude
+            </v-card-subtitle>
+						<v-card-title>
+              {{ receivedLLA.lat.toFixed(6) }}
+            </v-card-title>
 					</v-col>
 					<v-col
 						cols="12"
 						md="4"
 					>
-						<v-card-subtitle>Longitude</v-card-subtitle>
-						<v-card-title>{{ receivedLLA.lon.toFixed(6) }}</v-card-title>
+						<v-card-subtitle>
+              Longitude
+            </v-card-subtitle>
+						<v-card-title>
+              {{ receivedLLA.lon.toFixed(6) }}
+            </v-card-title>
 					</v-col>
 					<v-col
 						cols="12"
@@ -1195,5 +1233,9 @@ useVisualizationCleanup(dsInstances);
 }
 .drag-handle:active {
 	cursor: grabbing;
+}
+.minimap-card {
+	height: 300px;
+	overflow: hidden;
 }
 </style>
