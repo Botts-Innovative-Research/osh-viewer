@@ -11,6 +11,8 @@ import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizat
 import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { getGroundAltitude } from '@/modules/map/services/altitude.service';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
+import { useVisualizationStore } from '@/stores/visualizationstore';
+import { createPointMarkerLayer } from '@/modules/map/mapVisualizations';
 
 const props = defineProps({
 	visualization: {
@@ -47,6 +49,10 @@ const minimapContainerId = `minimap-${Date.now()}`;
 
 const viewMode = ref<'platform' | 'follow' | 'overhead'>('follow');
 const hasOrientation = ref(false);
+
+const visualizationStore = useVisualizationStore();
+const duplicatedLayerIds = new Set<string>();
+const duplicatedDsInstances: (typeof ConSysApi)[] = [];
 
 let terrainHeight = 0;
 let lastSampledLat = 0;
@@ -205,6 +211,8 @@ onMounted(async () => {
 		dsInstance.connect();
 		dsInstances.value.push(dsInstance);
 	}
+
+	addPointMarkerLayers();
 });
 
 watch([receivedLLA, receivedOrientation], () => {
@@ -218,12 +226,43 @@ watch(viewMode, () => {
 	updateCamera();
 });
 
+function addPointMarkerLayers() {
+	if (!mapView) return;
+
+	const pmVizs = visualizationStore.getVisualizationsByType('pointmarker');
+	for (const viz of pmVizs) {
+		if (duplicatedLayerIds.has(viz.id)) continue;
+		if (Array.isArray(viz.visualizationComponents)) continue;
+
+		const dsArray = viz.visualizationComponents.dataSource;
+		if (!dsArray?.length) continue;
+
+		const result = createPointMarkerLayer(viz, dsArray);
+		mapView.addLayer(result.vizLayer);
+		duplicatedLayerIds.add(viz.id);
+
+		for (const ds of result.dsInstances) {
+			duplicatedDsInstances.push(ds);
+		}
+	}
+}
+
+watch(
+	() => visualizationStore.mapVisualizations.length,
+	() => {
+		addPointMarkerLayers();
+	}
+);
+
 onBeforeUnmount(() => {
 	if (mapView) {
 		mapView.destroy();
 		mapView = null;
 	}
 	for (const ds of dsInstances.value) {
+		ds.disconnect();
+	}
+	for (const ds of duplicatedDsInstances) {
 		ds.disconnect();
 	}
 });
