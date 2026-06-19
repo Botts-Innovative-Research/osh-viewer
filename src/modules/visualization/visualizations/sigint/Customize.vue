@@ -8,6 +8,8 @@ import { useComponentValidation } from '@/modules/visualization/wizard/composabl
 import SliderValueControl from '@/modules/visualization/wizard/customizations/SliderValueControl.vue';
 import IconVisibilityControl from '@/modules/visualization/wizard/customizations/IconVisibilityControl.vue';
 import { useVizWizStore } from '@/stores/vizwizstore';
+import { confirmRoles } from '../../registry/roleUtils';
+import { EllipseConfigRoles } from '../ellipse/Descriptor';
 
 const vizwizStore = useVizWizStore();
 // POINTMARKER
@@ -184,6 +186,7 @@ useComponentValidation(valid, emit);
 			eager
 			title="Ellipse Customizations"
 			value="ellipse"
+			v-show="confirmRoles(EllipseConfigRoles, vizwizStore.dsConfig, vizwizStore.csConfig)"
 		>
 			<v-expansion-panel-text>
 				<v-expand-transition>
