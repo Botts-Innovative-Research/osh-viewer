@@ -24,6 +24,7 @@ export const ConfigComponentEllipse: VisualizationFormComponent = {
 	component: defineAsyncComponent(
 		() => import('@/modules/visualization/visualizations/ellipse/Config.vue')
 	),
+	optional: true,
 };
 
 export const CustomizeComponent: VisualizationFormComponent = {

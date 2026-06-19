@@ -167,7 +167,6 @@ export function useMap() {
 
 		// Find viz layer
 		const mapLayer = mapItemLayers.value.get(vizId);
-		console.log(mapLayer);
 		if (!mapLayer) return; // Skip if no layer found for this vizId (including parent viz)
 
 		// Collect ds IDs
@@ -285,9 +284,6 @@ export function useMap() {
 					await toggleVizVisibility(viz, visualizationStore.isMapLayerVisible(viz.id));
 				}
 			}
-
-			console.log('Hidden:', hiddenLayers.value);
-			console.log('Map Layers:', mapItemLayers.value);
 		},
 		{ deep: true }
 	);
@@ -297,14 +293,14 @@ export function useMap() {
 			if (hiddenLayers.value.has(viz.id)) {
 				hiddenLayers.value.delete(viz.id); // Remove from hidden layers
 				addVisualization(viz); // Rebuild viz
-				console.log('Rebuilt layer!');
+				console.log('Rebuilt visualization:', viz);
 			}
 		}
 		// Hide/delete visualization
 		else {
 			hiddenLayers.value.set(viz.id, viz); // Add to hidden layers
 			await deleteVisualization(viz.id); // Delete viz from map
-			console.log('Hid layer!');
+			console.log('Hid visualization:', viz);
 		}
 	}
 

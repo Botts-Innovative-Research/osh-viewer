@@ -6,17 +6,21 @@ import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { AggregateDatastreams, getUsedDatastreams } from '../../services/aggregation.service';
 import { PointMarkerDescriptor } from '../pointmarker/Descriptor';
 import { LobDescriptor } from '../lob/Descriptor';
-import { EllipseDescriptor } from '../ellipse/Descriptor';
+import { EllipseConfigRoles, EllipseDescriptor } from '../ellipse/Descriptor';
 import { SigIntDescriptor } from './Descriptor';
 import { VisualizationComponents } from '../../types/visualization';
 import { CreatePointMarkerVizProps } from '../pointmarker/Builder';
 import { CreateLobVizProps } from '../lob/Builder';
 import { CreateEllipseVizProps } from '../ellipse/Builder';
+import { confirmRoles } from '../../registry/roleUtils';
 
 export default function build() {
 	console.log('Building Sigint Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
+
+	let components: VisualizationComponents[] = [];
+	let children: OSHVisualization[] = [];
 
 	// Aggregate datastreams from vizwizStore
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
@@ -43,6 +47,8 @@ export default function build() {
 	);
 	pmViz.setVisualizationComponents(pmVisualizationComponents);
 	visualizationStore.addVisualization(pmViz);
+	components.push(pmVisualizationComponents);
+	children.push(pmViz);
 
 	// LOB
 	const lobResult = CreateLobVizProps(datastreams, {
@@ -71,27 +77,36 @@ export default function build() {
 	);
 	lobViz.setVisualizationComponents(lobVisualizationComponents);
 	visualizationStore.addVisualization(lobViz);
+	components.push(lobVisualizationComponents);
+	children.push(lobViz);
 
-	// ELLIPSE
-	const ellipseResult = CreateEllipseVizProps(datastreams, {
-		name: vizwizStore.visualizationCustomizationOptions.name,
-		ellipseColor: vizwizStore.visualizationCustomizationOptions.ellipseColor,
-	});
-	const ellipseVisualizationComponents: VisualizationComponents = {
-		dataSource: ellipseResult.vizDatasources,
-		dataLayer: ellipseResult.ellipseLayer,
-	};
-	const ellipseViz: OSHVisualization = new OSHVisualization(
-		`${vizwizStore.id}-${randomUUID()}`,
-		`${vizwizStore.visualizationCustomizationOptions.name} - Ellipse`,
-		'ellipse',
-		EllipseDescriptor.viewLocation,
-		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
-		undefined,
-		vizwizStore.id
-	);
-	ellipseViz.setVisualizationComponents(ellipseVisualizationComponents);
-	visualizationStore.addVisualization(ellipseViz);
+	// ELLIPSE - OPTIONAL
+	// Check if it contains the required properties to determine whether it should be built or not
+	if (confirmRoles(EllipseConfigRoles, vizwizStore.dsConfig)) {
+		const ellipseResult = CreateEllipseVizProps(datastreams, {
+			name: vizwizStore.visualizationCustomizationOptions.name,
+			ellipseColor: vizwizStore.visualizationCustomizationOptions.ellipseColor,
+		});
+		const ellipseVisualizationComponents = {
+			dataSource: ellipseResult.vizDatasources,
+			dataLayer: ellipseResult.ellipseLayer,
+		};
+		const ellipseViz = new OSHVisualization(
+			`${vizwizStore.id}-${randomUUID()}`,
+			`${vizwizStore.visualizationCustomizationOptions.name} - Ellipse`,
+			'ellipse',
+			EllipseDescriptor.viewLocation,
+			getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
+			undefined,
+			vizwizStore.id
+		);
+		ellipseViz.setVisualizationComponents(ellipseVisualizationComponents);
+		visualizationStore.addVisualization(ellipseViz);
+		components.push(ellipseVisualizationComponents);
+		children.push(ellipseViz);
+	}
+
+	console.log(components, children);
 
 	// FULL SIGINT VIZ
 	const newViz: OSHVisualization = new OSHVisualization(
@@ -102,12 +117,8 @@ export default function build() {
 		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig)
 	);
 	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization
-	newViz.setVisualizationComponents([
-		pmVisualizationComponents,
-		lobVisualizationComponents,
-		ellipseVisualizationComponents,
-	]);
-	newViz.addChildVisualization([pmViz, lobViz, ellipseViz]);
+	newViz.setVisualizationComponents(components);
+	newViz.addChildVisualization(children);
 	visualizationStore.addVisualization(newViz);
 	console.log('Created SigInt Visualization:', newViz);
 }

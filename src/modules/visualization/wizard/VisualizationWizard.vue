@@ -35,9 +35,13 @@ function handleStepBinds(
 			requireCs: VisualizationRegistry[selectedType]?.requireCs,
 		};
 	}
-	// Else, pass roles as props
+	// Pass roles as props
 	else if (step?.roles) {
-		return { configRoles: step.roles };
+		return { configRoles: step.roles, optional: step.optional };
+	}
+	// Pass optional
+	else if (step?.optional) {
+		return { optional: step.optional };
 	} else return;
 }
 
@@ -59,10 +63,7 @@ onMounted(async () => await init());
 		>
 			<v-card-title>{{ props.viz.name }}</v-card-title>
 		</v-card>
-		<v-stepper
-			v-model="currentStep"
-			class="wizard-content"
-		>
+		<v-stepper v-model="currentStep">
 			<template v-slot:default="{}">
 				<v-stepper-header>
 					<template
@@ -75,12 +76,13 @@ onMounted(async () => await init());
 							:value="index + 1"
 							:title="step.short"
 							:color="stepStatus(index)"
+							:subtitle="step.optional ? 'Optional' : ''"
 						></v-stepper-item>
 						<v-divider v-if="index < completeSteps.length - 1"></v-divider>
 					</template>
 				</v-stepper-header>
 
-				<v-stepper-window>
+				<v-stepper-window class="wizard-content">
 					<!-- STEP CONTENT -->
 					<v-stepper-window-item
 						v-for="(step, index) in completeSteps"
@@ -102,7 +104,7 @@ onMounted(async () => await init());
 					</v-stepper-window-item>
 				</v-stepper-window>
 				<!-- NAVIGATION BUTTONS -->
-				<v-stepper-actions>
+				<v-stepper-actions class="step-actions">
 					<template #prev>
 						<v-btn
 							v-if="currentStep > 1"
@@ -131,8 +133,14 @@ onMounted(async () => await init());
 
 <style scoped>
 .wizard-content {
-	max-height: 80vh;
+	max-height: 60vh;
 	overflow-y: auto;
 	padding-right: 4px;
+}
+
+.step-actions {
+	position: sticky;
+	bottom: 0;
+	z-index: 10;
 }
 </style>
