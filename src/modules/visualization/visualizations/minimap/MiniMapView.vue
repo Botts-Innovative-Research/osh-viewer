@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
+import { onMounted, onBeforeUnmount, ref, watch, computed } from 'vue';
 import * as Cesium from 'cesium';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
@@ -47,7 +47,9 @@ let dsInstances = ref<typeof ConSysApi[]>([]);
 let mapView: typeof CesiumView | null = null;
 const minimapContainerId = `minimap-${Date.now()}`;
 
-const viewMode = ref<'platform' | 'follow' | 'overhead'>('follow');
+const viewMode = ref<'platform' | 'follow' | 'overhead' | 'freelook'>('follow');
+const showHUD = ref(false);
+
 const hasOrientation = ref(false);
 
 const visualizationStore = useVisualizationStore();
@@ -94,7 +96,6 @@ function onOrientationListener(dsInstance: typeof ConSysApi) {
 	dataBroadcastChannel.onmessage = (message) => {
 		if (message.data.type === 'data') {
 			const data = message.data.values[0].data;
-			console.log('data',data)
 			receivedOrientation.value = {
 				yaw:
 					data.Attitude?.yaw ??
@@ -108,9 +109,18 @@ function onOrientationListener(dsInstance: typeof ConSysApi) {
 	};
 }
 
+function setSceneInputEnabled(viewer: any, enabled: boolean) {
+	const controller = viewer.scene.screenSpaceCameraController;
+	controller.enableRotate = enabled;
+	controller.enableTranslate = enabled;
+	controller.enableZoom = enabled;
+	controller.enableTilt = enabled;
+	controller.enableLook = enabled;
+}
 
 function updateCamera() {
 	if (!mapView?.viewer) return;
+	if (viewMode.value === 'freelook') return;
 
 	const lon = receivedLLA.value.lon;
 	const lat = receivedLLA.value.lat;
@@ -198,6 +208,8 @@ onMounted(async () => {
 		requestVertexNormals: true,
 	});
 
+	setSceneInputEnabled(mapView.viewer, false);
+
 	for (const ds of props.datasource) {
 		let dsInstance = createDatasource(ds);
 
@@ -219,11 +231,18 @@ watch([receivedLLA, receivedOrientation], () => {
 	updateCamera();
 }, { deep: true });
 
-watch(viewMode, () => {
-	if (mapView?.viewer) {
-		mapView.viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+watch(viewMode, (newMode) => {
+	if (!mapView?.viewer) return;
+	const viewer = mapView.viewer;
+
+	viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+
+	if (newMode === 'freelook') {
+		setSceneInputEnabled(viewer, true);
+	} else {
+		setSceneInputEnabled(viewer, false);
+		updateCamera();
 	}
-	updateCamera();
 });
 
 function addPointMarkerLayers() {
@@ -280,23 +299,71 @@ useVisualizationCleanup(dsInstances);
 				<v-btn
 					value="platform"
 					:disabled="!hasOrientation"
+					density="compact"
+					size="small"
 				>
 					<v-icon start>mdi-airplane</v-icon>
 					Platform
 				</v-btn>
 
-				<v-btn value="follow">
+				<v-btn
+					value="follow"
+					density="compact"
+					size="small"
+				>
 					<v-icon start>mdi-camera-control</v-icon>
 					Follow
 				</v-btn>
 
-				<v-btn value="overhead">
+				<v-btn
+					value="overhead"
+					density="compact"
+					size="small"
+				>
 					<v-icon start>mdi-crosshairs-gps</v-icon>
 					Overhead
 				</v-btn>
+				<v-btn
+					value="freelook"
+					density="compact"
+					size="small"
+				>
+					<v-icon start>mdi-orbit-variant</v-icon>
+					Free-look
+				</v-btn>
 			</v-btn-toggle>
 		</div>
-		<div :id="minimapContainerId" class="minimap-viewer"></div>
+		<div class="minimap-scene">
+			<div :id="minimapContainerId" class="minimap-viewer"></div>
+
+			<v-btn
+				class="hud-toggle"
+				:color="showHUD ? 'green' : undefined"
+				size="x-small"
+				@click="showHUD = !showHUD"
+			>
+				HUD
+			</v-btn>
+
+			<div v-if="showHUD" class="hud-overlay" :style="{ transform: `rotate(${-receivedOrientation.roll}deg)` }">
+				<div class="hud-crosshair">
+					<div class="crosshair-h"></div>
+					<div class="crosshair-v"></div>
+				</div>
+
+				<div class="hud-alt">
+					<div class="hud-data-label">ALT</div>
+					<div class="hud-data-value">{{ receivedLLA.alt.toFixed(1) }}<span class="hud-unit">m</span></div>
+				</div>
+
+				<div class="hud-attitude">
+					<div class="hud-data-label">PITCH</div>
+					<div class="hud-data-value">{{ receivedOrientation.pitch.toFixed(1) }}&#176;</div>
+					<div class="hud-data-label">ROLL</div>
+					<div class="hud-data-value">{{ receivedOrientation.roll.toFixed(1) }}&#176;</div>
+				</div>
+			</div>
+		</div>
 	</div>
 </template>
 
@@ -311,9 +378,15 @@ useVisualizationCleanup(dsInstances);
 	padding: 4px 0;
 	z-index: 1;
 }
-.minimap-viewer {
+
+.minimap-scene {
+	position: relative;
 	width: 100%;
 	height: 400px;
+}
+.minimap-viewer {
+	width: 100%;
+	height: 100%;
 }
 .minimap-viewer :deep(.cesium-viewer),
 .minimap-viewer :deep(.cesium-widget),
@@ -321,4 +394,77 @@ useVisualizationCleanup(dsInstances);
 	width: 100% !important;
 	height: 100% !important;
 }
+
+.hud-toggle {
+	position: absolute;
+	top: 6px;
+	left: 6px;
+	z-index: 2;
+}
+
+.hud-overlay {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	color: #00ff41;
+	font-family: 'Courier New', monospace;
+	font-size: 11px;
+	text-shadow: 0 0 4px rgba(0, 255, 65, 0.6);
+	overflow: hidden;
+}
+.hud-crosshair {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+}
+.crosshair-h {
+	position: absolute;
+	top: 0;
+	left: -16px;
+	width: 32px;
+	height: 1px;
+	background: #00ff41;
+}
+.crosshair-v {
+	position: absolute;
+	left: 0;
+	top: -16px;
+	width: 1px;
+	height: 32px;
+	background: #00ff41;
+}
+
+.hud-alt {
+	position: absolute;
+	right: 12px;
+	top: 50%;
+	transform: translateY(-50%);
+	text-align: right;
+}
+
+.hud-attitude {
+	position: absolute;
+	left: 12px;
+	top: 45%;
+	transform: translateY(-50%);
+	text-align: left;
+}
+
+.hud-data-label {
+	font-size: 9px;
+	opacity: 0.7;
+	letter-spacing: 0.5px;
+}
+.hud-data-value {
+	font-size: 14px;
+	font-weight: bold;
+	margin-bottom: 6px;
+}
+.hud-unit {
+	font-size: 10px;
+	font-weight: normal;
+	opacity: 0.7;
+	margin-left: 1px;
+}
+
 </style>
