@@ -71,20 +71,28 @@ const fetchResources = () => {
 	oshConnect.fetchSlowResources();
 };
 
-const addAllSamplingFeaturePMs = () => {
+const hasFOIs = (system: OSHSystem) => {
+	return !!system.samplingFeatures.length;
+};
+
+const addFOILayer = (system: OSHSystem) => {
+	system.samplingFeatures.forEach((foi: any) => {
+		if (!foi.properties.geometry) return;
+		const geom = new Geometry(
+			foi.properties.id,
+			system.id,
+			foi.properties.geometry.type ?? '',
+			foi.properties.geometry.coordinates,
+			foi.properties,
+			foi.properties.bbox
+		);
+		visualizationStore.addFOILayer(geom);
+	});
+};
+
+const addAllFOIs = () => {
 	systems.forEach((system: OSHSystem) => {
-		console.log(system.name, system.samplingFeatures);
-		system.samplingFeatures.forEach((foi: any) => {
-			if (!foi.properties.geometry) return;
-			const geom = new Geometry(
-				foi.properties.id,
-				foi.properties.geometry.type ?? '',
-				foi.properties.geometry.coordinates,
-				foi.properties,
-				foi.properties.bbox
-			);
-			visualizationStore.addFOILayer(geom);
-		});
+		addFOILayer(system);
 	});
 };
 
@@ -128,7 +136,7 @@ const openPropertiesDialog = (item: any) => {
 				>
 					<template v-slot:activator="{ props }">
 						<v-btn
-							@click="addAllSamplingFeaturePMs"
+							@click="addAllFOIs"
 							v-bind="props"
 							prepend-icon="mdi-map-marker"
 							>All FOIs</v-btn
@@ -188,9 +196,49 @@ const openPropertiesDialog = (item: any) => {
 					label="Remove"
 					@delete="openDeleteNodeDialog(item.raw)"
 				></DeleteButton>
+				<!-- Add System FOI -->
+				<v-tooltip
+					v-else-if="item.type === 'system'"
+					:text="`${!hasFOIs(item.raw as OSHSystem) ? 'System has no' : visualizationStore.foiExists(item.id) ? 'Delete' : 'Add'} FOI`"
+					location="bottom"
+					open-delay="500"
+				>
+					<template #activator="{ props }">
+						<span
+							v-if="!hasFOIs(item.raw as OSHSystem)"
+							v-bind="props"
+						>
+							<IconButton
+								icon="mdi-map-marker-alert-outline"
+								variant="plain"
+								class="properties-button"
+								disabled
+							>
+							</IconButton>
+						</span>
+						<IconButton
+							v-else-if="visualizationStore.foiExists(item.id)"
+							v-bind="props"
+							icon="mdi-map-marker-minus"
+							variant="text"
+							@click="visualizationStore.removeFOILayer(item.id)"
+							class="properties-button"
+						>
+						</IconButton>
+						<IconButton
+							v-else
+							v-bind="props"
+							icon="mdi-map-marker-plus"
+							variant="text"
+							@click="addFOILayer(item.raw as OSHSystem)"
+							class="properties-button"
+						>
+						</IconButton>
+					</template>
+				</v-tooltip>
 				<!-- DS/CS properties -->
 				<v-tooltip
-					v-if="item.type === 'ds' || item.type === 'cs'"
+					v-else-if="item.type === 'ds' || item.type === 'cs'"
 					text="Properties"
 					location="bottom"
 					open-delay="500"

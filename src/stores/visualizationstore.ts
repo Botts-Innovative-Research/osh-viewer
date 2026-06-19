@@ -28,12 +28,6 @@ export const useVisualizationStore = defineStore(
 		const addVisualization = (visualization: OSHVisualization): void => {
 			console.log('[VisualizationStore] Adding visualization:', visualization);
 			visualizations.value.push(visualization);
-
-			// TODO: Remove for foi patch
-			if (visualization.type === 'pointmarker-feature') {
-				console.log('skipping fois for serialization');
-				return;
-			}
 			serializedVisualizations.value.push(serializeVisualization(visualization));
 		};
 
@@ -100,13 +94,21 @@ export const useVisualizationStore = defineStore(
 			console.log('[VizStore] Rehydrated visualizations:', visualizations.value.length);
 		};
 
-		/* FOI PATCH */
+		/* FOI Layers */
 		const foiLayers: Ref<Geometry[]> = ref<Geometry[]>([]);
 		const addFOILayer = (geometry: Geometry) => {
-			foiLayers.value.push(geometry);
+			foiLayers.value = [...foiLayers.value, geometry];
+		};
+		const removeFOILayer = (systemId: string) => {
+			foiLayers.value = foiLayers.value.filter((foi) => {
+				return foi.systemId !== systemId;
+			});
 		};
 		const clearFOILayers = () => {
 			foiLayers.value = [];
+		};
+		const foiExists = (systemId: string) => {
+			return foiLayers.value.some((foi) => foi.systemId === systemId);
 		};
 
 		return {
@@ -126,7 +128,9 @@ export const useVisualizationStore = defineStore(
 			rehydrateVisualizations,
 			foiLayers,
 			addFOILayer,
+			removeFOILayer,
 			clearFOILayers,
+			foiExists,
 		};
 	},
 	{ persist: { pick: ['serializedVisualizations'] } }

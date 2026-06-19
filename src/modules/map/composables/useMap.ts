@@ -22,6 +22,7 @@ import {
 	disconnectDatasources as disconnect,
 } from '@/modules/visualization/services/datasource.service';
 import { getGroundAltitude } from '../services/altitude.service';
+import { setLayerData } from '../services/foi.service';
 
 export function useMap() {
 	// Stores
@@ -43,6 +44,8 @@ export function useMap() {
 	const geoPtzLayer = ref<typeof PointMarkerLayer | null>(null);
 	// Array of waypoint Pointmarkers for mission builder
 	const waypointLayers = ref<(typeof PointMarkerLayer)[]>([]);
+	// FOI Layers
+	const foiLayers = ref<{ layer: typeof PointMarkerLayer; props: any }[]>([]);
 	// Hidden visualization IDs
 	const hiddenLayers = ref<Map<string, SupportedMapLayer>>(new Map());
 
@@ -100,8 +103,10 @@ export function useMap() {
 		connectDatasources();
 
 		// Rebuild all FOIs
-		visualizationStore.foiLayers.forEach((foi) => {
-			addFoiLayer(foi);
+		foiLayers.value.forEach(async (foi) => {
+			foi.props = await setLayerData(foi.layer);
+			mapAdapter.value?.addLayer(foi.layer);
+			mapAdapter.value?.updateMarker(foi.props);
 		});
 	}
 	watch(mapType, async () => {
@@ -195,14 +200,22 @@ export function useMap() {
 
 	/* FOI */
 	watch(
-		() => visualizationStore.foiLayers.map((v) => v),
+		() => visualizationStore.foiLayers,
 		(newLayers, oldLayers) => {
 			const addedLayers = newLayers?.filter(
 				(newLayer) => !oldLayers?.some((layer: any) => layer.id === newLayer.id)
 			);
+			const removedLayers = oldLayers?.filter(
+				(oldLayer) => !newLayers.some((layer: any) => layer.id === oldLayer.id)
+			);
 			if (addedLayers) {
 				addedLayers.forEach(async (layer) => {
 					await addFoiLayer(layer);
+				});
+			}
+			if (removedLayers) {
+				removedLayers.forEach((layer) => {
+					removeFoiLayer(layer);
 				});
 			}
 		},
@@ -213,7 +226,15 @@ export function useMap() {
 		if (result) {
 			mapAdapter.value?.addLayer(result.layer);
 			if (result.props) mapAdapter.value?.updateMarker(result.props);
+			foiLayers.value.push({ layer: result.layer, props: result.props });
 		}
+	}
+	function removeFoiLayer(layer: Geometry) {
+		const remove = foiLayers.value.find((foiLayer) => {
+			return foiLayer.layer.properties.id === layer.id;
+		});
+		mapAdapter.value?.removeLayer(remove?.layer);
+		foiLayers.value = foiLayers.value.filter((foiLayer) => foiLayer.layer !== remove?.layer);
 	}
 
 	/** MAP INTERACTIONS */
