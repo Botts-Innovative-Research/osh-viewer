@@ -317,7 +317,6 @@ async function isLegacyPlanSchema(): Promise<boolean> {
 	try {
 		const { cs: storeCs } = mineControlObsPropsFromCS(cs.id);
 		const schema = await fetchCsSchema(storeCs.controlstream);
-		console.log('schema', schema)
 		if (!schema?.parametersSchema) return false;
 
 		const items = schema.parametersSchema.fields ?? schema.parametersSchema;
