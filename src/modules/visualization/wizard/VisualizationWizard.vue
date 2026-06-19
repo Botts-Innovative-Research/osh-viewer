@@ -35,9 +35,13 @@ function handleStepBinds(
 			requireCs: VisualizationRegistry[selectedType]?.requireCs,
 		};
 	}
-	// Else, pass roles as props
+	// Pass roles as props
 	else if (step?.roles) {
 		return { configRoles: step.roles, optional: step.optional };
+	}
+	// Pass optional
+	else if (step?.optional) {
+		return { optional: step.optional };
 	} else return;
 }
 

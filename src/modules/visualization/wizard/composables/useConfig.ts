@@ -1,10 +1,13 @@
-import { computed, onMounted, watch } from 'vue';
+import { computed, onMounted, ref, Ref, watch } from 'vue';
 import { useCheckedRoles } from './useCheckedRoles';
 import { useValidRoles } from './useValidRoles';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import type { VisualizationConfigRole } from '../../registry/types';
 
-export function useConfig(configRoles: VisualizationConfigRole[]) {
+export function useConfig(
+	configRoles: VisualizationConfigRole[],
+	include: Ref<boolean> = ref(true)
+) {
 	const vizwizStore = useVizWizStore();
 
 	const checkedRoles = useCheckedRoles(configRoles, vizwizStore);
@@ -25,11 +28,31 @@ export function useConfig(configRoles: VisualizationConfigRole[]) {
 		});
 	}
 
-	onMounted(applyRequiredDefaults);
+	function clearAllRoles() {
+		configRoles.forEach((config) => {
+			const storeConfig = config.type === 'ds' ? 'dsConfig' : 'csConfig';
 
-	watch([() => vizwizStore.dsConfig, () => vizwizStore.csConfig], applyRequiredDefaults, {
-		deep: true,
-	});
+			// remove from store
+			if (vizwizStore[storeConfig][config.role]) {
+				delete vizwizStore[storeConfig][config.role];
+			}
+		});
+		console.log(vizwizStore.dsConfig, vizwizStore.csConfig);
+	}
+
+	function syncConfigState() {
+		if (include.value) {
+			applyRequiredDefaults();
+		} else {
+			clearAllRoles();
+		}
+	}
+
+	// Run on mount
+	onMounted(syncConfigState);
+
+	// React to toggle
+	watch(include, syncConfigState);
 
 	const valid = computed(() =>
 		configRoles.every((config) => {
@@ -42,5 +65,6 @@ export function useConfig(configRoles: VisualizationConfigRole[]) {
 		checkedRoles,
 		validRoles,
 		valid,
+		include,
 	};
 }
