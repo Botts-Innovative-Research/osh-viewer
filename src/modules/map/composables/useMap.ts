@@ -45,7 +45,7 @@ export function useMap() {
 	const waypointLayers = ref<(typeof PointMarkerLayer)[]>([]);
 
 	// Hidden visualization IDs
-	const hiddenLayers = ref<Map<string, OSHVisualization>>(new Map());
+	const hiddenLayers = ref<Map<string, SupportedMapLayer>>(new Map());
 
 	/* MAP INITIALIZATION/DESTRUCTION/TOGGLE */
 	async function initMap() {
@@ -89,7 +89,10 @@ export function useMap() {
 		const newLayers = rebuildMapVisualizations(mapItemLayers.value);
 		newLayers.forEach((layer) => {
 			// Type is 'marker' in osh-js, pass 'pointmarker' instead
-			if (isMapLayerCompatible(layer.type === 'marker' ? 'pointmarker' : layer.type))
+			if (
+				isMapLayerCompatible(layer.type === 'marker' ? 'pointmarker' : layer.type) &&
+				!hiddenLayers.value.has(layer.id)
+			)
 				mapAdapter.value?.addLayer(layer);
 		});
 		mapItemLayers.value = newLayers;
@@ -99,9 +102,6 @@ export function useMap() {
 
 		// Delete all FOIs
 		visualizationStore.clearFOILayers();
-
-		// Clear list of hidden visualizations
-		visualizationStore.clearMapLayerVisibility();
 	}
 	watch(mapType, async () => {
 		await switchMap();
@@ -109,10 +109,10 @@ export function useMap() {
 
 	/* DATASOURCE MANAGEMENT */
 	function connectDatasources() {
-		connect(listDataSourceInstances.value);
+		connect(listDataSourceInstances);
 	}
 	function disconnectDatasources() {
-		disconnect(listDataSourceInstances.value);
+		disconnect(listDataSourceInstances);
 	}
 
 	/* CREATE/DELETE VISUALIZATIONS */
