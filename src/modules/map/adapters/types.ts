@@ -30,6 +30,8 @@ export interface MapAdapter {
 	removeTerrain?(): void;
 	addBuildings?(): void;
 	removeBuildings?(): void;
+	addGooglePhotorealistic?(): void;
+	removeGooglePhotorealistic?(): void;
 	addMapLayer?(layer: MapLayer): void;
 	removeMapLayer?(id: string): void;
 	destroyAllLayers?(): void;
