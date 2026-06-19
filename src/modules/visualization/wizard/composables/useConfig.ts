@@ -3,12 +3,15 @@ import { useCheckedRoles } from './useCheckedRoles';
 import { useValidRoles } from './useValidRoles';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import type { VisualizationConfigRole } from '../../registry/types';
+import { confirmRoles } from '../../registry/roleUtils';
 
-export function useConfig(
-	configRoles: VisualizationConfigRole[],
-	include: Ref<boolean> = ref(true)
-) {
+export function useConfig(configRoles: VisualizationConfigRole[]) {
 	const vizwizStore = useVizWizStore();
+
+	// Whether the config step is included in the visualization
+	const include: Ref<boolean> = ref(
+		confirmRoles(configRoles, vizwizStore.dsConfig, vizwizStore.csConfig)
+	);
 
 	const checkedRoles = useCheckedRoles(configRoles, vizwizStore);
 	const validRoles = useValidRoles(configRoles);

@@ -18,3 +18,18 @@ export function deriveRoles<T extends readonly VisualizationConfigRole[]>(
 		...(overrides[r.role] ?? {}),
 	}));
 }
+
+/**
+ * Confirm true/false that all required "findRoles" exist in the collection of "allConfigs"
+ * @param findRoles - VisualizationConfigRole[] to confirm exist
+ * @param allConfigs - from vizwizstore dsConfig / csConfig
+ * @returns
+ */
+export function confirmRoles<T extends readonly VisualizationConfigRole[]>(
+	findRoles: T,
+	...allConfigs: Array<Record<string, Record<string, any>>>
+) {
+	return findRoles
+		.filter((role) => role.required)
+		.every(({ role }) => allConfigs.some((config) => role in config));
+}
