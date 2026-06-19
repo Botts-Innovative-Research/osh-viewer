@@ -9,7 +9,7 @@ import {
 	createWaypointLayer,
 	rebuildMapVisualizations,
 } from '../mapVisualizations';
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import { createCesiumAdapter } from '../adapters/cesium.adapter';
 import { taskGeoPTZ } from '../services/geoPTZ.service';
@@ -43,7 +43,6 @@ export function useMap() {
 	const geoPtzLayer = ref<typeof PointMarkerLayer | null>(null);
 	// Array of waypoint Pointmarkers for mission builder
 	const waypointLayers = ref<(typeof PointMarkerLayer)[]>([]);
-
 	// Hidden visualization IDs
 	const hiddenLayers = ref<Map<string, SupportedMapLayer>>(new Map());
 
@@ -100,8 +99,10 @@ export function useMap() {
 		// Reconnect datasources
 		connectDatasources();
 
-		// Delete all FOIs
-		visualizationStore.clearFOILayers();
+		// Rebuild all FOIs
+		visualizationStore.foiLayers.forEach((foi) => {
+			addFoiLayer(foi);
+		});
 	}
 	watch(mapType, async () => {
 		await switchMap();
@@ -201,16 +202,19 @@ export function useMap() {
 			);
 			if (addedLayers) {
 				addedLayers.forEach(async (layer) => {
-					const result = await createFOILayer(layer);
-					if (result) {
-						mapAdapter.value?.addLayer(result.layer);
-						if (result.props) mapAdapter.value?.updateMarker(result.props);
-					}
+					await addFoiLayer(layer);
 				});
 			}
 		},
 		{ deep: true, immediate: true }
 	);
+	async function addFoiLayer(layer: Geometry) {
+		const result = await createFOILayer(layer);
+		if (result) {
+			mapAdapter.value?.addLayer(result.layer);
+			if (result.props) mapAdapter.value?.updateMarker(result.props);
+		}
+	}
 
 	/** MAP INTERACTIONS */
 	function bindMapInteractions() {
