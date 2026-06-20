@@ -14,6 +14,7 @@ import { ILineOfBearingCustomizationOptions } from '../../types/customization';
 import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { ILineOfBearingLayerProperties } from '../../types/layers';
 import { VisualizationComponents } from '../../types/visualization';
+import { ICON_BASE } from '@/lib/icons';
 
 export default function build() {
 	console.log('Building LOB Visualization...');
@@ -61,7 +62,7 @@ export function CreateLobVizProps(
 		weight: visOptions.lobWeight,
 		opacity: visOptions.lobOpacity,
 		length: visOptions.lobDistanceKm * 1000, // Convert km to m
-		icon: visOptions.showIcon ? visOptions.icon : null,
+		icon: visOptions.showIcon ? `${ICON_BASE}${visOptions.icon}` : null,
 		iconColor: visOptions.iconColor,
 		iconName: visOptions.iconName,
 		iconOpacity: visOptions.showIcon ? 1 : 0, // Set opacity to 0 if no icon, otherwise use default opacity

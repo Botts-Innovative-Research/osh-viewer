@@ -15,10 +15,7 @@ import { SupportedMapLayer } from './supportedMapLayers';
 import { getGroundAltitude } from './services/altitude.service';
 import { IConSysApiDataSourceProperties } from '../visualization/types/datasource';
 import { setLayerData } from './services/foi.service';
-
-// prettier-ignore
-// @ts-ignore
-const iconBase = import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.meta.env.VITE_VIEWER_ENDPOINT : '';
+import { ICON_BASE } from '@/lib/icons';
 
 export interface ICreateMapVisualizationResult {
 	vizLayer: SupportedMapLayer;
@@ -399,7 +396,7 @@ export async function createGeoPTZLayer(
 		name: 'GeoPTZ',
 		label: 'GeoPTZ',
 		id: vizId,
-		icon: `${iconBase}/icons/map/${useSettingsStore().geoPtzIcon}.png`,
+		icon: `${ICON_BASE}/icons/geoptz/${useSettingsStore().geoPtzIcon}.png`,
 		iconColor: useSettingsStore().geoPtzIconColor,
 		iconSize: [32, 32],
 		iconAnchor: [16, 16],
@@ -444,7 +441,7 @@ export async function createWaypointLayer(
 			y: waypoint.lat,
 			z: waypoint.alt || (await getGroundAltitude(waypoint.lon, waypoint.lat)),
 		},
-		icon: `${iconBase}/icons/map/geoPtz-pin.png`,
+		icon: `${ICON_BASE}/icons/map/round-pin.png`,
 		iconSize: [32, 32],
 		iconAnchor: [16, 32],
 		label: `WP ${index + 1}`,
@@ -479,7 +476,7 @@ export async function createFOILayer(geometry: Geometry) {
 			y: lat,
 			z: alt,
 		},
-		icon: `${iconBase}/icons/map/map-marker.png`,
+		icon: `${ICON_BASE}/icons/map/map-marker.png`,
 		iconSize: [32, 32],
 		iconAnchor: [16, 32],
 		label: geometry.properties.properties.name,
