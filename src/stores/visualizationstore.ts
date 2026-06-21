@@ -102,6 +102,16 @@ export const useVisualizationStore = defineStore(
 				{ geometry, icon: '/icons/map/map-marker.png', color: '#FFFFFF' },
 			];
 		};
+		const editFOIIcon = (systemId: string, icon: string) => {
+			foiLayers.value = foiLayers.value.map((foi) =>
+				foi.geometry.systemId === systemId ? { ...foi, icon } : foi
+			);
+		};
+		const editFOIColor = (systemId: string, color: string) => {
+			foiLayers.value = foiLayers.value.map((foi) =>
+				foi.geometry.systemId === systemId ? { ...foi, color } : foi
+			);
+		};
 		const removeFOILayer = (systemId: string) => {
 			foiLayers.value = foiLayers.value.filter((foi) => {
 				return foi.geometry.systemId !== systemId;
@@ -110,7 +120,7 @@ export const useVisualizationStore = defineStore(
 		const clearFOILayers = () => {
 			foiLayers.value = [];
 		};
-		const foiExists = (systemId: string) => {
+		const FOIExists = (systemId: string) => {
 			return foiLayers.value.some((foi) => foi.geometry.systemId === systemId);
 		};
 
@@ -131,9 +141,11 @@ export const useVisualizationStore = defineStore(
 			rehydrateVisualizations,
 			foiLayers,
 			addFOILayer,
+			editFOIIcon,
+			editFOIColor,
 			removeFOILayer,
 			clearFOILayers,
-			foiExists,
+			FOIExists,
 		};
 	},
 	{ persist: { pick: ['serializedVisualizations'] } }

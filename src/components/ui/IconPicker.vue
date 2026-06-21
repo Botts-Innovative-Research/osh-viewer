@@ -13,7 +13,7 @@ const model = defineModel<string>({
 	<v-btn-toggle
 		v-model="model"
 		mandatory
-		class="ga-2 h-auto"
+		class="ga-2 h-auto flex-wrap justify-end"
 	>
 		<IconButton
 			v-for="icon in iconOptions"
@@ -22,7 +22,7 @@ const model = defineModel<string>({
 			variant="text"
 			size="x-large"
 			class="iconButton"
-			:value="icon.icon"
+			:value="`/icons/${icon.category}/${icon.icon}.png`"
 		></IconButton>
 	</v-btn-toggle>
 </template>

@@ -203,12 +203,10 @@ export function useMap() {
 		() => visualizationStore.foiLayers,
 		(newLayers, oldLayers) => {
 			const addedLayers = newLayers?.filter(
-				(newLayer) =>
-					!oldLayers?.some((layer: any) => layer.geometry.id === newLayer.geometry.id)
+				(newLayer) => !oldLayers?.some((layer: any) => layer === newLayer)
 			);
 			const removedLayers = oldLayers?.filter(
-				(oldLayer) =>
-					!newLayers.some((layer: any) => layer.geometry.id === oldLayer.geometry.id)
+				(oldLayer) => !newLayers.some((layer: any) => layer === oldLayer)
 			);
 			if (addedLayers) {
 				addedLayers.forEach(async (layer) => {

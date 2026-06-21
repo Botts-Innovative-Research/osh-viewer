@@ -397,7 +397,7 @@ export async function createGeoPTZLayer(
 		name: 'GeoPTZ',
 		label: 'GeoPTZ',
 		id: vizId,
-		icon: `${ICON_BASE}/icons/geoptz/${useSettingsStore().geoPtzIcon}.png`,
+		icon: `${ICON_BASE}${useSettingsStore().geoPtzIcon}`,
 		iconColor: useSettingsStore().geoPtzIconColor,
 		iconSize: [32, 32],
 		iconAnchor: [16, 16],

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useSystemStore } from '@/stores/systemstore';
 import { useNodeStore } from '@/stores/nodestore.js';
 import { useOSHConnectStore } from '@/stores/oshconnectstore.js';
@@ -17,6 +17,7 @@ import NodeConfigForm from '@/components/menus/NodeConfigForm.vue';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
 import PropertiesDialog from '@/modules/system-browser/PropertiesDialog.vue';
 import NodeIcon from '@/components/icons/node-logo.svg';
+import FoiStyleDialog from './FoiStyleDialog.vue';
 
 const oshConnect = useOSHConnectStore().getInstance();
 const nodeStore = useNodeStore();
@@ -25,7 +26,7 @@ const visualizationStore = useVisualizationStore();
 const uiStore = useUIStore();
 const nodeToDelete = ref<OSHNode | null>(null);
 const propertiesRef = ref<OSHDatastream | OSHControlStream | null>(null);
-const systemFoiStyle = ref<OSHSystem | null>(null);
+const foiRef = ref<OSHSystem | null>(null);
 
 type TreeItem = {
 	id: string;
@@ -111,8 +112,8 @@ const openPropertiesDialog = (item: any) => {
 	uiStore.openPropertiesDialog();
 };
 
-const openFoiStyleDialog = (system: OSHSystem) => {
-	systemFoiStyle.value = system;
+const openFoiStyleDialog = (system: any) => {
+	foiRef.value = system;
 	uiStore.openFoiStyleDialog();
 };
 </script>
@@ -181,6 +182,7 @@ const openFoiStyleDialog = (system: OSHSystem) => {
 				<v-icon
 					v-if="item.type === 'system'"
 					icon="mdi-cogs"
+					color="default"
 				></v-icon>
 				<v-icon
 					v-if="item.type === 'ds'"
@@ -191,7 +193,6 @@ const openFoiStyleDialog = (system: OSHSystem) => {
 					icon="mdi-controller"
 				></v-icon>
 			</template>
-
 			<!-- Actions -->
 			<template v-slot:append="{ item }">
 				<!-- Remove node -->
@@ -202,55 +203,77 @@ const openFoiStyleDialog = (system: OSHSystem) => {
 					label="Remove"
 					@delete="openDeleteNodeDialog(item.raw)"
 				></DeleteButton>
-				<!-- Add System FOI -->
-				<v-tooltip
-					v-else-if="item.type === 'system'"
-					:text="`${!hasFOIs(item.raw as OSHSystem) ? 'System has no' : visualizationStore.foiExists(item.id) ? 'Delete' : 'Add'} FOI`"
-					location="bottom"
-					open-delay="500"
-				>
-					<template #activator="{ props }">
-						<span
-							v-if="!hasFOIs(item.raw as OSHSystem)"
-							v-bind="props"
-						>
+				<!-- FOIs -->
+				<div v-else-if="item.type === 'system'">
+					<!-- No FOI compatability -->
+					<v-tooltip
+						v-if="!hasFOIs(item.raw as OSHSystem)"
+						text="No FOIs exist on this system"
+						location="bottom"
+						open-delay="500"
+					>
+						<template #activator="{ props }">
 							<IconButton
+								v-bind="props"
 								icon="mdi-map-marker-alert-outline"
 								variant="plain"
 								class="properties-button"
-								disabled
 							>
 							</IconButton>
-						</span>
-						<span
-							v-else-if="visualizationStore.foiExists(item.id)"
-							v-bind="props"
+						</template>
+					</v-tooltip>
+					<!-- Remove / Edit FOI -->
+					<div v-else-if="visualizationStore.FOIExists(item.id)">
+						<v-tooltip
+							text="Customize FOI"
+							location="bottom"
+							open-delay="500"
 						>
+							<template #activator="{ props }">
+								<IconButton
+									v-bind="props"
+									icon="mdi-palette"
+									variant="text"
+									class="properties-button"
+									@click="openFoiStyleDialog(item.raw)"
+								></IconButton>
+							</template>
+						</v-tooltip>
+						<v-tooltip
+							text="Delete FOI"
+							location="bottom"
+							open-delay="500"
+							><template #activator="{ props }">
+								<IconButton
+									v-bind="props"
+									icon="mdi-map-marker-minus"
+									variant="text"
+									class="properties-button"
+									@click="visualizationStore.removeFOILayer(item.id)"
+								>
+								</IconButton>
+							</template>
+						</v-tooltip>
+					</div>
+					<!-- Add FOI -->
+					<v-tooltip
+						v-else
+						text="Add FOI"
+						location="bottom"
+						open-delay="500"
+					>
+						<template #activator="{ props }">
 							<IconButton
-								icon="mdi-palette"
+								v-bind="props"
+								icon="mdi-map-marker-plus"
 								variant="text"
-								@click="openFoiStyleDialog(item.raw as OSHSystem)"
-							>
-							</IconButton>
-							<IconButton
-								icon="mdi-map-marker-minus"
-								variant="text"
-								@click="visualizationStore.removeFOILayer(item.id)"
 								class="properties-button"
+								@click="addFOILayer(item.raw as OSHSystem)"
 							>
 							</IconButton>
-						</span>
-						<IconButton
-							v-else
-							v-bind="props"
-							icon="mdi-map-marker-plus"
-							variant="text"
-							@click="addFOILayer(item.raw as OSHSystem)"
-							class="properties-button"
-						>
-						</IconButton>
-					</template>
-				</v-tooltip>
+						</template>
+					</v-tooltip>
+				</div>
 				<!-- DS/CS properties -->
 				<v-tooltip
 					v-else-if="item.type === 'ds' || item.type === 'cs'"
@@ -293,6 +316,15 @@ const openFoiStyleDialog = (system: OSHSystem) => {
 		<PropertiesDialog
 			v-if="propertiesRef"
 			:item="propertiesRef"
+		/>
+	</v-dialog>
+	<v-dialog
+		v-model="uiStore.foiStyleDialog"
+		max-width="540"
+	>
+		<FoiStyleDialog
+			v-if="foiRef"
+			:system="foiRef"
 		/>
 	</v-dialog>
 </template>
