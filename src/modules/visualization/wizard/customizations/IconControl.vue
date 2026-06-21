@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import RadioCards from '@/components/ui/RadioCards.vue';
-import { ICON_BASE, ICON_OPTIONS, IconItem } from '@/lib/icons';
+import { ICON_OPTIONS, IconItem } from '@/lib/icons';
 
 const props = withDefaults(
 	defineProps<{

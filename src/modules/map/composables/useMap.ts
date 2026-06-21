@@ -1,5 +1,5 @@
 import { useMapStore } from '@/stores/mapstore';
-import { useVisualizationStore } from '@/stores/visualizationstore';
+import { FoiLayer, useVisualizationStore } from '@/stores/visualizationstore';
 import { computed, onMounted, ref, watch } from 'vue';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import {
@@ -203,10 +203,12 @@ export function useMap() {
 		() => visualizationStore.foiLayers,
 		(newLayers, oldLayers) => {
 			const addedLayers = newLayers?.filter(
-				(newLayer) => !oldLayers?.some((layer: any) => layer.id === newLayer.id)
+				(newLayer) =>
+					!oldLayers?.some((layer: any) => layer.geometry.id === newLayer.geometry.id)
 			);
 			const removedLayers = oldLayers?.filter(
-				(oldLayer) => !newLayers.some((layer: any) => layer.id === oldLayer.id)
+				(oldLayer) =>
+					!newLayers.some((layer: any) => layer.geometry.id === oldLayer.geometry.id)
 			);
 			if (addedLayers) {
 				addedLayers.forEach(async (layer) => {
@@ -221,7 +223,7 @@ export function useMap() {
 		},
 		{ deep: true, immediate: true }
 	);
-	async function addFoiLayer(layer: Geometry) {
+	async function addFoiLayer(layer: FoiLayer) {
 		const result = await createFOILayer(layer);
 		if (result) {
 			mapAdapter.value?.addLayer(result.layer);
@@ -229,9 +231,9 @@ export function useMap() {
 			foiLayers.value.push({ layer: result.layer, props: result.props });
 		}
 	}
-	function removeFoiLayer(layer: Geometry) {
+	function removeFoiLayer(layer: FoiLayer) {
 		const remove = foiLayers.value.find((foiLayer) => {
-			return foiLayer.layer.properties.id === layer.id;
+			return foiLayer.layer.properties.id === layer.geometry.id;
 		});
 		mapAdapter.value?.removeLayer(remove?.layer);
 		foiLayers.value = foiLayers.value.filter((foiLayer) => foiLayer.layer !== remove?.layer);

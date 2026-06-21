@@ -95,20 +95,23 @@ export const useVisualizationStore = defineStore(
 		};
 
 		/* FOI Layers */
-		const foiLayers: Ref<Geometry[]> = ref<Geometry[]>([]);
+		const foiLayers: Ref<FoiLayer[]> = ref<FoiLayer[]>([]);
 		const addFOILayer = (geometry: Geometry) => {
-			foiLayers.value = [...foiLayers.value, geometry];
+			foiLayers.value = [
+				...foiLayers.value,
+				{ geometry, icon: '/icons/map/map-marker.png', color: '#FFFFFF' },
+			];
 		};
 		const removeFOILayer = (systemId: string) => {
 			foiLayers.value = foiLayers.value.filter((foi) => {
-				return foi.systemId !== systemId;
+				return foi.geometry.systemId !== systemId;
 			});
 		};
 		const clearFOILayers = () => {
 			foiLayers.value = [];
 		};
 		const foiExists = (systemId: string) => {
-			return foiLayers.value.some((foi) => foi.systemId === systemId);
+			return foiLayers.value.some((foi) => foi.geometry.systemId === systemId);
 		};
 
 		return {
@@ -135,3 +138,16 @@ export const useVisualizationStore = defineStore(
 	},
 	{ persist: { pick: ['serializedVisualizations'] } }
 );
+
+/**
+ * Metadata of FOI geometry and customization properties
+ *
+ * geometry - Geometry type
+ * icon - icon path
+ * color - icon color
+ */
+export interface FoiLayer {
+	geometry: Geometry;
+	icon: string;
+	color: string;
+}

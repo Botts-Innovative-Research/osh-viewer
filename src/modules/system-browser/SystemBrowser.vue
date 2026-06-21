@@ -15,7 +15,7 @@ import { Geometry } from '@/lib/OSHConnectDataStructs';
 import DeleteNodeDialog from '@/components/menus/DeleteNodeDialog.vue';
 import NodeConfigForm from '@/components/menus/NodeConfigForm.vue';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
-import PropertiesDialog from '@/components/menus/PropertiesDialog.vue';
+import PropertiesDialog from '@/modules/system-browser/PropertiesDialog.vue';
 import NodeIcon from '@/components/icons/node-logo.svg';
 
 const oshConnect = useOSHConnectStore().getInstance();
@@ -25,6 +25,7 @@ const visualizationStore = useVisualizationStore();
 const uiStore = useUIStore();
 const nodeToDelete = ref<OSHNode | null>(null);
 const propertiesRef = ref<OSHDatastream | OSHControlStream | null>(null);
+const systemFoiStyle = ref<OSHSystem | null>(null);
 
 type TreeItem = {
 	id: string;
@@ -108,6 +109,11 @@ const openDeleteNodeDialog = (node: any) => {
 const openPropertiesDialog = (item: any) => {
 	propertiesRef.value = item;
 	uiStore.openPropertiesDialog();
+};
+
+const openFoiStyleDialog = (system: OSHSystem) => {
+	systemFoiStyle.value = system;
+	uiStore.openFoiStyleDialog();
 };
 </script>
 <template>
@@ -216,15 +222,24 @@ const openPropertiesDialog = (item: any) => {
 							>
 							</IconButton>
 						</span>
-						<IconButton
+						<span
 							v-else-if="visualizationStore.foiExists(item.id)"
 							v-bind="props"
-							icon="mdi-map-marker-minus"
-							variant="text"
-							@click="visualizationStore.removeFOILayer(item.id)"
-							class="properties-button"
 						>
-						</IconButton>
+							<IconButton
+								icon="mdi-palette"
+								variant="text"
+								@click="openFoiStyleDialog(item.raw as OSHSystem)"
+							>
+							</IconButton>
+							<IconButton
+								icon="mdi-map-marker-minus"
+								variant="text"
+								@click="visualizationStore.removeFOILayer(item.id)"
+								class="properties-button"
+							>
+							</IconButton>
+						</span>
 						<IconButton
 							v-else
 							v-bind="props"

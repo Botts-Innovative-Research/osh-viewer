@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ICON_OPTIONS, IconItem } from '@/lib/icons';
-import { ref, watch } from 'vue';
+import { IconItem } from '@/lib/icons';
 
-const model = defineModel<IconItem>({
+const props = defineProps<{
+	iconOptions: IconItem[];
+}>();
+const model = defineModel<string>({
 	required: true,
 });
 </script>
@@ -14,13 +16,13 @@ const model = defineModel<IconItem>({
 		class="ga-2 h-auto"
 	>
 		<IconButton
-			v-for="icon in ICON_OPTIONS"
+			v-for="icon in iconOptions"
 			v-model="model"
 			:icon="`mdi-${icon.icon}`"
 			variant="text"
 			size="x-large"
 			class="iconButton"
-			:value="`/icons/${icon.category}/`"
+			:value="icon.icon"
 		></IconButton>
 	</v-btn-toggle>
 </template>
