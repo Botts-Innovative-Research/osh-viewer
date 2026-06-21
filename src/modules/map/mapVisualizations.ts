@@ -458,7 +458,6 @@ export async function createWaypointLayer(
 	return { layer: waypointLayer, props };
 }
 export async function createFOILayer(foiLayer: FoiLayer) {
-	console.log(foiLayer);
 	const lon = Array.isArray(foiLayer.geometry.coordinates[0])
 		? foiLayer.geometry.coordinates[0][0]
 		: foiLayer.geometry.coordinates[0];

@@ -96,11 +96,16 @@ export const useVisualizationStore = defineStore(
 
 		/* FOI Layers */
 		const foiLayers: Ref<FoiLayer[]> = ref<FoiLayer[]>([]);
-		const addFOILayer = (geometry: Geometry) => {
-			foiLayers.value = [
-				...foiLayers.value,
-				{ geometry, icon: '/icons/map/map-marker.png', color: '#FFFFFF' },
-			];
+		const addFOILayer = (geometry: Geometry): FoiLayer | null => {
+			if (foiLayers.value.find((foi) => foi.geometry.systemId === geometry.systemId))
+				return null;
+			const newFoiLayer: FoiLayer = {
+				geometry,
+				icon: '/icons/map/map-marker.png',
+				color: '#FFFFFF',
+			};
+			foiLayers.value = [...foiLayers.value, newFoiLayer];
+			return newFoiLayer;
 		};
 		const editFOIIcon = (systemId: string, icon: string) => {
 			foiLayers.value = foiLayers.value.map((foi) =>

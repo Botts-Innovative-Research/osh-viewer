@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { useSystemStore } from '@/stores/systemstore';
 import { useNodeStore } from '@/stores/nodestore.js';
 import { useOSHConnectStore } from '@/stores/oshconnectstore.js';
@@ -12,12 +12,13 @@ import {
 	OSHSystem,
 } from '@/lib/OSHConnectDataStructs.js';
 import { Geometry } from '@/lib/OSHConnectDataStructs';
-import DeleteNodeDialog from '@/components/menus/DeleteNodeDialog.vue';
-import NodeConfigForm from '@/components/menus/NodeConfigForm.vue';
+import DeleteNodeDialog from '@/modules/system-browser/components/DeleteNodeDialog.vue';
+import NodeConfigForm from '@/modules/system-browser/components/NodeConfigForm.vue';
+import PropertiesDialog from '@/modules/system-browser/components/PropertiesDialog.vue';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
-import PropertiesDialog from '@/modules/system-browser/PropertiesDialog.vue';
 import NodeIcon from '@/components/icons/node-logo.svg';
-import FoiStyleDialog from './FoiStyleDialog.vue';
+import FoiStyleDialog from './components/FoiStyleDialog.vue';
+import { showToast } from '@/composables/useToast.js';
 
 const oshConnect = useOSHConnectStore().getInstance();
 const nodeStore = useNodeStore();
@@ -77,7 +78,8 @@ const hasFOIs = (system: OSHSystem) => {
 	return !!system.samplingFeatures.length;
 };
 
-const addFOILayer = (system: OSHSystem) => {
+const addFOILayer = (system: OSHSystem): number => {
+	let count = 0;
 	system.samplingFeatures.forEach((foi: any) => {
 		if (!foi.properties.geometry) return;
 		const geom = new Geometry(
@@ -88,14 +90,25 @@ const addFOILayer = (system: OSHSystem) => {
 			foi.properties,
 			foi.properties.bbox
 		);
-		visualizationStore.addFOILayer(geom);
+		const added = visualizationStore.addFOILayer(geom);
+		if (added) count++;
 	});
+	return count;
 };
 
 const addAllFOIs = () => {
+	let count = 0;
 	systems.forEach((system: OSHSystem) => {
-		addFOILayer(system);
+		count += addFOILayer(system);
 	});
+	if (count === 0) showToast('No new FOIs added.', 'DEFAULT');
+	else showToast(`Added ${count} FOI${count > 1 ? 's' : ''}`, 'SUCCESS');
+};
+
+const removeAllFOIs = () => {
+	const count = visualizationStore.foiLayers.length;
+	visualizationStore.clearFOILayers();
+	if (count > 0) showToast(`Deleted all ${count} FOI${count > 1 ? 's' : ''}`);
 };
 
 const openNodeConfig = () => {
@@ -122,9 +135,10 @@ const openFoiStyleDialog = (system: any) => {
 		id="node-sidebar"
 		class="pa-4"
 	>
-		<v-sheet class="pb-4">
-			<div class="mb-2 pa-2">
-				<v-tooltip
+		<!-- Add Node -->
+		<v-row class="align-center">
+			<v-col cols="auto"
+				><v-tooltip
 					text="Fetch Resources"
 					location="bottom"
 				>
@@ -135,36 +149,48 @@ const openFoiStyleDialog = (system: any) => {
 							@click="fetchResources"
 							icon="mdi-refresh"
 						></IconButton>
-					</template>
-				</v-tooltip>
-				<v-tooltip
-					text="Create FOI pointmarkers"
-					location="bottom"
+					</template> </v-tooltip
+			></v-col>
+			<v-col
+				><v-btn
+					block
+					prepend-icon="mdi-plus-circle"
+					color="success"
+					@click="openNodeConfig"
 				>
-					<template v-slot:activator="{ props }">
-						<v-btn
-							@click="addAllFOIs"
-							v-bind="props"
-							prepend-icon="mdi-map-marker"
-							>All FOIs</v-btn
-						>
-					</template>
-				</v-tooltip>
-			</div>
-			<!-- Add Node -->
-			<v-btn
-				block
-				prepend-icon="mdi-plus-circle"
-				variant="flat"
-				color="success"
-				@click="openNodeConfig"
+					Add Node
+				</v-btn>
+			</v-col>
+		</v-row>
+		<v-divider class="mt-3 mb-3"></v-divider>
+		<!-- FOIs -->
+		<v-row class="align-center">
+			<v-col cols="6"
+				><v-btn
+					block
+					prepend-icon="mdi-map-marker-multiple-outline"
+					variant="outlined"
+					color=""
+					@click="addAllFOIs"
+					class="text-none"
+				>
+					Add All FOIs
+				</v-btn></v-col
 			>
-				Add Node
-			</v-btn>
-		</v-sheet>
-
-		<v-divider></v-divider>
-
+			<v-col cols="6"
+				><v-btn
+					block
+					prepend-icon="mdi-close"
+					variant="outlined"
+					@click="removeAllFOIs"
+					class="text-none"
+					:disabled="!!!visualizationStore.foiLayers.length"
+				>
+					Delete All FOIs
+				</v-btn></v-col
+			>
+		</v-row>
+		<v-divider class="mt-3"></v-divider>
 		<!-- Tree view of nodes/systems/datastreams -->
 		<v-treeview
 			:items="treeItems"
