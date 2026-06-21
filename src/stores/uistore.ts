@@ -10,6 +10,7 @@ export const useUIStore = defineStore(
 		const nodeConfigFormOpen = ref(false);
 		const deleteNodeDialog = ref(false);
 		const propertiesDialog = ref(false);
+		const foiStyleDialog = ref(false);
 		const vizWizOpen = ref(false);
 		const editVizOpen = ref(false); // Edit visualization wizard
 
@@ -51,6 +52,12 @@ export const useUIStore = defineStore(
 		function openPropertiesDialog() {
 			propertiesDialog.value = true;
 		}
+		function toggleFoiStyleDialog() {
+			foiStyleDialog.value = !foiStyleDialog.value;
+		}
+		function openFoiStyleDialog() {
+			foiStyleDialog.value = true;
+		}
 
 		function toggleVizWiz() {
 			vizWizOpen.value = !vizWizOpen.value;
@@ -89,6 +96,9 @@ export const useUIStore = defineStore(
 			editVizOpen,
 			toggleEditViz,
 			openEditViz,
+			foiStyleDialog,
+			toggleFoiStyleDialog,
+			openFoiStyleDialog,
 		};
 	},
 	{ persist: { pick: ['theme'] } }

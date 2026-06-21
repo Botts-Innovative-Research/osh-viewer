@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import RadioCards from '@/components/ui/RadioCards.vue';
+import { ICON_OPTIONS, IconItem } from '@/lib/icons';
 
 const props = withDefaults(
 	defineProps<{
@@ -13,33 +14,14 @@ const props = withDefaults(
 );
 
 const vwStore = useVizWizStore();
-type IconItem = {
-	id: number;
-	label: string;
-	icon: string;
-};
-// icon value corresponds to mdi icon names AND png filenames in /icons/map/
-const iconOptions: IconItem[] = [
-	{ id: 1, label: 'Marker', icon: 'map-marker' },
-	{ id: 2, label: 'Pin', icon: 'pin' },
-	{ id: 3, label: 'Arrow', icon: 'arrow-up-bold' },
-	{ id: 4, label: 'Antenna', icon: 'antenna' },
-	{ id: 5, label: 'Camera', icon: 'camera-marker' },
-	{ id: 6, label: 'Cellphone', icon: 'cellphone-marker' },
-	{ id: 7, label: 'Eye', icon: 'eye' },
-	{ id: 8, label: 'Drone', icon: 'quadcopter' },
-	{ id: 9, label: 'Plane', icon: 'airplane' },
-	{ id: 10, label: 'Boat', icon: 'sail-boat' },
-	{ id: 11, label: 'Car', icon: 'car' },
-];
-const iconBase =
-	import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.meta.env.VITE_VIEWER_ENDPOINT : '';
+
+const iconOptions = ICON_OPTIONS.filter((option: IconItem) => option.category.includes('map'));
 const icon = ref(iconOptions[0]);
 
 function selectIcon(val: any) {
 	icon.value = val;
 	vwStore.updateVisualizationCustomizationOptions({
-		[props.roleName]: `${iconBase}/icons/map/${val.icon}.png`,
+		[props.roleName]: `/icons/${val.category}/${val.icon}.png`,
 		[`${props.roleName}Name`]: val.icon,
 	});
 }
@@ -47,7 +29,7 @@ function selectIcon(val: any) {
 onMounted(() => {
 	if (!vwStore.visualizationCustomizationOptions[props.roleName]) {
 		vwStore.updateVisualizationCustomizationOptions({
-			[props.roleName]: `/icons/map/${icon.value.icon}.png`,
+			[props.roleName]: `/icons/${icon.value.category}/${icon.value.icon}.png`,
 			[`${props.roleName}Name`]: icon.value.icon,
 		});
 	} else {

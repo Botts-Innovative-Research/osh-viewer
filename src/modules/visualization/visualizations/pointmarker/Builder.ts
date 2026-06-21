@@ -14,6 +14,7 @@ import { VisualizationComponents } from '../../types/visualization';
 import { IPointMarkerCustomizationOptions } from '../../types/customization';
 import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { IPointMarkerLayerProperties } from '../../types/layers';
+import { ICON_BASE } from '@/lib/icons';
 
 export default function build() {
 	console.log('Building Point Marker Visualization...');
@@ -63,7 +64,7 @@ export function CreatePointMarkerVizProps(
 	let pointMarkerLayer: IPointMarkerLayerProperties = {
 		name: visOptions.name,
 		label: visOptions.name,
-		icon: visOptions.icon,
+		icon: `${ICON_BASE}${visOptions.icon}`,
 		iconColor: visOptions.iconColor || '#FF0000',
 		iconName: visOptions.iconName,
 		iconSize: [32, 32],

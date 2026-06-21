@@ -15,10 +15,8 @@ import { SupportedMapLayer } from './supportedMapLayers';
 import { getGroundAltitude } from './services/altitude.service';
 import { IConSysApiDataSourceProperties } from '../visualization/types/datasource';
 import { setLayerData } from './services/foi.service';
-
-// prettier-ignore
-// @ts-ignore
-const iconBase = import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.meta.env.VITE_VIEWER_ENDPOINT : '';
+import { ICON_BASE } from '@/lib/icons';
+import { FoiLayer } from '@/stores/visualizationstore';
 
 export interface ICreateMapVisualizationResult {
 	vizLayer: SupportedMapLayer;
@@ -399,7 +397,7 @@ export async function createGeoPTZLayer(
 		name: 'GeoPTZ',
 		label: 'GeoPTZ',
 		id: vizId,
-		icon: `${iconBase}/icons/map/${useSettingsStore().geoPtzIcon}.png`,
+		icon: `${ICON_BASE}${useSettingsStore().geoPtzIcon}`,
 		iconColor: useSettingsStore().geoPtzIconColor,
 		iconSize: [32, 32],
 		iconAnchor: [16, 16],
@@ -444,7 +442,7 @@ export async function createWaypointLayer(
 			y: waypoint.lat,
 			z: waypoint.alt || (await getGroundAltitude(waypoint.lon, waypoint.lat)),
 		},
-		icon: `${iconBase}/icons/map/geoPtz-pin.png`,
+		icon: `${ICON_BASE}/icons/map/round-pin.png`,
 		iconSize: [32, 32],
 		iconAnchor: [16, 32],
 		label: `WP ${index + 1}`,
@@ -459,41 +457,42 @@ export async function createWaypointLayer(
 
 	return { layer: waypointLayer, props };
 }
-export async function createFOILayer(geometry: Geometry) {
-	const lon = Array.isArray(geometry.coordinates[0])
-		? geometry.coordinates[0][0]
-		: geometry.coordinates[0];
-	const lat = Array.isArray(geometry.coordinates[1])
-		? geometry.coordinates[1][0]
-		: geometry.coordinates[1];
-	const alt = !geometry.coordinates[2]
+export async function createFOILayer(foiLayer: FoiLayer) {
+	const lon = Array.isArray(foiLayer.geometry.coordinates[0])
+		? foiLayer.geometry.coordinates[0][0]
+		: foiLayer.geometry.coordinates[0];
+	const lat = Array.isArray(foiLayer.geometry.coordinates[1])
+		? foiLayer.geometry.coordinates[1][0]
+		: foiLayer.geometry.coordinates[1];
+	const alt = !foiLayer.geometry.coordinates[2]
 		? await getGroundAltitude(lon, lat)
-		: Array.isArray(geometry.coordinates[2])
-			? geometry.coordinates[2][0]
-			: geometry.coordinates[2];
+		: Array.isArray(foiLayer.geometry.coordinates[2])
+			? foiLayer.geometry.coordinates[2][0]
+			: foiLayer.geometry.coordinates[2];
 
-	const foiLayer = new PointMarkerLayer({
-		id: geometry.id,
+	const pmLayer = new PointMarkerLayer({
+		id: foiLayer.geometry.id,
 		location: {
 			x: lon,
 			y: lat,
 			z: alt,
 		},
-		icon: `${iconBase}/icons/map/map-marker.png`,
+		icon: `${ICON_BASE}${foiLayer.icon}`,
+		iconColor: foiLayer.color,
 		iconSize: [32, 32],
 		iconAnchor: [16, 32],
-		label: geometry.properties.properties.name,
+		label: foiLayer.geometry.properties.properties.name,
 		labelColor: '#FFFFFF',
 		labelOutlineColor: '#000000',
 		labelSize: 14,
 		labelOffset: [0, -36],
 		defaultToTerrainElevation: true,
-		markerId: geometry.id + '-feature' + randomUUID(),
+		markerId: foiLayer.geometry.id + '-feature' + randomUUID(),
 	});
 
-	const props = await setLayerData(foiLayer);
+	const props = await setLayerData(pmLayer);
 
-	return { layer: foiLayer, props };
+	return { layer: pmLayer, props };
 }
 
 export function rebuildMapVisualizations(

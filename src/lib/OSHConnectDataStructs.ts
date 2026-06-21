@@ -457,6 +457,7 @@ export class OSHVisualization {
 
 export class Geometry {
 	id: string;
+	systemId: string;
 	type: string;
 	coordinates: number[] | number[][];
 	properties?: any;
@@ -464,12 +465,14 @@ export class Geometry {
 
 	constructor(
 		id: string,
+		systemId: string,
 		type: string,
 		coordinates: number[] | number[][],
 		properties?: any,
 		bbox?: number[]
 	) {
 		this.id = id;
+		this.systemId = systemId;
 		this.type = type;
 		this.coordinates = coordinates;
 		this.properties = properties || {};
