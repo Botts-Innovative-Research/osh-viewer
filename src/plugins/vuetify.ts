@@ -4,7 +4,6 @@ import { createVuetify } from 'vuetify';
 import * as components from 'vuetify/components';
 import * as directives from 'vuetify/directives';
 import '@mdi/font/css/materialdesignicons.css';
-import { VBtn } from 'vuetify/components';
 
 export const vuetify = createVuetify({
 	components,
@@ -16,7 +15,7 @@ export const vuetify = createVuetify({
 		defaultTheme: 'dark',
 	},
 	aliases: {
-		IconButton: VBtn,
+		IconButton: components.VBtn,
 	},
 	defaults: {
 		VTab: {
@@ -24,25 +23,25 @@ export const vuetify = createVuetify({
 		},
 		VTreeview: {
 			VBtn: {
-				rounded: 'circle',
+				rounded: '100%',
 			},
 		},
 		VToolbar: {
 			VBtn: {
-				rounded: 'circle',
+				rounded: '100%',
 			},
 		},
 		VBtn: {
-			rounded: 'lg',
+			rounded: 10,
 		},
 		// Custom icon button
 		IconButton: {
 			icon: true,
-			rounded: 'circle',
+			rounded: '100%',
 			size: 'small',
 		},
 		VCard: {
-			rounded: 'lg',
+			rounded: 10,
 		},
 		VStepper: {
 			class: 'elevation-0',
@@ -54,18 +53,31 @@ export const vuetify = createVuetify({
 			},
 		},
 		VExpansionPanels: {
-			rounded: 0,
+			rounded: [20, 8],
+			gap: 8,
 		},
 		VList: {
 			VListItem: {
-				rounded: 'lg',
+				rounded: 10,
 			},
 		},
 		VTooltip: {
 			openDelay: 500,
 		},
 		VAlert: {
-			rounded: 'lg',
+			rounded: 10,
+		},
+		VAutocomplete: {
+			variant: 'outlined',
+			rounded: 10,
+		},
+		VSelect: {
+			variant: 'outlined',
+			rounded: 10,
+		},
+		VTextField: {
+			variant: 'outlined',
+			rounded: 10,
 		},
 	},
 });
