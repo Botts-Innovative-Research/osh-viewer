@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import RadioCards from '@/components/ui/RadioCards.vue';
-import { ICON_OPTIONS, IconItem } from '@/lib/icons';
+import { ICON_OPTIONS, IconItem, iconPathBuilder } from '@/lib/icons';
 
 const props = withDefaults(
 	defineProps<{
@@ -21,7 +21,7 @@ const icon = ref(iconOptions[0]);
 function selectIcon(val: any) {
 	icon.value = val;
 	vwStore.updateVisualizationCustomizationOptions({
-		[props.roleName]: `/icons/${val.category}/${val.icon}.png`,
+		[props.roleName]: iconPathBuilder(val.category, val.icon),
 		[`${props.roleName}Name`]: val.icon,
 	});
 }
@@ -29,7 +29,7 @@ function selectIcon(val: any) {
 onMounted(() => {
 	if (!vwStore.visualizationCustomizationOptions[props.roleName]) {
 		vwStore.updateVisualizationCustomizationOptions({
-			[props.roleName]: `/icons/${icon.value.category}/${icon.value.icon}.png`,
+			[props.roleName]: iconPathBuilder(icon.value.category, icon.value.icon),
 			[`${props.roleName}Name`]: icon.value.icon,
 		});
 	} else {

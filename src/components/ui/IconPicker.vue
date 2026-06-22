@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { IconItem } from '@/lib/icons';
+import { IconItem, iconPathBuilder } from '@/lib/icons';
 
 const props = defineProps<{
 	iconOptions: IconItem[];
@@ -22,7 +22,7 @@ const model = defineModel<string>({
 			variant="text"
 			size="x-large"
 			class="iconButton"
-			:value="`/icons/${icon.category}/${icon.icon}.png`"
+			:value="iconPathBuilder(icon.category, icon.icon)"
 		></IconButton>
 	</v-btn-toggle>
 </template>
