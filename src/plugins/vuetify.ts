@@ -37,11 +37,6 @@ export const vuetify = createVuetify({
 		VTab: {
 			rounded: 0,
 		},
-		VTreeview: {
-			VBtn: {
-				rounded: 10,
-			},
-		},
 		VToolbar: {
 			VBtn: {
 				rounded: '100%',
@@ -50,15 +45,17 @@ export const vuetify = createVuetify({
 		},
 		VBtn: {
 			rounded: 10,
+			elevation: 0,
 		},
 		// Custom icon button
 		IconButton: {
 			icon: true,
-			rounded: '100%',
+			rounded: 10,
 			size: 'small',
 		},
 		VCard: {
-			rounded: 10,
+			rounded: 20,
+			elevation: 0,
 		},
 		VStepper: {
 			class: 'elevation-0',
@@ -70,8 +67,18 @@ export const vuetify = createVuetify({
 			},
 		},
 		VExpansionPanels: {
-			rounded: [20, 8],
+			rounded: [15, 15],
 			gap: 8,
+			static: true,
+			elevation: 0,
+		},
+		VExpansionPanel: {
+			rounded: 15,
+			gap: 8,
+			class: 'border-sm',
+		},
+		VExpansionPanelText: {
+			class: 'pa-0',
 		},
 		VList: {
 			VListItem: {
@@ -87,10 +94,12 @@ export const vuetify = createVuetify({
 		VAutocomplete: {
 			variant: 'outlined',
 			rounded: 10,
+			class: 'pl-2',
 		},
 		VSelect: {
 			variant: 'outlined',
 			rounded: 10,
+			class: 'pl-2',
 		},
 		VTextField: {
 			variant: 'outlined',

@@ -133,10 +133,10 @@ const openFoiStyleDialog = (system: any) => {
 <template>
 	<v-sheet
 		id="node-sidebar"
-		class="pa-4"
+		class="pa-2"
 	>
 		<!-- Add Node -->
-		<v-row class="align-center">
+		<v-row class="align-center pa-2">
 			<v-col cols="auto"
 				><v-tooltip
 					text="Fetch Resources"
@@ -148,6 +148,7 @@ const openFoiStyleDialog = (system: any) => {
 							aria-label="Fetch Resources"
 							@click="fetchResources"
 							icon="mdi-refresh"
+							variant="outlined"
 						></IconButton>
 					</template> </v-tooltip
 			></v-col>
@@ -155,16 +156,16 @@ const openFoiStyleDialog = (system: any) => {
 				><v-btn
 					block
 					prepend-icon="mdi-plus-circle"
-					color="success"
 					@click="openNodeConfig"
+					color="primary"
 				>
 					Add Node
 				</v-btn>
 			</v-col>
 		</v-row>
-		<v-divider class="mt-3 mb-3"></v-divider>
+		<v-divider></v-divider>
 		<!-- FOIs -->
-		<v-row class="align-center">
+		<v-row class="align-center pa-2">
 			<v-col cols="6"
 				><v-btn
 					block
@@ -190,7 +191,7 @@ const openFoiStyleDialog = (system: any) => {
 				</v-btn></v-col
 			>
 		</v-row>
-		<v-divider class="mt-3"></v-divider>
+		<v-divider></v-divider>
 		<!-- Tree view of nodes/systems/datastreams -->
 		<v-treeview
 			:items="treeItems"
@@ -201,23 +202,25 @@ const openFoiStyleDialog = (system: any) => {
 		>
 			<!-- Icons -->
 			<template v-slot:prepend="{ item }">
-				<v-icon
-					v-if="item.type === 'node'"
-					:icon="NodeIcon"
-				></v-icon>
-				<v-icon
-					v-if="item.type === 'system'"
-					icon="mdi-cogs"
-					color="default"
-				></v-icon>
-				<v-icon
-					v-if="item.type === 'ds'"
-					icon="mdi-cable-data"
-				></v-icon>
-				<v-icon
-					v-if="item.type === 'cs'"
-					icon="mdi-controller"
-				></v-icon>
+				<div class="pl-2 pr-2">
+					<v-icon
+						v-if="item.type === 'node'"
+						:icon="NodeIcon"
+					></v-icon>
+					<v-icon
+						v-if="item.type === 'system'"
+						icon="mdi-cogs"
+						color="default"
+					></v-icon>
+					<v-icon
+						v-if="item.type === 'ds'"
+						icon="mdi-cable-data"
+					></v-icon>
+					<v-icon
+						v-if="item.type === 'cs'"
+						icon="mdi-controller"
+					></v-icon>
+				</div>
 			</template>
 			<!-- Actions -->
 			<template v-slot:append="{ item }">
