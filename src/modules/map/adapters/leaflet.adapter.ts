@@ -3,7 +3,7 @@ import L from 'leaflet';
 import { MapAdapter, MapClickHandler, MapPoint } from './types';
 
 export function createLeafletAdapter(): MapAdapter {
-	let mapView: LeafletView | null;
+	let mapView: typeof LeafletView | null;
 	let flightPathPolyline: any = null;
 
 	async function init(container: string) {
@@ -26,11 +26,6 @@ export function createLeafletAdapter(): MapAdapter {
 	async function removeLayer(layer: any): Promise<void> {
 		mapView.removeAllFromLayer(layer);
 		return;
-	}
-
-	function addFOILayer(markerProps: any) {
-		const markerEnt = mapView.addMarker(markerProps, undefined);
-		mapView.addMarkerToLayer(markerEnt, markerProps);
 	}
 
 	function setCursor(mode: any) {
@@ -82,6 +77,5 @@ export function createLeafletAdapter(): MapAdapter {
 		updateMarker,
 		drawMissionPath,
 		clearMissionPath,
-		addFOILayer,
 	};
 }

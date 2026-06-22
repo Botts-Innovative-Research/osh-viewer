@@ -1,7 +1,7 @@
 import { showToast } from '@/composables/useToast';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
-import ControlFilter from 'osh-js/source/core/sweapi/control/ControlFilter';
-import Control from 'osh-js/source/core/sweapi/control/Control';
+import ControlStreamFilter from 'osh-js/source/core/consysapi/controlstream/ControlStreamFilter';
+import ControlStream from 'osh-js/source/core/consysapi/controlstream/ControlStream';
 
 type CommandType = {
 	type: string;
@@ -31,7 +31,7 @@ export async function fetchCsSchema(controlstream: any): Promise<any> {
 		checkedFormat = ['application/om+json']; // Fallback to om+json which should be available always
 	}
 
-	let filter = new ControlFilter({ format: 'application/json' });
+	let filter = new ControlStreamFilter({ format: 'application/json' });
 	return controlstream
 		.getSchema(filter)
 		.then((schemaRes: any) => {
@@ -108,9 +108,9 @@ export async function fetchControlStreamSchema(controlstream: any, networkProper
 		type: controlstream.type,
 	};
 
-	const control = new Control(props, networkProperties);
+	const control = new ControlStream(props, networkProperties);
 
-	let filter = new ControlFilter();
+	let filter = new ControlStreamFilter();
 	return control
 		.getSchema(filter)
 		.then((schema: any) => {

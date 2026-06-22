@@ -15,8 +15,8 @@ import {
 } from '../../services/aggregation.service';
 import { VisualizationComponents } from '../../types/visualization';
 import {
-	ISweApiControlStreamProperties,
-	ISweApiDataSourceProperties,
+	IConSysApiControlStreamProperties,
+	IConSysApiDataSourceProperties,
 } from '../../types/datasource';
 
 export default function build() {
@@ -56,15 +56,15 @@ export function CreateMissionVizProps(
 	const controlstreamStore = useControlStreamStore();
 	const datastreamStore = useDataStreamStore();
 
-	const vizControlstreams: ISweApiControlStreamProperties[] = [];
-	const vizDatastreams: ISweApiDataSourceProperties[] = [];
+	const vizControlstreams: IConSysApiControlStreamProperties[] = [];
+	const vizDatastreams: IConSysApiDataSourceProperties[] = [];
 
 	for (const [dsId, entry] of Object.entries(datastreams)) {
 		const properties = BuildRoleProperty(entry);
 
 		const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
 
-		const currentDatastream: ISweApiDataSourceProperties = {
+		const currentDatastream: IConSysApiDataSourceProperties = {
 			endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
 			resource: `/datastreams/${dsId}/observations`,
 			tls: currentOSHDatastream[0].datastream.networkProperties.tls,
@@ -88,7 +88,7 @@ export function CreateMissionVizProps(
 		const currentOSHControlstream: OSHControlStream = controlstreamStore.getControlStreamsById([
 			csId,
 		])[0];
-		const currentControlstream: ISweApiControlStreamProperties = {
+		const currentControlstream: IConSysApiControlStreamProperties = {
 			endpointUrl: currentOSHControlstream.controlstream.networkProperties.endpointUrl,
 			tls: currentOSHControlstream.controlstream.networkProperties.tls,
 			protocol: 'ws',

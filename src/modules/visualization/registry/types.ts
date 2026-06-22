@@ -15,12 +15,36 @@ export type ViewLocation = 'panel' | 'map' | 'multi';
  * - label: title of the form step (e.g. 'Configure Chart Properties', 'Customize Chart', etc.)
  * - short: short label for stepper header (e.g., Configure, Customize, etc.)
  * - component: the Vue component to render for this form step
+ * - roles?: optional config roles to pass as props to the component
+ * - optional?: optional flag to make a step optional, will appear as a subtitle in the stepper step title
  */
 export interface VisualizationFormComponent {
 	id: string; // Standard: kebab-case, starting with visualization type (___-config, ___-customize, etc.)
 	label: string; // Standard: Title Case, starting with verbal action (Configure ___ Properties, Customize ___, etc.)
 	short: string; // Standard: Title Case, concise, no verbal action (Configure, Customize, etc.)
 	component: Component | null; // Vue component to render for this form step
+	roles?: VisualizationConfigRole[]; // Optional config roles
+	optional?: boolean; // Default: FALSE
+}
+
+/**
+ * Define a "role" (e.g. location, bearing, etc.) for configuration
+ * - role: the role name used in vizwiz
+ * - label: the name of the role to display
+ * - description: a short 1 sentence description of the role and its purpose in relation to the viz type
+ * - type: Either "ds" or "cs" of whether to render a datasource or controlstream picker
+ * - required?: whether the role is required, making it selected/checked by default
+ * - showPropertySelector?: optional flag of whether the role asks to select properties (e.g. mission builder does not show property selector for any roles)
+ * - multiple?: optional flag of whether the role can have multiple properties selected in ds/cs picker (e.g. Y-Axis role can have multiple properties)
+ */
+export interface VisualizationConfigRole {
+	role: string;
+	label: string;
+	description: string;
+	type: 'ds' | 'cs';
+	required?: boolean; // Default: FALSE
+	showPropertySelector?: boolean; // Default: TRUE
+	multiple?: boolean; // Default: FALSE
 }
 
 /**
@@ -41,7 +65,7 @@ export type VisualizationBuilderModule = () => void;
  * - builder: Async function that imports the visualization's Builder.ts, which contains a default export build() to construct the visualization
  * - supportsCs: Boolean flag to indicate if the visualization can support a controlstream if available
  * - requireCs: Boolean flag to indicate if the visualization REQUIRES a controlstream
- * - supportedMaps: Optional array of supported map types, if map-related
+ * - supportedMaps?: Optional array of supported map types, if map-related
  */
 export interface VisualizationDescriptor {
 	label: string;

@@ -3,6 +3,7 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { VisualizationRegistry } from '../registry/VisualizationRegistry';
 import { useVisualizationWizard } from './composables/useVisualizationWizard';
 import { onMounted } from 'vue';
+import { VisualizationFormComponent } from '../registry/types';
 
 const props = defineProps<{
 	mode: 'create' | 'edit';
@@ -22,11 +23,26 @@ const {
 	submit,
 } = useVisualizationWizard({ mode: props.mode, viz: props.viz });
 
-function handleDataStepBinds(stepIndex: number) {
-	// If the user is on the data step (edit or create), handle binds
-	if (stepIndex === 1 && props.mode === 'create') return true;
-	else if (stepIndex === 0 && props.mode === 'edit') return true;
-	else return false;
+function handleStepBinds(
+	stepIndex: number,
+	selectedType: string,
+	step: VisualizationFormComponent
+) {
+	// Handle data step
+	if (stepIndex === 0) {
+		return {
+			supportsCs: VisualizationRegistry[selectedType]?.supportsCs,
+			requireCs: VisualizationRegistry[selectedType]?.requireCs,
+		};
+	}
+	// Pass roles as props
+	else if (step?.roles) {
+		return { configRoles: step.roles, optional: step.optional };
+	}
+	// Pass optional
+	else if (step?.optional) {
+		return { optional: step.optional };
+	} else return;
 }
 
 onMounted(async () => await init());
@@ -47,10 +63,7 @@ onMounted(async () => await init());
 		>
 			<v-card-title>{{ props.viz.name }}</v-card-title>
 		</v-card>
-		<v-stepper
-			v-model="currentStep"
-			class="wizard-content"
-		>
+		<v-stepper v-model="currentStep">
 			<template v-slot:default="{}">
 				<v-stepper-header>
 					<template
@@ -63,12 +76,13 @@ onMounted(async () => await init());
 							:value="index + 1"
 							:title="step.short"
 							:color="stepStatus(index)"
+							:subtitle="step.optional ? 'Optional' : ''"
 						></v-stepper-item>
 						<v-divider v-if="index < completeSteps.length - 1"></v-divider>
 					</template>
 				</v-stepper-header>
 
-				<v-stepper-window>
+				<v-stepper-window class="wizard-content">
 					<!-- STEP CONTENT -->
 					<v-stepper-window-item
 						v-for="(step, index) in completeSteps"
@@ -80,20 +94,17 @@ onMounted(async () => await init());
 							:is="step.component"
 							v-model:valid="componentValid[index]"
 							v-bind="
-								handleDataStepBinds(index)
-									? {
-											supportsCs:
-												VisualizationRegistry[selectedType]?.supportsCs,
-											requireCs:
-												VisualizationRegistry[selectedType]?.requireCs,
-										}
-									: {}
+								handleStepBinds(
+									props.mode === 'create' ? index - 1 : index,
+									selectedType,
+									step
+								)
 							"
 						/>
 					</v-stepper-window-item>
 				</v-stepper-window>
 				<!-- NAVIGATION BUTTONS -->
-				<v-stepper-actions>
+				<v-stepper-actions class="step-actions">
 					<template #prev>
 						<v-btn
 							v-if="currentStep > 1"
@@ -122,8 +133,14 @@ onMounted(async () => await init());
 
 <style scoped>
 .wizard-content {
-	max-height: 80vh;
+	max-height: 60vh;
 	overflow-y: auto;
 	padding-right: 4px;
+}
+
+.step-actions {
+	position: sticky;
+	bottom: 0;
+	z-index: 10;
 }
 </style>

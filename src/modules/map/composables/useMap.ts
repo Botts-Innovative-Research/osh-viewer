@@ -1,15 +1,16 @@
 import { useMapStore } from '@/stores/mapstore';
-import { useVisualizationStore } from '@/stores/visualizationstore';
+import { FoiLayer, useVisualizationStore } from '@/stores/visualizationstore';
 import { computed, onMounted, ref, watch } from 'vue';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import {
-	createFOIProps,
+	createFOILayer,
+	createGeoPTZLayer,
 	createMapVisualizations,
 	createWaypointLayer,
 	rebuildMapVisualizations,
 } from '../mapVisualizations';
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
+import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import { createCesiumAdapter } from '../adapters/cesium.adapter';
 import { taskGeoPTZ } from '../services/geoPTZ.service';
 import { MapAdapter } from '../adapters/types';
@@ -20,6 +21,8 @@ import {
 	connectDatasources as connect,
 	disconnectDatasources as disconnect,
 } from '@/modules/visualization/services/datasource.service';
+import { getGroundAltitude } from '../services/altitude.service';
+import { setLayerData } from '../services/foi.service';
 
 export function useMap() {
 	// Stores
@@ -36,12 +39,15 @@ export function useMap() {
 	// Map of visualization ID to its corresponding visualization layer instance
 	const mapItemLayers = ref<Map<string, SupportedMapLayer>>(new Map());
 	// List of all connected datasource instances created for map visualizations
-	const listDataSourceInstances = ref<SweApi[]>([]);
+	const listDataSourceInstances = ref<(typeof ConSysApi)[]>([]);
+	// Current GeoPTZ layer
+	const geoPtzLayer = ref<typeof PointMarkerLayer | null>(null);
 	// Array of waypoint Pointmarkers for mission builder
-	const waypointLayers = ref<PointMarkerLayer[]>([]);
-
+	const waypointLayers = ref<(typeof PointMarkerLayer)[]>([]);
+	// FOI Layers
+	const foiLayers = ref<{ layer: typeof PointMarkerLayer; props: any }[]>([]);
 	// Hidden visualization IDs
-	const hiddenLayers = ref<Map<string, OSHVisualization>>(new Map());
+	const hiddenLayers = ref<Map<string, SupportedMapLayer>>(new Map());
 
 	/* MAP INITIALIZATION/DESTRUCTION/TOGGLE */
 	async function initMap() {
@@ -60,6 +66,9 @@ export function useMap() {
 			}
 			if (settingsStore.enable3DBuildings) {
 				await mapAdapter.value?.addBuildings?.();
+			}
+			if (settingsStore.enableGooglePhotorealistic) {
+				await mapAdapter.value?.addGooglePhotorealistic?.();
 			}
 		} else if (mapType.value === 'leaflet') {
 			mapAdapter.value = createLeafletAdapter();
@@ -82,7 +91,10 @@ export function useMap() {
 		const newLayers = rebuildMapVisualizations(mapItemLayers.value);
 		newLayers.forEach((layer) => {
 			// Type is 'marker' in osh-js, pass 'pointmarker' instead
-			if (isMapLayerCompatible(layer.type === 'marker' ? 'pointmarker' : layer.type))
+			if (
+				isMapLayerCompatible(layer.type === 'marker' ? 'pointmarker' : layer.type) &&
+				!hiddenLayers.value.has(layer.id)
+			)
 				mapAdapter.value?.addLayer(layer);
 		});
 		mapItemLayers.value = newLayers;
@@ -90,11 +102,12 @@ export function useMap() {
 		// Reconnect datasources
 		connectDatasources();
 
-		// Delete all FOIs
-		visualizationStore.clearFOILayers();
-
-		// Clear list of hidden visualizations
-		visualizationStore.clearMapLayerVisibility();
+		// Rebuild all FOIs
+		foiLayers.value.forEach(async (foi) => {
+			foi.props = await setLayerData(foi.layer);
+			mapAdapter.value?.addLayer(foi.layer);
+			mapAdapter.value?.updateMarker(foi.props);
+		});
 	}
 	watch(mapType, async () => {
 		await switchMap();
@@ -102,10 +115,10 @@ export function useMap() {
 
 	/* DATASOURCE MANAGEMENT */
 	function connectDatasources() {
-		connect(listDataSourceInstances.value);
+		connect(listDataSourceInstances);
 	}
 	function disconnectDatasources() {
-		disconnect(listDataSourceInstances.value);
+		disconnect(listDataSourceInstances);
 	}
 
 	/* CREATE/DELETE VISUALIZATIONS */
@@ -130,19 +143,19 @@ export function useMap() {
 					.map((id) => visualizationStore.getVisualizationById(id))
 					.filter(Boolean) as OSHVisualization[];
 
-				newOSHVisualizations.forEach((viz: OSHVisualization) => {
-					addVisualization(viz);
+				newOSHVisualizations.forEach(async (viz: OSHVisualization) => {
+					await addVisualization(viz);
 				});
 			}
 		},
 		{ deep: true }
 	);
-	function addVisualization(viz: OSHVisualization) {
+	async function addVisualization(viz: OSHVisualization) {
 		// If parent, skip - no layer to build
 		if (viz.isParentVisualization()) return;
 		// If not parent, add directly
 		else {
-			const result = createMapVisualizations(viz);
+			const result = await createMapVisualizations(viz);
 			if (!result) return;
 
 			const { vizLayer, dsInstances } = result;
@@ -160,7 +173,6 @@ export function useMap() {
 
 		// Find viz layer
 		const mapLayer = mapItemLayers.value.get(vizId);
-		console.log(mapLayer);
 		if (!mapLayer) return; // Skip if no layer found for this vizId (including parent viz)
 
 		// Collect ds IDs
@@ -168,7 +180,7 @@ export function useMap() {
 
 		// Disconnect and remove datasources
 		listDataSourceInstances.value = listDataSourceInstances.value.filter(
-			(dsInstance: SweApi) => {
+			(dsInstance: typeof ConSysApi) => {
 				// Find matching datasource IDs to remove
 				if (removedDsIds.includes(dsInstance.id)) {
 					console.log('Disconnecting datasource:', dsInstance.id);
@@ -188,27 +200,72 @@ export function useMap() {
 
 	/* FOI */
 	watch(
-		() => visualizationStore.foiLayers.map((v) => v),
+		() => visualizationStore.foiLayers,
 		(newLayers, oldLayers) => {
 			const addedLayers = newLayers?.filter(
-				(newLayer) => !oldLayers?.some((layer: any) => layer.id === newLayer.id)
+				(newLayer) => !oldLayers?.some((layer: any) => layer === newLayer)
+			);
+			const removedLayers = oldLayers?.filter(
+				(oldLayer) => !newLayers.some((layer: any) => layer === oldLayer)
 			);
 			if (addedLayers) {
-				addedLayers.forEach((layer) => {
-					const markerProps = createFOIProps(layer);
-					mapAdapter.value?.addFOILayer(markerProps);
+				addedLayers.forEach(async (layer) => {
+					await addFoiLayer(layer);
+				});
+			}
+			if (removedLayers) {
+				removedLayers.forEach((layer) => {
+					removeFoiLayer(layer);
 				});
 			}
 		},
 		{ deep: true, immediate: true }
 	);
+	async function addFoiLayer(layer: FoiLayer) {
+		const result = await createFOILayer(layer);
+		if (result) {
+			mapAdapter.value?.addLayer(result.layer);
+			if (result.props) mapAdapter.value?.updateMarker(result.props);
+			foiLayers.value.push({ layer: result.layer, props: result.props });
+		}
+	}
+	function removeFoiLayer(layer: FoiLayer) {
+		const remove = foiLayers.value.find((foiLayer) => {
+			return foiLayer.layer.properties.id === layer.geometry.id;
+		});
+		mapAdapter.value?.removeLayer(remove?.layer);
+		foiLayers.value = foiLayers.value.filter((foiLayer) => foiLayer.layer !== remove?.layer);
+	}
 
 	/** MAP INTERACTIONS */
 	function bindMapInteractions() {
 		if (!mapAdapter.value) return;
 
-		mapAdapter.value.onClick((lat, lon, alt) => {
-			if (mapStore.isGeoPTZSelected) taskGeoPTZ(lat, lon, alt);
+		mapAdapter.value.onClick(async (lat, lon, alt) => {
+			// GeoPTZ
+			if (mapStore.isGeoPTZSelected && mapStore.selectedGeoPTZ) {
+				// Calculate alt if needed
+				const calcAlt = alt ?? (await getGroundAltitude(lon, lat)) ?? 0;
+
+				// Create pointmarker
+				const result = await createGeoPTZLayer(
+					{ lon, lat, alt: calcAlt },
+					mapStore.selectedGeoPTZ
+				);
+				if (result) {
+					// Remove old pointmarker
+					mapAdapter.value?.removeLayer(geoPtzLayer.value);
+					geoPtzLayer.value = result.layer;
+
+					// Add new pointmarker
+					mapAdapter.value?.addLayer(geoPtzLayer.value);
+					if (result.props) mapAdapter.value?.updateMarker(result.props);
+
+					// Task GeoPTZ
+					taskGeoPTZ(lat, lon, calcAlt);
+				}
+			}
+			// Mission Planner
 			if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lon, 0);
 			// Add additional onClick functions
 		});
@@ -252,9 +309,6 @@ export function useMap() {
 					await toggleVizVisibility(viz, visualizationStore.isMapLayerVisible(viz.id));
 				}
 			}
-
-			console.log('Hidden:', hiddenLayers.value);
-			console.log('Map Layers:', mapItemLayers.value);
 		},
 		{ deep: true }
 	);
@@ -264,37 +318,26 @@ export function useMap() {
 			if (hiddenLayers.value.has(viz.id)) {
 				hiddenLayers.value.delete(viz.id); // Remove from hidden layers
 				addVisualization(viz); // Rebuild viz
-				console.log('Rebuilt layer!');
+				console.log('Rebuilt visualization:', viz);
 			}
 		}
 		// Hide/delete visualization
 		else {
 			hiddenLayers.value.set(viz.id, viz); // Add to hidden layers
 			await deleteVisualization(viz.id); // Delete viz from map
-			console.log('Hid layer!');
+			console.log('Hid visualization:', viz);
 		}
 	}
 
 	/* GEOPTZ */
 	watch(
-		() => mapStore.selectedGeoPTZ,
-		(geoPtz, oldGeoPtz) => {
-			// If had value, delete
-			if (oldGeoPtz?.length) deleteVisualization(oldGeoPtz[0].id);
-			// If has a new value, create new
-			if (geoPtz?.length) addVisualization(geoPtz[0]);
-		},
-		{ deep: true }
+		() => mapStore.isGeoPTZSelected,
+		(selected) => {
+			// Remove old pointmarker on selection change
+			if (geoPtzLayer.value) mapAdapter.value?.removeLayer(geoPtzLayer.value);
+			geoPtzLayer.value = null;
+		}
 	);
-	watch([() => settingsStore.geoPtzIcon, () => settingsStore.geoPtzIconColor], () => {
-		// Rebuild viz on icon change
-		const currentGeoPtz = mapStore.selectedGeoPTZ;
-		if (!currentGeoPtz?.length) return;
-
-		// Delete and make new
-		deleteVisualization(currentGeoPtz[0].id);
-		addVisualization(currentGeoPtz[0]);
-	});
 
 	/* MISSION BUILDER */
 	watch(
@@ -361,6 +404,18 @@ export function useMap() {
 				await mapAdapter.value.addBuildings?.();
 			} else {
 				mapAdapter.value.removeBuildings?.();
+			}
+		}
+	);
+	watch(
+		() => settingsStore.enableGooglePhotorealistic,
+		async (enabled) => {
+			if (!mapAdapter.value) return;
+
+			if (enabled) {
+				await mapAdapter.value.addGooglePhotorealistic?.();
+			} else {
+				mapAdapter.value.removeGooglePhotorealistic?.();
 			}
 		}
 	);

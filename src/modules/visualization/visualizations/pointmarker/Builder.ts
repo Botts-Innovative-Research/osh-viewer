@@ -12,7 +12,7 @@ import {
 } from '../../services/aggregation.service';
 import { VisualizationComponents } from '../../types/visualization';
 import { IPointMarkerCustomizationOptions } from '../../types/customization';
-import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { IPointMarkerLayerProperties } from '../../types/layers';
 
 export default function build() {
@@ -59,7 +59,7 @@ export function CreatePointMarkerVizProps(
 	const datastreamStore = useDataStreamStore();
 
 	// Create datasources, layer, and view
-	const vizDatasources: ISweApiDataSourceProperties[] = [];
+	const vizDatasources: IConSysApiDataSourceProperties[] = [];
 	let pointMarkerLayer: IPointMarkerLayerProperties = {
 		name: visOptions.name,
 		label: visOptions.name,
@@ -74,9 +74,9 @@ export function CreatePointMarkerVizProps(
 		// Get selected properties for each role of the datastream
 		const properties = BuildRoleProperty(entry);
 
-		// Push new ISweApiDataSourceProperties
+		// Push new IConSysApiDataSourceProperties
 		const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
-		const currentDataSource: ISweApiDataSourceProperties = {
+		const currentDataSource: IConSysApiDataSourceProperties = {
 			endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
 			resource: `/datastreams/${dsId}/observations`,
 			tls: currentOSHDatastream[0].datastream.networkProperties.tls,

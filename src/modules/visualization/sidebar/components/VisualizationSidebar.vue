@@ -8,6 +8,9 @@ import { useVisualizationSidebar } from '../composables/useVisualizationSidebar'
 import { useUIStore } from '@/stores/uistore';
 import MapVisualizationWrapper from './MapVisualizationWrapper.vue';
 import GeoPtzWrapper from './GeoPtzWrapper.vue';
+import MissionWrapper from '@/modules/visualization/sidebar/components/MissionWrapper.vue';
+import MissionBuilder from '@/modules/visualization/visualizations/mission/MissionBuilder.vue';
+import { VueDraggable } from 'vue-draggable-plus';
 
 const {
 	editViz,
@@ -18,6 +21,9 @@ const {
 	openPanelVisualizations,
 	selectedGeoPTZControllers,
 	removeGeoPTZ,
+	missionVisualizations,
+	selectedMissionControllers,
+	removeMission,
 	isMapLayerVisible,
 	toggleMapLayerVisibility,
 	toggleSelectedMapItem,
@@ -65,15 +71,23 @@ const uiStore = useUIStore();
 						<div class="panel-header">Map Visualizations</div>
 					</template>
 					<v-expansion-panel-text class="panel-text">
-						<MapVisualizationWrapper
-							v-for="viz in mapVisualizations"
-							:viz="viz"
-							:toggleSelectedMapItem="toggleSelectedMapItem"
-							:isMapLayerVisible="isMapLayerVisible"
-							:toggleMapLayerVisibility="toggleMapLayerVisibility"
-							:openEditViz="openEditViz"
-							:removeVisualization="removeVisualization"
-						/>
+						<VueDraggable
+							v-model="mapVisualizations"
+							item-key="id"
+							:animation="150"
+							tag="div"
+							style="display: contents"
+						>
+							<MapVisualizationWrapper
+								v-for="viz in mapVisualizations"
+								:viz="viz"
+								:toggleSelectedMapItem="toggleSelectedMapItem"
+								:isMapLayerVisible="isMapLayerVisible"
+								:toggleMapLayerVisibility="toggleMapLayerVisibility"
+								:openEditViz="openEditViz"
+								:removeVisualization="removeVisualization"
+							/>
+						</VueDraggable>
 					</v-expansion-panel-text>
 				</v-expansion-panel>
 				<!-- GEOPTZ VISUALIZATIONS -->
@@ -104,6 +118,34 @@ const uiStore = useUIStore();
 						</v-sheet>
 					</v-expansion-panel-text>
 				</v-expansion-panel>
+<!--				Mission Builder Visualizations-->
+				<v-expansion-panel
+					:disabled="missionVisualizations.length == 0"
+					value="mission"
+				>
+					<template #title>
+						<div class="panel-header">Mission Builder Controllers</div>
+					</template>
+					<v-expansion-panel-text>
+						<v-sheet>
+							<MissionBuilder
+								v-if="selectedMissionControllers"
+								:visualizations="selectedMissionControllers"
+							>
+								<template #controllers>
+									<MissionWrapper
+										v-model:selectedMissionControllers="
+											selectedMissionControllers
+										"
+										:missionVisualizations="missionVisualizations"
+										:openEditViz="openEditViz"
+										:removeMission="removeMission"
+									/>
+								</template>
+							</MissionBuilder>
+						</v-sheet>
+					</v-expansion-panel-text>
+				</v-expansion-panel>
 			</v-expansion-panels>
 			<v-divider></v-divider>
 			<!-- PANEL VISUALIZATIONS -->
@@ -114,45 +156,53 @@ const uiStore = useUIStore();
 				eager
 				elevation="0"
 			>
-				<v-expansion-panel
-					v-for="viz in panelVisualizations"
-					:key="viz.id"
-					class="visualization-item"
-					:value="viz.id"
-					static
+				<VueDraggable
+					v-model="panelVisualizations"
+					item-key="id"
+					:animation="150"
+					tag="div"
+					style="display: contents"
 				>
-					<template #title>
-						<div class="panel-header">
-							<span class="viz-name">{{ viz.name }}</span>
-							<div class="panel-actions">
-								<v-tooltip
-									text="Edit Visualization"
-									location="bottom"
-								>
-									<template v-slot:activator="{ props }">
-										<IconButton
-											v-bind="props"
-											aria-label="Edit Visualization"
-											size="x-small"
-											variant="plain"
-											icon="mdi-pencil"
-											@click.stop="openEditViz(viz)"
-										></IconButton>
-									</template>
-								</v-tooltip>
-								<DeleteButton
-									class="ml-2 mr-2"
-									label="Remove"
-									@delete="removeVisualization(viz)"
-								>
-								</DeleteButton>
+					<v-expansion-panel
+						v-for="viz in panelVisualizations"
+						:key="viz.id"
+						class="visualization-item"
+						:value="viz.id"
+						static
+					>
+						<template #title>
+							<div class="panel-header">
+								<span class="viz-name">{{ viz.name }}</span>
+								<div class="panel-actions">
+									<v-tooltip
+										text="Edit Visualization"
+										location="bottom"
+									>
+										<template v-slot:activator="{ props }">
+											<IconButton
+												v-bind="props"
+												aria-label="Edit Visualization"
+												size="x-small"
+												variant="plain"
+												icon="mdi-pencil"
+												@click.stop="openEditViz(viz)"
+											></IconButton>
+										</template>
+									</v-tooltip>
+									<DeleteButton
+										class="ml-2 mr-2"
+										label="Remove"
+										@delete="removeVisualization(viz)"
+									>
+									</DeleteButton>
+								</div>
 							</div>
-						</div>
-					</template>
-					<v-expansion-panel-text>
-						<PanelVisualizationWrapper :viz="viz"></PanelVisualizationWrapper>
-					</v-expansion-panel-text>
-				</v-expansion-panel>
+						</template>
+						<v-expansion-panel-text>
+							<PanelVisualizationWrapper :viz="viz"></PanelVisualizationWrapper>
+						</v-expansion-panel-text>
+					</v-expansion-panel>
+				</VueDraggable>
 			</v-expansion-panels>
 		</v-sheet>
 	</v-sheet>

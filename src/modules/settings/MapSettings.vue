@@ -5,6 +5,8 @@ import DeleteButton from '@/components/ui/DeleteButton.vue';
 import { showToast } from '@/composables/useToast';
 import { useSettingsStore } from '@/stores/settingsstore';
 import ColorPicker from '@/components/ui/ColorPicker.vue';
+import IconPicker from '@/components/ui/IconPicker.vue';
+import { ICON_OPTIONS } from '@/lib/icons';
 
 const settingsStore = useSettingsStore();
 const mapStore = useMapStore();
@@ -31,6 +33,10 @@ const enable3DTerrain = computed({
 const enable3DBuildings = computed({
 	get: () => settingsStore.enable3DBuildings,
 	set: (val) => settingsStore.set3DBuildings(val),
+});
+const enableGooglePhotorealistic = computed({
+	get: () => settingsStore.enableGooglePhotorealistic,
+	set: (val) => settingsStore.setGooglePhotorealistic(val),
 });
 async function addIonAssetUrl() {
 	if (focusedMap.value === 'cesium' && url.value) {
@@ -82,26 +88,12 @@ const canAddUrl = computed(() => {
 				<v-list-item>
 					<v-list-item-title>Icon</v-list-item-title>
 					<template #append>
-						<v-btn-toggle
+						<IconPicker
 							v-model="geoPtzIcon"
-							mandatory
-							class="ga-2 h-auto"
-						>
-							<IconButton
-								icon="mdi-target"
-								variant="text"
-								size="x-large"
-								class="iconButton"
-								value="target"
-							></IconButton>
-							<IconButton
-								icon="mdi-target-variant"
-								variant="text"
-								size="x-large"
-								class="iconButton"
-								value="target-variant"
-							></IconButton>
-						</v-btn-toggle>
+							:icon-options="
+								ICON_OPTIONS.filter((option) => option.category === 'geoptz')
+							"
+						></IconPicker>
 					</template>
 				</v-list-item>
 				<v-list-item>
@@ -130,6 +122,19 @@ const canAddUrl = computed(() => {
 							<template #append>
 								<v-switch
 									v-model="enable3DBuildings"
+									color="primary"
+									inset
+									hide-details
+								></v-switch>
+							</template>
+						</v-list-item>
+						<v-list-item>
+							<v-list-item-title
+								>Enable 3D Google Photorealistic Tiles</v-list-item-title
+							>
+							<template #append>
+								<v-switch
+									v-model="enableGooglePhotorealistic"
 									color="primary"
 									inset
 									hide-details

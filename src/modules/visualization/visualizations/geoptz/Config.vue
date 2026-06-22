@@ -1,62 +1,71 @@
 <script setup lang="ts">
-import { useVizWizStore } from '@/stores/vizwizstore';
-import { computed, reactive, watch, onMounted, ref } from 'vue';
-import ControlStreamPicker from '../../wizard/components/ControlStreamPicker.vue';
-import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
+import { GeoPtzConfigRoles } from './Descriptor';
+import type { VisualizationConfigRole } from '../../registry/types';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
+import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
+import { useConfig } from '../../wizard/composables/useConfig';
+import RoleCheckbox from '../../wizard/components/RoleCheckbox.vue';
+import DataSourcePicker from '../../wizard/components/DataSourcePicker.vue';
+import ControlStreamPicker from '../../wizard/components/ControlStreamPicker.vue';
+import { computed } from 'vue';
 
-// Retrieve controlstreams
-const vizwizStore = useVizWizStore();
-
-// Checked status for each role
-const checkedRoles = reactive({
-	lla: computed({
-		get: () => vizwizStore.csConfig.lla?.selected ?? true,
-		set: (val: boolean) => vizwizStore.updateCsConfig('lla', { selected: val }),
-	}),
-});
-
-// Initialize csConfig with geo ptz selected by default when mounted
-onMounted(() => {
-	if (!vizwizStore.csConfig.lla) {
-		vizwizStore.updateCsConfig('lla', { selected: true });
+const props = withDefaults(
+	defineProps<{ configRoles: VisualizationConfigRole[]; optional?: boolean }>(),
+	{
+		configRoles: () => GeoPtzConfigRoles,
+		optional: false,
 	}
-});
-
-// If dsConfig is reset, ensure geoptz is selected by default
-watch(
-	() => vizwizStore.csConfig,
-	(newVal) => {
-		if (!newVal.lla) {
-			vizwizStore.updateCsConfig('lla', { selected: true });
-		}
-	},
-	{ deep: true }
 );
 
-// Validation: CS must be configured
+const { checkedRoles, validRoles, valid, include } = useConfig(props.configRoles, !props.optional);
+
+// Validation
 const emit = defineEmits<VisualizationComponentEmits>();
-const csValid = ref<boolean>(false);
-const valid = computed(() => {
-	return checkedRoles.lla ? csValid.value : true;
+const effectiveValid = computed(() => {
+	if (!props.optional) return valid.value;
+	if (include.value) return valid.value;
+	return true;
 });
-useComponentValidation(valid, emit);
+useComponentValidation(effectiveValid, emit);
 </script>
 <template>
-	<!-- GeoPTZ -->
-	<v-container>
-		<v-checkbox
-			label="GeoPTZ Control"
-			v-model="checkedRoles.lla"
-			disabled
-		></v-checkbox>
-		<ControlStreamPicker
-			v-if="checkedRoles.lla"
-			role="lla"
-			:show-property-selector="false"
-			v-model:valid="csValid"
+	<v-container
+		v-if="props.optional"
+		class="pa-0"
+	>
+		<v-switch
+			v-model="include"
+			label="Include in visualization?"
+			color="primary"
 		/>
 	</v-container>
+
+	<v-expand-transition>
+		<div v-if="include">
+			<v-container v-for="config in props.configRoles">
+				<RoleCheckbox
+					v-model="checkedRoles[config.role]"
+					:label="config.label"
+					:tooltip="config.description"
+					:disabled="config.required"
+				>
+					<DataSourcePicker
+						v-if="checkedRoles[config.role] && config.type === 'ds'"
+						:role="config.role"
+						:multiple="config.multiple"
+						v-model:valid="validRoles[config.role]"
+						:show-property-selector="config.showPropertySelector ?? true"
+					/>
+					<ControlStreamPicker
+						v-if="checkedRoles[config.role] && config.type === 'cs'"
+						:role="config.role"
+						:show-property-selector="config.showPropertySelector ?? true"
+						v-model:valid="validRoles[config.role]"
+					/>
+				</RoleCheckbox>
+			</v-container>
+		</div>
+	</v-expand-transition>
 </template>
 
 <style scoped></style>

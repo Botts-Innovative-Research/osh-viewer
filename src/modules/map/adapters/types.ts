@@ -13,7 +13,6 @@ export interface MapAdapter {
 	destroy(): void;
 
 	addLayer(layer: any): void;
-	addFOILayer(markerProps: any): void;
 	removeLayer(layer: any): Promise<void>;
 
 	onClick(handler: MapClickHandler): () => void;
@@ -31,6 +30,8 @@ export interface MapAdapter {
 	removeTerrain?(): void;
 	addBuildings?(): void;
 	removeBuildings?(): void;
+	addGooglePhotorealistic?(): void;
+	removeGooglePhotorealistic?(): void;
 	addMapLayer?(layer: MapLayer): void;
 	removeMapLayer?(id: string): void;
 	destroyAllLayers?(): void;

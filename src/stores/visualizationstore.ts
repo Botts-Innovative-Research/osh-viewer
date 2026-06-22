@@ -28,12 +28,6 @@ export const useVisualizationStore = defineStore(
 		const addVisualization = (visualization: OSHVisualization): void => {
 			console.log('[VisualizationStore] Adding visualization:', visualization);
 			visualizations.value.push(visualization);
-
-			// TODO: Remove for foi patch
-			if (visualization.type === 'pointmarker-feature') {
-				console.log('skipping fois for serialization');
-				return;
-			}
 			serializedVisualizations.value.push(serializeVisualization(visualization));
 		};
 
@@ -100,13 +94,39 @@ export const useVisualizationStore = defineStore(
 			console.log('[VizStore] Rehydrated visualizations:', visualizations.value.length);
 		};
 
-		/* FOI PATCH */
-		const foiLayers: Ref<Geometry[]> = ref<Geometry[]>([]);
-		const addFOILayer = (geometry: Geometry) => {
-			foiLayers.value.push(geometry);
+		/* FOI Layers */
+		const foiLayers: Ref<FoiLayer[]> = ref<FoiLayer[]>([]);
+		const addFOILayer = (geometry: Geometry): FoiLayer | null => {
+			if (foiLayers.value.find((foi) => foi.geometry.systemId === geometry.systemId))
+				return null;
+			const newFoiLayer: FoiLayer = {
+				geometry,
+				icon: '/icons/map/map-marker.png',
+				color: '#FFFFFF',
+			};
+			foiLayers.value = [...foiLayers.value, newFoiLayer];
+			return newFoiLayer;
+		};
+		const editFOIIcon = (systemId: string, icon: string) => {
+			foiLayers.value = foiLayers.value.map((foi) =>
+				foi.geometry.systemId === systemId ? { ...foi, icon } : foi
+			);
+		};
+		const editFOIColor = (systemId: string, color: string) => {
+			foiLayers.value = foiLayers.value.map((foi) =>
+				foi.geometry.systemId === systemId ? { ...foi, color } : foi
+			);
+		};
+		const removeFOILayer = (systemId: string) => {
+			foiLayers.value = foiLayers.value.filter((foi) => {
+				return foi.geometry.systemId !== systemId;
+			});
 		};
 		const clearFOILayers = () => {
 			foiLayers.value = [];
+		};
+		const FOIExists = (systemId: string) => {
+			return foiLayers.value.some((foi) => foi.geometry.systemId === systemId);
 		};
 
 		return {
@@ -126,8 +146,25 @@ export const useVisualizationStore = defineStore(
 			rehydrateVisualizations,
 			foiLayers,
 			addFOILayer,
+			editFOIIcon,
+			editFOIColor,
+			removeFOILayer,
 			clearFOILayers,
+			FOIExists,
 		};
 	},
 	{ persist: { pick: ['serializedVisualizations'] } }
 );
+
+/**
+ * Metadata of FOI geometry and customization properties
+ *
+ * geometry - Geometry type
+ * icon - icon path
+ * color - icon color
+ */
+export interface FoiLayer {
+	geometry: Geometry;
+	icon: string;
+	color: string;
+}

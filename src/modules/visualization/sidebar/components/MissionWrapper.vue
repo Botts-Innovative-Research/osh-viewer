@@ -1,0 +1,60 @@
+<script setup lang="ts">
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import DeleteButton from '@/components/ui/DeleteButton.vue';
+
+const { selectedMissionControllers, missionVisualizations, openEditViz, removeMission } = defineProps<{
+	selectedMissionControllers: OSHVisualization[];
+	missionVisualizations: OSHVisualization[];
+	openEditViz: (viz: string | OSHVisualization) => void;
+	removeMission: (viz: OSHVisualization) => void;
+}>();
+
+const emit = defineEmits<{
+	(e: 'update:selectedMissionControllers', value: OSHVisualization[]): void;
+}>();
+</script>
+<template>
+	<v-select
+		label=""
+		:model-value="selectedMissionControllers"
+		@update:model-value="emit('update:selectedMissionControllers', $event)"
+		v-bind:items="missionVisualizations"
+		item-title="name"
+		:item-value="(item: OSHVisualization) => item"
+		multiple
+		chips
+		hide-details
+		clearable
+	>
+		<template v-slot:item="{ props, item }">
+			<v-list-item v-bind="props">
+				<template v-slot:prepend="{ isSelected }">
+					<v-checkbox-btn :model-value="isSelected"></v-checkbox-btn>
+				</template>
+				<!-- Actions -->
+				<template v-slot:append>
+					<v-tooltip
+						text="Edit Visualization"
+						location="bottom"
+					>
+						<template v-slot:activator="{ props }">
+							<IconButton
+								v-bind="props"
+								aria-label="Edit Visualization"
+								size="x-small"
+								variant="plain"
+								icon="mdi-pencil"
+								@click.stop="openEditViz(item.raw.id!)"
+							>
+							</IconButton>
+						</template>
+					</v-tooltip>
+					<DeleteButton
+						label="Remove"
+						@delete="removeMission(item.raw)"
+					></DeleteButton>
+				</template>
+			</v-list-item>
+		</template>
+	</v-select>
+</template>
