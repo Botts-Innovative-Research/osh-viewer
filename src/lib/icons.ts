@@ -42,3 +42,15 @@ export const ICON_OPTIONS: IconItem[] = [
 	// FOI
 	// { id: 15, label: 'Building', icon: 'domain', category: ['foi'] },
 ];
+
+/**
+ * Builds the directory path for an icon given a category (directory) and icon (icon name)
+ * ASSUMES .PNG
+ *
+ * @param category
+ * @param icon
+ * @returns
+ */
+export function iconPathBuilder(category: string, icon: string): string {
+	return `/icons/${category}/${icon}.png`;
+}

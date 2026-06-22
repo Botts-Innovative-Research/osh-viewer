@@ -1,3 +1,4 @@
+import { ICON_OPTIONS, iconPathBuilder } from '@/lib/icons';
 import { defineStore } from 'pinia';
 import { Ref, ref } from 'vue';
 
@@ -22,7 +23,9 @@ export const useSettingsStore = defineStore(
 		const focusedMap: Ref<'cesium' | 'leaflet'> = ref('cesium'); // Focused map corresponds to map type
 
 		// GeoPTZ settings
-		const geoPtzIcon: Ref<string> = ref('target');
+		const geoPtzIcon: Ref<string> = ref(
+			iconPathBuilder(ICON_OPTIONS[12].category, ICON_OPTIONS[12].icon)
+		);
 		const geoPtzIconColor: Ref<string> = ref('#FF0000');
 
 		// Cesium settings
