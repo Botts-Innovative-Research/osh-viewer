@@ -59,7 +59,7 @@ onMounted(async () => await init());
 		<v-card
 			v-if="props.mode === 'edit' && props.viz"
 			class="text-center"
-			color="info"
+			color="primary"
 		>
 			<v-card-title>{{ props.viz.name }}</v-card-title>
 		</v-card>

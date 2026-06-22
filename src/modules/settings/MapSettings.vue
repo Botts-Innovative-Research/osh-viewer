@@ -157,7 +157,7 @@ const canAddUrl = computed(() => {
 								<template #append-inner>
 									<v-btn
 										prepend-icon="mdi-plus"
-										color="info"
+										color="primary"
 										:disabled="!canAddUrl"
 										@click="addIonAssetUrl"
 									>

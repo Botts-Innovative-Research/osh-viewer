@@ -13,6 +13,22 @@ export const vuetify = createVuetify({
 	},
 	theme: {
 		defaultTheme: 'dark',
+		themes: {
+			dark: {
+				dark: true,
+				colors: {
+					primary: '#E64A19',
+					secondary: '#03A9F4',
+				},
+			},
+			light: {
+				dark: false,
+				colors: {
+					primary: '#E64A19',
+					secondary: '#03A9F4',
+				},
+			},
+		},
 	},
 	aliases: {
 		IconButton: components.VBtn,
@@ -23,12 +39,13 @@ export const vuetify = createVuetify({
 		},
 		VTreeview: {
 			VBtn: {
-				rounded: '100%',
+				rounded: 10,
 			},
 		},
 		VToolbar: {
 			VBtn: {
 				rounded: '100%',
+				color: 'on-primary',
 			},
 		},
 		VBtn: {
