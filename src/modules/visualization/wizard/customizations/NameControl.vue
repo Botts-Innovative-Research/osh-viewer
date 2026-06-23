@@ -58,7 +58,7 @@ function generateVizName(role: string) {
 }
 </script>
 <template>
-	<h3 class="pb-2">Visualization Name</h3>
+	<h3>Visualization Name</h3>
 	<v-text-field
 		v-model="name"
 		label="Name"

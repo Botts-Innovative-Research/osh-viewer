@@ -673,6 +673,7 @@ useVisualizationCleanup(dsInstances);
 										:color="isSelected ? 'primary' : 'grey'"
 										@click="toggle"
 										:disabled="noController"
+										rounded="xl"
 									>
 										<v-icon>{{
 											isSelected ? 'mdi-crosshairs-gps' : 'mdi-crosshairs'

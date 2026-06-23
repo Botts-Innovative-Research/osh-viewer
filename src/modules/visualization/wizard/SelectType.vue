@@ -90,7 +90,7 @@ useComponentValidation(valid, emit);
 		<v-row class="ma-0">
 			<v-expand-transition>
 				<div
-					class="w-100"
+					class="w-100 mt-4"
 					:key="selectedFilters.join(',')"
 				>
 					<radio-cards

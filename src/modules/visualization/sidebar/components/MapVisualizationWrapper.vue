@@ -74,18 +74,6 @@ function getIconColor(viz: OSHVisualization) {
 
 // Parent viz logic
 const childrenOpen = ref(false);
-function handleParentClick(viz: OSHVisualization) {
-	toggleSelectedMapItem(viz);
-
-	// Only toggle children if this is a parent visualization
-	if (!viz.isParentVisualization()) return;
-
-	if (mapStore.selectedMapItem === viz) {
-		childrenOpen.value = true;
-	} else {
-		childrenOpen.value = false;
-	}
-}
 function handleParentVisibilityToggle(viz: OSHVisualization) {
 	toggleMapLayerVisibility(viz);
 
@@ -225,7 +213,7 @@ watch(
 			<v-list-item
 				:key="viz.id"
 				:active="isSelected(viz)"
-				@click="handleParentClick(viz)"
+				@click="toggleSelectedMapItem(viz)"
 			>
 				<!-- Icon -->
 				<template #prepend>
@@ -253,17 +241,10 @@ watch(
 				</template>
 				<!-- Title -->
 				<template #title>
-					<v-tooltip
-						text="Right click to view child visualizations"
-						location="bottom"
-						><template v-slot:activator="{ props }">
-							<span
-								:style="`text-decoration: ${isMapLayerVisible(viz.id) ? '' : 'line-through'}`"
-								v-bind="props"
-								>{{ viz.name }}</span
-							>
-						</template>
-					</v-tooltip>
+					<span
+						:style="`text-decoration: ${isMapLayerVisible(viz.id) ? '' : 'line-through'}`"
+						>{{ viz.name }}</span
+					>
 				</template>
 				<!-- Actions -->
 				<template #append>

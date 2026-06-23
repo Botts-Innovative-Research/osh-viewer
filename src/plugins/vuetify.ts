@@ -51,6 +51,7 @@ export const vuetify = createVuetify({
 			icon: true,
 			rounded: 10,
 			size: 'small',
+			variant: 'flat',
 		},
 		VCard: {
 			rounded: 20,

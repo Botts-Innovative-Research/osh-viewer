@@ -28,7 +28,7 @@ function selectItem(item: any) {
 		:model-value="selectedItem"
 		@update:model-value="selectItem"
 	>
-		<v-container class="py-4">
+		<v-container>
 			<v-row class="d-flex justify-center">
 				<TransitionGroup
 					tag="div"

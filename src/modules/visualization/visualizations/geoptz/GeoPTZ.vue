@@ -106,6 +106,7 @@ onBeforeUnmount(() => {
 								:disabled="props.visualizations.length === 0"
 								class="pa-0"
 								size="default"
+								rounded="xl"
 							>
 								<v-icon>{{
 									isSelected ? 'mdi-crosshairs-gps' : 'mdi-crosshairs'
@@ -151,6 +152,7 @@ onBeforeUnmount(() => {
 				/>
 				<v-btn
 					color="primary"
+					prepend-icon="mdi-send"
 					@click="onSend"
 					block
 					>Send</v-btn
