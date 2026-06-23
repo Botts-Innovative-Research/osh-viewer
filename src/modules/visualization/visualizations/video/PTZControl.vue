@@ -205,7 +205,7 @@ const constraintTooltip = computed(() => {
 </script>
 
 <template>
-	<v-container class="controlsContainer">
+	<v-container class="controlsContainer pa-2">
 		<v-sheet
 			v-if="hasRelative"
 			class="wrapper"

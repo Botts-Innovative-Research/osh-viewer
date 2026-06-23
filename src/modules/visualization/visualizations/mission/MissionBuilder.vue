@@ -14,7 +14,11 @@ import {
 } from '@/modules/visualization/services/datasource.service';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
-import { sendCommand, fetchCsSchema, mineControlObsPropsFromCS } from '../../services/controlstream.service';
+import {
+	sendCommand,
+	fetchCsSchema,
+	mineControlObsPropsFromCS,
+} from '../../services/controlstream.service';
 import { VisualizationComponents } from '../../types/visualization';
 import { VueDraggable } from 'vue-draggable-plus';
 
@@ -44,12 +48,18 @@ const activeVisualization = computed(() => {
 
 const datasources = computed(() => {
 	if (!activeVisualization.value) return [];
-	return (activeVisualization.value.visualizationComponents as VisualizationComponents).dataSource ?? [];
+	return (
+		(activeVisualization.value.visualizationComponents as VisualizationComponents).dataSource ??
+		[]
+	);
 });
 
 const controlstreams = computed(() => {
 	if (!activeVisualization.value) return [];
-	return (activeVisualization.value.visualizationComponents as VisualizationComponents).controlstream ?? [];
+	return (
+		(activeVisualization.value.visualizationComponents as VisualizationComponents)
+			.controlstream ?? []
+	);
 });
 
 // Helper to find controlstream by role
@@ -63,7 +73,6 @@ const missionControlStream = computed<Controlstream | undefined>(() =>
 );
 
 const noController = computed(() => props.visualizations.length === 0);
-
 
 interface Waypoint {
 	id: string;
@@ -301,7 +310,7 @@ async function isLegacyPlanSchema(): Promise<boolean> {
 	try {
 		const { cs: storeCs } = mineControlObsPropsFromCS(cs.id);
 		const schema = await fetchCsSchema(storeCs.controlstream);
-		console.log('schema', schema)
+		console.log('schema', schema);
 		if (!schema?.parametersSchema) return false;
 
 		const items = schema.parametersSchema.fields ?? schema.parametersSchema;
@@ -341,7 +350,11 @@ async function sendWaypoints() {
 		parameters: legacy ? { qGroundControlPlan: JSON.stringify(parameters) } : parameters,
 	};
 
-	console.log('[MissionBuilder.vue] Sending MissionBuilder command:', command, legacy ? '(legacy)' : '(structured)');
+	console.log(
+		'[MissionBuilder.vue] Sending MissionBuilder command:',
+		command,
+		legacy ? '(legacy)' : '(structured)'
+	);
 	sendCommand(
 		commandBaseUrl.value,
 		cs.id,
@@ -529,7 +542,6 @@ function cleanupDatasources() {
 	dsInstances.value = [];
 }
 
-
 async function connectDatasources() {
 	for (const ds of datasources.value) {
 		let dsInstance = createDatasource(ds);
@@ -552,12 +564,15 @@ async function connectDatasources() {
 	}
 }
 
-
-watch(activeVisualization, async () => {
-	cleanupDatasources();
-	if (!activeVisualization.value) return;
-	await connectDatasources();
-}, { immediate: true });
+watch(
+	activeVisualization,
+	async () => {
+		cleanupDatasources();
+		if (!activeVisualization.value) return;
+		await connectDatasources();
+	},
+	{ immediate: true }
+);
 
 onBeforeUnmount(() => {
 	if (isSelected.value) mapStore.disableWaypointSelection();
@@ -568,27 +583,30 @@ useVisualizationCleanup(dsInstances);
 </script>
 
 <template>
-	<v-container fluid>
+	<v-container
+		fluid
+		class="py-4"
+	>
 		<v-row
 			class="d-flex align-center"
 			no-gutters
 		>
 			<v-col>
 				<slot name="controllers"></slot>
-				<p class="text-caption text-grey mt-1">Select a controller to build and send missions.</p>
+				<p class="text-caption text-grey mt-1">
+					Select a controller to build and send missions.
+				</p>
 			</v-col>
 		</v-row>
-		<v-divider
-			class="my-4"
-			v-if="!noController"
-		></v-divider>
+		<v-divider v-if="!noController"></v-divider>
 
-		<v-sheet class="pa-0 d-flex flex-column ga-2" v-if="!noController">
+		<v-sheet
+			class="pa-0 d-flex flex-column"
+			v-if="!noController"
+		>
 			<v-card class="telemetry-card">
 				<v-card-text>Live Telemetry</v-card-text>
-				<v-row
-					dense
-				>
+				<v-row dense>
 					<v-col
 						cols="12"
 						md="4"
@@ -613,7 +631,7 @@ useVisualizationCleanup(dsInstances);
 				</v-row>
 			</v-card>
 
-			<v-card class="pa-2">
+			<v-card class="pt-0">
 				<v-tabs
 					v-model="missionSource"
 					grow
@@ -639,7 +657,7 @@ useVisualizationCleanup(dsInstances);
 				<v-window v-model="missionSource">
 					<v-window-item
 						value="waypoints"
-						class="mt-2"
+						class="my-4"
 					>
 						<v-form ref="waypointForm">
 							<v-row
@@ -657,8 +675,8 @@ useVisualizationCleanup(dsInstances);
 										:disabled="noController"
 									>
 										<v-icon>{{
-												isSelected ? 'mdi-crosshairs-gps' : 'mdi-crosshairs'
-											}}</v-icon>
+											isSelected ? 'mdi-crosshairs-gps' : 'mdi-crosshairs'
+										}}</v-icon>
 									</IconButton>
 									<v-tooltip
 										activator="parent"
@@ -681,7 +699,9 @@ useVisualizationCleanup(dsInstances);
 										label="Latitude"
 										placeholder="0.0"
 										hint="-90 to 90"
-										:rules="[(v) => (v >= -90 && v <= 90) || 'Must be -90 to 90']"
+										:rules="[
+											(v) => (v >= -90 && v <= 90) || 'Must be -90 to 90',
+										]"
 									/>
 								</v-col>
 								<v-col
@@ -695,8 +715,8 @@ useVisualizationCleanup(dsInstances);
 										placeholder="0.0"
 										hint="-180 to 180"
 										:rules="[
-										(v) => (v >= -180 && v <= 180) || 'Must be -180 to 180',
-									]"
+											(v) => (v >= -180 && v <= 180) || 'Must be -180 to 180',
+										]"
 									/>
 								</v-col>
 								<v-col
@@ -729,10 +749,10 @@ useVisualizationCleanup(dsInstances);
 						<v-expansion-panels class="mt-3">
 							<v-expansion-panel title="Waypoint Settings">
 								<v-expansion-panel-text>
-									<div class="d-flex justify-space-between align-center mb-2">
-									<span class="text-subtitle-2"
-									>Waypoints ({{ waypoints.length }})</span
-									>
+									<div class="d-flex justify-space-between align-center mb-4">
+										<span class="text-subtitle-2"
+											>Waypoints ({{ waypoints.length }})</span
+										>
 										<v-btn
 											size="small"
 											variant="text"
@@ -742,16 +762,32 @@ useVisualizationCleanup(dsInstances);
 										>
 											Clear All
 										</v-btn>
-										<v-dialog v-model="showClearConfirm" max-width="400">
+										<v-dialog
+											v-model="showClearConfirm"
+											max-width="400"
+										>
 											<v-card>
-												<v-card-title>Clear All Waypoints</v-card-title>
+												<v-card-item>
+													<v-card-title>Clear All Waypoints</v-card-title>
+												</v-card-item>
 												<v-card-text>
-													Are you sure you want to clear all {{ waypoints.length }} waypoints? This action cannot be undone.
+													Are you sure you want to clear all
+													{{ waypoints.length }} waypoints? This action
+													cannot be undone.
 												</v-card-text>
 												<v-card-actions>
 													<v-spacer />
-													<v-btn variant="text" @click="showClearConfirm = false">Cancel</v-btn>
-													<v-btn color="error" variant="flat" @click="clearWaypoints">Clear</v-btn>
+													<v-btn
+														variant="text"
+														@click="showClearConfirm = false"
+														>Cancel</v-btn
+													>
+													<v-btn
+														color="error"
+														variant="flat"
+														@click="clearWaypoints"
+														>Clear</v-btn
+													>
 												</v-card-actions>
 											</v-card>
 										</v-dialog>
@@ -769,11 +805,22 @@ useVisualizationCleanup(dsInstances);
 											class="pa-1"
 										>
 											<template v-slot:prepend>
-												<v-icon class="drag-handle mr-1" size="small">mdi-drag</v-icon>
-												<span class="text-caption mr-2">{{ index + 1 }}.</span>
+												<div>
+													<v-icon
+														class="drag-handle mr-1"
+														size="small"
+														>mdi-drag</v-icon
+													>
+													<span class="text-caption w-auto"
+														>{{ index + 1 }}.</span
+													>
+												</div>
 											</template>
-											<v-list-item-title class="text-body-2">
-												<v-row class="align-center">
+											<v-list-item-title class="px-2">
+												<v-row
+													class="align-center"
+													density="compact"
+												>
 													<v-col cols="4">
 														<v-text-field
 															type="number"
@@ -804,19 +851,23 @@ useVisualizationCleanup(dsInstances);
 												</v-row>
 											</v-list-item-title>
 											<template v-slot:append>
-												<v-btn
-													icon
-													size="x-small"
-													variant="text"
-													@click="removeWaypoint(wp.id)"
-												>
-													<v-icon size="small">mdi-close-circle</v-icon>
-													<v-tooltip
-														activator="parent"
-														location="top"
-													>Remove waypoint</v-tooltip
+												<div class="">
+													<v-btn
+														icon
+														size="x-small"
+														variant="text"
+														@click="removeWaypoint(wp.id)"
 													>
-												</v-btn>
+														<v-icon size="small"
+															>mdi-close-circle</v-icon
+														>
+														<v-tooltip
+															activator="parent"
+															location="top"
+															>Remove waypoint</v-tooltip
+														>
+													</v-btn>
+												</div>
 											</template>
 										</v-list-item>
 									</VueDraggable>
@@ -826,9 +877,7 @@ useVisualizationCleanup(dsInstances);
 									>
 										No waypoints added. Click on the map or use the form above.
 									</div>
-								</v-expansion-panel-text>
-								<v-expansion-panel-text>
-									<v-divider class="my-3"></v-divider>
+									<v-divider class="my-4"></v-divider>
 									<v-row dense>
 										<v-col
 											cols="12"
@@ -876,45 +925,40 @@ useVisualizationCleanup(dsInstances);
 												label="Auto Continue"
 												density="compact"
 												color="primary"
+												hide-details
 											/>
 										</v-col>
 									</v-row>
 								</v-expansion-panel-text>
 							</v-expansion-panel>
 							<v-expansion-panel title="Planned Home Position">
-								<v-expansion-panel-text>
+								<v-expansion-panel-text class="py-2">
 									<v-row dense>
-										<v-col
-											cols="12"
-											md="4"
-										>
+										<v-col cols="4">
 											<v-card-subtitle>Latitude</v-card-subtitle>
-											<v-card-text>{{ homeLocation.lat.toFixed(6) }}</v-card-text>
+											<v-card-text>{{
+												homeLocation.lat.toFixed(6)
+											}}</v-card-text>
 										</v-col>
-										<v-col
-											cols="12"
-											md="4"
-										>
+										<v-col cols="4">
 											<v-card-subtitle>Longitude</v-card-subtitle>
-											<v-card-text>{{ homeLocation.lon.toFixed(6) }}</v-card-text>
+											<v-card-text>{{
+												homeLocation.lon.toFixed(6)
+											}}</v-card-text>
 										</v-col>
-										<v-col
-											cols="12"
-											md="4"
-										>
+										<v-col cols="4">
 											<v-card-subtitle>Altitude</v-card-subtitle>
-											<v-card-text>{{ homeLocation.alt.toFixed(2) }}</v-card-text>
+											<v-card-text>{{
+												homeLocation.alt.toFixed(2)
+											}}</v-card-text>
 										</v-col>
 									</v-row>
 								</v-expansion-panel-text>
 							</v-expansion-panel>
 							<v-expansion-panel title="Mission Settings">
-								<v-expansion-panel-text>
+								<v-expansion-panel-text class="py-2">
 									<v-row dense>
-										<v-col
-											cols="6"
-											md="3"
-										>
+										<v-col cols="6">
 											<v-text-field
 												v-model.number="cruiseSpeed"
 												type="number"
@@ -923,10 +967,7 @@ useVisualizationCleanup(dsInstances);
 												hide-details
 											/>
 										</v-col>
-										<v-col
-											cols="6"
-											md="3"
-										>
+										<v-col cols="6">
 											<v-text-field
 												v-model.number="hoverSpeed"
 												type="number"
@@ -954,7 +995,10 @@ useVisualizationCleanup(dsInstances);
 						</v-expansion-panels>
 					</v-window-item>
 
-					<v-window-item value="file">
+					<v-window-item
+						value="file"
+						class="my-4"
+					>
 						<v-row dense>
 							<v-col cols="12">
 								<v-btn
@@ -1012,10 +1056,10 @@ useVisualizationCleanup(dsInstances);
 					class="flex-grow-1"
 					@click="confirmSendMission"
 					:disabled="
-					noController ||
-					(missionSource === 'waypoints' && waypoints.length === 0) ||
-					(missionSource === 'file' && !selectedFile)
-				"
+						noController ||
+						(missionSource === 'waypoints' && waypoints.length === 0) ||
+						(missionSource === 'file' && !selectedFile)
+					"
 					prepend-icon="mdi-send"
 				>
 					Send Mission
@@ -1023,14 +1067,19 @@ useVisualizationCleanup(dsInstances);
 				<v-btn
 					variant="outlined"
 					@click="showExportDialog = true"
-					:disabled="noController || missionSource !== 'waypoints' || waypoints.length === 0"
+					:disabled="
+						noController || missionSource !== 'waypoints' || waypoints.length === 0
+					"
 					prepend-icon="mdi-download"
 				>
 					Export
 				</v-btn>
 			</div>
 
-			<v-dialog v-model="showExportDialog" max-width="400">
+			<v-dialog
+				v-model="showExportDialog"
+				max-width="400"
+			>
 				<v-card>
 					<v-card-title>Export Mission</v-card-title>
 					<v-card-text>
@@ -1045,46 +1094,75 @@ useVisualizationCleanup(dsInstances);
 					</v-card-text>
 					<v-card-actions>
 						<v-spacer />
-						<v-btn variant="text" @click="showExportDialog = false">Cancel</v-btn>
-						<v-btn color="primary" variant="flat" @click="exportMissionPlan" prepend-icon="mdi-download">Export</v-btn>
+						<v-btn
+							variant="text"
+							@click="showExportDialog = false"
+							>Cancel</v-btn
+						>
+						<v-btn
+							color="primary"
+							variant="flat"
+							@click="exportMissionPlan"
+							prepend-icon="mdi-download"
+							>Export</v-btn
+						>
 					</v-card-actions>
 				</v-card>
 			</v-dialog>
 
-			<v-dialog v-model="showMissionSummary" max-width="500">
+			<v-dialog
+				v-model="showMissionSummary"
+				max-width="500"
+			>
 				<v-card>
 					<v-card-title>Mission Summary</v-card-title>
 					<!--				todo: add flight time and distance (using haversine formula for distance. then distance / speed = time)-->
 					<v-card-text>
 						<v-table density="compact">
 							<tbody>
-							<tr>
-								<td class="font-weight-medium">Source</td>
-								<td>{{ missionSource === 'waypoints' ? 'Waypoints' : 'Plan File' }}</td>
-							</tr>
-							<tr v-if="missionSource === 'waypoints'">
-								<td class="font-weight-medium">Waypoints</td>
-								<td>{{ waypoints.length }}</td>
-							</tr>
-							<tr v-if="missionSource === 'waypoints'">
-								<td class="font-weight-medium">Cruise Speed</td>
-								<td>{{ cruiseSpeed }} m/s</td>
-							</tr>
-							<tr v-if="missionSource === 'waypoints'">
-								<td class="font-weight-medium">Altitude</td>
-								<td>{{ waypointAltitude }} m</td>
-							</tr>
-							<tr v-if="missionSource === 'file' && selectedFile">
-								<td class="font-weight-medium">File</td>
-								<td>{{ selectedFile.name }}</td>
-							</tr>
+								<tr>
+									<td class="font-weight-medium">Source</td>
+									<td>
+										{{
+											missionSource === 'waypoints'
+												? 'Waypoints'
+												: 'Plan File'
+										}}
+									</td>
+								</tr>
+								<tr v-if="missionSource === 'waypoints'">
+									<td class="font-weight-medium">Waypoints</td>
+									<td>{{ waypoints.length }}</td>
+								</tr>
+								<tr v-if="missionSource === 'waypoints'">
+									<td class="font-weight-medium">Cruise Speed</td>
+									<td>{{ cruiseSpeed }} m/s</td>
+								</tr>
+								<tr v-if="missionSource === 'waypoints'">
+									<td class="font-weight-medium">Altitude</td>
+									<td>{{ waypointAltitude }} m</td>
+								</tr>
+								<tr v-if="missionSource === 'file' && selectedFile">
+									<td class="font-weight-medium">File</td>
+									<td>{{ selectedFile.name }}</td>
+								</tr>
 							</tbody>
 						</v-table>
 					</v-card-text>
 					<v-card-actions>
 						<v-spacer />
-						<v-btn variant="text" @click="showMissionSummary = false">Cancel</v-btn>
-						<v-btn color="primary" variant="flat" @click="sendMission" prepend-icon="mdi-send">Send</v-btn>
+						<v-btn
+							variant="text"
+							@click="showMissionSummary = false"
+							>Cancel</v-btn
+						>
+						<v-btn
+							color="primary"
+							variant="flat"
+							@click="sendMission"
+							prepend-icon="mdi-send"
+							>Send</v-btn
+						>
 					</v-card-actions>
 				</v-card>
 			</v-dialog>
@@ -1094,17 +1172,16 @@ useVisualizationCleanup(dsInstances);
 					:controlstreams="controlstreams"
 					class="mt-3"
 					v-if="
-					getControlstreamByRole('land') ||
-					getControlstreamByRole('pause') ||
-					getControlstreamByRole('rtl') ||
-					getControlstreamByRole('offboard') ||
-					getControlstreamByRole('takeoff')
-				"
+						getControlstreamByRole('land') ||
+						getControlstreamByRole('pause') ||
+						getControlstreamByRole('rtl') ||
+						getControlstreamByRole('offboard') ||
+						getControlstreamByRole('takeoff')
+					"
 				/>
 			</v-card>
 		</v-sheet>
 	</v-container>
-
 </template>
 
 <style scoped>

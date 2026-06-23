@@ -100,7 +100,7 @@ const close = () => {
 			<v-btn
 				type="submit"
 				color="error"
-				variant="tonal"
+				variant="flat"
 				@click="deleteNode"
 				>Delete Node</v-btn
 			>

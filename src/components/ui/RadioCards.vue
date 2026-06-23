@@ -28,11 +28,11 @@ function selectItem(item: any) {
 		:model-value="selectedItem"
 		@update:model-value="selectItem"
 	>
-		<v-container>
-			<v-row>
+		<v-container class="py-4">
+			<v-row class="d-flex justify-center">
 				<TransitionGroup
 					tag="div"
-					class="d-flex flex-wrap w-100"
+					class="d-flex flex-wrap ga-2 w-100 justify-center"
 				>
 					<v-col
 						v-for="item in items"
@@ -45,7 +45,7 @@ function selectItem(item: any) {
 						>
 							<v-card
 								:color="isSelected ? 'primary' : ''"
-								class="d-flex align-center justify-center"
+								class="d-flex align-center justify-center border-sm"
 								:height="props.size === 'small' ? 100 : 150"
 								@click="toggle"
 							>

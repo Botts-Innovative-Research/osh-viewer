@@ -74,7 +74,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-	<v-container fluid>
+	<v-container
+		fluid
+		class="py-4"
+	>
 		<v-row
 			class="d-flex align-center"
 			no-gutters

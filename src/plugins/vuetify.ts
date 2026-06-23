@@ -65,9 +65,6 @@ export const vuetify = createVuetify({
 			VStepperHeader: {
 				class: 'elevation-0',
 			},
-			VStepperWindow: {
-				class: 'pa-2',
-			},
 		},
 		VExpansionPanels: {
 			rounded: [15, 15],
@@ -80,13 +77,15 @@ export const vuetify = createVuetify({
 			class: 'border-sm',
 			rounded: 15,
 		},
-		VExpansionPanelText: {},
-		VList: {},
+		VList: {
+			rounded: 10,
+		},
 		VListItem: {
 			rounded: 10,
 		},
 		VTooltip: {
 			openDelay: 500,
+			rounded: 10,
 		},
 		VAlert: {
 			rounded: 10,
@@ -94,7 +93,9 @@ export const vuetify = createVuetify({
 		VAutocomplete: {
 			variant: 'outlined',
 			rounded: 10,
-			class: 'pl-2',
+			menuProps: {
+				rounded: 100,
+			},
 		},
 		VSelect: {
 			variant: 'outlined',
@@ -102,7 +103,10 @@ export const vuetify = createVuetify({
 		},
 		VTextField: {
 			variant: 'outlined',
-			rounded: 15,
+			rounded: 10,
+		},
+		VContainer: {
+			class: 'pa-0',
 		},
 	},
 });

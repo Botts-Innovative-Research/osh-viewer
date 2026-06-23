@@ -59,11 +59,11 @@ const valid = computed(() => {
 useComponentValidation(valid, emit);
 </script>
 <template>
-	<v-sheet class="pa-2">
+	<v-sheet>
 		<v-row>
-			<h4>Filter by layer</h4>
+			<h4 class="ma-0">Filter by layer</h4>
 		</v-row>
-		<v-row class="align-center ga-2">
+		<v-row class="align-center ma-0 ga-2">
 			<v-chip
 				v-if="selectedFilters.length"
 				closable
@@ -87,7 +87,7 @@ useComponentValidation(valid, emit);
 				</v-chip>
 			</v-chip-group>
 		</v-row>
-		<v-row>
+		<v-row class="ma-0">
 			<v-expand-transition>
 				<div
 					class="w-100"
