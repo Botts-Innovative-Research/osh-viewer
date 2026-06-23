@@ -197,7 +197,6 @@ const uiStore = useUIStore();
 											</template>
 										</v-tooltip>
 										<DeleteButton
-											class="ml-2 mr-2"
 											label="Remove"
 											@delete="removeVisualization(viz)"
 										>
@@ -293,6 +292,10 @@ const uiStore = useUIStore();
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+.v-expansion-panel--active {
+	margin-bottom: 0px; /* consistent gap */
 }
 
 .v-expansion-panel:hover .panel-actions {

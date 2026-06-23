@@ -54,15 +54,18 @@ onMounted(fetchConfigs);
 </script>
 
 <template>
-	<v-card class="pa-2">
-		<v-card-title>Load State</v-card-title>
-		<v-card-text>
-			<v-alert
-				text="Loading a saved state will delete all current visualizations"
-				type="warning"
-				class="mb-4"
-			></v-alert>
-			<v-form @submit.prevent="handleLoad">
+	<v-card>
+		<v-card-item>
+			<v-card-title>Load State</v-card-title>
+		</v-card-item>
+		<v-form @submit.prevent="handleLoad">
+			<v-card-text>
+				<v-alert
+					text="Loading a saved state will delete all current visualizations"
+					type="warning"
+					class="mb-8"
+					variant="outlined"
+				></v-alert>
 				<v-select
 					v-model="selectedNode"
 					:items="listNodes"
@@ -78,21 +81,21 @@ onMounted(fetchConfigs);
 					:loading="loadingConfigs"
 					:disabled="loadingConfigs"
 					label="Select saved configuration"
-					persistent-hint
+					hide-details
 					no-data-text="No saved configurations found"
 				/>
-				<v-card-actions>
-					<v-btn
-						block
-						type="submit"
-						color="success"
-						variant="tonal"
-						:disabled="!selectedConfig || loadingConfigs"
-						>Load State</v-btn
-					>
-				</v-card-actions>
-			</v-form>
-		</v-card-text>
+			</v-card-text>
+			<v-card-actions>
+				<v-btn
+					block
+					type="submit"
+					color="primary"
+					variant="tonal"
+					:disabled="!selectedConfig || loadingConfigs"
+					>Load State</v-btn
+				>
+			</v-card-actions>
+		</v-form>
 	</v-card>
 </template>
 

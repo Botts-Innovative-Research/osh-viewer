@@ -54,7 +54,7 @@ const cancelForm = () => {
 	uiStore.nodeConfigFormOpen = false;
 };
 
-function sanitizeAPIRoot(path) {
+function sanitizeAPIRoot(path: any) {
 	if (path.startsWith('/')) {
 		path = path.slice(1);
 	}
@@ -66,16 +66,16 @@ function sanitizeAPIRoot(path) {
 </script>
 
 <template>
-	<v-card class="pa-2">
-		<v-card-title>Add a New Node</v-card-title>
-
-		<v-card-text>
-			<v-form @submit.prevent="createNode()">
+	<v-card>
+		<v-card-item>
+			<v-card-title>Add a New Node</v-card-title>
+		</v-card-item>
+		<v-form @submit.prevent="createNode()">
+			<v-card-text class="d-flex flex-column ga-2">
 				<v-text-field
 					label="Node Name"
 					v-model="nodeName"
 					placeholder="Test"
-					class="mb-2"
 					:rules="[(v) => !!v || 'Name is required']"
 					required
 				/>
@@ -93,7 +93,6 @@ function sanitizeAPIRoot(path) {
 					type="number"
 					inputmode="numeric"
 					onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault();"
-					class="mb-2"
 					:rules="[(v) => !!v || 'Port is required']"
 					required
 				/>
@@ -101,14 +100,12 @@ function sanitizeAPIRoot(path) {
 					label="Node Path"
 					v-model="nodePath"
 					placeholder="sensorhub/api"
-					class="mb-2"
 					:rules="[(v) => !!v || 'Path is required']"
 					required
 				/>
 				<v-text-field
 					label="Node User"
 					v-model="nodeUser"
-					class="mb-2"
 					:rules="[(v) => !!v || 'Username is required']"
 					required
 				/>
@@ -116,32 +113,33 @@ function sanitizeAPIRoot(path) {
 					label="Node Password"
 					v-model="nodePassword"
 					type="password"
-					class="mb-2"
 					:rules="[(v) => !!v || 'Password is required']"
 					required
 				/>
 				<v-checkbox
 					label="TLS: Secure"
 					v-model="tls"
+					color="primary"
+					hide-details
 				></v-checkbox>
+			</v-card-text>
 
-				<!-- Buttons inside the form -->
-				<v-card-actions>
-					<v-btn
-						type="submit"
-						color="success"
-						variant="tonal"
-						:disabled="!isValid"
-						>Create Node</v-btn
-					>
-					<v-btn
-						text
-						@click="cancelForm"
-						>Cancel</v-btn
-					>
-				</v-card-actions>
-			</v-form>
-		</v-card-text>
+			<!-- Buttons inside the form -->
+			<v-card-actions>
+				<v-btn
+					text
+					@click="cancelForm"
+					>Cancel</v-btn
+				>
+				<v-btn
+					type="submit"
+					color="primary"
+					variant="tonal"
+					:disabled="!isValid"
+					>Create Node</v-btn
+				>
+			</v-card-actions>
+		</v-form>
 	</v-card>
 </template>
 

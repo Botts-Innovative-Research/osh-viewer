@@ -158,6 +158,7 @@ const openFoiStyleDialog = (system: any) => {
 					prepend-icon="mdi-plus-circle"
 					@click="openNodeConfig"
 					color="primary"
+					variant="tonal"
 				>
 					Add Node
 				</v-btn>

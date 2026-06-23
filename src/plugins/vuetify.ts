@@ -3,7 +3,6 @@ import 'vuetify/styles';
 import { createVuetify } from 'vuetify';
 import * as components from 'vuetify/components';
 import * as directives from 'vuetify/directives';
-import '@mdi/font/css/materialdesignicons.css';
 
 export const vuetify = createVuetify({
 	components,
@@ -56,6 +55,10 @@ export const vuetify = createVuetify({
 		VCard: {
 			rounded: 20,
 			elevation: 0,
+			class: 'pa-4',
+		},
+		VCardActions: {
+			class: 'justify-end',
 		},
 		VStepper: {
 			class: 'elevation-0',
@@ -71,19 +74,16 @@ export const vuetify = createVuetify({
 			gap: 8,
 			static: true,
 			elevation: 0,
+			variant: 'accordion',
 		},
 		VExpansionPanel: {
-			rounded: 15,
-			gap: 8,
 			class: 'border-sm',
+			rounded: 15,
 		},
-		VExpansionPanelText: {
-			class: 'pa-0',
-		},
-		VList: {
-			VListItem: {
-				rounded: 10,
-			},
+		VExpansionPanelText: {},
+		VList: {},
+		VListItem: {
+			rounded: 10,
 		},
 		VTooltip: {
 			openDelay: 500,
@@ -99,11 +99,10 @@ export const vuetify = createVuetify({
 		VSelect: {
 			variant: 'outlined',
 			rounded: 10,
-			class: 'pl-2',
 		},
 		VTextField: {
 			variant: 'outlined',
-			rounded: 10,
+			rounded: 15,
 		},
 	},
 });

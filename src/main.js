@@ -1,12 +1,13 @@
+import 'vuetify/styles';
+import '@mdi/font/css/materialdesignicons.css';
 import './assets/main.css';
-
+import './styles/vuetify-overrides.css';
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 import Toast from 'vue-toastification';
 import 'vue-toastification/dist/index.css';
 import { vuetify } from './plugins/vuetify';
-import './styles/vuetify-overrides.css';
 
 import App from './App.vue';
 import router from './router/index.js';
