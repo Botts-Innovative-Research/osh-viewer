@@ -148,7 +148,6 @@ export function createLoBLayer(
 	let getOrigin: any;
 	let getBearing: any;
 	let getLobId: any;
-	let getIconColor: any;
 	let getColor: any;
 
 	for (const dsProps of dsArray) {
@@ -191,16 +190,6 @@ export function createLoBLayer(
 				},
 			};
 		}
-		// Check for iconColor property
-		if (dsProps.properties.lobIconColor) {
-			getIconColor = {
-				dataSourceIds: [dsInstance.id],
-				handler: (rec: any) => {
-					return colorHash(getLayerId(rec, dsProps.properties.lobIconColor.property))
-						.rgba;
-				},
-			};
-		}
 		// Check for line color property
 		if (dsProps.properties.lobLineColor) {
 			getColor = {
@@ -220,12 +209,10 @@ export function createLoBLayer(
 		...viz.visualizationComponents.dataLayer,
 		name: viz.name,
 		id: viz.id,
-		icon: `${ICON_BASE}${viz.visualizationComponents.dataLayer.icon}`,
 		dataSourceIds: dsInstances.map((ds) => ds.id),
 		...(getOrigin ? { getOrigin } : {}),
 		...(getBearing ? { getBearing } : {}),
 		...(getLobId ? { getLobId } : {}),
-		...(getIconColor ? { getIconColor } : {}),
 		...(getColor ? { getColor } : {}),
 	});
 
