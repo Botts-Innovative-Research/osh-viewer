@@ -46,11 +46,10 @@ watch(
 </script>
 
 <template>
-	<v-card class="pa-2">
+	<v-card>
 		<v-card-title>Properties</v-card-title>
-
 		<v-card-text>
-			<v-table>
+			<v-table class="overflow-wrap">
 				<tbody>
 					<tr>
 						<td>Name</td>
@@ -89,7 +88,14 @@ watch(
 							<v-table
 								density="compact"
 								class="mt-1 mb-1"
+								height=""
 							>
+								<thead>
+									<tr>
+										<th>Name</th>
+										<th>Units</th>
+									</tr>
+								</thead>
 								<tr v-for="property in schema">
 									<td>{{ property.label ?? property.name }}</td>
 									<td v-if="property.uom && property.uom.code">
@@ -106,4 +112,18 @@ watch(
 	</v-card>
 </template>
 
-<style scoped></style>
+<style scoped>
+:deep(td) {
+	white-space: normal;
+	word-break: break-word;
+	overflow-wrap: anywhere;
+}
+:deep(.v-table) {
+	display: block;
+	max-height: 60vh;
+	overflow-y: auto;
+}
+:deep(th) {
+	padding: 0;
+}
+</style>

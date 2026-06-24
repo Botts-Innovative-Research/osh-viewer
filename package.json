@@ -39,11 +39,11 @@
 		"simple-worker-vite": "^0.3.0",
 		"splitpanes": "^4.0.4",
 		"vite-svg-loader": "^5.1.1",
-		"vue": "^3.5.24",
+		"vue": "^3.5.38",
 		"vue-draggable-plus": "^0.6.1",
 		"vue-router": "^4.6.3",
 		"vue-toastification": "^2.0.0-rc.5",
-		"vuetify": "^3.10.11"
+		"vuetify": "^4.1.2"
 	},
 	"devDependencies": {
 		"@tsconfig/node22": "^22.0.4",
@@ -58,6 +58,7 @@
 		"typescript": "^5.9.3",
 		"vite": "7.1.11",
 		"vite-plugin-static-copy": "^3.1.4",
-		"vite-plugin-vue-devtools": "^8.0.5"
+		"vite-plugin-vue-devtools": "^8.0.5",
+		"vite-plugin-vuetify": "^2.1.3"
 	}
 }

@@ -138,3 +138,4 @@ useComponentValidation(valid, emit);
 		:disabled="!selectedSystems.length"
 	></v-autocomplete>
 </template>
+<style scoped></style>

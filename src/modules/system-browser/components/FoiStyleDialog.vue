@@ -28,8 +28,10 @@ const foiColor = computed({
 </script>
 
 <template>
-	<v-card class="pa-2">
-		<v-card-title>Customize FOI</v-card-title>
+	<v-card>
+		<v-card-item>
+			<v-card-title>Customize FOI</v-card-title>
+		</v-card-item>
 		<v-card-text>
 			<v-alert
 				:text="props.system.name"

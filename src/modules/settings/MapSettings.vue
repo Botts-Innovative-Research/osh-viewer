@@ -64,12 +64,12 @@ const canAddUrl = computed(() => {
 </script>
 
 <template>
-	<v-card class="elevation-0">
+	<v-card style="padding: 0px">
 		<v-card-item>
 			<v-card-title>Map Settings</v-card-title>
 			<v-card-subtitle>Configure map-related settings.</v-card-subtitle>
 		</v-card-item>
-		<v-card-text class="pl-0">
+		<v-card-text class="pa-0">
 			<v-list>
 				<v-list-item>
 					<v-list-item-title>Map Type</v-list-item-title>
@@ -112,7 +112,7 @@ const canAddUrl = computed(() => {
 								<v-switch
 									v-model="enable3DTerrain"
 									color="primary"
-									inset
+									inset="material"
 									hide-details
 								></v-switch>
 							</template>
@@ -123,7 +123,7 @@ const canAddUrl = computed(() => {
 								<v-switch
 									v-model="enable3DBuildings"
 									color="primary"
-									inset
+									inset="material"
 									hide-details
 								></v-switch>
 							</template>
@@ -136,7 +136,7 @@ const canAddUrl = computed(() => {
 								<v-switch
 									v-model="enableGooglePhotorealistic"
 									color="primary"
-									inset
+									inset="material"
 									hide-details
 								></v-switch>
 							</template>
@@ -157,7 +157,7 @@ const canAddUrl = computed(() => {
 								<template #append-inner>
 									<v-btn
 										prepend-icon="mdi-plus"
-										color="info"
+										color="primary"
 										:disabled="!canAddUrl"
 										@click="addIonAssetUrl"
 									>
@@ -173,23 +173,28 @@ const canAddUrl = computed(() => {
 								<v-expansion-panel>
 									<v-expansion-panel-title>
 										Current Layers
-										<v-badge
-											v-if="mapStore.cesiumMapLayers.length"
-											inline
-											location="top right"
-											:content="mapStore.cesiumMapLayers.length"
-											class="pl-2"
-										/>
+										<v-fade-transition>
+											<v-badge
+												v-if="mapStore.cesiumMapLayers.length"
+												inline
+												location="top right"
+												:content="mapStore.cesiumMapLayers.length"
+												class="pl-2"
+											/>
+										</v-fade-transition>
 									</v-expansion-panel-title>
 									<v-expansion-panel-text
 										v-if="mapStore.cesiumMapLayers.length"
 										class="layer-list"
 									>
-										<v-list activatable>
+										<v-list
+											activatable
+											bg-color="transparent"
+										>
 											<v-list-item
 												v-for="layer in mapStore.cesiumMapLayers"
 												:key="layer.id"
-												class="pl-4"
+												class="ga-2 px-2"
 											>
 												<template #prepend>
 													<DeleteButton
@@ -218,9 +223,6 @@ const canAddUrl = computed(() => {
 </template>
 <style scoped>
 :deep(.layer-list .v-expansion-panel-text__wrapper) {
-	padding: 0;
-}
-.iconButton {
-	font-size: 35px;
+	padding: 8px;
 }
 </style>
