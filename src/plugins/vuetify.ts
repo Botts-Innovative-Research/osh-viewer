@@ -94,9 +94,6 @@ export const vuetify = createVuetify({
 		VAutocomplete: {
 			variant: 'outlined',
 			rounded: 10,
-			menuProps: {
-				rounded: 100,
-			},
 		},
 		VSelect: {
 			variant: 'outlined',
@@ -108,6 +105,9 @@ export const vuetify = createVuetify({
 		},
 		VContainer: {
 			class: 'pa-0',
+		},
+		VSheet: {
+			rounded: 'lg',
 		},
 	},
 });
