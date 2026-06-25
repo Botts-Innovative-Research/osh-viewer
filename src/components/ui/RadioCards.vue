@@ -1,39 +1,79 @@
 <script setup lang="ts">
 import { computed, toRaw } from 'vue';
 
-
 const props = defineProps<{
-  items: any[];
-  selectedItem: any;
-  tooltip: boolean;
-}>()
+	items: any[];
+	selectedItem: any;
+	tooltip: boolean;
+	size: 'small' | 'large';
+}>();
 
 const emit = defineEmits<{
-  (e: 'update:value', value: any): void
-}>()
+	(e: 'update:value', value: any): void;
+}>();
 
 const selectedItem = computed({
-  get: () => props.selectedItem,
-  set: (val: any) => emit('update:value', val)
-})
+	get: () => props.selectedItem,
+	set: (val: any) => emit('update:value', val),
+});
 
 function selectItem(item: any) {
-	selectedItem.value = item
+	selectedItem.value = item;
 }
-
 </script>
 
 <template>
-	<v-row justify="center" class="mb-2" v-if="items.length > 0">
-		<v-col v-for="item in items" :key="item.id" cols="12" sm="6" md="3"
-			class="d-flex justify-center">
-			<v-card :elevation="toRaw(selectedItem) === item ? 10 : 2" :color="toRaw(selectedItem) === item ? 'primary' : ''"
-				class="d-flex flex-column align-center justify-center pa-4 type-card" @click="selectItem(item)"
-				style="cursor: pointer; min-height: 120px; max-width: 220px; width: 100%">
-				<v-icon size="36" class="mb-2">{{ item.icon.startsWith('mdi-') ? item.icon : `mdi-${item.icon}` }}</v-icon>
-				<span>{{ item.label }}</span>
-				<v-tooltip v-if="props.tooltip" activator="parent" location="bottom">{{ item.description }}</v-tooltip>
-			</v-card>
-		</v-col>
-	</v-row>
+	<v-item-group
+		mandatory
+		:model-value="selectedItem"
+		@update:model-value="selectItem"
+	>
+		<v-container>
+			<v-row>
+				<TransitionGroup
+					tag="div"
+					class="d-flex flex-wrap w-100"
+				>
+					<v-col
+						v-for="item in items"
+						:key="item.id"
+						:cols="props.size === 'small' ? 2 : 3"
+					>
+						<v-item
+							:value="item"
+							v-slot="{ isSelected, toggle }"
+						>
+							<v-card
+								:color="isSelected ? 'primary' : ''"
+								class="d-flex align-center justify-center"
+								:height="props.size === 'small' ? 100 : 150"
+								@click="toggle"
+							>
+								<v-scroll-y-transition>
+									<div class="d-flex flex-column align-center text-center">
+										<v-icon
+											size="36"
+											class="mb-2"
+											>{{
+												item.icon.startsWith('mdi-')
+													? item.icon
+													: `mdi-${item.icon}`
+											}}</v-icon
+										>
+										<span>{{ item.label }}</span>
+									</div>
+								</v-scroll-y-transition>
+								<v-tooltip
+									v-if="props.tooltip"
+									activator="parent"
+									location="bottom"
+									>{{ item.description }}</v-tooltip
+								>
+							</v-card>
+						</v-item>
+					</v-col>
+				</TransitionGroup>
+			</v-row>
+		</v-container>
+	</v-item-group>
 </template>

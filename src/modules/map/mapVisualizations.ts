@@ -1,0 +1,537 @@
+import { createDatasource } from '@/modules/visualization/services/datasource.service';
+import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
+import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
+import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
+import EllipseLayer from 'osh-js/source/core/ui/layer/EllipseLayer';
+import PolylineLayer from 'osh-js/source/core/ui/layer/PolylineLayer';
+import { MapPoint } from './adapters/types';
+import { setWaypointData } from './services/missionBuilder.service';
+import { useSettingsStore } from '@/stores/settingsstore';
+import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+import { getLayerId } from './services/layerId.service';
+import { colorHash } from './services/colorId.service';
+import { SupportedMapLayer } from './supportedMapLayers';
+import { getGroundAltitude } from './services/altitude.service';
+import { IConSysApiDataSourceProperties } from '../visualization/types/datasource';
+import { setLayerData } from './services/foi.service';
+import { ICON_BASE } from '@/lib/icons';
+import { FoiLayer } from '@/stores/visualizationstore';
+
+export interface ICreateMapVisualizationResult {
+	vizLayer: SupportedMapLayer;
+	dsInstances: (typeof ConSysApi)[];
+}
+
+export async function createMapVisualizations(
+	viz: OSHVisualization
+): Promise<ICreateMapVisualizationResult | null> {
+	if (viz.type === 'pointmarker') {
+		return createPointMarkerLayer(viz, viz.visualizationComponents.dataSource);
+	} else if (viz.type === 'lob') {
+		return createLoBLayer(viz, viz.visualizationComponents.dataSource);
+	} else if (viz.type === 'ellipse') {
+		return createEllipseLayer(viz, viz.visualizationComponents.dataSource);
+	} else if (viz.type === 'polyline') {
+		return createPolylineLayer(viz, viz.visualizationComponents.dataSource);
+	} else {
+		console.warn(`Visualization type ${viz.type} not supported for map view`);
+		return null;
+	}
+}
+
+export function createPointMarkerLayer(
+	viz: OSHVisualization,
+	dsArray: IConSysApiDataSourceProperties[]
+): ICreateMapVisualizationResult {
+	// Ds instances created
+	let dsInstances: (typeof ConSysApi)[] = [];
+
+	// Undefined initially
+	let getLocation: any;
+	let getOrientation: any;
+	let getMarkerId: any;
+	let getIconColor: any;
+	let getLabel: any;
+
+	for (const dsProps of dsArray) {
+		const dsInstance = createDatasource(dsProps);
+
+		// Check for location property
+		if (dsProps.properties.location) {
+			getLocation = {
+				dataSourceIds: [dsInstance.id],
+				handler: async (rec: any) => {
+					const lon = rec[dsProps.properties.location.property].lon;
+					const lat = rec[dsProps.properties.location.property].lat;
+					return {
+						x: lon,
+						y: lat,
+						z:
+							rec[dsProps.properties.location.property].alt ||
+							(await getGroundAltitude(lon, lat)),
+					};
+				},
+			};
+		}
+		// Check for orientation property
+		if (dsProps.properties.orientation) {
+			getOrientation = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return {
+						heading: rec[dsProps.properties.orientation.property].heading,
+					};
+				},
+			};
+		}
+		// Check for markerId property
+		if (dsProps.properties.markerId) {
+			getMarkerId = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return getLayerId(rec, dsProps.properties.markerId.property);
+				},
+			};
+		}
+		// Check for iconColor property
+		if (dsProps.properties.pmIconColor) {
+			getIconColor = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return colorHash(getLayerId(rec, dsProps.properties.pmIconColor.property)).rgba;
+				},
+			};
+		}
+		// Check for label property
+		if (dsProps.properties.pmLabel) {
+			getLabel = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					const labelValue = rec[dsProps.properties.pmLabel.property];
+					if (labelValue === undefined || labelValue === null) return '';
+					if (typeof labelValue === 'object') {
+						return JSON.stringify(labelValue);
+					}
+					return labelValue?.toString() || '';
+				},
+			};
+		}
+
+		dsInstance.connect();
+		dsInstances.push(dsInstance);
+	}
+
+	const pmLayer = new PointMarkerLayer({
+		...viz.visualizationComponents.dataLayer,
+		name: viz.name,
+		id: viz.id,
+		icon: `${ICON_BASE}${viz.visualizationComponents.dataLayer.icon}`,
+		defaultToTerrainElevation: true,
+		dataSourceIds: dsInstances.map((ds) => ds.id),
+		...(getLocation ? { getLocation } : {}),
+		...(getOrientation ? { getOrientation } : {}),
+		...(getMarkerId ? { getMarkerId } : {}),
+		...(getIconColor ? { getIconColor } : {}),
+		...(getLabel ? { getLabel } : {}),
+	});
+	return { vizLayer: pmLayer, dsInstances };
+}
+export function createLoBLayer(
+	viz: OSHVisualization,
+	dsArray: IConSysApiDataSourceProperties[]
+): ICreateMapVisualizationResult {
+	// Ds instances created
+	let dsInstances: (typeof ConSysApi)[] = [];
+
+	// Undefined initially
+	let getOrigin: any;
+	let getBearing: any;
+	let getLobId: any;
+	let getIconColor: any;
+	let getColor: any;
+
+	for (const dsProps of dsArray) {
+		const dsInstance = createDatasource(dsProps);
+
+		// Check for origin property
+		if (dsProps.properties.origin) {
+			getOrigin = {
+				dataSourceIds: [dsInstance.id],
+				handler: async (rec: any) => {
+					const lon = rec[dsProps.properties.origin.property].lon;
+					const lat = rec[dsProps.properties.origin.property].lat;
+					return {
+						x: lon,
+						y: lat,
+						z:
+							rec[dsProps.properties.origin.property].alt ||
+							(await getGroundAltitude(lon, lat)),
+					};
+				},
+			};
+		}
+		// Check for bearing property
+		if (dsProps.properties.bearing) {
+			getBearing = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					const bearingValue = rec[dsProps.properties.bearing.property];
+					if (!bearingValue) return null;
+					return bearingValue.heading != null ? bearingValue.heading : bearingValue;
+				},
+			};
+		}
+		// Check for lobId property
+		if (dsProps.properties.lobId) {
+			getLobId = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return getLayerId(rec, dsProps.properties.lobId.property);
+				},
+			};
+		}
+		// Check for iconColor property
+		if (dsProps.properties.lobIconColor) {
+			getIconColor = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return colorHash(getLayerId(rec, dsProps.properties.lobIconColor.property))
+						.rgba;
+				},
+			};
+		}
+		// Check for line color property
+		if (dsProps.properties.lobLineColor) {
+			getColor = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return colorHash(getLayerId(rec, dsProps.properties.lobLineColor.property))
+						.rgba;
+				},
+			};
+		}
+
+		dsInstance.connect();
+		dsInstances.push(dsInstance);
+	}
+
+	const lobLayer = new LoBLayer({
+		...viz.visualizationComponents.dataLayer,
+		name: viz.name,
+		id: viz.id,
+		icon: `${ICON_BASE}${viz.visualizationComponents.dataLayer.icon}`,
+		dataSourceIds: dsInstances.map((ds) => ds.id),
+		...(getOrigin ? { getOrigin } : {}),
+		...(getBearing ? { getBearing } : {}),
+		...(getLobId ? { getLobId } : {}),
+		...(getIconColor ? { getIconColor } : {}),
+		...(getColor ? { getColor } : {}),
+	});
+
+	return { vizLayer: lobLayer, dsInstances };
+}
+export function createEllipseLayer(
+	viz: OSHVisualization,
+	dsArray: IConSysApiDataSourceProperties[]
+): ICreateMapVisualizationResult {
+	// Ds instances created
+	let dsInstances: (typeof ConSysApi)[] = [];
+
+	// Undefined initially
+	let getPosition: any;
+	let getSemiMajorAxis: any;
+	let getSemiMinorAxis: any;
+	let getEllipseId: any;
+	let getColor: any;
+
+	for (const dsProps of dsArray) {
+		const dsInstance = createDatasource(dsProps);
+
+		// Check for position property
+		if (dsProps.properties.position) {
+			getPosition = {
+				dataSourceIds: [dsInstance.id],
+				handler: async (rec: any) => {
+					const lon = rec[dsProps.properties.position.property].lon;
+					const lat = rec[dsProps.properties.position.property].lat;
+					return {
+						x: lon,
+						y: lat,
+						z:
+							rec[dsProps.properties.position.property].alt ||
+							(await getGroundAltitude(lon, lat)),
+					};
+				},
+			};
+		}
+		// Check for semi-major axis property
+		if (dsProps.properties.semiMajorAxis) {
+			getSemiMajorAxis = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return rec[dsProps.properties.semiMajorAxis.property];
+				},
+			};
+		}
+		// Check for semi-minor axis property
+		if (dsProps.properties.semiMinorAxis) {
+			getSemiMinorAxis = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return rec[dsProps.properties.semiMinorAxis.property];
+				},
+			};
+		}
+		// Check for ellipse ID property
+		if (dsProps.properties.ellipseId) {
+			getEllipseId = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return getLayerId(rec, dsProps.properties.ellipseId.property);
+				},
+			};
+		}
+		// Check for color property
+		if (dsProps.properties.ellipseColor) {
+			getColor = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return colorHash(getLayerId(rec, dsProps.properties.ellipseColor.property))
+						.rgba;
+				},
+			};
+		}
+
+		dsInstance.connect();
+		dsInstances.push(dsInstance);
+	}
+
+	const ellipseLayer = new EllipseLayer({
+		...viz.visualizationComponents.dataLayer,
+		name: viz.name,
+		id: viz.id,
+		defaultToTerrainElevation: true,
+		dataSourceIds: dsInstances.map((ds) => ds.id),
+		...(getPosition ? { getPosition } : {}),
+		...(getSemiMajorAxis ? { getSemiMajorAxis } : {}),
+		...(getSemiMinorAxis ? { getSemiMinorAxis } : {}),
+		...(getEllipseId ? { getEllipseId } : {}),
+		...(getColor ? { getColor } : {}),
+	});
+	return { vizLayer: ellipseLayer, dsInstances };
+}
+export function createPolylineLayer(
+	viz: OSHVisualization,
+	dsArray: IConSysApiDataSourceProperties[]
+): ICreateMapVisualizationResult {
+	// Ds instances created
+	let dsInstances: (typeof ConSysApi)[] = [];
+
+	// Undefined initially
+	let getLocation: any;
+	let getPolylineId: any;
+	let getColor: any;
+
+	for (const dsProps of dsArray) {
+		const dsInstance = createDatasource(dsProps);
+
+		// Check for location property
+		if (dsProps.properties.location) {
+			getLocation = {
+				dataSourceIds: [dsInstance.id],
+				handler: async (rec: any) => {
+					const lon = rec[dsProps.properties.location.property].lon;
+					const lat = rec[dsProps.properties.location.property].lat;
+					return {
+						x: lon,
+						y: lat,
+						z:
+							rec[dsProps.properties.location.property].alt ||
+							(await getGroundAltitude(lon, lat)),
+					};
+				},
+			};
+		}
+		// Check for polylineId property
+		if (dsProps.properties.polylineId) {
+			getPolylineId = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return getLayerId(rec, dsProps.properties.polylineId.property);
+				},
+			};
+		}
+		// Check for color property
+		if (dsProps.properties.polylineColor) {
+			getColor = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return colorHash(getLayerId(rec, dsProps.properties.polylineColor.property))
+						.rgba;
+				},
+			};
+		}
+
+		dsInstance.connect();
+		dsInstances.push(dsInstance);
+	}
+
+	const polylineLayer = new PolylineLayer({
+		...viz.visualizationComponents.dataLayer,
+		name: viz.name,
+		id: viz.id,
+		dataSourceIds: dsInstances.map((ds) => ds.id),
+		...(getLocation ? { getLocation } : {}),
+		...(getPolylineId ? { getPolylineId } : {}),
+		...(getColor ? { getColor } : {}),
+	});
+
+	return { vizLayer: polylineLayer, dsInstances };
+}
+export async function createGeoPTZLayer(
+	location: { lat: number; lon: number; alt: number },
+	selectedGeoPTZ: OSHVisualization[]
+) {
+	const vizId = `geoptz-${randomUUID()}`;
+
+	const geoPtzLayer = new PointMarkerLayer({
+		name: 'GeoPTZ',
+		label: 'GeoPTZ',
+		id: vizId,
+		icon: `${ICON_BASE}${useSettingsStore().geoPtzIcon}`,
+		iconColor: useSettingsStore().geoPtzIconColor,
+		iconSize: [32, 32],
+		iconAnchor: [16, 16],
+		labelOffset: [-16, -32],
+		location: {
+			x: location.lon,
+			y: location.lat,
+			z: location.alt,
+		},
+		defaultToTerrainElevation: true,
+		markerId: vizId + '-geoptz' + randomUUID(),
+		getDescription: {
+			dataSourceIds: [],
+			handler: (rec: any) => {
+				return `
+              <div>${selectedGeoPTZ
+					?.map((viz: OSHVisualization) => {
+						return `${viz.name}`;
+					})
+					.join(', ')}</div>
+            `;
+			},
+		},
+	});
+
+	const props = await setLayerData(geoPtzLayer);
+
+	return { layer: geoPtzLayer, props };
+}
+export async function createWaypointLayer(
+	waypoint: MapPoint,
+	index: string
+): Promise<{
+	layer: typeof PointMarkerLayer;
+	props: any;
+}> {
+	const waypointLayer = new PointMarkerLayer({
+		id: `waypoint-${index}`,
+		name: `Waypoint ${index + 1}`,
+		location: {
+			x: waypoint.lon,
+			y: waypoint.lat,
+			z: waypoint.alt || (await getGroundAltitude(waypoint.lon, waypoint.lat)),
+		},
+		icon: `${ICON_BASE}/icons/map/round-pin.png`,
+		iconSize: [32, 32],
+		iconAnchor: [16, 32],
+		label: `WP ${index + 1}`,
+		labelColor: '#FFFFFF',
+		labelOutlineColor: '#000000',
+		labelSize: 14,
+		labelOffset: [0, -36],
+		defaultToTerrainElevation: true,
+	});
+
+	const props = await setWaypointData(waypointLayer);
+
+	return { layer: waypointLayer, props };
+}
+export async function createFOILayer(foiLayer: FoiLayer) {
+	const lon = Array.isArray(foiLayer.geometry.coordinates[0])
+		? foiLayer.geometry.coordinates[0][0]
+		: foiLayer.geometry.coordinates[0];
+	const lat = Array.isArray(foiLayer.geometry.coordinates[1])
+		? foiLayer.geometry.coordinates[1][0]
+		: foiLayer.geometry.coordinates[1];
+	const alt = !foiLayer.geometry.coordinates[2]
+		? await getGroundAltitude(lon, lat)
+		: Array.isArray(foiLayer.geometry.coordinates[2])
+			? foiLayer.geometry.coordinates[2][0]
+			: foiLayer.geometry.coordinates[2];
+
+	const pmLayer = new PointMarkerLayer({
+		id: foiLayer.geometry.id,
+		location: {
+			x: lon,
+			y: lat,
+			z: alt,
+		},
+		icon: `${ICON_BASE}${foiLayer.icon}`,
+		iconColor: foiLayer.color,
+		iconSize: [32, 32],
+		iconAnchor: [16, 32],
+		label: foiLayer.geometry.properties.properties.name,
+		labelColor: '#FFFFFF',
+		labelOutlineColor: '#000000',
+		labelSize: 14,
+		labelOffset: [0, -36],
+		defaultToTerrainElevation: true,
+		markerId: foiLayer.geometry.id + '-feature' + randomUUID(),
+	});
+
+	const props = await setLayerData(pmLayer);
+
+	return { layer: pmLayer, props };
+}
+
+export function rebuildMapVisualizations(
+	oldLayers: Map<string, SupportedMapLayer>
+): Map<string, SupportedMapLayer> {
+	const newLayers = new Map<string, SupportedMapLayer>();
+
+	oldLayers.forEach((layer) => {
+		// Add new PM Layers
+		if (layer instanceof PointMarkerLayer) {
+			const pmLayer = new PointMarkerLayer({
+				...layer.properties,
+			});
+			newLayers.set(layer.properties.id, pmLayer);
+		}
+		// Add new LoB Layers
+		else if (layer instanceof LoBLayer) {
+			const lobLayer = new LoBLayer({
+				...layer.properties,
+			});
+			newLayers.set(layer.properties.id, lobLayer);
+		}
+		// Add new Ellipse Layers
+		else if (layer instanceof EllipseLayer) {
+			const ellipseLayer = new EllipseLayer({
+				...layer.properties,
+			});
+			newLayers.set(layer.properties.id, ellipseLayer);
+		}
+		// Add new Polyline Layers
+		else if (layer instanceof PolylineLayer) {
+			const polylineLayer = new PolylineLayer({
+				...layer.properties,
+			});
+			newLayers.set(layer.properties.id, polylineLayer);
+		}
+	});
+
+	return newLayers;
+}

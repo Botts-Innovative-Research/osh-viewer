@@ -1,0 +1,76 @@
+import { defineAsyncComponent } from 'vue';
+import {
+	VisualizationConfigRole,
+	VisualizationDescriptor,
+	VisualizationFormComponent,
+} from '../../registry/types';
+
+export const VideoConfigRoles: VisualizationConfigRole[] = [
+	{
+		role: 'video',
+		label: 'Video',
+		description: 'The datastream of video feed.',
+		type: 'ds',
+		required: true,
+	},
+	{
+		role: 'ptz',
+		label: 'PTZ Control',
+		description: 'The controlstream for sending PTZ commands.',
+		type: 'cs',
+		showPropertySelector: false,
+	},
+];
+
+export const ConfigComponent: VisualizationFormComponent = {
+	id: 'video-config',
+	label: 'Configure Video Properties',
+	short: 'Configure',
+	component: defineAsyncComponent(
+		() => import('@/modules/visualization/visualizations/video/Config.vue')
+	),
+	roles: VideoConfigRoles,
+};
+
+export const CustomizeComponent: VisualizationFormComponent = {
+	id: 'video-customize',
+	label: 'Customize Video',
+	short: 'Customize',
+	component: defineAsyncComponent(
+		() => import('@/modules/visualization/visualizations/video/Customize.vue')
+	),
+};
+
+export const VideoDescriptor: VisualizationDescriptor = {
+	label: 'Video',
+	id: 'video',
+	icon: 'mdi-video',
+	viewLocation: 'panel',
+	layers: ['VideoDataLayer'],
+	description: 'Display a video stream.',
+	formComponents: [ConfigComponent, CustomizeComponent],
+	builder: () => import('@/modules/visualization/visualizations/video/Builder'),
+	supportsCs: true, // Supports controlstream for PTZ commands if available
+	requireCs: false, // PTZ not required
+};
+
+// Type for PTZ command directions
+export type Direction =
+	| 'up'
+	| 'down'
+	| 'left'
+	| 'right'
+	| 'up-left'
+	| 'up-right'
+	| 'down-left'
+	| 'down-right'
+	| 'home'
+	| 'zoomIn'
+	| 'zoomOut';
+
+// Define PTZ data interface
+export interface PTZData {
+	pan: number;
+	tilt: number;
+	zoom: number;
+}

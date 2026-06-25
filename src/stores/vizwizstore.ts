@@ -1,9 +1,12 @@
-import {OSHControlStream, OSHDatastream} from '@/lib/OSHConnectDataStructs';
+import { OSHControlStream, OSHDatastream } from '@/lib/OSHConnectDataStructs';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { VisualizationCustomizationOptions } from '@/lib/VisualizationHelpers';
-import { useDataStreamStore } from './datastreamstore';
-import { useControlStreamStore } from './controlstreamstore';
+import {
+	getStreamIds,
+	rehydrateControlStreams,
+	rehydrateDatastreams,
+} from '@/modules/visualization/services/visualization.serialization';
+import { VisualizationCustomizationOptions } from '@/modules/visualization/types/visualization';
 
 export interface WizardConfig {
 	id: string;
@@ -13,7 +16,7 @@ export interface WizardConfig {
 	controlstreamIds: string[];
 	dsConfig: Record<string, Record<string, any>>;
 	csConfig: Record<string, Record<string, any>>;
-	visualizationCustomizationOptions: any;
+	visualizationCustomizationOptions: VisualizationCustomizationOptions;
 }
 
 export const useVizWizStore = defineStore('vizwiz', () => {
@@ -31,27 +34,22 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 
 	const setId = (val: string): void => {
 		id.value = val;
-		console.log('[VizWizStore] Set ID:', val);
 	};
 
 	const setType = (type: string): void => {
 		visualizationType.value = type;
-		console.log('[VizWizStore] Set type:', type);
 	};
 
 	const setSystems = (val: string[]): void => {
 		systems.value = val;
-		console.log('[VizWizStore] Set systems:', val);
 	};
 
 	const setDatastreams = (val: OSHDatastream[]): void => {
 		datastreams.value = val;
-		console.log('[VizWizStore] Set datastreams:', val);
 	};
 
 	const setControlstreams = (val: OSHControlStream[]): void => {
 		controlstreams.value = val;
-		console.log('[VizWizStore] Set controlstreams:', val);
 	};
 
 	const updateDsConfig = (role: string, patch: Partial<Record<string, any>>) => {
@@ -62,7 +60,6 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 			...dsConfig.value[role],
 			...patch,
 		};
-		console.log('[VizWizStore] Updated DS config:', role, patch);
 	};
 
 	const updateCsConfig = (role: string, patch: Partial<Record<string, any>>) => {
@@ -73,16 +70,13 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 			...csConfig.value[role],
 			...patch,
 		};
-		console.log('[VizWizStore] Updated CS config:', role, patch);
 	};
 
 	const setVisualizationCustomizationOptions = (options: VisualizationCustomizationOptions) => {
 		visualizationCustomizationOptions.value = options;
 	};
 
-	const updateVisualizationCustomizationOptions = (
-		patch: Partial<VisualizationCustomizationOptions>
-	) => {
+	const updateVisualizationCustomizationOptions = (patch: Partial<any>) => {
 		visualizationCustomizationOptions.value = {
 			...visualizationCustomizationOptions.value,
 			...patch,
@@ -91,12 +85,10 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 
 	const resetDsConfig = () => {
 		dsConfig.value = {};
-		console.log('[VizWizStore] DS Config reset');
 	};
 
 	const resetCsConfig = () => {
 		csConfig.value = {};
-		console.log('[VizWizStore] CS Config reset');
 	};
 
 	// Clear viz wiz EXCLUDING ID
@@ -109,8 +101,6 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 		dsConfig.value = {};
 		csConfig.value = {};
 		visualizationCustomizationOptions.value = {};
-
-		console.log('[VizWizStore] Store cleared, ID persisted:', id.value);
 	};
 
 	// RESET STORE STATE
@@ -129,19 +119,12 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 
 	// RETURN STORE STATE -> For saving in visualization
 	const getWizardConfig = (): WizardConfig => {
-		// Save only IDs for serialization purposes
-		const getIds = (streams: OSHDatastream[] | OSHControlStream[] | null): string[] => {
-			return streams != null
-				? streams.map((item: OSHDatastream | OSHControlStream) => item.id)
-				: [];
-		};
-
 		return {
 			id: id.value,
 			visualizationType: visualizationType.value,
 			systems: systems.value,
-			datastreamIds: getIds(datastreams.value),
-			controlstreamIds: getIds(controlstreams.value),
+			datastreamIds: getStreamIds(datastreams.value),
+			controlstreamIds: getStreamIds(controlstreams.value),
 			dsConfig: dsConfig.value,
 			csConfig: csConfig.value,
 			visualizationCustomizationOptions: visualizationCustomizationOptions.value,
@@ -151,10 +134,8 @@ export const useVizWizStore = defineStore('vizwiz', () => {
 	// RESTORE STORE STATE -> For editing visualization
 	const setWizardConfig = (config: WizardConfig) => {
 		// Get OSHDatastream | OSHControlstream objects by ID
-		const datastreamObjs = useDataStreamStore().getDataStreamsById(config.datastreamIds);
-		const controlstreamObjs = useControlStreamStore().getControlStreamsById(
-			config.controlstreamIds
-		);
+		const datastreamObjs = rehydrateDatastreams(config.datastreamIds);
+		const controlstreamObjs = rehydrateControlStreams(config.controlstreamIds);
 
 		id.value = config.id;
 		visualizationType.value = config.visualizationType;
