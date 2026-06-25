@@ -14,11 +14,17 @@ export const FrustumConfigRoles: VisualizationConfigRole[] = [
 		required: true,
 	},
 	{
-		role: 'orientation',
-		label: 'Orientation',
-		description: 'The orientation (heading, pitch, roll) of the frustum.',
+		role: 'platformOrientation',
+		label: 'Platform Orientation',
+		description: 'The platform orientation (heading, pitch, roll) of the frustum.',
 		type: 'ds',
 		required: true,
+	},
+	{
+		role: 'sensorOrientation',
+		label: 'Sensor Orientation',
+		description: 'The sensor orientation (yaw, pitch, roll) of the frustum.',
+		type: 'ds',
 	},
 ];
 

@@ -60,5 +60,7 @@ export interface IPolylineLayerProperties extends DataLayerProperties {
 export interface IFrustumLayerProperties extends DataLayerProperties {
 	color: any;
 	opacity: number;
+	fov: number;
+	range: number;
 	iconName: string; // Used for display in map visualizations list
 }

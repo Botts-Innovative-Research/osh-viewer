@@ -425,24 +425,26 @@ export function createFrustumLayer(
 			};
 		}
 		// Check for orientation property
-		if (dsProps.properties.orientation) {
+		if (dsProps.properties.platformOrientation) {
 			getPlatformOrientation = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
 					return {
-						heading: rec[dsProps.properties.orientation.property].heading,
-						pitch: rec[dsProps.properties.orientation.property].pitch,
-						roll: rec[dsProps.properties.orientation.property].roll,
+						heading: rec[dsProps.properties.platformOrientation.property].heading,
+						pitch: rec[dsProps.properties.platformOrientation.property].pitch,
+						roll: rec[dsProps.properties.platformOrientation.property].roll,
 					};
 				},
 			};
+		}
+		if (dsProps.properties.sensorOrientation) {
 			getSensorOrientation = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
 					return {
-						yaw: rec[dsProps.properties.orientation.property].heading,
-						pitch: rec[dsProps.properties.orientation.property].pitch,
-						roll: rec[dsProps.properties.orientation.property].roll,
+						yaw: rec[dsProps.properties.sensorOrientation.property].heading,
+						pitch: rec[dsProps.properties.sensorOrientation.property].pitch,
+						roll: rec[dsProps.properties.sensorOrientation.property].roll,
 					};
 				},
 			};
@@ -456,12 +458,18 @@ export function createFrustumLayer(
 		...viz.visualizationComponents.dataLayer,
 		name: viz.name,
 		id: viz.id,
-		fov: 45,
-		range: 5000,
 		dataSourceIds: dsInstances.map((ds) => ds.id),
 		...(getOrigin ? { getOrigin } : {}),
 		...(getPlatformOrientation ? { getPlatformOrientation } : {}),
-		...(getSensorOrientation ? { getSensorOrientation } : {}),
+		...(getSensorOrientation
+			? { getSensorOrientation }
+			: {
+					sensorOrientation: {
+						yaw: 0.0,
+						pitch: 0.0,
+						roll: 0.0,
+					},
+				}),
 	});
 	return { vizLayer: pmLayer, dsInstances };
 }

@@ -46,4 +46,6 @@ export interface IPolylineCustomizationOptions extends CustomizationOptions {
 export interface IFrustumCustomizationOptions extends CustomizationOptions {
 	color: string;
 	opacity: number;
+	fov: number;
+	range: number;
 }
