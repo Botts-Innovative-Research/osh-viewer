@@ -7,12 +7,14 @@ import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import EllipseLayer from 'osh-js/source/core/ui/layer/EllipseLayer';
 import PolylineLayer from 'osh-js/source/core/ui/layer/PolylineLayer';
+import FrustumLayer from 'osh-js/source/core/ui/layer/FrustumLayer';
 
 export const SupportedMapLayers = {
 	PointMarkerLayer: PointMarkerLayer,
 	LoBLayer: LoBLayer,
 	EllipseLayer: EllipseLayer,
 	PolylineLayer: PolylineLayer,
+	FrustumLayer: FrustumLayer,
 } as const;
 export type SupportedMapLayer = (typeof SupportedMapLayers)[keyof typeof SupportedMapLayers];
 

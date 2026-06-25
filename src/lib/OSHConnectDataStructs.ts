@@ -487,7 +487,7 @@ export type OSHLayer =
 	| 'CurveLayer'
 	// | 'DataLayer'
 	| 'EllipseLayer'
-	// | 'FrustumLayer'
+	| 'FrustumLayer'
 	// | 'ImageDrapingLayer'
 	| 'LoB'
 	| 'PointMarkerLayer'
@@ -502,7 +502,7 @@ export const OSHLayerLabels: Array<{ layer: OSHLayer; label: string }> = [
 	{ layer: 'CurveLayer', label: 'Curve' },
 	// { layer: 'DataLayer', label: 'Data' },
 	// { layer: 'EllipseLayer', label: 'Ellipse' },
-	// { layer: 'FrustumLayer', label: 'Frustum' },
+	{ layer: 'FrustumLayer', label: 'Frustum' },
 	// { layer: 'ImageDrapingLayer', label: 'Image Draping' },
 	{ layer: 'LoB', label: 'Line of Bearing' },
 	{ layer: 'PointMarkerLayer', label: 'Point Marker' },
