@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { onMounted, onBeforeUnmount, ref, watch, computed } from 'vue';
+import { onMounted, onBeforeUnmount, ref, watch, toRaw } from 'vue';
 import * as Cesium from 'cesium';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
+import VideoView from 'osh-js/source/core/ui/view/video/VideoView.js';
+import VideoDataLayer from 'osh-js/source/core/ui/layer/VideoDataLayer.js';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import {
 	createDatasource,
@@ -49,8 +51,12 @@ const minimapContainerId = `minimap-${Date.now()}`;
 
 const viewMode = ref<'platform' | 'follow' | 'overhead' | 'freelook'>('follow');
 const showHUD = ref(false);
+const showAROverlay = ref(false);
+const viewModeBeforeAR = ref<'platform' | 'follow' | 'overhead' | 'freelook'>('follow');
+const arFov = ref(85);
 
 const hasOrientation = ref(false);
+const hasVideo = ref(false);
 
 const visualizationStore = useVisualizationStore();
 const duplicatedLayerIds = new Set<string>();
@@ -78,12 +84,13 @@ function onLLAListener(dsInstance: typeof ConSysApi) {
 	dataBroadcastChannel.onmessage = (message) => {
 		if (message.data.type === 'data') {
 			const data = message.data.values[0].data;
-			const lon = data.Location.lon ?? 0;
-			const lat = data.Location.lat ?? 0;
+			const lon = data[dsInstance.properties.location.property]?.lon ?? 0;
+			const lat = data[dsInstance.properties.location.property]?.lat ?? 0;
+			const alt = data[dsInstance.properties.location.property]?.alt ?? 0;
 			receivedLLA.value = {
 				lat,
 				lon,
-				alt: data.Location.alt ?? 0,
+				alt: alt,
 			};
 			updateTerrainHeight(lon, lat);
 		}
@@ -96,18 +103,101 @@ function onOrientationListener(dsInstance: typeof ConSysApi) {
 	dataBroadcastChannel.onmessage = (message) => {
 		if (message.data.type === 'data') {
 			const data = message.data.values[0].data;
+
 			receivedOrientation.value = {
-				yaw:
-					data.Attitude?.yaw ??
-					data.Orientation?.heading ??
-					0,
-				pitch: data.Attitude?.pitch ?? data.Orientation?.pitch ?? 0,
-				roll: data.Attitude?.roll ?? data.Orientation?.roll ?? 0,
+				yaw: data[dsInstance.properties.orientation.property].yaw ?? data[dsInstance.properties.orientation.property]?.heading ?? 0,
+				pitch: data[dsInstance.properties.orientation.property]?.pitch ?? 0,
+				roll: data[dsInstance.properties.orientation.property]?.roll ?? 0,
 			};
+
 			hasOrientation.value = true;
 		}
 	};
 }
+
+const videoContainerId = `minimap-video-${Date.now()}`;
+let arVideoView: any = null;
+let arVideoLayer: any = null;
+let videoDsInstance: typeof ConSysApi | null = null;
+let videoDsProps: IConSysApiDataSourceProperties | null = null;
+
+function createVideoView() {
+	if (arVideoView || !videoDsInstance || !videoDsProps) return;
+
+	const rawDs = toRaw(videoDsProps);
+	const getFrameData = {
+		dataSourceIds: [videoDsInstance.id],
+		handler: (rec: any) => rec[rawDs.properties.video.property],
+	};
+
+	const getTimestamp = {
+		dataSourceIds: [videoDsInstance.id],
+		handler: (rec: any) => rec.timestamp,
+	};
+
+	arVideoView = new VideoView({
+		container: videoContainerId,
+		css: 'video-view',
+		layers: [],
+		useWebCodecApi: true,
+		showTime: false,
+		showStats: false,
+	});
+
+	arVideoLayer = new VideoDataLayer({
+		name: 'ar-video',
+		dataSourceIds: [videoDsInstance.id],
+		getFrameData,
+		getTimestamp,
+	});
+
+	arVideoView.addLayer(arVideoLayer);
+}
+
+function destroyVideoView() {
+	if (arVideoView) {
+		try { arVideoView.destroy(); } catch (e) {}
+		arVideoView = null;
+		arVideoLayer = null;
+	}
+}
+
+function toggleAROverlay() {
+	showAROverlay.value = !showAROverlay.value;
+
+	if (!mapView?.viewer) return;
+	const viewer = mapView.viewer;
+
+	if (showAROverlay.value) {
+		viewModeBeforeAR.value = viewMode.value;
+		viewMode.value = 'platform';
+		// render cesium on transparent background
+		viewer.scene.globe.show = false;
+		viewer.scene.backgroundColor = Cesium.Color.TRANSPARENT;
+		updateARFov();
+		createVideoView();
+
+	} else {
+		viewMode.value = viewModeBeforeAR.value;
+
+		viewer.scene.globe.show = true;
+		viewer.scene.backgroundColor = Cesium.Color.BLACK;
+		viewer.scene.moon.show = true;
+		destroyVideoView();
+	}
+	viewer.scene.requestRender();
+}
+
+function updateARFov() {
+	if (!mapView?.viewer || !showAROverlay.value) return;
+	const frustum = mapView.viewer.camera.frustum;
+	if (frustum instanceof Cesium.PerspectiveFrustum) {
+		frustum.fov = Cesium.Math.toRadians(arFov.value);
+		mapView.viewer.scene.requestRender();
+	}
+}
+
+watch(arFov, () => updateARFov());
 
 function setSceneInputEnabled(viewer: any, enabled: boolean) {
 	const controller = viewer.scene.screenSpaceCameraController;
@@ -126,7 +216,7 @@ function updateCamera() {
 	const lat = receivedLLA.value.lat;
 	const alt = receivedLLA.value.alt;
 
-	if (lon === 0 && lat === 0 && alt === 0) return;
+	if (lon === 0 && lat === 0) return;
 
 	const viewer = mapView.viewer;
 
@@ -153,7 +243,6 @@ function updateCamera() {
 	switch (viewMode.value) {
 		case 'platform': {
 			viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
-
 			viewer.camera.setView({
 				destination: Cesium.Cartesian3.fromDegrees(lon, lat, cameraAlt + 1.5),
 				orientation: {
@@ -173,7 +262,7 @@ function updateCamera() {
 
 			viewer.camera.lookAtTransform(
 				transform,
-				new Cesium.Cartesian3(0, -120, 50)
+				new Cesium.Cartesian3(0, -120, 60)
 			);
 			break;
 		}
@@ -200,6 +289,18 @@ onMounted(async () => {
 		container: minimapContainerId,
 		autoZoomOnFirstMarker: true,
 		layers: [],
+		options: {
+			viewerProps: {
+				orderIndependentTranslucency: false,
+				skyBox: false,
+				skyAtmosphere: false,
+				contextOptions: {
+					webgl: {
+						alpha: true,
+					},
+				},
+			},
+		},
 	});
 	await new Promise(requestAnimationFrame);
 
@@ -212,12 +313,17 @@ onMounted(async () => {
 
 	for (const ds of props.datasource) {
 		let dsInstance = createDatasource(ds);
-
 		if (ds?.properties?.location) {
 			onLLAListener(dsInstance);
 		}
 		if (ds?.properties?.orientation) {
 			onOrientationListener(dsInstance);
+		}
+
+		if (ds?.properties?.video) {
+			hasVideo.value = true;
+			videoDsInstance = dsInstance;
+			videoDsProps = ds;
 		}
 
 		dsInstance.connect();
@@ -274,6 +380,11 @@ watch(
 );
 
 onBeforeUnmount(() => {
+	if (arFrustumCuller) {
+		arFrustumCuller();
+		arFrustumCuller = null;
+	}
+	destroyVideoView();
 	if (mapView) {
 		mapView.destroy();
 		mapView = null;
@@ -294,6 +405,7 @@ useVisualizationCleanup(dsInstances);
 			<v-btn-toggle
 				v-model="viewMode"
 				mandatory
+				:disabled="showAROverlay"
 				class="ga-2"
 			>
 				<v-btn
@@ -334,16 +446,41 @@ useVisualizationCleanup(dsInstances);
 			</v-btn-toggle>
 		</div>
 		<div class="minimap-scene">
-			<div :id="minimapContainerId" class="minimap-viewer"></div>
+			<div
+				:id="videoContainerId"
+				class="video-background"
+				:class="{ 'video-visible': showAROverlay && hasVideo }"
+			></div>
+			<div
+				:id="minimapContainerId"
+				class="minimap-viewer"
+				:class="{ 'ar-transparent': showAROverlay }"
+			></div>
 
-			<v-btn
-				class="hud-toggle"
-				:color="showHUD ? 'green' : undefined"
-				size="x-small"
-				@click="showHUD = !showHUD"
-			>
-				HUD
-			</v-btn>
+			<div class="overlay-toggles">
+				<v-btn
+					class="overlay-toggle-btn"
+					:color="showHUD ? 'green' : undefined"
+					size="x-small"
+					@click="showHUD = !showHUD"
+				>
+					HUD
+				</v-btn>
+				<v-btn
+					v-if="hasVideo"
+					class="overlay-toggle-btn"
+					:color="showAROverlay ? 'green' : undefined"
+					size="x-small"
+					@click="toggleAROverlay"
+				>
+					<v-icon start size="small">mdi-augmented-reality</v-icon>
+					AR
+				</v-btn>
+			</div>
+
+			<div v-if="showAROverlay" class="ar-fov-control">
+				<span class="ar-fov-label">FOV {{ arFov }}°</span>
+			</div>
 
 			<div v-if="showHUD" class="hud-overlay" :style="{ transform: `rotate(${-receivedOrientation.roll}deg)` }">
 				<div class="hud-crosshair">
@@ -395,11 +532,57 @@ useVisualizationCleanup(dsInstances);
 	height: 100% !important;
 }
 
-.hud-toggle {
+.overlay-toggles {
 	position: absolute;
 	top: 6px;
 	left: 6px;
 	z-index: 2;
+	display: flex;
+	gap: 4px;
+}
+
+.ar-fov-control {
+	position: absolute;
+	bottom: 8px;
+	right: 8px;
+	z-index: 2;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	background: rgba(0, 0, 0, 0.6);
+	border-radius: 4px;
+	padding: 4px 12px;
+	width: 200px;
+}
+.ar-fov-label {
+	color: #00ff41;
+	font-family: 'Courier New', monospace;
+	font-size: 11px;
+	white-space: nowrap;
+}
+
+.video-background {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	background: #000;
+	overflow: hidden;
+	visibility: hidden;
+	pointer-events: none;
+}
+.video-background.video-visible {
+	visibility: visible;
+}
+
+.minimap-viewer.ar-transparent {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+}
+.minimap-viewer.ar-transparent :deep(.cesium-viewer),
+.minimap-viewer.ar-transparent :deep(.cesium-widget),
+.minimap-viewer.ar-transparent :deep(.cesium-widget canvas) {
+	background: transparent !important;
 }
 
 .hud-overlay {
@@ -467,4 +650,10 @@ useVisualizationCleanup(dsInstances);
 	margin-left: 1px;
 }
 
+.video-background :deep(canvas),
+.video-background :deep(img) {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+}
 </style>

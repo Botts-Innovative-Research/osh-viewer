@@ -13,7 +13,7 @@ export const MiniMapConfigRoles: VisualizationConfigRole[] = [
 		description: 'Select the data stream for the vehicle\'s live position.',
 		type: 'ds',
 		required: true,
-		showPropertySelector: false,
+		showPropertySelector: true,
 	},
 	{
 		role: 'orientation',
@@ -21,7 +21,7 @@ export const MiniMapConfigRoles: VisualizationConfigRole[] = [
 		description: 'Select the data stream for the direction of the vehicle\'s facing',
 		type: 'ds',
 		required: false,
-		showPropertySelector: false,
+		showPropertySelector: true,
 	},
 	{
 		role: 'video',
@@ -29,7 +29,7 @@ export const MiniMapConfigRoles: VisualizationConfigRole[] = [
 		description: 'Select the data stream for the video overlay',
 		type: 'ds',
 		required: false,
-		showPropertySelector: false,
+		showPropertySelector: true,
 	},
 ];
 

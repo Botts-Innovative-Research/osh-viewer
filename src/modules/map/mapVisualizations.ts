@@ -80,7 +80,7 @@ export function createPointMarkerLayer(
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
 					return {
-						heading: rec[dsProps.properties.orientation.property].heading,
+						heading: rec[dsProps.properties.orientation.property].heading ?? rec[dsProps.properties.orientation.property].qx,
 					};
 				},
 			};
