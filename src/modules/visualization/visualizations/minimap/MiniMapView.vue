@@ -3,6 +3,8 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { onMounted, onBeforeUnmount, ref, computed, watch, toRaw } from 'vue';
 import * as Cesium from 'cesium';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
+import VideoView from 'osh-js/source/core/ui/view/video/VideoView.js';
+import VideoDataLayer from 'osh-js/source/core/ui/layer/VideoDataLayer.js';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
@@ -48,6 +50,8 @@ const minimapContainerId = `minimap-${Date.now()}`;
 const viewMode = ref<'platform' | 'follow' | 'overhead' | 'freelook'>('follow');
 const showHUD = ref(false);
 const showAROverlay = ref(false);
+const viewModeBeforeAR = ref<'platform' | 'follow' | 'overhead' | 'freelook'>('follow');
+const arFov = ref(85);
 
 const hasOrientation = ref(false);
 const hasVideo = ref(false);
@@ -105,11 +109,94 @@ function onOrientationListener(dsInstance: typeof ConSysApi, ds: IConSysApiDataS
 				pitch: data[ds.properties.orientation.property].pitch ?? 0,
 				roll: data[ds.properties.orientation.property].roll ?? 0,
 			};
-
 			hasOrientation.value = true;
 		}
 	};
 }
+
+const videoContainerId = `minimap-video-${Date.now()}`;
+let arVideoView: any = null;
+let arVideoLayer: any = null;
+let videoDsInstance: typeof ConSysApi | null = null;
+let videoDsProps: IConSysApiDataSourceProperties | null = null;
+
+function createVideoView() {
+	if (arVideoView || !videoDsInstance || !videoDsProps) return;
+
+	const rawDs = toRaw(videoDsProps);
+	const getFrameData = {
+		dataSourceIds: [videoDsInstance.id],
+		handler: (rec: any) => rec[rawDs.properties.video.property],
+	};
+
+	const getTimestamp = {
+		dataSourceIds: [videoDsInstance.id],
+		handler: (rec: any) => rec.timestamp,
+	};
+
+	arVideoView = new VideoView({
+		container: videoContainerId,
+		css: 'video-view',
+		layers: [],
+		useWebCodecApi: true,
+		showTime: false,
+		showStats: false,
+	});
+
+	arVideoLayer = new VideoDataLayer({
+		name: 'ar-video',
+		dataSourceIds: [videoDsInstance.id],
+		getFrameData,
+		getTimestamp,
+	});
+
+	arVideoView.addLayer(arVideoLayer);
+}
+
+function destroyVideoView() {
+	if (arVideoView) {
+		try { arVideoView.destroy(); } catch (e) {}
+		arVideoView = null;
+		arVideoLayer = null;
+	}
+}
+
+function toggleAROverlay() {
+	showAROverlay.value = !showAROverlay.value;
+
+	if (!mapView?.viewer) return;
+	const viewer = mapView.viewer;
+
+	if (showAROverlay.value) {
+		viewModeBeforeAR.value = viewMode.value;
+		viewMode.value = 'platform';
+		// render cesium on transparent background
+		viewer.scene.globe.show = false;
+		viewer.scene.backgroundColor = Cesium.Color.TRANSPARENT;
+		updateARFov();
+		createVideoView();
+
+	} else {
+		viewMode.value = viewModeBeforeAR.value;
+
+		viewer.scene.globe.show = true;
+		viewer.scene.backgroundColor = Cesium.Color.BLACK;
+		viewer.scene.moon.show = true;
+		destroyVideoView();
+	}
+	viewer.scene.requestRender();
+}
+
+function updateARFov() {
+	if (!mapView?.viewer || !showAROverlay.value) return;
+	const frustum = mapView.viewer.camera.frustum;
+	if (frustum instanceof Cesium.PerspectiveFrustum) {
+		frustum.fov = Cesium.Math.toRadians(arFov.value);
+		mapView.viewer.scene.requestRender();
+	}
+}
+
+watch(arFov, () => updateARFov());
 
 function setSceneInputEnabled(viewer: any, enabled: boolean) {
 	const controller = viewer.scene.screenSpaceCameraController;
@@ -235,10 +322,10 @@ onMounted(async () => {
 		if (ds?.properties?.orientation) {
 			onOrientationListener(dsInstance, ds);
 		}
-
 		if (ds?.properties?.video) {
 			hasVideo.value = true;
-			continue;
+			videoDsInstance = dsInstance;
+			videoDsProps = ds;
 		}
 
 		dsInstance.connect();
@@ -295,6 +382,11 @@ watch(
 );
 
 onBeforeUnmount(() => {
+	if (arFrustumCuller) {
+		arFrustumCuller();
+		arFrustumCuller = null;
+	}
+	destroyVideoView();
 	if (mapView) {
 		mapView.destroy();
 		mapView = null;
@@ -356,21 +448,41 @@ useVisualizationCleanup(dsInstances);
 			</v-btn-toggle>
 		</div>
 		<div class="minimap-scene">
-			<div
-				:id="minimapContainerId"
-				class="minimap-viewer"
-			></div>
+      <div
+          :id="videoContainerId"
+          class="video-background"
+          :class="{ 'video-visible': showAROverlay && hasVideo }"
+      ></div>
+      <div
+          :id="minimapContainerId"
+          class="minimap-viewer"
+          :class="{ 'ar-transparent': showAROverlay }"
+      ></div>
 
-			<div class="overlay-toggles">
-				<v-btn
-					class="overlay-toggle-btn"
-					:color="showHUD ? 'green' : undefined"
-					size="x-small"
-					@click="showHUD = !showHUD"
-				>
-					HUD
-				</v-btn>
-			</div>
+      <div class="overlay-toggles">
+        <v-btn
+            class="overlay-toggle-btn"
+            :color="showHUD ? 'green' : undefined"
+            size="x-small"
+            @click="showHUD = !showHUD"
+        >
+          HUD
+        </v-btn>
+        <v-btn
+            v-if="hasVideo"
+            class="overlay-toggle-btn"
+            :color="showAROverlay ? 'green' : undefined"
+            size="x-small"
+            @click="toggleAROverlay"
+        >
+          <v-icon start size="small">mdi-augmented-reality</v-icon>
+          AR
+        </v-btn>
+      </div>
+
+      <div v-if="showAROverlay" class="ar-fov-control">
+        <span class="ar-fov-label">FOV {{ arFov }}°</span>
+      </div>
 
 			<div
 				v-if="showHUD"
@@ -439,6 +551,52 @@ useVisualizationCleanup(dsInstances);
 	z-index: 2;
 	display: flex;
 	gap: 4px;
+	display: flex;
+	gap: 4px;
+}
+
+.ar-fov-control {
+	position: absolute;
+	bottom: 8px;
+	right: 8px;
+	z-index: 2;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	background: rgba(0, 0, 0, 0.6);
+	border-radius: 4px;
+	padding: 4px 12px;
+	width: 200px;
+}
+.ar-fov-label {
+	color: #00ff41;
+	font-family: 'Courier New', monospace;
+	font-size: 11px;
+	white-space: nowrap;
+}
+
+.video-background {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	background: #000;
+	overflow: hidden;
+	visibility: hidden;
+	pointer-events: none;
+}
+.video-background.video-visible {
+	visibility: visible;
+}
+
+.minimap-viewer.ar-transparent {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+}
+.minimap-viewer.ar-transparent :deep(.cesium-viewer),
+.minimap-viewer.ar-transparent :deep(.cesium-widget),
+.minimap-viewer.ar-transparent :deep(.cesium-widget canvas) {
+	background: transparent !important;
 }
 
 .hud-overlay {
@@ -504,5 +662,12 @@ useVisualizationCleanup(dsInstances);
 	font-weight: normal;
 	opacity: 0.7;
 	margin-left: 1px;
+}
+
+.video-background :deep(canvas),
+.video-background :deep(img) {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
 }
 </style>
