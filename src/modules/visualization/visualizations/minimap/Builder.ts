@@ -20,7 +20,13 @@ export default function build() {
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
 
-	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
+	const dsConfig = { ...vizwizStore.dsConfig };
+	for (const [role, entry] of Object.entries(dsConfig)) {
+		if ((entry as any).dsId && !(entry as any).selected) {
+			(dsConfig as any)[role] = { ...entry as any, selected: true };
+		}
+	}
+	const datastreams = AggregateDatastreams(dsConfig);
 
 	const minimapResult = CreateMiniMapVizProps(datastreams);
 
@@ -55,13 +61,15 @@ export function CreateMiniMapVizProps(datastreams: { [key: string]: any }
 
 		const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
 
+		const hasVideoRole = properties.video !== undefined;
+
 		const currentDatastream: ISweApiDataSourceProperties = {
 			endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
 			resource: `/datastreams/${dsId}/observations`,
 			tls: currentOSHDatastream[0].datastream.networkProperties.tls,
 			protocol: 'ws',
 			mode: Mode.REAL_TIME,
-			responseFormat: 'application/swe+json',
+			responseFormat: hasVideoRole ? 'application/swe+binary' : 'application/swe+json',
 			id: currentOSHDatastream[0].id,
 			properties: properties,
 			connectorOpts: {
