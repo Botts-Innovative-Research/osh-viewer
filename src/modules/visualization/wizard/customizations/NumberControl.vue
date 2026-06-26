@@ -43,7 +43,6 @@ useComponentValidation(valid, emit);
 	<h3>{{ `${props.label}${props.units ? ` (${props.units})` : ''}` }}</h3>
 	<v-number-input
 		v-model="numValue"
-		type="number"
 		:label="props.label"
 		:min="props.min"
 		:max="props.max"

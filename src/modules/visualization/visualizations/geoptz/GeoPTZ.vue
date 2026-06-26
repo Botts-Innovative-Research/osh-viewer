@@ -126,29 +126,29 @@ onBeforeUnmount(() => {
 		></v-divider>
 		<v-row :style="{ display: props.visualizations.length > 0 ? 'block' : 'none' }">
 			<v-col no-gutters>
-				<v-text-field
+				<v-number-input
 					v-model.number="latInput"
-					type="number"
+					variant="outlined"
 					label="Latitude (-90 to 90)"
 					placeholder="0.0"
-					min="-90"
-					max="90"
+					:min="-90"
+					:max="90"
 				/>
-				<v-text-field
+				<v-number-input
 					v-model.number="lonInput"
-					type="number"
+					variant="outlined"
 					label="Longitude (-180 to 180)"
 					placeholder="0.0"
-					min="-180"
-					max="180"
+					:min="-180"
+					:max="180"
 				/>
-				<v-text-field
+				<v-number-input
 					v-model.number="altInput"
-					type="number"
+					variant="outlined"
 					label="Altitude"
 					placeholder="0.0"
-					min="-9999"
-					max="99999"
+					:min="-9999"
+					:max="99999"
 				/>
 				<v-btn
 					color="primary"
