@@ -1,5 +1,5 @@
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
-import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
@@ -17,6 +17,7 @@ import { IConSysApiDataSourceProperties } from '../visualization/types/datasourc
 import { setLayerData } from './services/foi.service';
 import { ICON_BASE } from '@/lib/icons';
 import { FoiLayer } from '@/stores/visualizationstore';
+import { getMilSymbol } from './services/milIcon.service';
 
 export interface ICreateMapVisualizationResult {
 	vizLayer: SupportedMapLayer;
@@ -53,6 +54,7 @@ export function createPointMarkerLayer(
 	let getMarkerId: any;
 	let getIconColor: any;
 	let getLabel: any;
+	let getIcon: any;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);
@@ -117,6 +119,15 @@ export function createPointMarkerLayer(
 				},
 			};
 		}
+		// Check for milsymbol property
+		if (dsProps.properties.milSymbol) {
+			getIcon = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return getMilSymbol(rec[dsProps.properties.milSymbol]);
+				},
+			};
+		}
 
 		dsInstance.connect();
 		dsInstances.push(dsInstance);
@@ -134,6 +145,7 @@ export function createPointMarkerLayer(
 		...(getMarkerId ? { getMarkerId } : {}),
 		...(getIconColor ? { getIconColor } : {}),
 		...(getLabel ? { getLabel } : {}),
+		...(getIcon ? { getIcon } : {}),
 	});
 	return { vizLayer: pmLayer, dsInstances };
 }

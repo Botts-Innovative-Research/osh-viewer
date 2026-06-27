@@ -8,6 +8,8 @@ import { useComponentValidation } from '../../wizard/composables/useComponentVal
 import { useVizWizStore } from '@/stores/vizwizstore';
 
 const vizwizStore = useVizWizStore();
+// If milSymbol is selected in Config, don't show icon select
+const showIcon = computed(() => (vizwizStore.dsConfig.milSymbol ? false : true));
 // If pmIconColor selected in Config, don't show icon color select
 const showIconColor = computed(() => (vizwizStore.dsConfig.pmIconColor ? false : true));
 
@@ -58,8 +60,21 @@ useComponentValidation(valid, emit);
 			title="Point Marker"
 			value="pointmarker"
 		>
-			<v-expansion-panel-text
-				><icon-control roleName="icon"></icon-control>
+			<v-expansion-panel-text>
+				<v-expand-transition>
+					<div v-if="showIcon">
+						<icon-control roleName="icon"></icon-control>
+					</div>
+					<div
+						v-else
+						class="pa-4"
+					>
+						<v-alert variant="outlined"
+							>Icon will be dynamically generated with the respective military symbol
+							based on the selected properties from the previous step.</v-alert
+						>
+					</div>
+				</v-expand-transition>
 				<v-expand-transition>
 					<div v-if="showIconColor">
 						<color-control

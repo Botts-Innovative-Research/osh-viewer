@@ -27,6 +27,12 @@ export const PointMarkerConfigRoles: VisualizationConfigRole[] = [
 		multiple: true,
 	},
 	{
+		role: 'milSymbol',
+		label: 'Military Symbology Icon',
+		description: 'Select a property to apply a milsymbol icon for the point marker.',
+		type: 'ds',
+	},
+	{
 		role: 'pmIconColor',
 		label: 'Icon Color',
 		description: 'Icon color will be generated dynamically based on the selected properties.',
