@@ -162,6 +162,59 @@ function destroyVideoView() {
 	}
 }
 
+let arFrustumCuller: Cesium.Event.RemoveCallback | null = null;
+
+
+// show only markers/layers that the 'camera' can currently see
+function cullToFrustum() {
+	if (!mapView?.viewer) return;
+	const camera = mapView.viewer.camera;
+	const frustum = camera.frustum;
+
+	const cullingVolume = frustum.computeCullingVolume(
+		camera.positionWC,
+		camera.directionWC,
+		camera.upWC
+	);
+
+	if (mapView.billboardCollection) {
+		for (let i = 0; i < mapView.billboardCollection.length; i++) {
+			const bb = mapView.billboardCollection.get(i);
+			if (bb.position) {
+				const visibility = cullingVolume.computeVisibility(
+					new Cesium.BoundingSphere(bb.position, 1)
+				);
+				bb.show = visibility !== Cesium.Intersect.OUTSIDE;
+			}
+		}
+	}
+	if (mapView.labelCollection) {
+		for (let i = 0; i < mapView.labelCollection.length; i++) {
+			const lb = mapView.labelCollection.get(i);
+			if (lb.position) {
+				const visibility = cullingVolume.computeVisibility(
+					new Cesium.BoundingSphere(lb.position, 1)
+				);
+				lb.show = visibility !== Cesium.Intersect.OUTSIDE;
+			}
+		}
+	}
+}
+
+function restoreBillboardVisibility() {
+	if (!mapView) return;
+	if (mapView.billboardCollection) {
+		for (let i = 0; i < mapView.billboardCollection.length; i++) {
+			mapView.billboardCollection.get(i).show = true;
+		}
+	}
+	if (mapView.labelCollection) {
+		for (let i = 0; i < mapView.labelCollection.length; i++) {
+			mapView.labelCollection.get(i).show = true;
+		}
+	}
+}
+
 function toggleAROverlay() {
 	showAROverlay.value = !showAROverlay.value;
 
@@ -177,6 +230,9 @@ function toggleAROverlay() {
 		updateARFov();
 		createVideoView();
 
+		arFrustumCuller = viewer.scene.postUpdate.addEventListener(() => {
+			cullToFrustum();
+		});
 	} else {
 		viewMode.value = viewModeBeforeAR.value;
 
@@ -184,7 +240,14 @@ function toggleAROverlay() {
 		viewer.scene.backgroundColor = Cesium.Color.BLACK;
 		viewer.scene.moon.show = true;
 		destroyVideoView();
+
+		if (arFrustumCuller) {
+			arFrustumCuller();
+			arFrustumCuller = null;
+		}
+		restoreBillboardVisibility();
 	}
+
 	viewer.scene.requestRender();
 }
 
@@ -480,6 +543,17 @@ useVisualizationCleanup(dsInstances);
 
 			<div v-if="showAROverlay" class="ar-fov-control">
 				<span class="ar-fov-label">FOV {{ arFov }}°</span>
+				<v-slider
+					v-model="arFov"
+					:min="30"
+					:max="120"
+					:step="1"
+					density="compact"
+					hide-details
+					thumb-size="12"
+					track-size="2"
+					color="green"
+				/>
 			</div>
 
 			<div v-if="showHUD" class="hud-overlay" :style="{ transform: `rotate(${-receivedOrientation.roll}deg)` }">
