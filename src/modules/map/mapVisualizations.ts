@@ -10,7 +10,7 @@ import { setWaypointData } from './services/missionBuilder.service';
 import { useSettingsStore } from '@/stores/settingsstore';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { getLayerId } from './services/layerId.service';
-import { colorHash } from './services/colorId.service';
+import { colorHash, getColoredIconUrl, getColoredSvgUrl } from './services/colorId.service';
 import { SupportedMapLayer } from './supportedMapLayers';
 import { getGroundAltitude } from './services/altitude.service';
 import { IConSysApiDataSourceProperties } from '../visualization/types/datasource';
@@ -27,7 +27,7 @@ export async function createMapVisualizations(
 	viz: OSHVisualization
 ): Promise<ICreateMapVisualizationResult | null> {
 	if (viz.type === 'pointmarker') {
-		return createPointMarkerLayer(viz, viz.visualizationComponents.dataSource);
+		return await createPointMarkerLayer(viz, viz.visualizationComponents.dataSource);
 	} else if (viz.type === 'lob') {
 		return createLoBLayer(viz, viz.visualizationComponents.dataSource);
 	} else if (viz.type === 'ellipse') {
@@ -40,10 +40,10 @@ export async function createMapVisualizations(
 	}
 }
 
-export function createPointMarkerLayer(
+export async function createPointMarkerLayer(
 	viz: OSHVisualization,
 	dsArray: IConSysApiDataSourceProperties[]
-): ICreateMapVisualizationResult {
+): Promise<ICreateMapVisualizationResult> {
 	// Ds instances created
 	let dsInstances: (typeof ConSysApi)[] = [];
 
@@ -122,11 +122,18 @@ export function createPointMarkerLayer(
 		dsInstances.push(dsInstance);
 	}
 
+	// Color the initial icon
+	const icon = await getColoredIconUrl(
+		`${ICON_BASE}${viz.visualizationComponents.dataLayer.icon}`,
+		viz.visualizationComponents.dataLayer.iconColor
+	);
+
+	console.log(icon);
 	const pmLayer = new PointMarkerLayer({
 		...viz.visualizationComponents.dataLayer,
 		name: viz.name,
 		id: viz.id,
-		icon: `${ICON_BASE}${viz.visualizationComponents.dataLayer.icon}`,
+		icon,
 		defaultToTerrainElevation: true,
 		dataSourceIds: dsInstances.map((ds) => ds.id),
 		...(getLocation ? { getLocation } : {}),
@@ -436,6 +443,9 @@ export async function createWaypointLayer(
 	layer: typeof PointMarkerLayer;
 	props: any;
 }> {
+	// Color the waypoint icon, default yellow
+	const icon = await getColoredIconUrl(`${ICON_BASE}/icons/map/round-pin.png`, '#FFFF00');
+
 	const waypointLayer = new PointMarkerLayer({
 		id: `waypoint-${index}`,
 		name: `Waypoint ${index + 1}`,
@@ -444,7 +454,7 @@ export async function createWaypointLayer(
 			y: waypoint.lat,
 			z: waypoint.alt || (await getGroundAltitude(waypoint.lon, waypoint.lat)),
 		},
-		icon: `${ICON_BASE}/icons/map/round-pin.png`,
+		icon,
 		iconSize: [32, 32],
 		iconAnchor: [16, 32],
 		label: `WP ${index + 1}`,
@@ -472,6 +482,9 @@ export async function createFOILayer(foiLayer: FoiLayer) {
 			? foiLayer.geometry.coordinates[2][0]
 			: foiLayer.geometry.coordinates[2];
 
+	// Color the foi icon
+	const icon = await getColoredIconUrl(`${ICON_BASE}${foiLayer.icon}`, foiLayer.color);
+
 	const pmLayer = new PointMarkerLayer({
 		id: foiLayer.geometry.id,
 		location: {
@@ -479,7 +492,7 @@ export async function createFOILayer(foiLayer: FoiLayer) {
 			y: lat,
 			z: alt,
 		},
-		icon: `${ICON_BASE}${foiLayer.icon}`,
+		icon,
 		iconColor: foiLayer.color,
 		iconSize: [32, 32],
 		iconAnchor: [16, 32],
