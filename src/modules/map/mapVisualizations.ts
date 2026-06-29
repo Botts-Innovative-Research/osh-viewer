@@ -128,7 +128,6 @@ export async function createPointMarkerLayer(
 		viz.visualizationComponents.dataLayer.iconColor
 	);
 
-	console.log(icon);
 	const pmLayer = new PointMarkerLayer({
 		...viz.visualizationComponents.dataLayer,
 		name: viz.name,
@@ -402,11 +401,17 @@ export async function createGeoPTZLayer(
 ) {
 	const vizId = `geoptz-${randomUUID()}`;
 
+	// Color the geoptz icon
+	const icon = await getColoredIconUrl(
+		`${ICON_BASE}${useSettingsStore().geoPtzIcon}`,
+		useSettingsStore().geoPtzIconColor
+	);
+
 	const geoPtzLayer = new PointMarkerLayer({
 		name: 'GeoPTZ',
 		label: 'GeoPTZ',
 		id: vizId,
-		icon: `${ICON_BASE}${useSettingsStore().geoPtzIcon}`,
+		icon,
 		iconColor: useSettingsStore().geoPtzIconColor,
 		iconSize: [32, 32],
 		iconAnchor: [16, 16],
@@ -444,7 +449,7 @@ export async function createWaypointLayer(
 	props: any;
 }> {
 	// Color the waypoint icon, default yellow
-	const icon = await getColoredIconUrl(`${ICON_BASE}/icons/map/round-pin.png`, '#FFFF00');
+	const icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, '#FFFF00');
 
 	const waypointLayer = new PointMarkerLayer({
 		id: `waypoint-${index}`,
