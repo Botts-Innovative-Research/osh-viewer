@@ -443,6 +443,9 @@ export async function createWaypointLayer(
 	layer: typeof PointMarkerLayer;
 	props: any;
 }> {
+	// Color the waypoint icon, default yellow
+	const icon = await getColoredIconUrl(`${ICON_BASE}/icons/map/round-pin.png`, '#FFFF00');
+
 	const waypointLayer = new PointMarkerLayer({
 		id: `waypoint-${index}`,
 		name: `Waypoint ${index + 1}`,
@@ -451,7 +454,7 @@ export async function createWaypointLayer(
 			y: waypoint.lat,
 			z: waypoint.alt || (await getGroundAltitude(waypoint.lon, waypoint.lat)),
 		},
-		icon: `${ICON_BASE}/icons/map/round-pin.png`,
+		icon,
 		iconSize: [32, 32],
 		iconAnchor: [16, 32],
 		label: `WP ${index + 1}`,
@@ -479,6 +482,9 @@ export async function createFOILayer(foiLayer: FoiLayer) {
 			? foiLayer.geometry.coordinates[2][0]
 			: foiLayer.geometry.coordinates[2];
 
+	// Color the foi icon
+	const icon = await getColoredIconUrl(`${ICON_BASE}${foiLayer.icon}`, foiLayer.color);
+
 	const pmLayer = new PointMarkerLayer({
 		id: foiLayer.geometry.id,
 		location: {
@@ -486,7 +492,7 @@ export async function createFOILayer(foiLayer: FoiLayer) {
 			y: lat,
 			z: alt,
 		},
-		icon: `${ICON_BASE}${foiLayer.icon}`,
+		icon,
 		iconColor: foiLayer.color,
 		iconSize: [32, 32],
 		iconAnchor: [16, 32],
