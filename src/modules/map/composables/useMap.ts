@@ -267,6 +267,8 @@ export function useMap() {
 			}
 			// Mission Planner
 			if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lon, 0);
+			// Drive Location
+			if (mapStore.isDriveLocationSelected) mapStore.setCurrentLLA(lat, lon, 0);
 			// Add additional onClick functions
 		});
 	}

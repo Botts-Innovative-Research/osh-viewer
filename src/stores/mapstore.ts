@@ -21,6 +21,9 @@ export const useMapStore = defineStore(
 		const selectedGeoPTZ: Ref<OSHVisualization[] | null> = ref(null); // Currently selected GeoPTZ Visualization(s) or null if none selected
 		const isGeoPTZSelected: Ref<boolean> = ref(false); // Whether a GeoPTZ visualization is currently selected
 
+		/* DRIVE LOCATION */
+		const isDriveLocationSelected: Ref<boolean> = ref(false);
+
 		/* MISSION PLANNER */
 		const selectedWaypoints: Ref<{
 			controlStreamId: string;
@@ -36,7 +39,7 @@ export const useMapStore = defineStore(
 		}
 
 		function toggleMapCursorMode() {
-			if (isGeoPTZSelected.value || selectedWaypoints.value)
+			if (isGeoPTZSelected.value || selectedWaypoints.value || isDriveLocationSelected.value)
 				mapCursorMode.value = 'crosshair';
 			else mapCursorMode.value = 'default';
 		}
@@ -51,7 +54,10 @@ export const useMapStore = defineStore(
 			setIsGeoPTZSelected(false);
 		}
 		function setIsGeoPTZSelected(val: boolean) {
-			if (val) disableWaypointSelection();
+			if (val) {
+				disableWaypointSelection();
+				isDriveLocationSelected.value = false;
+			}
 			isGeoPTZSelected.value = val;
 			toggleMapCursorMode();
 		}
@@ -71,6 +77,7 @@ export const useMapStore = defineStore(
 			auth: string
 		) {
 			if (isGeoPTZSelected.value) setIsGeoPTZSelected(false);
+			isDriveLocationSelected.value = false;
 			selectedWaypoints.value = { controlStreamId, commandBaseUrl, auth };
 			toggleMapCursorMode();
 		}
@@ -96,6 +103,16 @@ export const useMapStore = defineStore(
 			clearMissionWaypointsMarkers.value = false;
 		}
 
+		// Drive Location functions
+		function setIsDriveLocationSelected(val: boolean) {
+			if (val) {
+				disableWaypointSelection();
+				if (isGeoPTZSelected.value) setIsGeoPTZSelected(false);
+			}
+			isDriveLocationSelected.value = val;
+			toggleMapCursorMode();
+		}
+
 		// Cesium
 		async function addLayer(url: string) {
 			const newLayer: MapLayer = await fetchLayerFromUrl(url);
@@ -114,6 +131,7 @@ export const useMapStore = defineStore(
 			selectedWaypoints,
 			missionWaypoints,
 			clearMissionWaypointsMarkers,
+			isDriveLocationSelected,
 			setSelectedMapItem,
 			setCurrentLLA,
 			clearCurrentLLA,
@@ -127,6 +145,7 @@ export const useMapStore = defineStore(
 			setFlightPathWaypoints,
 			triggerClearWaypointMarkers,
 			resetClearWaypointMarkersSignal,
+			setIsDriveLocationSelected,
 			addLayer,
 			removeLayer,
 			mapCursorMode,

@@ -67,9 +67,12 @@ function getControlstreamByRole(role: string) {
 	return controlstreams.value.find((cs: any) => cs.properties && cs.properties[role]);
 }
 
-// Get the plan controlstream for sending missions
+// Determine vehicle type based on which plan controlstream is configured
+const isRover = computed(() => !!getControlstreamByRole('roverPlan'));
+
+// Get the plan controlstream for sending missions (rover or UAV)
 const missionControlStream = computed<Controlstream | undefined>(() =>
-	getControlstreamByRole('plan')
+	getControlstreamByRole('roverPlan') ?? getControlstreamByRole('plan')
 );
 
 const noController = computed(() => props.visualizations.length === 0);
@@ -103,9 +106,9 @@ const fileInputRef = ref<any | null>(null);
 const selectedFile = ref<File | null>(null);
 const exportFilename = ref<string>('mission');
 
-const droneDatasourceLLA = ref<ConSysApi | null>(null);
-const droneHomeDatasource = ref<ConSysApi | null>(null);
-let dsInstances = ref<ConSysApi[]>([]);
+const droneDatasourceLLA = ref<(typeof ConSysApi )| null>(null);
+const droneHomeDatasource = ref<(typeof ConSysApi) | null>(null);
+let dsInstances = ref<(typeof ConSysApi[])>([]);
 
 let homeLocation = ref<{ lat: number; lon: number; alt: number }>({ lat: 0, lon: 0, alt: 0 });
 
@@ -181,7 +184,7 @@ async function addWaypoint() {
 		id: randomUUID(),
 		lat: latInput.value,
 		lon: lonInput.value,
-		alt: altInput.value,
+		alt: isRover.value ? 0 : altInput.value,
 	};
 	waypoints.value.push(newWaypoint);
 	console.log('[MissionBuilder.vue] Added waypoint:', newWaypoint);
@@ -310,7 +313,7 @@ async function isLegacyPlanSchema(): Promise<boolean> {
 	try {
 		const { cs: storeCs } = mineControlObsPropsFromCS(cs.id);
 		const schema = await fetchCsSchema(storeCs.controlstream);
-		console.log('schema', schema);
+
 		if (!schema?.parametersSchema) return false;
 
 		const items = schema.parametersSchema.fields ?? schema.parametersSchema;
@@ -441,56 +444,60 @@ function generateMissionControlPlan() {
 		homeLocation.value?.alt ?? waypoints.value[0].alt,
 	];
 
-	// send takeoff
-	const takeoffLocation = homeLocation.value ?? waypoints.value[0];
+	const items: any[] = [];
 
-	const items: any[] = [
-		{
-			AMSLAltAboveTerrain: amslAltAboveTerrain.value,
-			Altitude: waypointAltitude.value,
-			AltitudeMode: altitudeMode.value,
-			autoContinue: autoContinue.value,
-			command: 22, // 22 = takeoff
-			doJumpId: 1,
-			frame: 3,
-			params: [0, 0, 0, null, takeoffLocation.lat, takeoffLocation.lon, takeoffLocation.alt],
-			type: 'SimpleItem',
-		},
-	];
-
-	waypoints.value.forEach((wp, index) => {
+	if (!isRover.value) {
+		// UAV: add takeoff command
+		const takeoffLocation = homeLocation.value ?? waypoints.value[0];
 		items.push({
 			AMSLAltAboveTerrain: amslAltAboveTerrain.value,
 			Altitude: waypointAltitude.value,
 			AltitudeMode: altitudeMode.value,
 			autoContinue: autoContinue.value,
-			command: 16, // 16 = waypoint
-			doJumpId: index + 2,
+			command: 22, // MAV_CMD_NAV_TAKEOFF
+			doJumpId: 1,
 			frame: 3,
-			params: [0, 0, 0, null, wp.lat, wp.lon, wp.alt],
+			params: [0, 0, 0, null, takeoffLocation.lat, takeoffLocation.lon, takeoffLocation.alt],
+			type: 'SimpleItem',
+		});
+	}
+
+	waypoints.value.forEach((wp, index) => {
+		items.push({
+			AMSLAltAboveTerrain: isRover.value ? 0 : (amslAltAboveTerrain.value ?? 0),
+			Altitude: isRover.value ? 0 : waypointAltitude.value,
+			AltitudeMode: isRover.value ? 0 : altitudeMode.value,
+			autoContinue: autoContinue.value,
+			command: 16, // MAV_CMD_NAV_WAYPOINT
+			doJumpId: items.length + 1,
+			frame: isRover.value ? 0 : 3,
+			params: [0, 0, 0, null, wp.lat, wp.lon, isRover.value ? 0 : wp.alt],
 			type: 'SimpleItem',
 		});
 	});
 
-	items.push({
-		AMSLAltAboveTerrain: amslAltAboveTerrain.value,
-		Altitude: 0,
-		AltitudeMode: altitudeMode.value,
-		autoContinue: autoContinue.value,
-		command: 21,
-		doJumpId: items.length + 1,
-		frame: 3,
-		params: [
-			0,
-			0,
-			0,
-			null,
-			homeLocation.value?.lat ?? waypoints.value[0].lat,
-			homeLocation.value?.lon ?? waypoints.value[0].lon,
-			0,
-		],
-		type: 'SimpleItem',
-	});
+	if (!isRover.value) {
+		// UAV: add land command
+		items.push({
+			AMSLAltAboveTerrain: amslAltAboveTerrain.value,
+			Altitude: 0,
+			AltitudeMode: altitudeMode.value,
+			autoContinue: autoContinue.value,
+			command: 21, // MAV_CMD_NAV_LAND
+			doJumpId: items.length + 1,
+			frame: 3,
+			params: [
+				0,
+				0,
+				0,
+				null,
+				homeLocation.value?.lat ?? waypoints.value[0].lat,
+				homeLocation.value?.lon ?? waypoints.value[0].lon,
+				0,
+			],
+			type: 'SimpleItem',
+		});
+	}
 
 	return {
 		fileType: 'Plan',
@@ -499,10 +506,10 @@ function generateMissionControlPlan() {
 			cruiseSpeed: cruiseSpeed.value,
 			firmwareType: 3,
 			globalPlanAltitudeMode: 0,
-			hoverSpeed: hoverSpeed.value,
+			hoverSpeed: isRover.value ? 0 : hoverSpeed.value,
 			items: items,
 			plannedHomePosition: plannedHomePosition,
-			vehicleType: 2,
+			vehicleType: isRover.value ? 10 : 2,
 			version: 2,
 		},
 		geoFence: {
@@ -622,6 +629,7 @@ useVisualizationCleanup(dsInstances);
 						<v-card-title>{{ receivedLLA.lon.toFixed(6) }}</v-card-title>
 					</v-col>
 					<v-col
+						v-if="!isRover"
 						cols="12"
 						md="4"
 					>
@@ -661,7 +669,7 @@ useVisualizationCleanup(dsInstances);
 					>
 						<v-form ref="waypointForm">
 							<v-row
-								dense
+								density="comfortable"
 								cols="12"
 								class="d-flex align-start justify-center"
 							>
@@ -721,6 +729,7 @@ useVisualizationCleanup(dsInstances);
 									/>
 								</v-col>
 								<v-col
+									v-if="!isRover"
 									cols="2.5"
 									xs="3"
 								>
@@ -822,7 +831,7 @@ useVisualizationCleanup(dsInstances);
 													class="align-center"
 													density="compact"
 												>
-													<v-col cols="4">
+													<v-col :cols="isRover ? 6 : 4">
 														<v-text-field
 															type="number"
 															label="Lat"
@@ -831,7 +840,7 @@ useVisualizationCleanup(dsInstances);
 															v-model.number="wp.lat"
 														/>
 													</v-col>
-													<v-col cols="4">
+													<v-col :cols="isRover ? 6 : 4">
 														<v-text-field
 															type="number"
 															label="Lon"
@@ -840,15 +849,18 @@ useVisualizationCleanup(dsInstances);
 															v-model.number="wp.lon"
 														/>
 													</v-col>
-													<v-col cols="4">
-														<v-text-field
-															type="number"
-															label="Alt"
-															density="compact"
-															hide-details
-															v-model.number="wp.alt"
-														/>
-													</v-col>
+													<v-col
+													v-if="!isRover"
+													cols="4"
+												>
+													<v-text-field
+														type="number"
+														label="Alt"
+														density="compact"
+														hide-details
+														v-model.number="wp.alt"
+													/>
+												</v-col>
 												</v-row>
 											</v-list-item-title>
 											<template v-slot:append>
@@ -879,8 +891,9 @@ useVisualizationCleanup(dsInstances);
 										No waypoints added. Click on the map or use the form above.
 									</div>
 									<v-divider class="my-4"></v-divider>
-									<v-row dense>
+									<v-row density="comfortable">
 										<v-col
+											v-if="!isRover"
 											cols="12"
 											md="6"
 										>
@@ -893,6 +906,7 @@ useVisualizationCleanup(dsInstances);
 											/>
 										</v-col>
 										<v-col
+											v-if="!isRover"
 											cols="12"
 											md="6"
 										>
@@ -906,6 +920,7 @@ useVisualizationCleanup(dsInstances);
 											/>
 										</v-col>
 										<v-col
+											v-if="!isRover"
 											cols="12"
 											md="6"
 										>
@@ -934,20 +949,23 @@ useVisualizationCleanup(dsInstances);
 							</v-expansion-panel>
 							<v-expansion-panel title="Planned Home Position">
 								<v-expansion-panel-text class="py-2">
-									<v-row dense>
-										<v-col cols="4">
+									<v-row density="comfortable">
+										<v-col :cols="isRover ? 6 : 4">
 											<v-card-subtitle>Latitude</v-card-subtitle>
 											<v-card-text>{{
 												homeLocation.lat.toFixed(6)
 											}}</v-card-text>
 										</v-col>
-										<v-col cols="4">
+										<v-col :cols="isRover ? 6 : 4">
 											<v-card-subtitle>Longitude</v-card-subtitle>
 											<v-card-text>{{
 												homeLocation.lon.toFixed(6)
 											}}</v-card-text>
 										</v-col>
-										<v-col cols="4">
+										<v-col
+											v-if="!isRover"
+											cols="4"
+										>
 											<v-card-subtitle>Altitude</v-card-subtitle>
 											<v-card-text>{{
 												homeLocation.alt.toFixed(2)
@@ -958,17 +976,20 @@ useVisualizationCleanup(dsInstances);
 							</v-expansion-panel>
 							<v-expansion-panel title="Mission Settings">
 								<v-expansion-panel-text class="py-2">
-									<v-row dense>
-										<v-col cols="6">
+									<v-row density="comfortable">
+										<v-col :cols="isRover ? 12 : 6">
 											<v-text-field
 												v-model.number="cruiseSpeed"
 												type="number"
-												label="Cruise Speed"
+												:label="isRover ? 'Ground Speed (m/s)' : 'Cruise Speed'"
 												density="compact"
 												hide-details
 											/>
 										</v-col>
-										<v-col cols="6">
+										<v-col
+											v-if="!isRover"
+											cols="6"
+										>
 											<v-text-field
 												v-model.number="hoverSpeed"
 												type="number"
@@ -1000,7 +1021,7 @@ useVisualizationCleanup(dsInstances);
 						value="file"
 						class="my-4"
 					>
-						<v-row dense>
+						<v-row density="comfortable">
 							<v-col cols="12">
 								<v-btn
 									block
@@ -1022,7 +1043,7 @@ useVisualizationCleanup(dsInstances);
 
 						<v-row
 							v-if="selectedFile"
-							dense
+							density="comfortable"
 							class="mt-3"
 						>
 							<v-col cols="12">
@@ -1136,10 +1157,14 @@ useVisualizationCleanup(dsInstances);
 									<td>{{ waypoints.length }}</td>
 								</tr>
 								<tr v-if="missionSource === 'waypoints'">
-									<td class="font-weight-medium">Cruise Speed</td>
+									<td class="font-weight-medium">{{ isRover ? 'Ground Speed' : 'Cruise Speed' }}</td>
 									<td>{{ cruiseSpeed }} m/s</td>
 								</tr>
 								<tr v-if="missionSource === 'waypoints'">
+									<td class="font-weight-medium">Vehicle Type</td>
+									<td>{{ isRover ? 'Rover' : 'UAV' }}</td>
+								</tr>
+								<tr v-if="missionSource === 'waypoints' && !isRover">
 									<td class="font-weight-medium">Altitude</td>
 									<td>{{ waypointAltitude }} m</td>
 								</tr>
@@ -1177,7 +1202,11 @@ useVisualizationCleanup(dsInstances);
 						getControlstreamByRole('pause') ||
 						getControlstreamByRole('rtl') ||
 						getControlstreamByRole('offboard') ||
-						getControlstreamByRole('takeoff')
+						getControlstreamByRole('takeoff') ||
+						getControlstreamByRole('driveVelocity') ||
+						getControlstreamByRole('driveLocation') ||
+						getControlstreamByRole('arm') ||
+						getControlstreamByRole('reboot')
 					"
 				/>
 			</v-card>

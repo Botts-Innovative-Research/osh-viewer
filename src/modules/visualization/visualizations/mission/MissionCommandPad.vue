@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { sendCommand } from '../../services/controlstream.service';
+import { useMapStore } from '@/stores/mapstore';
 
 const props = defineProps({
 	controlstreams: {
@@ -14,12 +15,36 @@ function getControlstreamByRole(role: string) {
 	return props.controlstreams.find((cs: any) => cs.properties && cs.properties[role]);
 }
 
+const mapStore = useMapStore();
+
+const driveLat = ref<number>(0.0);
+const driveLon = ref<number>(0.0);
+const isDriveLocationMapSelect = computed(() => mapStore.isDriveLocationSelected);
+
+watch(
+	() => mapStore.currentLLA,
+	(newVal) => {
+		if (isDriveLocationMapSelect.value && newVal) {
+			driveLat.value = newVal.latitude;
+			driveLon.value = newVal.longitude;
+		}
+	}
+);
+
+function toggleDriveLocationSelect() {
+	mapStore.setIsDriveLocationSelected(!mapStore.isDriveLocationSelected);
+}
+
 const xVelocity = ref<number>(0.0);
 const yVelocity = ref<number>(0.0);
 const zVelocity = ref<number>(0.0);
 const yawRate = ref<number>(0.0);
 const takeOffAlt = ref<number>(0.0);
+const yawRateDrive = ref<number>(0.0);
+const forwardVelocityDrive = ref<number>(0.0);
 const offboardForm = ref<any>(null);
+const isPaused = ref(false);
+const isArmed = ref(false);
 
 function getControlstreamConfig(cs: any) {
 	if (!cs) return null;
@@ -45,25 +70,38 @@ function sendCommandToRole(role: string, payload: any) {
 	sendCommand(config.baseUrl, config.id, payload, config.auth);
 }
 
-function pauseMission() {
+function pause() {
+	isPaused.value = !isPaused.value;
 	// resume = true , pause = false
-	if (isPaused.value) {
-		const payload = {
-			parameters: {
-				Resume: true,
-			},
-		};
+	const payload = {
+		parameters: {
+			Resume: isPaused.value,
+		},
+	};
 
-		sendCommandToRole('pause', payload);
-	} else {
-		const payload = {
-			parameters: {
-				Resume: false,
-			},
-		};
+	sendCommandToRole('pause', payload);
+}
 
-		sendCommandToRole('pause', payload);
-	}
+function arm() {
+	isArmed.value = !isArmed.value;
+	// arm = true , disarm = false
+	const payload = {
+		parameters: {
+			ARM: isArmed.value,
+		},
+	};
+
+	sendCommandToRole('arm', payload);
+}
+
+function reboot() {
+	const payload = {
+		parameters: {
+			reboot: true,
+		},
+	};
+
+	sendCommandToRole('reboot', payload);
 }
 
 function returnToLaunch() {
@@ -119,19 +157,34 @@ function takeoffCommand() {
 	sendCommandToRole('takeoff', payload);
 }
 
-const isPaused = ref(false);
+function driveVelocityCommand() {
+	const payload = {
+		parameters: {
+			forwardVelocity: forwardVelocityDrive.value,
+			yawRate: yawRateDrive.value,
+		},
+	};
 
-function toggle() {
-	console.log('[MissionCommandPad] toggle called, isPaused:', isPaused.value);
-	pauseMission();
-	isPaused.value = !isPaused.value;
-	console.log('[MissionCommandPad] isPaused now:', isPaused.value);
+	sendCommandToRole('driveVelocity', payload);
+}
+
+function driveLocationCommand() {
+	const payload = {
+		parameters: {
+			locationVectorLL: {
+				Latitude: driveLat.value,
+				Longitude: driveLon.value,
+			}
+		},
+	};
+
+	sendCommandToRole('driveLocation', payload);
 }
 </script>
 
 <template>
-	<v-sheet class="pa-4 mission-control-card">
-		<!--pause, rtl, land-->
+	<div>
+		<!--commands-->
 		<div
 			v-if="
 				getControlstreamByRole('pause') ||
@@ -140,10 +193,30 @@ function toggle() {
 				getControlstreamByRole('cancel')
 			"
 		>
-			<v-card-title class="text-subtitle-1 pa-0 mb-3"> Commands </v-card-title>
-			<v-row dense>
+			<div class="section-header mb-3">
+				<v-icon size="small" class="mr-2">mdi-gamepad-variant</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">Commands</span>
+			</div>
+			<v-row density="comfortable">
 				<v-col
-					cols="12"
+					cols="6"
+					md="3"
+					v-if="getControlstreamByRole('arm')"
+				>
+					<v-btn
+						block
+						variant="tonal"
+						:color="isArmed ? 'primary' : 'grey'"
+						@click="arm"
+						class="command-btn"
+					>
+						<v-icon start>{{ isArmed ? 'mdi-shield-off' : 'mdi-shield-check' }}</v-icon>
+						{{ isArmed ? 'Disarm' : 'Arm' }}
+					</v-btn>
+				</v-col>
+
+				<v-col
+					cols="6"
 					md="3"
 					v-if="getControlstreamByRole('pause')"
 				>
@@ -151,7 +224,7 @@ function toggle() {
 						block
 						variant="tonal"
 						:color="isPaused ? 'primary' : 'grey'"
-						@click="toggle"
+						@click="pause"
 						class="command-btn"
 					>
 						<v-icon start>{{
@@ -160,8 +233,9 @@ function toggle() {
 						{{ isPaused ? 'Resume' : 'Pause' }}
 					</v-btn>
 				</v-col>
+
 				<v-col
-					cols="12"
+					cols="6"
 					md="3"
 					v-if="getControlstreamByRole('rtl')"
 				>
@@ -176,8 +250,43 @@ function toggle() {
 						RTL
 					</v-btn>
 				</v-col>
+
 				<v-col
-					cols="12"
+					cols="6"
+					md="3"
+					v-if="getControlstreamByRole('takeoff')"
+				>
+					<v-btn
+						block
+						variant="tonal"
+						color="primary"
+						@click="takeoffCommand"
+						class="command-btn"
+					>
+						<v-icon start>mdi-airplane-takeoff</v-icon>
+						Take Off
+					</v-btn>
+				</v-col>
+
+				<v-col
+					cols="6"
+					md="3"
+					v-if="getControlstreamByRole('land')"
+				>
+					<v-btn
+						block
+						variant="tonal"
+						color="warning"
+						@click="land"
+						class="command-btn"
+					>
+						<v-icon start>mdi-airplane-landing</v-icon>
+						Land
+					</v-btn>
+				</v-col>
+
+				<v-col
+					cols="6"
 					md="3"
 					v-if="getControlstreamByRole('cancel')"
 				>
@@ -192,20 +301,21 @@ function toggle() {
 						Cancel
 					</v-btn>
 				</v-col>
+
 				<v-col
-					cols="12"
+					cols="6"
 					md="3"
-					v-if="getControlstreamByRole('land')"
+					v-if="getControlstreamByRole('reboot')"
 				>
 					<v-btn
 						block
 						variant="tonal"
-						color="grey"
-						@click="land"
+						color="error"
+						@click="reboot"
 						class="command-btn"
 					>
-						<v-icon start>mdi-airplane-landing</v-icon>
-						Land
+						<v-icon start>mdi-restart</v-icon>
+						Reboot
 					</v-btn>
 				</v-col>
 			</v-row>
@@ -213,24 +323,28 @@ function toggle() {
 
 		<!--takeoff control-->
 		<div v-if="getControlstreamByRole('takeoff')">
-			<v-divider class="mt-2 mb-4"></v-divider>
-			<v-card-title class="text-subtitle-1 pa-0 mb-3"> Takeoff Control </v-card-title>
-			<v-row dense>
+			<v-divider class="my-4"></v-divider>
+			<div class="section-header mb-3">
+				<v-icon size="small" class="mr-2">mdi-airplane</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">Takeoff Control</span>
+			</div>
+			<v-row density="comfortable" align="center">
 				<v-col
-					cols="12"
-					md="4"
+					cols="8"
+					md="6"
 				>
 					<v-text-field
 						v-model.number="takeOffAlt"
 						type="number"
-						label="Takeoff Altitude"
+						label="Altitude (AGL)"
 						density="compact"
 						hide-details
+						suffix="m"
 					/>
 				</v-col>
 				<v-col
-					cols="12"
-					md="4"
+					cols="4"
+					md="3"
 				>
 					<v-btn
 						block
@@ -239,8 +353,58 @@ function toggle() {
 						@click="takeoffCommand"
 						class="command-btn"
 					>
-						<v-icon start>mdi-airplane</v-icon>
+						<v-icon start>mdi-airplane-takeoff</v-icon>
 						Take Off
+					</v-btn>
+				</v-col>
+			</v-row>
+		</div>
+
+		<!--drive velocity control-->
+		<div v-if="getControlstreamByRole('driveVelocity')">
+			<v-divider class="my-4"></v-divider>
+			<div class="section-header mb-3">
+				<v-icon size="small" class="mr-2">mdi-steering</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">Drive Velocity Control</span>
+			</div>
+			<v-row density="comfortable" align="center">
+				<v-col
+					cols="5"
+					md="4"
+				>
+					<v-text-field
+						v-model.number="forwardVelocityDrive"
+						type="number"
+						label="Forward Velocity"
+						density="compact"
+						hide-details
+					/>
+				</v-col>
+				<v-col
+					cols="5"
+					md="4"
+				>
+					<v-text-field
+						v-model.number="yawRateDrive"
+						type="number"
+						label="Yaw Rate"
+						density="compact"
+						hide-details
+					/>
+				</v-col>
+				<v-col
+					cols="2"
+					md="4"
+				>
+					<v-btn
+						block
+						variant="tonal"
+						color="primary"
+						@click="driveVelocityCommand"
+						class="command-btn"
+					>
+						<v-icon start>mdi-send</v-icon>
+						Send
 					</v-btn>
 				</v-col>
 			</v-row>
@@ -248,15 +412,15 @@ function toggle() {
 
 		<!--offboard control-->
 		<div v-if="getControlstreamByRole('offboard')">
-			<v-divider class="mt-2 mb-4"></v-divider>
-			<v-card-title class="text-subtitle-1 pa-0 mb-3"> Offboard Control </v-card-title>
+			<v-divider class="my-4"></v-divider>
+			<div class="section-header mb-3">
+				<v-icon size="small" class="mr-2">mdi-controller</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">Offboard Control</span>
+			</div>
 			<v-form ref="offboardForm">
-				<v-row
-					dense
-					align="center"
-				>
+				<v-row density="comfortable" align="center">
 					<v-col
-						cols="12"
+						cols="6"
 						md="2"
 					>
 						<v-text-field
@@ -268,7 +432,7 @@ function toggle() {
 						/>
 					</v-col>
 					<v-col
-						cols="12"
+						cols="6"
 						md="2"
 					>
 						<v-text-field
@@ -280,7 +444,7 @@ function toggle() {
 						/>
 					</v-col>
 					<v-col
-						cols="12"
+						cols="6"
 						md="2"
 					>
 						<v-text-field
@@ -292,7 +456,7 @@ function toggle() {
 						/>
 					</v-col>
 					<v-col
-						cols="12"
+						cols="6"
 						md="2"
 					>
 						<v-text-field
@@ -305,7 +469,7 @@ function toggle() {
 					</v-col>
 					<v-col
 						cols="12"
-						md="auto"
+						md="4"
 					>
 						<v-btn
 							block
@@ -314,32 +478,90 @@ function toggle() {
 							@click="offboard"
 							class="command-btn"
 						>
-							<v-icon start>mdi-controller</v-icon>
-							Offboard
+							<v-icon start>mdi-send</v-icon>
+							Send
 						</v-btn>
 					</v-col>
 				</v-row>
 			</v-form>
 		</div>
-	</v-sheet>
+
+		<!--drive to location-->
+		<div v-if="getControlstreamByRole('driveLocation')">
+			<v-divider class="my-4"></v-divider>
+			<div class="section-header mb-3">
+				<v-icon size="small" class="mr-2">mdi-map-marker</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">Drive to Location</span>
+			</div>
+			<v-row density="comfortable" align="center">
+				<v-col cols="auto">
+					<IconButton
+						:color="isDriveLocationMapSelect ? 'primary' : 'grey'"
+						@click="toggleDriveLocationSelect"
+						rounded="xl"
+					>
+						<v-icon>{{
+							isDriveLocationMapSelect ? 'mdi-crosshairs-gps' : 'mdi-crosshairs'
+						}}</v-icon>
+						<v-tooltip
+							activator="parent"
+							location="top"
+						>
+							{{ isDriveLocationMapSelect ? 'Click map to set location' : 'Enable map selection' }}
+						</v-tooltip>
+					</IconButton>
+				</v-col>
+				<v-col
+					cols="4"
+					md="4"
+				>
+					<v-text-field
+						v-model.number="driveLat"
+						type="number"
+						label="Latitude"
+						density="compact"
+						hide-details
+					/>
+				</v-col>
+				<v-col
+					cols="4"
+					md="4"
+				>
+					<v-text-field
+						v-model.number="driveLon"
+						type="number"
+						label="Longitude"
+						density="compact"
+						hide-details
+					/>
+				</v-col>
+				<v-col
+					cols="3"
+					md="3"
+				>
+					<v-btn
+						block
+						variant="tonal"
+						color="primary"
+						@click="driveLocationCommand"
+						class="command-btn"
+					>
+						<v-icon start>mdi-send</v-icon>
+						Send
+					</v-btn>
+				</v-col>
+			</v-row>
+		</div>
+	</div>
 </template>
 
 <style scoped>
-.mission-control-card {
-}
-
-.controls-wrapper {
-	background: rgba(0, 0, 0, 0.2);
-	border-radius: 12px;
-	padding: 16px;
-	border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.control-column {
+.section-header {
 	display: flex;
-	flex-direction: column;
 	align-items: center;
+	opacity: 0.8;
 }
+
 .command-btn {
 	text-transform: none;
 	font-weight: 500;
