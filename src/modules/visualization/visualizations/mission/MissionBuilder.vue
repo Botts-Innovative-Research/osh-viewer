@@ -112,8 +112,8 @@ let dsInstances = ref<(typeof ConSysApi[])>([]);
 
 let homeLocation = ref<{ lat: number; lon: number; alt: number }>({ lat: 0, lon: 0, alt: 0 });
 
-const cruiseSpeed = ref<number>(15);
-const hoverSpeed = ref<number>(5);
+const cruiseSpeed = ref<number>(0.25);
+const hoverSpeed = ref<number>(0.25);
 const waypointAltitude = ref<number>(25);
 const altitudeMode = ref<number>(1);
 const autoContinue = ref<boolean>(true);

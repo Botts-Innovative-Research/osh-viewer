@@ -45,6 +45,7 @@ const forwardVelocityDrive = ref<number>(0.0);
 const offboardForm = ref<any>(null);
 const isPaused = ref(false);
 const isArmed = ref(false);
+const isHold = ref(false);
 
 function getControlstreamConfig(cs: any) {
 	if (!cs) return null;
@@ -92,6 +93,18 @@ function arm() {
 	};
 
 	sendCommandToRole('arm', payload);
+}
+
+function hold() {
+	isHold.value = !isHold.value;
+	// arm = true , disarm = false
+	const payload = {
+		parameters: {
+			engageHold: isHold.value,
+		},
+	};
+
+	sendCommandToRole('hold', payload);
 }
 
 function reboot() {
@@ -190,7 +203,10 @@ function driveLocationCommand() {
 				getControlstreamByRole('pause') ||
 				getControlstreamByRole('rtl') ||
 				getControlstreamByRole('land') ||
-				getControlstreamByRole('cancel')
+				getControlstreamByRole('cancel') ||
+				getControlstreamByRole('arm') ||
+				getControlstreamByRole('hold') ||
+				getControlstreamByRole('reboot')
 			"
 		>
 			<div class="section-header mb-3">
@@ -200,7 +216,6 @@ function driveLocationCommand() {
 			<v-row density="comfortable">
 				<v-col
 					cols="6"
-					md="3"
 					v-if="getControlstreamByRole('arm')"
 				>
 					<v-btn
@@ -217,7 +232,22 @@ function driveLocationCommand() {
 
 				<v-col
 					cols="6"
-					md="3"
+					v-if="getControlstreamByRole('hold')"
+				>
+					<v-btn
+						block
+						variant="tonal"
+						:color="isHold ? 'primary' : 'grey'"
+						@click="hold"
+						class="command-btn"
+					>
+						<v-icon start>{{ isHold ? 'mdi-shield-off' : 'mdi-shield-check' }}</v-icon>
+						{{ isHold ? 'Release' : 'Hold' }}
+					</v-btn>
+				</v-col>
+
+				<v-col
+					cols="6"
 					v-if="getControlstreamByRole('pause')"
 				>
 					<v-btn
@@ -236,7 +266,6 @@ function driveLocationCommand() {
 
 				<v-col
 					cols="6"
-					md="3"
 					v-if="getControlstreamByRole('rtl')"
 				>
 					<v-btn
@@ -253,7 +282,6 @@ function driveLocationCommand() {
 
 				<v-col
 					cols="6"
-					md="3"
 					v-if="getControlstreamByRole('takeoff')"
 				>
 					<v-btn
@@ -270,7 +298,6 @@ function driveLocationCommand() {
 
 				<v-col
 					cols="6"
-					md="3"
 					v-if="getControlstreamByRole('land')"
 				>
 					<v-btn
@@ -287,7 +314,6 @@ function driveLocationCommand() {
 
 				<v-col
 					cols="6"
-					md="3"
 					v-if="getControlstreamByRole('cancel')"
 				>
 					<v-btn
@@ -304,7 +330,6 @@ function driveLocationCommand() {
 
 				<v-col
 					cols="6"
-					md="3"
 					v-if="getControlstreamByRole('reboot')"
 				>
 					<v-btn
@@ -330,8 +355,7 @@ function driveLocationCommand() {
 			</div>
 			<v-row density="comfortable" align="center">
 				<v-col
-					cols="8"
-					md="6"
+					cols="6"
 				>
 					<v-text-field
 						v-model.number="takeOffAlt"
@@ -343,8 +367,7 @@ function driveLocationCommand() {
 					/>
 				</v-col>
 				<v-col
-					cols="4"
-					md="3"
+					cols="6"
 				>
 					<v-btn
 						block
@@ -369,8 +392,7 @@ function driveLocationCommand() {
 			</div>
 			<v-row density="comfortable" align="center">
 				<v-col
-					cols="5"
-					md="4"
+					cols="6"
 				>
 					<v-text-field
 						v-model.number="forwardVelocityDrive"
@@ -381,8 +403,7 @@ function driveLocationCommand() {
 					/>
 				</v-col>
 				<v-col
-					cols="5"
-					md="4"
+					cols="6"
 				>
 					<v-text-field
 						v-model.number="yawRateDrive"
@@ -393,8 +414,7 @@ function driveLocationCommand() {
 					/>
 				</v-col>
 				<v-col
-					cols="2"
-					md="4"
+					cols="6"
 				>
 					<v-btn
 						block
@@ -421,7 +441,6 @@ function driveLocationCommand() {
 				<v-row density="comfortable" align="center">
 					<v-col
 						cols="6"
-						md="2"
 					>
 						<v-text-field
 							v-model.number="xVelocity"
@@ -433,7 +452,6 @@ function driveLocationCommand() {
 					</v-col>
 					<v-col
 						cols="6"
-						md="2"
 					>
 						<v-text-field
 							v-model.number="yVelocity"
@@ -445,7 +463,6 @@ function driveLocationCommand() {
 					</v-col>
 					<v-col
 						cols="6"
-						md="2"
 					>
 						<v-text-field
 							v-model.number="zVelocity"
@@ -457,7 +474,6 @@ function driveLocationCommand() {
 					</v-col>
 					<v-col
 						cols="6"
-						md="2"
 					>
 						<v-text-field
 							v-model.number="yawRate"
@@ -468,8 +484,7 @@ function driveLocationCommand() {
 						/>
 					</v-col>
 					<v-col
-						cols="12"
-						md="4"
+						cols="6"
 					>
 						<v-btn
 							block
@@ -511,10 +526,7 @@ function driveLocationCommand() {
 						</v-tooltip>
 					</IconButton>
 				</v-col>
-				<v-col
-					cols="4"
-					md="4"
-				>
+				<v-col>
 					<v-text-field
 						v-model.number="driveLat"
 						type="number"
@@ -523,10 +535,7 @@ function driveLocationCommand() {
 						hide-details
 					/>
 				</v-col>
-				<v-col
-					cols="4"
-					md="4"
-				>
+				<v-col>
 					<v-text-field
 						v-model.number="driveLon"
 						type="number"
@@ -535,10 +544,9 @@ function driveLocationCommand() {
 						hide-details
 					/>
 				</v-col>
-				<v-col
-					cols="3"
-					md="3"
-				>
+			</v-row>
+			<v-row density="comfortable">
+				<v-col>
 					<v-btn
 						block
 						variant="tonal"
