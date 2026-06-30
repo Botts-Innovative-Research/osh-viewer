@@ -428,6 +428,40 @@ export async function createGeoPTZLayer(
 
 	return { layer: geoPtzLayer, props };
 }
+export async function createDriveLocationLayer(location: {
+	lat: number;
+	lon: number;
+	alt: number;
+}): Promise<{ layer: typeof PointMarkerLayer; props: any }> {
+	const vizId = `drive-location-${randomUUID()}`;
+
+	const icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, '#00BFFF');
+
+	const driveLocationLayer = new PointMarkerLayer({
+		id: vizId,
+		name: 'Drive to Location',
+		label: 'Drive Target',
+		location: {
+			x: location.lon,
+			y: location.lat,
+			z: location.alt,
+		},
+		icon,
+		iconSize: [32, 32],
+		iconAnchor: [16, 32],
+		labelColor: '#FFFFFF',
+		labelOutlineColor: '#000000',
+		labelSize: 14,
+		labelOffset: [0, -36],
+		defaultToTerrainElevation: true,
+		markerId: vizId + '-drive' + randomUUID(),
+	});
+
+	const props = await setLayerData(driveLocationLayer);
+
+	return { layer: driveLocationLayer, props };
+}
+
 export async function createWaypointLayer(
 	waypoint: MapPoint,
 	index: string

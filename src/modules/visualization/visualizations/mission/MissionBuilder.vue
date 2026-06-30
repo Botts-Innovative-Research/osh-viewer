@@ -613,7 +613,7 @@ useVisualizationCleanup(dsInstances);
 		>
 			<v-card class="telemetry-card">
 				<v-card-text>Live Telemetry</v-card-text>
-				<v-row dense>
+				<v-row density="comfortable">
 					<v-col
 						cols="12"
 						md="4"
