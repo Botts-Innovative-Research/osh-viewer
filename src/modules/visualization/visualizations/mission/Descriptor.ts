@@ -99,6 +99,13 @@ export const MissionConfigRoles: VisualizationConfigRole[] = [
 		type: 'cs',
 		showPropertySelector: false,
 	},
+	{
+		role: 'hold',
+		label: 'Hold Control',
+		description: 'Select the control stream used to send  ',
+		type: 'cs',
+		showPropertySelector: false,
+	},
 	// {
 	//     role: 'cancel',
 	//     label: 'Cancel Mission',
