@@ -272,12 +272,13 @@ export function useMap() {
 			// Drive Location
 			if (mapStore.isDriveLocationSelected) {
 				const calcAlt = alt ?? (await getGroundAltitude(lon, lat)) ?? 0;
-				mapStore.setCurrentLLA(lat, lon, calcAlt);
+				mapStore.setCurrentLLA(lat, lon, 0);
 
-				const result = await createDriveLocationLayer({ lon, lat, alt: calcAlt });
+				const result = await createDriveLocationLayer({ lon, lat, alt: 0 });
 				if (result) {
 					mapAdapter.value?.removeLayer(driveLocationLayer.value);
 					driveLocationLayer.value = result.layer;
+					
 					mapAdapter.value?.addLayer(driveLocationLayer.value);
 					if (result.props) mapAdapter.value?.updateMarker(result.props);
 				}
@@ -358,10 +359,8 @@ export function useMap() {
 	watch(
 		() => mapStore.isDriveLocationSelected,
 		(selected) => {
-			if (!selected && driveLocationLayer.value) {
-				mapAdapter.value?.removeLayer(driveLocationLayer.value);
+			if (driveLocationLayer.value) mapAdapter.value?.removeLayer(driveLocationLayer.value);
 				driveLocationLayer.value = null;
-			}
 		}
 	);
 
