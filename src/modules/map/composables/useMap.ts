@@ -271,7 +271,6 @@ export function useMap() {
 			if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lon, 0);
 			// Drive Location
 			if (mapStore.isDriveLocationSelected) {
-				const calcAlt = alt ?? (await getGroundAltitude(lon, lat)) ?? 0;
 				mapStore.setCurrentLLA(lat, lon, 0);
 
 				const result = await createDriveLocationLayer({ lon, lat, alt: 0 });
