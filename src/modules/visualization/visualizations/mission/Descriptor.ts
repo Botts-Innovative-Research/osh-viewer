@@ -24,10 +24,16 @@ export const MissionConfigRoles: VisualizationConfigRole[] = [
 	},
 	{
 		role: 'plan',
-		label: 'Mission Control Plan',
-		description: 'Select the control stream used to upload and run the mission on the vehicle.',
+		label: 'UAV Mission Plan',
+		description: 'Select the control stream used to upload and run a UAV (aerial) mission. Includes takeoff, landing, and altitude.',
 		type: 'cs',
-		required: true,
+		showPropertySelector: false,
+	},
+	{
+		role: 'roverPlan',
+		label: 'Rover Mission Plan',
+		description: 'Select the control stream used to upload and run a rover (ground vehicle) mission. Ground-based waypoints without takeoff/landing.',
+		type: 'cs',
 		showPropertySelector: false,
 	},
 	{
@@ -65,6 +71,34 @@ export const MissionConfigRoles: VisualizationConfigRole[] = [
 		type: 'cs',
 		showPropertySelector: false,
 	},
+	{
+		role: 'arm',
+		label: 'Arming Control',
+		description: 'Select the control stream used to send',
+		type: 'cs',
+		showPropertySelector: false,
+	},
+	{
+		role: 'driveVelocity',
+		label: 'Drive Velocity Control',
+		description: 'Select the control stream used to send ',
+		type: 'cs',
+		showPropertySelector: false,
+	},
+	{
+		role: 'driveLocation',
+		label: 'Drive to Location Control',
+		description: 'Select the control stream used to send  ',
+		type: 'cs',
+		showPropertySelector: false,
+	},
+	{
+		role: 'reboot',
+		label: 'Reboot Control',
+		description: 'Select the control stream used to send  ',
+		type: 'cs',
+		showPropertySelector: false,
+	},
 	// {
 	//     role: 'cancel',
 	//     label: 'Cancel Mission',
@@ -99,7 +133,7 @@ export const MissionDescriptor: VisualizationDescriptor = {
 	icon: 'mdi-airplane-plus',
 	viewLocation: 'multi',
 	layers: ['PointMarkerLayer', 'PolylineLayer'],
-	description: 'Create and manage missions for a drone.',
+	description: 'Create and manage missions for UAVs and ground vehicles.',
 	formComponents: [ConfigComponent, CustomizeComponent],
 	builder: () => import('@/modules/visualization/visualizations/mission/Builder'),
 	supportsCs: true, // This visualization requires a controlstream to function
