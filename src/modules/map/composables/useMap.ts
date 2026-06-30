@@ -3,6 +3,7 @@ import { FoiLayer, useVisualizationStore } from '@/stores/visualizationstore';
 import { computed, onMounted, ref, watch } from 'vue';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import {
+	createDriveLocationLayer,
 	createFOILayer,
 	createGeoPTZLayer,
 	createMapVisualizations,
@@ -42,6 +43,7 @@ export function useMap() {
 	const listDataSourceInstances = ref<(typeof ConSysApi)[]>([]);
 	// Current GeoPTZ layer
 	const geoPtzLayer = ref<typeof PointMarkerLayer | null>(null);
+	const driveLocationLayer = ref<typeof PointMarkerLayer | null>(null);
 	// Array of waypoint Pointmarkers for mission builder
 	const waypointLayers = ref<(typeof PointMarkerLayer)[]>([]);
 	// FOI Layers
@@ -268,7 +270,18 @@ export function useMap() {
 			// Mission Planner
 			if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lon, 0);
 			// Drive Location
-			if (mapStore.isDriveLocationSelected) mapStore.setCurrentLLA(lat, lon, 0);
+			if (mapStore.isDriveLocationSelected) {
+				const calcAlt = alt ?? (await getGroundAltitude(lon, lat)) ?? 0;
+				mapStore.setCurrentLLA(lat, lon, calcAlt);
+
+				const result = await createDriveLocationLayer({ lon, lat, alt: calcAlt });
+				if (result) {
+					mapAdapter.value?.removeLayer(driveLocationLayer.value);
+					driveLocationLayer.value = result.layer;
+					mapAdapter.value?.addLayer(driveLocationLayer.value);
+					if (result.props) mapAdapter.value?.updateMarker(result.props);
+				}
+			}
 			// Add additional onClick functions
 		});
 	}
@@ -289,7 +302,7 @@ export function useMap() {
 			if (!layer) return;
 
 			const layerProps = layer.getCurrentProps();
-			const location = layerProps.location ?? layerProps.position ?? layerProps.locations[0]; // Handle location for PM/LoB, position for ellipse, locations[0] for polyline
+			const location = layerProps.location ?? layerProps.position ?? layerProps.locations?.[0]; // Handle location for PM/LoB, position for ellipse, locations[0] for polyline
 			if (!location) return;
 
 			mapAdapter.value?.flyToPoint(location);
@@ -338,6 +351,17 @@ export function useMap() {
 			// Remove old pointmarker on selection change
 			if (geoPtzLayer.value) mapAdapter.value?.removeLayer(geoPtzLayer.value);
 			geoPtzLayer.value = null;
+		}
+	);
+
+	/* DRIVE LOCATION */
+	watch(
+		() => mapStore.isDriveLocationSelected,
+		(selected) => {
+			if (!selected && driveLocationLayer.value) {
+				mapAdapter.value?.removeLayer(driveLocationLayer.value);
+				driveLocationLayer.value = null;
+			}
 		}
 	);
 
