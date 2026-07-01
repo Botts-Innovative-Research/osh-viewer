@@ -74,7 +74,7 @@ export const PointMarkerDescriptor: VisualizationDescriptor = {
 	layers: ['PointMarkerLayer'],
 	description: 'Visualize a point marker on the map.',
 	formComponents: [ConfigComponent, CustomizeComponent],
-	builder: () => import('@/modules/visualization/visualizations/pointmarker/Builder'),
+	builder: async () => import('@/modules/visualization/visualizations/pointmarker/Builder'),
 	supportsCs: false,
 	requireCs: false,
 	supportedMaps: ['cesium', 'leaflet'],

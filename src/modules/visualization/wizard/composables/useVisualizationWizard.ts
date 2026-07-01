@@ -133,7 +133,7 @@ export function useVisualizationWizard(options: {
 
 		// Call default "build" function from the builder module
 		const builderModule = await entry.builder();
-		builderModule.default();
+		await builderModule.default();
 
 		// Close the wizard
 		showToast(`Visualization ${options.mode === 'create' ? 'created' : 'updated'}`, 'SUCCESS');

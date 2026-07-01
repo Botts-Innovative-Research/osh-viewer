@@ -17,7 +17,7 @@ import { IConSysApiDataSourceProperties } from '../visualization/types/datasourc
 import { setLayerData } from './services/foi.service';
 import { ICON_BASE } from '@/lib/icons';
 import { FoiLayer } from '@/stores/visualizationstore';
-import { getInitialMilSymbol, getMilSymbol } from './services/milIcon.service';
+import { getMilSymbol } from './services/milIcon.service';
 
 export interface ICreateMapVisualizationResult {
 	vizLayer: SupportedMapLayer;
@@ -124,7 +124,7 @@ export async function createPointMarkerLayer(
 			getIcon = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
-					return getMilSymbol(rec[dsProps.properties.milSymbol]);
+					return getMilSymbol(rec[dsProps.properties.milSymbol.property]);
 				},
 			};
 		}

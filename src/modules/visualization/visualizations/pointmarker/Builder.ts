@@ -14,8 +14,9 @@ import { VisualizationComponents } from '../../types/visualization';
 import { IPointMarkerCustomizationOptions } from '../../types/customization';
 import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { IPointMarkerLayerProperties } from '../../types/layers';
+import { getInitialMilSymbol } from '@/modules/map/services/milIcon.service';
 
-export default function build() {
+export default async function build() {
 	console.log('Building Point Marker Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
@@ -23,7 +24,7 @@ export default function build() {
 	// Aggregate datastreams from vizwizStore
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
-	const pmResult = CreatePointMarkerVizProps(
+	const pmResult = await CreatePointMarkerVizProps(
 		datastreams,
 		vizwizStore.visualizationCustomizationOptions
 	);
@@ -47,12 +48,11 @@ export default function build() {
 
 /**
  * Creates properties for a Map View based on the provided datastream, selected property, and visualization options.
- * @param ds
- * @param selectedProperty
+ * @param datastreams
  * @param visOptions
  * @constructor
  */
-export function CreatePointMarkerVizProps(
+export async function CreatePointMarkerVizProps(
 	datastreams: { [key: string]: any },
 	visOptions: IPointMarkerCustomizationOptions
 ) {
@@ -63,9 +63,9 @@ export function CreatePointMarkerVizProps(
 	let pointMarkerLayer: IPointMarkerLayerProperties = {
 		name: visOptions.name,
 		label: visOptions.name,
-		icon: visOptions.icon,
+		icon: visOptions.icon ?? '',
 		iconColor: visOptions.iconColor || '#FF0000',
-		iconName: visOptions.iconName,
+		iconName: visOptions.iconName ?? '',
 		iconSize: [32, 32],
 	};
 
@@ -95,6 +95,14 @@ export function CreatePointMarkerVizProps(
 			},
 		};
 		vizDatasources.push(currentDataSource);
+
+		// Check for milsymbol and assign as iconName
+		if (properties.milSymbol) {
+			pointMarkerLayer.iconName = await getInitialMilSymbol(
+				currentDataSource,
+				properties.milSymbol.property
+			);
+		}
 	}
 
 	return {
