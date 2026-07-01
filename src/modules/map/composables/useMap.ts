@@ -13,7 +13,7 @@ import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import { createCesiumAdapter } from '../adapters/cesium.adapter';
 import { taskGeoPTZ } from '../services/geoPTZ.service';
-import { MapAdapter } from '../adapters/types';
+import { MapAdapter, MapPoint } from '../adapters/types';
 import { createLeafletAdapter } from '../adapters/leaflet.adapter';
 import { useSettingsStore } from '@/stores/settingsstore';
 import { isMapLayerCompatible, SupportedMapLayer } from '../supportedMapLayers';
@@ -108,6 +108,15 @@ export function useMap() {
 			mapAdapter.value?.addLayer(foi.layer);
 			mapAdapter.value?.updateMarker(foi.props);
 		});
+
+		// Rebuild all waypoints
+		waypointLayers.value = [];
+		await Promise.all(
+			mapStore.missionWaypoints.map(async (waypoint: MapPoint, index: number) => {
+				await addWaypointLayer(waypoint, index);
+			})
+		);
+		drawMissionPath(mapStore.missionWaypoints);
 	}
 	watch(mapType, async () => {
 		await switchMap();
@@ -359,20 +368,30 @@ export function useMap() {
 
 			// Add waypoints
 			for (const [index, waypoint] of waypoints.entries()) {
-				const result = await createWaypointLayer(waypoint, index.toString());
-				if (result) {
-					mapAdapter.value?.addLayer(result.layer);
-					waypointLayers.value.push(result.layer);
-					if (result.props) mapAdapter.value?.updateMarker(result.props);
-				}
+				await addWaypointLayer(waypoint, index);
 			}
-
-			// Handle polyline if waypoints >= 2
-			if (waypoints.length >= 2) {
-				mapAdapter.value.drawMissionPath(waypoints);
-			}
+			// Draw mission path
+			drawMissionPath(waypoints);
 		}
 	);
+	async function addWaypointLayer(waypoint: MapPoint, index: number) {
+		if (!mapAdapter.value) return;
+
+		const result = await createWaypointLayer(waypoint, index.toString());
+		if (result) {
+			mapAdapter.value?.addLayer(result.layer);
+			waypointLayers.value.push(result.layer);
+			if (result.props) mapAdapter.value?.updateMarker(result.props);
+		}
+	}
+	function drawMissionPath(waypoints: MapPoint[]) {
+		if (!mapAdapter.value) return;
+
+		// Handle polyline if waypoints >= 2
+		if (waypoints.length >= 2) {
+			mapAdapter.value.drawMissionPath(waypoints);
+		}
+	}
 	function clearMission() {
 		for (const layer of waypointLayers.value) {
 			mapAdapter.value?.removeLayer(layer);
