@@ -515,7 +515,7 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 			</v-expansion-panel-title>
 			<v-expansion-panel-text>
 				<v-row align="center" density="comfortable">
-					<v-col cols="6">
+					<v-col cols="4">
 						<v-text-field
 							v-model.number="forwardVelocityDrive"
 							density="compact"
@@ -524,7 +524,7 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 							type="number"
 						/>
 					</v-col>
-					<v-col cols="6">
+					<v-col cols="4">
 						<v-text-field
 							v-model.number="yawRateDrive"
 							density="compact"
@@ -533,7 +533,7 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 							type="number"
 						/>
 					</v-col>
-					<v-col cols="6">
+					<v-col cols="4">
 						<v-btn
 							block
 							class="command-btn"
