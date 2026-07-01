@@ -4,6 +4,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
+import PlanMission from './PlanMission.vue';
 import {
 	createDatasource,
 	disconnectDatasources,
@@ -240,6 +241,12 @@ const hasCommandPad = computed(() =>
 
 			<v-window v-model="activeTab">
 				<v-window-item value="plan">
+					<PlanMission
+						:is-rover="isRover"
+						:no-controller="noController"
+						:home-location="homeLocation"
+						:mission-control-stream="missionControlStream"
+					/>
 				</v-window-item>
 
 				<v-window-item value="control">
