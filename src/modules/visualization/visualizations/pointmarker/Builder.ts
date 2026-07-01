@@ -14,7 +14,6 @@ import { VisualizationComponents } from '../../types/visualization';
 import { IPointMarkerCustomizationOptions } from '../../types/customization';
 import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { IPointMarkerLayerProperties } from '../../types/layers';
-import { getInitialMilSymbol } from '@/modules/map/services/milIcon.service';
 
 export default async function build() {
 	console.log('Building Point Marker Visualization...');
