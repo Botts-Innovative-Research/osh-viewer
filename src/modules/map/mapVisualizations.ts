@@ -55,7 +55,6 @@ export function createPointMarkerLayer(
 	let getIconColor: any;
 	let getLabel: any;
 	let getIcon: any;
-	let initialIcon: any;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);
@@ -128,7 +127,6 @@ export function createPointMarkerLayer(
 					return getMilSymbol(rec[dsProps.properties.milSymbol]);
 				},
 			};
-			initialIcon = getInitialMilSymbol(dsInstance, dsProps.properties.milSymbol);
 		}
 
 		dsInstance.connect();
@@ -139,11 +137,7 @@ export function createPointMarkerLayer(
 		...viz.visualizationComponents.dataLayer,
 		name: viz.name,
 		id: viz.id,
-		icon:
-			initialIcon !== null
-				? initialIcon
-				: `${ICON_BASE}${viz.visualizationComponents.dataLayer.icon}`,
-		// icon: `${ICON_BASE}${viz.visualizationComponents.dataLayer.icon}`,
+		icon: `${ICON_BASE}${viz.visualizationComponents.dataLayer.icon}`,
 		defaultToTerrainElevation: true,
 		dataSourceIds: dsInstances.map((ds) => ds.id),
 		...(getLocation ? { getLocation } : {}),
