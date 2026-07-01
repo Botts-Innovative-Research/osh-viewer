@@ -1,19 +1,15 @@
 <script lang="ts" setup>
-import { ref, watch, computed, onBeforeUnmount } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useMapStore } from '@/stores/mapstore';
 import { useMissionStore } from '@/stores/missionstore';
 import { showToast } from '@/composables/useToast';
-import {
-	sendCommand,
-	fetchCsSchema,
-	mineControlObsPropsFromCS,
-} from '../../services/controlstream.service';
+import { fetchCsSchema, mineControlObsPropsFromCS, sendCommand, } from '../../services/controlstream.service';
 import MissionWaypointBuilder from './MissionWaypointBuilder.vue';
 import SaveMissionDialog from './SaveMissionDialog.vue';
 import DeleteMissionDialog from './DeleteMissionDialog.vue';
-import type { Waypoint, MissionSettings, SavedMission } from './types';
+import type { MissionSettings, SavedMission, Waypoint } from './types';
 
 interface Controlstream {
 	id: string;
@@ -326,7 +322,11 @@ async function sendWaypoints() {
 		parameters: legacy ? { qGroundControlPlan: JSON.stringify(parameters) } : parameters,
 	};
 
-	console.log('[PlanMission] Sending mission command:', command, legacy ? '(legacy)' : '(structured)');
+	console.log(
+		'[PlanMission] Sending mission command:',
+		command,
+		legacy ? '(legacy)' : '(structured)'
+	);
 	sendCommand(
 		commandBaseUrl.value,
 		cs.id,
@@ -364,7 +364,11 @@ async function sendQGCPlanFileUpload() {
 		parameters: legacy ? { plan: JSON.stringify(parameters) } : parameters,
 	};
 
-	console.log('[PlanMission] Sending mission file command:', command, legacy ? '(legacy)' : '(structured)');
+	console.log(
+		'[PlanMission] Sending mission file command:',
+		command,
+		legacy ? '(legacy)' : '(structured)'
+	);
 	sendCommand(
 		commandBaseUrl.value,
 		cs.id,
@@ -449,7 +453,10 @@ function generateMissionControlPlan() {
 			doJumpId: items.length + 1,
 			frame: 3,
 			params: [
-				0, 0, 0, null,
+				0,
+				0,
+				0,
+				null,
 				props.homeLocation?.lat ?? waypoints.value[0].lat,
 				props.homeLocation?.lon ?? waypoints.value[0].lon,
 				0,
@@ -493,9 +500,9 @@ onBeforeUnmount(() => {
 <template>
 	<v-tabs
 		v-model="missionSource"
-		grow
-		color="primary"
 		class="mb-2"
+		color="primary"
+		grow
 	>
 		<v-tab
 			prepend-icon="mdi-map-marker-path"
@@ -522,46 +529,46 @@ onBeforeUnmount(() => {
 
 	<v-window v-model="missionSource">
 		<v-window-item
-			value="waypoints"
 			class="my-4"
+			value="waypoints"
 		>
 			<MissionWaypointBuilder
 				ref="waypointBuilderRef"
-				v-model:waypoints="waypoints"
-				v-model:waypointAltitude="waypointAltitude"
+				v-model:altitudeMode="altitudeMode"
+				v-model:amslAltAboveTerrain="amslAltAboveTerrain"
+				v-model:autoContinue="autoContinue"
 				v-model:cruiseSpeed="cruiseSpeed"
 				v-model:hoverSpeed="hoverSpeed"
-				v-model:altitudeMode="altitudeMode"
-				v-model:autoContinue="autoContinue"
-				v-model:amslAltAboveTerrain="amslAltAboveTerrain"
-				:is-rover="isRover"
-				:no-controller="noController"
-				:is-selected="isSelected"
+				v-model:waypointAltitude="waypointAltitude"
+				v-model:waypoints="waypoints"
 				:home-location="homeLocation"
+				:is-rover="isRover"
+				:is-selected="isSelected"
+				:no-controller="noController"
 				@toggle="toggle"
 				@clear-waypoints="onClearWaypoints"
 			/>
 		</v-window-item>
 
 		<v-window-item
-			value="file"
 			class="my-4"
+			value="file"
 		>
 			<v-row density="comfortable">
 				<v-col cols="12">
 					<v-btn
 						block
-						@click="triggerFileInput"
 						prepend-icon="mdi-folder-open"
 						variant="outlined"
+						@click="triggerFileInput"
 					>
 						Browse Files
 					</v-btn>
 					<input
-						type="file"
 						ref="fileInputRef"
-						style="display: none"
 						accept=".plan"
+						style="display: none"
+						type="file"
 						@change="handleFileChange"
 					/>
 				</v-col>
@@ -569,15 +576,15 @@ onBeforeUnmount(() => {
 
 			<v-row
 				v-if="selectedFile"
-				density="comfortable"
 				class="mt-3"
+				density="comfortable"
 			>
 				<v-col cols="12">
 					<v-alert
+						closable
+						density="compact"
 						type="info"
 						variant="tonal"
-						density="compact"
-						closable
 						@click:close="clearSelectedFile"
 					>
 						<template v-slot:prepend>
@@ -597,13 +604,13 @@ onBeforeUnmount(() => {
 		</v-window-item>
 
 		<v-window-item
-			value="saved"
 			class="my-4"
+			value="saved"
 		>
 			<v-list
 				v-if="missionStore.savedMissions.length > 0"
-				density="compact"
 				class="saved-missions-list"
+				density="compact"
 			>
 				<v-list-item
 					v-for="mission in missionStore.savedMissions"
@@ -627,7 +634,8 @@ onBeforeUnmount(() => {
 							<v-tooltip
 								activator="parent"
 								location="top"
-							>Load mission</v-tooltip>
+								>Load mission</v-tooltip
+							>
 						</v-btn>
 						<v-btn
 							icon
@@ -639,7 +647,8 @@ onBeforeUnmount(() => {
 							<v-tooltip
 								activator="parent"
 								location="top"
-							>Delete mission</v-tooltip>
+								>Delete mission</v-tooltip
+							>
 						</v-btn>
 					</template>
 				</v-list-item>
@@ -655,47 +664,47 @@ onBeforeUnmount(() => {
 
 	<div class="d-flex ga-2">
 		<v-btn
-			color="primary"
-			variant="tonal"
-			class="flex-grow-1"
-			@click="confirmSendMission"
 			:disabled="
 				noController ||
 				(missionSource === 'waypoints' && waypoints.length === 0) ||
 				(missionSource === 'file' && !selectedFile) ||
 				missionSource === 'saved'
 			"
+			class="flex-grow-1"
+			color="primary"
 			prepend-icon="mdi-send"
+			variant="tonal"
+			@click="confirmSendMission"
 		>
 			Send Mission
 		</v-btn>
 
 		<v-btn
-        icon
-        @click="showSaveDialog = true"
-        :disabled="noController || waypoints.length === 0"
-    >
-      <v-icon>mdi-content-save</v-icon>
-      <v-tooltip
-          activator="parent"
-          location="bottom"
-      >
-        Save Mission
-      </v-tooltip>
-    </v-btn>
+			:disabled="noController || waypoints.length === 0"
+			icon
+			@click="showSaveDialog = true"
+		>
+			<v-icon>mdi-content-save</v-icon>
+			<v-tooltip
+				activator="parent"
+				location="bottom"
+			>
+				Save Mission
+			</v-tooltip>
+		</v-btn>
 
 		<v-btn
+			:disabled="noController || missionSource !== 'waypoints' || waypoints.length === 0"
 			icon
 			@click="showExportDialog = true"
-			:disabled="noController || missionSource !== 'waypoints' || waypoints.length === 0"
 		>
-      <v-icon>mdi-download</v-icon>
-      <v-tooltip
-          activator="parent"
-          location="bottom"
-      >
-        Download Mission as .plan file
-      </v-tooltip>
+			<v-icon>mdi-download</v-icon>
+			<v-tooltip
+				activator="parent"
+				location="bottom"
+			>
+				Download Mission as .plan file
+			</v-tooltip>
 		</v-btn>
 	</div>
 
@@ -708,10 +717,10 @@ onBeforeUnmount(() => {
 			<v-card-text>
 				<v-text-field
 					v-model="exportFilename"
+					autofocus
+					density="compact"
 					label="Filename"
 					suffix=".plan"
-					density="compact"
-					autofocus
 					@keyup.enter="exportMissionPlan"
 				/>
 			</v-card-text>
@@ -720,13 +729,15 @@ onBeforeUnmount(() => {
 				<v-btn
 					variant="text"
 					@click="showExportDialog = false"
-				>Cancel</v-btn>
+					>Cancel</v-btn
+				>
 				<v-btn
 					color="primary"
+					prepend-icon="mdi-download"
 					variant="flat"
 					@click="exportMissionPlan"
-					prepend-icon="mdi-download"
-				>Export</v-btn>
+					>Export</v-btn
+				>
 			</v-card-actions>
 		</v-card>
 	</v-dialog>
@@ -751,7 +762,9 @@ onBeforeUnmount(() => {
 							<td>{{ waypoints.length }}</td>
 						</tr>
 						<tr v-if="missionSource === 'waypoints'">
-							<td class="font-weight-medium">{{ isRover ? 'Ground Speed' : 'Cruise Speed' }}</td>
+							<td class="font-weight-medium">
+								{{ isRover ? 'Ground Speed' : 'Cruise Speed' }}
+							</td>
 							<td>{{ cruiseSpeed }} m/s</td>
 						</tr>
 						<tr v-if="missionSource === 'waypoints'">
@@ -774,13 +787,15 @@ onBeforeUnmount(() => {
 				<v-btn
 					variant="text"
 					@click="showMissionSummary = false"
-				>Cancel</v-btn>
+					>Cancel</v-btn
+				>
 				<v-btn
 					color="primary"
+					prepend-icon="mdi-send"
 					variant="flat"
 					@click="sendMission"
-					prepend-icon="mdi-send"
-				>Send</v-btn>
+					>Send</v-btn
+				>
 			</v-card-actions>
 		</v-card>
 	</v-dialog>

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref } from 'vue';
 
 const props = defineProps<{
@@ -36,10 +36,10 @@ function cancel() {
 			<v-card-text>
 				<v-text-field
 					v-model="missionName"
-					label="Mission Name"
-					density="compact"
-					autofocus
 					:rules="[() => !!missionName.trim() || 'Name is required']"
+					autofocus
+					density="compact"
+					label="Mission Name"
 					@keyup.enter="save"
 				/>
 				<p class="text-caption text-grey mt-2">
@@ -55,9 +55,9 @@ function cancel() {
 				>
 				<v-btn
 					color="primary"
+					prepend-icon="mdi-content-save"
 					variant="flat"
 					@click="save"
-					prepend-icon="mdi-content-save"
 					>Save</v-btn
 				>
 			</v-card-actions>

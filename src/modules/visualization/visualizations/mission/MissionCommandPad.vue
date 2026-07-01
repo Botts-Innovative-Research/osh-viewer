@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, watch, computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { sendCommand } from '../../services/controlstream.service';
 import { useMapStore } from '@/stores/mapstore';
 import LocationPicker from '@/components/ui/LocationPicker.vue';
@@ -24,23 +24,14 @@ const isDriveLocationMapSelect = computed(() => mapStore.isDriveLocationSelected
 const homeLocationPickerRef = ref<InstanceType<typeof LocationPicker> | null>(null);
 const isHomeLocationMapSelect = computed(() => mapStore.isHomeLocationSelected);
 
-
 watch(
 	() => mapStore.currentLLA,
 	(newVal) => {
 		if (isDriveLocationMapSelect.value && newVal) {
-			driveLocationPickerRef.value?.setLatLonAlt(
-				newVal.latitude,
-				newVal.longitude,
-				0
-			);
+			driveLocationPickerRef.value?.setLatLonAlt(newVal.latitude, newVal.longitude, 0);
 		}
 		if (isHomeLocationMapSelect.value && newVal) {
-			homeLocationPickerRef.value?.setLatLonAlt(
-				newVal.latitude,
-				newVal.longitude,
-				0
-			);
+			homeLocationPickerRef.value?.setLatLonAlt(newVal.latitude, newVal.longitude, 0);
 		}
 	}
 );
@@ -64,7 +55,19 @@ const offboardForm = ref<any>(null);
 const isPaused = ref(false);
 const isArmed = ref(false);
 const isHold = ref(false);
-const driveModes = ref(['MANUAL', 'ACRO', 'STEERING', 'HOLD', 'LOITER', 'FOLLOW', 'SIMPLE', 'DOCK', 'AUTO', 'RTL', 'GUIDED']);
+const driveModes = ref([
+	'MANUAL',
+	'ACRO',
+	'STEERING',
+	'HOLD',
+	'LOITER',
+	'FOLLOW',
+	'SIMPLE',
+	'DOCK',
+	'AUTO',
+	'RTL',
+	'GUIDED',
+]);
 const selectedDriveMode = ref('HOLD');
 
 function getControlstreamConfig(cs: any) {
@@ -209,13 +212,13 @@ function driveMode() {
 	sendCommandToRole('driveMode', payload);
 }
 
-function homePositionCommand(location: { lat: number; lon: number; }) {
+function homePositionCommand(location: { lat: number; lon: number }) {
 	const payload = {
 		parameters: {
 			locationVectorLL: {
 				Latitude: location.lat,
 				Longitude: location.lon,
-			}
+			},
 		},
 	};
 
@@ -228,7 +231,7 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 			locationVectorLL: {
 				Latitude: location.lat,
 				Longitude: location.lon,
-			}
+			},
 		},
 	};
 
@@ -268,7 +271,8 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 						activator="parent"
 						location="top"
 					>
-						Enable motors and prepare for operation. Disarm to disable motors and power down.
+						Enable motors and prepare for operation. Disarm to disable motors and power
+						down.
 					</v-tooltip>
 				</v-btn>
 			</v-col>
@@ -290,7 +294,8 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 						activator="parent"
 						location="top"
 					>
-						Hold current position and stop all movement. Release to resume normal control.
+						Hold current position and stop all movement. Release to resume normal
+						control.
 					</v-tooltip>
 				</v-btn>
 			</v-col>
@@ -306,9 +311,7 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 					variant="tonal"
 					@click="pause"
 				>
-					<v-icon start>{{
-						isPaused ? 'mdi-play-circle' : 'mdi-pause-circle'
-					}}</v-icon>
+					<v-icon start>{{ isPaused ? 'mdi-play-circle' : 'mdi-pause-circle' }}</v-icon>
 					{{ isPaused ? 'Resume' : 'Pause' }}
 					<v-tooltip
 						activator="parent"
@@ -427,7 +430,11 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 		<!--drive mode-->
 		<v-expansion-panel v-if="getControlstreamByRole('driveMode')">
 			<v-expansion-panel-title>
-				<v-icon class="mr-2" size="small">mdi-car</v-icon>
+				<v-icon
+					class="mr-2"
+					size="small"
+					>mdi-car</v-icon
+				>
 				<span class="text-subtitle-2 font-weight-medium">Drive Mode Control</span>
 				<v-tooltip
 					activator="parent"
@@ -437,13 +444,16 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 				</v-tooltip>
 			</v-expansion-panel-title>
 			<v-expansion-panel-text>
-				<v-row align="center" density="comfortable">
+				<v-row
+					align="center"
+					density="comfortable"
+				>
 					<v-col cols="8">
 						<v-select
 							v-model="selectedDriveMode"
 							:items="driveModes"
-							label="Drive Mode"
 							class="mt-2"
+							label="Drive Mode"
 						/>
 					</v-col>
 					<v-col cols="4">
@@ -465,7 +475,11 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 		<!--takeoff control-->
 		<v-expansion-panel v-if="getControlstreamByRole('takeoff')">
 			<v-expansion-panel-title>
-				<v-icon class="mr-2" size="small">mdi-airplane</v-icon>
+				<v-icon
+					class="mr-2"
+					size="small"
+					>mdi-airplane</v-icon
+				>
 				<span class="text-subtitle-2 font-weight-medium">Takeoff Control</span>
 				<v-tooltip
 					activator="parent"
@@ -475,7 +489,10 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 				</v-tooltip>
 			</v-expansion-panel-title>
 			<v-expansion-panel-text>
-				<v-row align="center" density="comfortable">
+				<v-row
+					align="center"
+					density="comfortable"
+				>
 					<v-col cols="4">
 						<v-text-field
 							v-model.number="takeOffAlt"
@@ -505,7 +522,11 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 		<!--drive velocity control-->
 		<v-expansion-panel v-if="getControlstreamByRole('driveVelocity')">
 			<v-expansion-panel-title>
-				<v-icon class="mr-2" size="small">mdi-steering</v-icon>
+				<v-icon
+					class="mr-2"
+					size="small"
+					>mdi-steering</v-icon
+				>
 				<span class="text-subtitle-2 font-weight-medium">Drive Velocity Control</span>
 				<v-tooltip
 					activator="parent"
@@ -515,7 +536,10 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 				</v-tooltip>
 			</v-expansion-panel-title>
 			<v-expansion-panel-text>
-				<v-row align="center" density="comfortable">
+				<v-row
+					align="center"
+					density="comfortable"
+				>
 					<v-col cols="4">
 						<v-text-field
 							v-model.number="forwardVelocityDrive"
@@ -553,7 +577,11 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 		<!--offboard control-->
 		<v-expansion-panel v-if="getControlstreamByRole('offboard')">
 			<v-expansion-panel-title>
-				<v-icon class="mr-2" size="small">mdi-controller</v-icon>
+				<v-icon
+					class="mr-2"
+					size="small"
+					>mdi-controller</v-icon
+				>
 				<span class="text-subtitle-2 font-weight-medium">Offboard Control</span>
 				<v-tooltip
 					activator="parent"
@@ -564,7 +592,10 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 			</v-expansion-panel-title>
 			<v-expansion-panel-text>
 				<v-form ref="offboardForm">
-					<v-row align="center" density="comfortable">
+					<v-row
+						align="center"
+						density="comfortable"
+					>
 						<v-col cols="6">
 							<v-text-field
 								v-model.number="xVelocity"
@@ -621,13 +652,18 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 		<!--drive to location-->
 		<v-expansion-panel v-if="getControlstreamByRole('driveLocation')">
 			<v-expansion-panel-title>
-				<v-icon class="mr-2" size="small">mdi-map-marker</v-icon>
+				<v-icon
+					class="mr-2"
+					size="small"
+					>mdi-map-marker</v-icon
+				>
 				<span class="text-subtitle-2 font-weight-medium">Drive to Location</span>
 				<v-tooltip
 					activator="parent"
 					location="top"
 				>
-					Navigate the vehicle to a specific lat/lon coordinate. Use the crosshairs to pick from the map.
+					Navigate the vehicle to a specific lat/lon coordinate. Use the crosshairs to
+					pick from the map.
 				</v-tooltip>
 			</v-expansion-panel-title>
 			<v-expansion-panel-text>
@@ -645,7 +681,11 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 
 		<v-expansion-panel v-if="getControlstreamByRole('homePos')">
 			<v-expansion-panel-title>
-				<v-icon class="mr-2" size="small">mdi-home</v-icon>
+				<v-icon
+					class="mr-2"
+					size="small"
+					>mdi-home</v-icon
+				>
 				<span class="text-subtitle-2 font-weight-medium">Home Location</span>
 				<v-tooltip
 					activator="parent"

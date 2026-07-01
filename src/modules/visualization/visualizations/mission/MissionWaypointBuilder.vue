@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref } from 'vue';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
@@ -61,29 +61,27 @@ defineExpose({ setLatLonAlt });
 <template>
 	<LocationPicker
 		ref="locationPickerRef"
-		:is-selected="isSelected"
+		:default-alt="waypointAltitude"
 		:disabled="noController"
 		:hide-alt="isRover"
-		:default-alt="waypointAltitude"
-		button-label="Add"
+		:is-selected="isSelected"
 		button-icon="mdi-plus"
-		@toggle="emit('toggle')"
+		button-label="Add"
 		@submit="addWaypoint"
+		@toggle="emit('toggle')"
 	/>
 
 	<v-expansion-panels class="mt-3">
 		<v-expansion-panel title="Waypoint Settings">
 			<v-expansion-panel-text>
 				<div class="d-flex justify-space-between align-center mb-4">
-					<span class="text-subtitle-2"
-						>Waypoints ({{ waypoints.length }})</span
-					>
+					<span class="text-subtitle-2">Waypoints ({{ waypoints.length }})</span>
 					<v-btn
+						:disabled="waypoints.length === 0"
+						color="error"
 						size="small"
 						variant="text"
-						color="error"
 						@click="showClearConfirm = true"
-						:disabled="waypoints.length === 0"
 					>
 						Clear All
 					</v-btn>
@@ -97,8 +95,7 @@ defineExpose({ setLatLonAlt });
 							</v-card-item>
 							<v-card-text>
 								Are you sure you want to clear all
-								{{ waypoints.length }} waypoints? This action
-								cannot be undone.
+								{{ waypoints.length }} waypoints? This action cannot be undone.
 							</v-card-text>
 							<v-card-actions>
 								<v-spacer />
@@ -120,9 +117,9 @@ defineExpose({ setLatLonAlt });
 				<VueDraggable
 					v-if="waypoints.length > 0"
 					v-model="waypoints"
-					handle=".drag-handle"
 					:animation="150"
 					class="waypoints-list"
+					handle=".drag-handle"
 				>
 					<v-list-item
 						v-for="(wp, index) in waypoints"
@@ -136,9 +133,7 @@ defineExpose({ setLatLonAlt });
 									size="small"
 									>mdi-drag</v-icon
 								>
-								<span class="text-caption w-auto"
-									>{{ index + 1 }}.</span
-								>
+								<span class="text-caption w-auto">{{ index + 1 }}.</span>
 							</div>
 						</template>
 						<v-list-item-title class="px-2">
@@ -148,20 +143,20 @@ defineExpose({ setLatLonAlt });
 							>
 								<v-col :cols="isRover ? 6 : 4">
 									<v-text-field
-										type="number"
-										label="Lat"
+										v-model.number="wp.lat"
 										density="compact"
 										hide-details
-										v-model.number="wp.lat"
+										label="Lat"
+										type="number"
 									/>
 								</v-col>
 								<v-col :cols="isRover ? 6 : 4">
 									<v-text-field
-										type="number"
-										label="Lon"
+										v-model.number="wp.lon"
 										density="compact"
 										hide-details
-										v-model.number="wp.lon"
+										label="Lon"
+										type="number"
 									/>
 								</v-col>
 								<v-col
@@ -169,11 +164,11 @@ defineExpose({ setLatLonAlt });
 									cols="4"
 								>
 									<v-text-field
-										type="number"
-										label="Alt"
+										v-model.number="wp.alt"
 										density="compact"
 										hide-details
-										v-model.number="wp.alt"
+										label="Alt"
+										type="number"
 									/>
 								</v-col>
 							</v-row>
@@ -186,9 +181,7 @@ defineExpose({ setLatLonAlt });
 									variant="text"
 									@click="removeWaypoint(wp.id)"
 								>
-									<v-icon size="small"
-										>mdi-close-circle</v-icon
-									>
+									<v-icon size="small">mdi-close-circle</v-icon>
 									<v-tooltip
 										activator="parent"
 										location="top"
@@ -214,10 +207,10 @@ defineExpose({ setLatLonAlt });
 					>
 						<v-text-field
 							v-model.number="waypointAltitude"
-							type="number"
-							label="Altitude (m)"
 							density="compact"
 							hide-details
+							label="Altitude (m)"
+							type="number"
 						/>
 					</v-col>
 					<v-col
@@ -227,11 +220,11 @@ defineExpose({ setLatLonAlt });
 					>
 						<v-text-field
 							v-model.number="amslAltAboveTerrain"
-							type="number"
-							label="AMSL Alt Above Terrain"
+							clearable
 							density="compact"
 							hide-details
-							clearable
+							label="AMSL Alt Above Terrain"
+							type="number"
 						/>
 					</v-col>
 					<v-col
@@ -242,9 +235,9 @@ defineExpose({ setLatLonAlt });
 						<v-select
 							v-model="altitudeMode"
 							:items="altitudeModeOptions"
-							label="Altitude Mode"
 							density="compact"
 							hide-details
+							label="Altitude Mode"
 						/>
 					</v-col>
 					<v-col
@@ -253,10 +246,10 @@ defineExpose({ setLatLonAlt });
 					>
 						<v-checkbox
 							v-model="autoContinue"
-							label="Auto Continue"
-							density="compact"
 							color="primary"
+							density="compact"
 							hide-details
+							label="Auto Continue"
 						/>
 					</v-col>
 				</v-row>
@@ -268,24 +261,18 @@ defineExpose({ setLatLonAlt });
 				<v-row density="comfortable">
 					<v-col :cols="isRover ? 6 : 4">
 						<v-card-subtitle>Latitude</v-card-subtitle>
-						<v-card-text>{{
-							homeLocation.lat.toFixed(6)
-						}}</v-card-text>
+						<v-card-text>{{ homeLocation.lat.toFixed(6) }}</v-card-text>
 					</v-col>
 					<v-col :cols="isRover ? 6 : 4">
 						<v-card-subtitle>Longitude</v-card-subtitle>
-						<v-card-text>{{
-							homeLocation.lon.toFixed(6)
-						}}</v-card-text>
+						<v-card-text>{{ homeLocation.lon.toFixed(6) }}</v-card-text>
 					</v-col>
 					<v-col
 						v-if="!isRover"
 						cols="4"
 					>
 						<v-card-subtitle>Altitude</v-card-subtitle>
-						<v-card-text>{{
-							homeLocation.alt.toFixed(2)
-						}}</v-card-text>
+						<v-card-text>{{ homeLocation.alt.toFixed(2) }}</v-card-text>
 					</v-col>
 				</v-row>
 			</v-expansion-panel-text>
@@ -297,10 +284,10 @@ defineExpose({ setLatLonAlt });
 					<v-col :cols="isRover ? 12 : 6">
 						<v-text-field
 							v-model.number="cruiseSpeed"
-							type="number"
 							:label="isRover ? 'Ground Speed (m/s)' : 'Cruise Speed'"
 							density="compact"
 							hide-details
+							type="number"
 						/>
 					</v-col>
 					<v-col
@@ -309,11 +296,11 @@ defineExpose({ setLatLonAlt });
 					>
 						<v-text-field
 							v-model.number="hoverSpeed"
-							type="number"
-							label="Hover Speed"
+							clearable
 							density="compact"
 							hide-details
-							clearable
+							label="Hover Speed"
+							type="number"
 						/>
 					</v-col>
 				</v-row>

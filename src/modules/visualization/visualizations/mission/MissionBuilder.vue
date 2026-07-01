@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
@@ -58,8 +58,8 @@ function getControlstreamByRole(role: string) {
 
 const isRover = computed(() => !!getControlstreamByRole('roverPlan'));
 
-const missionControlStream = computed<Controlstream | undefined>(() =>
-	getControlstreamByRole('roverPlan') ?? getControlstreamByRole('plan')
+const missionControlStream = computed<Controlstream | undefined>(
+	() => getControlstreamByRole('roverPlan') ?? getControlstreamByRole('plan')
 );
 
 const noController = computed(() => props.visualizations.length === 0);
@@ -75,9 +75,9 @@ interface LLAData {
 const receivedLLA = ref<LLAData>({ lat: 0, lon: 0, alt: 0 });
 const mapStore = useMapStore();
 
-const droneDatasourceLLA = ref<(typeof ConSysApi) | null>(null);
-const droneHomeDatasource = ref<(typeof ConSysApi) | null>(null);
-let dsInstances = ref<(typeof ConSysApi[])>([]);
+const droneDatasourceLLA = ref<typeof ConSysApi | null>(null);
+const droneHomeDatasource = ref<typeof ConSysApi | null>(null);
+let dsInstances = ref<(typeof ConSysApi)[]>([]);
 
 let homeLocation = ref<{ lat: number; lon: number; alt: number }>({ lat: 0, lon: 0, alt: 0 });
 
@@ -158,24 +158,25 @@ onBeforeUnmount(() => {
 });
 useVisualizationCleanup(dsInstances);
 
-const hasCommandPad = computed(() =>
-	getControlstreamByRole('land') ||
-	getControlstreamByRole('pause') ||
-	getControlstreamByRole('rtl') ||
-	getControlstreamByRole('offboard') ||
-	getControlstreamByRole('takeoff') ||
-	getControlstreamByRole('driveVelocity') ||
-	getControlstreamByRole('driveLocation') ||
-	getControlstreamByRole('arm') ||
-	getControlstreamByRole('reboot') ||
-	getControlstreamByRole('driveMode')
+const hasCommandPad = computed(
+	() =>
+		getControlstreamByRole('land') ||
+		getControlstreamByRole('pause') ||
+		getControlstreamByRole('rtl') ||
+		getControlstreamByRole('offboard') ||
+		getControlstreamByRole('takeoff') ||
+		getControlstreamByRole('driveVelocity') ||
+		getControlstreamByRole('driveLocation') ||
+		getControlstreamByRole('arm') ||
+		getControlstreamByRole('reboot') ||
+		getControlstreamByRole('driveMode')
 );
 </script>
 
 <template>
 	<v-container
-		fluid
 		class="py-4"
+		fluid
 	>
 		<v-row
 			class="d-flex align-center"
@@ -191,8 +192,8 @@ const hasCommandPad = computed(() =>
 		<v-divider v-if="!noController"></v-divider>
 
 		<v-card
-			class="telemetry-card"
 			v-if="!noController"
+			class="telemetry-card"
 		>
 			<v-card-text>Live Telemetry</v-card-text>
 			<v-row density="comfortable">
@@ -222,14 +223,14 @@ const hasCommandPad = computed(() =>
 		</v-card>
 
 		<v-sheet
-			class="pa-0 d-flex flex-column"
 			v-if="!noController"
+			class="pa-0 d-flex flex-column"
 		>
 			<v-tabs
 				v-model="activeTab"
-				grow
-				color="primary"
 				class="mb-2"
+				color="primary"
+				grow
 			>
 				<v-tab value="plan">
 					<span>Plan</span>
@@ -242,10 +243,10 @@ const hasCommandPad = computed(() =>
 			<v-window v-model="activeTab">
 				<v-window-item value="plan">
 					<PlanMission
-						:is-rover="isRover"
-						:no-controller="noController"
 						:home-location="homeLocation"
+						:is-rover="isRover"
 						:mission-control-stream="missionControlStream"
+						:no-controller="noController"
 					/>
 				</v-window-item>
 
@@ -259,5 +260,4 @@ const hasCommandPad = computed(() =>
 	</v-container>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>
