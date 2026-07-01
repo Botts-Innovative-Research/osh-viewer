@@ -95,14 +95,6 @@ export async function CreatePointMarkerVizProps(
 			},
 		};
 		vizDatasources.push(currentDataSource);
-
-		// Check for milsymbol and assign as iconName
-		if (properties.milSymbol) {
-			pointMarkerLayer.iconName = await getInitialMilSymbol(
-				currentDataSource,
-				properties.milSymbol.property
-			);
-		}
 	}
 
 	return {
