@@ -61,11 +61,7 @@ export function CreateLobVizProps(
 		weight: visOptions.lobWeight,
 		opacity: visOptions.lobOpacity,
 		length: visOptions.lobDistanceKm * 1000, // Convert km to m
-		icon: visOptions.showIcon ? visOptions.icon : null,
-		iconColor: visOptions.iconColor,
-		iconName: visOptions.iconName,
-		iconOpacity: visOptions.showIcon ? 1 : 0, // Set opacity to 0 if no icon, otherwise use default opacity
-		iconSize: [32, 32],
+		iconName: 'ray-start',
 		label: visOptions.name,
 		name: visOptions.name,
 	};

@@ -6,7 +6,6 @@ import NameControl from '@/modules/visualization/wizard/customizations/NameContr
 import ColorControl from '@/modules/visualization/wizard/customizations/ColorControl.vue';
 import { useComponentValidation } from '@/modules/visualization/wizard/composables/useComponentValidation';
 import SliderValueControl from '@/modules/visualization/wizard/customizations/SliderValueControl.vue';
-import IconVisibilityControl from '@/modules/visualization/wizard/customizations/IconVisibilityControl.vue';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { confirmRoles } from '../../registry/roleUtils';
 import { EllipseConfigRoles } from '../ellipse/Descriptor';
@@ -15,10 +14,6 @@ const vizwizStore = useVizWizStore();
 // POINTMARKER
 const showPmIconColor = computed(() => (vizwizStore.dsConfig.pmIconColor ? false : true));
 // LOB
-const showLobIcon = computed(
-	() => vizwizStore.visualizationCustomizationOptions.showLobIcon ?? true
-);
-const showLobIconColor = computed(() => (vizwizStore.dsConfig.lobIconColor ? false : true));
 const showLobLineColor = computed(() => (vizwizStore.dsConfig.lobLineColor ? false : true));
 // ELLIPSE
 const showEllipseColor = computed(() => (vizwizStore.dsConfig.ellipseColor ? false : true));
@@ -97,40 +92,6 @@ useComponentValidation(valid, emit);
 			value="lob"
 		>
 			<v-expansion-panel-text>
-				<icon-visibility-control
-					roleName="showLobIcon"
-					label="Show LoB Icon"
-				></icon-visibility-control>
-				<v-expand-transition>
-					<div v-if="showLobIcon">
-						<icon-control roleName="lobIcon"></icon-control>
-						<v-expand-transition>
-							<div v-if="showLobIconColor">
-								<color-control
-									roleName="lobIconColor"
-									label="LoB Icon Color"
-								></color-control>
-							</div>
-							<div
-								v-else
-								class="pb-4"
-							>
-								<v-alert variant="outlined"
-									>Icon color will be dynamically generated based on the selected
-									properties from the previous step.</v-alert
-								>
-							</div>
-						</v-expand-transition>
-					</div>
-					<div
-						v-else
-						class="pb-4"
-					>
-						<v-alert variant="outlined"
-							>Icon is hidden. Enable "Show Icon" to customize.</v-alert
-						>
-					</div>
-				</v-expand-transition>
 				<v-expand-transition>
 					<div v-if="showLobLineColor">
 						<color-control

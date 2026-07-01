@@ -1,18 +1,13 @@
 <script setup lang="ts">
-import IconControl from '@/modules/visualization/wizard/customizations/IconControl.vue';
 import SliderValueControl from '../../wizard/customizations/SliderValueControl.vue';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import ColorControl from '../../wizard/customizations/ColorControl.vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
 import { computed, ref } from 'vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
-import IconVisibilityControl from '@/modules/visualization/wizard/customizations/IconVisibilityControl.vue';
 import { useVizWizStore } from '@/stores/vizwizstore';
 
 const vizwizStore = useVizWizStore();
-const showIcon = computed(() => vizwizStore.visualizationCustomizationOptions.showIcon ?? true);
-// If lobIconColor selected in Config, don't show icon color select
-const showIconColor = computed(() => (vizwizStore.dsConfig.lobIconColor ? false : true));
 // If lobLineColor selected in Config, don't show line color select
 const showLineColor = computed(() => (vizwizStore.dsConfig.lobLineColor ? false : true));
 
@@ -56,48 +51,6 @@ useComponentValidation(valid, emit);
 					role="origin"
 					v-model:valid="nameValid"
 				></name-control>
-			</v-expansion-panel-text>
-		</v-expansion-panel>
-		<v-expansion-panel
-			eager
-			title="Icon"
-			value="icon"
-		>
-			<v-expansion-panel-text>
-				<icon-visibility-control
-					roleName="showIcon"
-					label="Show Icon"
-				></icon-visibility-control>
-				<v-expand-transition>
-					<div v-if="showIcon">
-						<icon-control roleName="icon"></icon-control>
-						<v-expand-transition>
-							<div v-if="showIconColor">
-								<color-control
-									roleName="iconColor"
-									label="Icon Color"
-								></color-control>
-							</div>
-							<div
-								v-else
-								class="pb-4"
-							>
-								<v-alert variant="outlined"
-									>Icon color will be dynamically generated based on the selected
-									properties from the previous step.</v-alert
-								>
-							</div>
-						</v-expand-transition>
-					</div>
-					<div
-						v-else
-						class="pb-4"
-					>
-						<v-alert variant="outlined"
-							>Icon is hidden. Enable "Show Icon" to customize.</v-alert
-						>
-					</div>
-				</v-expand-transition>
 			</v-expansion-panel-text>
 		</v-expansion-panel>
 		<v-expansion-panel

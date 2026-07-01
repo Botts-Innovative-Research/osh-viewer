@@ -40,16 +40,9 @@ function getIcon(viz: OSHVisualization) {
 	}
 	// Use iconName from dataLayer
 	const iconName = viz.visualizationComponents.dataLayer.iconName;
-	if (iconName) {
-		if (viz.visualizationComponents.dataLayer.iconOpacity === 0) {
-			return VisualizationRegistry[viz.type].icon ?? 'mdi-shape';
-		}
-		return `mdi-${iconName}`;
-	}
+	if (iconName) return `mdi-${iconName}`;
 	// Otherwise, use viz type icon
-	else {
-		return VisualizationRegistry[viz.type].icon ?? 'mdi-shape';
-	}
+	else return VisualizationRegistry[viz.type].icon ?? 'mdi-shape';
 }
 function getIconColor(viz: OSHVisualization) {
 	if (viz.isParentVisualization()) {
