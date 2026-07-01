@@ -106,6 +106,20 @@ export const MissionConfigRoles: VisualizationConfigRole[] = [
 		type: 'cs',
 		showPropertySelector: false,
 	},
+	{
+		role: 'homePos',
+		label: 'Home Position Control',
+		description: 'Select the control stream used to send  ',
+		type: 'cs',
+		showPropertySelector: false,
+	},
+	{
+		role: 'driveMode',
+		label: 'Drive Mode Control',
+		description: 'Select the control stream used to send  ',
+		type: 'cs',
+		showPropertySelector: false,
+	},
 	// {
 	//     role: 'cancel',
 	//     label: 'Cancel Mission',

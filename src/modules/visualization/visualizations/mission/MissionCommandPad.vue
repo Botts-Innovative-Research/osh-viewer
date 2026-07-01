@@ -1,7 +1,8 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref, watch, computed } from 'vue';
 import { sendCommand } from '../../services/controlstream.service';
 import { useMapStore } from '@/stores/mapstore';
+import LocationPicker from '@/components/ui/LocationPicker.vue';
 
 const props = defineProps({
 	controlstreams: {
@@ -17,22 +18,39 @@ function getControlstreamByRole(role: string) {
 
 const mapStore = useMapStore();
 
-const driveLat = ref<number>(0.0);
-const driveLon = ref<number>(0.0);
+const driveLocationPickerRef = ref<InstanceType<typeof LocationPicker> | null>(null);
 const isDriveLocationMapSelect = computed(() => mapStore.isDriveLocationSelected);
+
+const homeLocationPickerRef = ref<InstanceType<typeof LocationPicker> | null>(null);
+const isHomeLocationMapSelect = computed(() => mapStore.isHomeLocationSelected);
+
 
 watch(
 	() => mapStore.currentLLA,
 	(newVal) => {
 		if (isDriveLocationMapSelect.value && newVal) {
-			driveLat.value = newVal.latitude;
-			driveLon.value = newVal.longitude;
+			driveLocationPickerRef.value?.setLatLonAlt(
+				newVal.latitude,
+				newVal.longitude,
+				0
+			);
+		}
+		if (isHomeLocationMapSelect.value && newVal) {
+			homeLocationPickerRef.value?.setLatLonAlt(
+				newVal.latitude,
+				newVal.longitude,
+				0
+			);
 		}
 	}
 );
 
 function toggleDriveLocationSelect() {
 	mapStore.setIsDriveLocationSelected(!mapStore.isDriveLocationSelected);
+}
+
+function toggleHomeLocationSelect() {
+	mapStore.setIsHomeLocationSelected(!mapStore.isHomeLocationSelected);
 }
 
 const xVelocity = ref<number>(0.0);
@@ -46,6 +64,8 @@ const offboardForm = ref<any>(null);
 const isPaused = ref(false);
 const isArmed = ref(false);
 const isHold = ref(false);
+const driveModes = ref(['MANUAL', 'ACRO', 'STEERING', 'HOLD', 'LOITER', 'FOLLOW', 'SIMPLE', 'DOCK', 'AUTO', 'RTL', 'GUIDED']);
+const selectedDriveMode = ref('HOLD');
 
 function getControlstreamConfig(cs: any) {
 	if (!cs) return null;
@@ -97,7 +117,6 @@ function arm() {
 
 function hold() {
 	isHold.value = !isHold.value;
-	// arm = true , disarm = false
 	const payload = {
 		parameters: {
 			engageHold: isHold.value,
@@ -181,12 +200,34 @@ function driveVelocityCommand() {
 	sendCommandToRole('driveVelocity', payload);
 }
 
-function driveLocationCommand() {
+function driveMode() {
+	const payload = {
+		parameters: {
+			mode: selectedDriveMode.value,
+		},
+	};
+	sendCommandToRole('driveMode', payload);
+}
+
+function homePositionCommand(location: { lat: number; lon: number; }) {
 	const payload = {
 		parameters: {
 			locationVectorLL: {
-				Latitude: driveLat.value,
-				Longitude: driveLon.value,
+				Latitude: location.lat,
+				Longitude: location.lon,
+			}
+		},
+	};
+
+	sendCommandToRole('homePos', payload);
+}
+
+function driveLocationCommand(location: { lat: number; lon: number; alt: number }) {
+	const payload = {
+		parameters: {
+			locationVectorLL: {
+				Latitude: location.lat,
+				Longitude: location.lon,
 			}
 		},
 	};
@@ -196,9 +237,9 @@ function driveLocationCommand() {
 </script>
 
 <template>
-	<div>
+	<v-expansion-panels multiple>
 		<!--commands-->
-		<div
+		<v-row
 			v-if="
 				getControlstreamByRole('pause') ||
 				getControlstreamByRole('rtl') ||
@@ -208,368 +249,426 @@ function driveLocationCommand() {
 				getControlstreamByRole('hold') ||
 				getControlstreamByRole('reboot')
 			"
+			density="comfortable"
 		>
-			<div class="section-header mb-3">
-				<v-icon size="small" class="mr-2">mdi-gamepad-variant</v-icon>
-				<span class="text-subtitle-2 font-weight-medium">Commands</span>
-			</div>
-			<v-row density="comfortable">
-				<v-col
-					cols="6"
-					v-if="getControlstreamByRole('arm')"
+			<v-col
+				v-if="getControlstreamByRole('arm')"
+				cols="4"
+			>
+				<v-btn
+					:color="isArmed ? 'primary' : 'grey'"
+					block
+					class="command-btn"
+					variant="tonal"
+					@click="arm"
 				>
-					<v-btn
-						block
-						variant="tonal"
-						:color="isArmed ? 'primary' : 'grey'"
-						@click="arm"
-						class="command-btn"
+					<v-icon start>{{ isArmed ? 'mdi-shield-off' : 'mdi-shield-check' }}</v-icon>
+					{{ isArmed ? 'Disarm' : 'Arm' }}
+					<v-tooltip
+						activator="parent"
+						location="top"
 					>
-						<v-icon start>{{ isArmed ? 'mdi-shield-off' : 'mdi-shield-check' }}</v-icon>
-						{{ isArmed ? 'Disarm' : 'Arm' }}
-					</v-btn>
-				</v-col>
+						Enable motors and prepare for operation. Disarm to disable motors and power down.
+					</v-tooltip>
+				</v-btn>
+			</v-col>
 
-				<v-col
-					cols="6"
-					v-if="getControlstreamByRole('hold')"
+			<v-col
+				v-if="getControlstreamByRole('hold')"
+				cols="4"
+			>
+				<v-btn
+					:color="isHold ? 'primary' : 'grey'"
+					block
+					class="command-btn"
+					variant="tonal"
+					@click="hold"
 				>
-					<v-btn
-						block
-						variant="tonal"
-						:color="isHold ? 'primary' : 'grey'"
-						@click="hold"
-						class="command-btn"
+					<v-icon start>{{ isHold ? 'mdi-shield-off' : 'mdi-shield-check' }}</v-icon>
+					{{ isHold ? 'Release' : 'Hold' }}
+					<v-tooltip
+						activator="parent"
+						location="top"
 					>
-						<v-icon start>{{ isHold ? 'mdi-shield-off' : 'mdi-shield-check' }}</v-icon>
-						{{ isHold ? 'Release' : 'Hold' }}
-					</v-btn>
-				</v-col>
+						Hold current position and stop all movement. Release to resume normal control.
+					</v-tooltip>
+				</v-btn>
+			</v-col>
 
-				<v-col
-					cols="6"
-					v-if="getControlstreamByRole('pause')"
+			<v-col
+				v-if="getControlstreamByRole('pause')"
+				cols="4"
+			>
+				<v-btn
+					:color="isPaused ? 'primary' : 'grey'"
+					block
+					class="command-btn"
+					variant="tonal"
+					@click="pause"
 				>
-					<v-btn
-						block
-						variant="tonal"
-						:color="isPaused ? 'primary' : 'grey'"
-						@click="pause"
-						class="command-btn"
+					<v-icon start>{{
+						isPaused ? 'mdi-play-circle' : 'mdi-pause-circle'
+					}}</v-icon>
+					{{ isPaused ? 'Resume' : 'Pause' }}
+					<v-tooltip
+						activator="parent"
+						location="top"
 					>
-						<v-icon start>{{
-							isPaused ? 'mdi-play-circle' : 'mdi-pause-circle'
-						}}</v-icon>
-						{{ isPaused ? 'Resume' : 'Pause' }}
-					</v-btn>
-				</v-col>
+						Pause the current mission. Resume to continue from where it left off.
+					</v-tooltip>
+				</v-btn>
+			</v-col>
 
-				<v-col
-					cols="6"
-					v-if="getControlstreamByRole('rtl')"
+			<v-col
+				v-if="getControlstreamByRole('rtl')"
+				cols="4"
+			>
+				<v-btn
+					block
+					class="command-btn"
+					color="primary"
+					variant="tonal"
+					@click="returnToLaunch"
 				>
-					<v-btn
-						block
-						variant="tonal"
-						color="primary"
-						@click="returnToLaunch"
-						class="command-btn"
+					<v-icon start>mdi-home</v-icon>
+					RTL
+					<v-tooltip
+						activator="parent"
+						location="top"
 					>
-						<v-icon start>mdi-home</v-icon>
-						RTL
-					</v-btn>
-				</v-col>
+						Return to the launch position and land automatically.
+					</v-tooltip>
+				</v-btn>
+			</v-col>
 
-				<v-col
-					cols="6"
-					v-if="getControlstreamByRole('takeoff')"
+			<v-col
+				v-if="getControlstreamByRole('takeoff')"
+				cols="4"
+			>
+				<v-btn
+					block
+					class="command-btn"
+					color="primary"
+					variant="tonal"
+					@click="takeoffCommand"
 				>
-					<v-btn
-						block
-						variant="tonal"
-						color="primary"
-						@click="takeoffCommand"
-						class="command-btn"
-					>
-						<v-icon start>mdi-airplane-takeoff</v-icon>
-						Take Off
-					</v-btn>
-				</v-col>
+					<v-icon start>mdi-airplane-takeoff</v-icon>
+					Take Off
+				</v-btn>
+			</v-col>
 
-				<v-col
-					cols="6"
-					v-if="getControlstreamByRole('land')"
+			<v-col
+				v-if="getControlstreamByRole('land')"
+				cols="4"
+			>
+				<v-btn
+					block
+					class="command-btn"
+					color="warning"
+					variant="tonal"
+					@click="land"
 				>
-					<v-btn
-						block
-						variant="tonal"
-						color="warning"
-						@click="land"
-						class="command-btn"
+					<v-icon start>mdi-airplane-landing</v-icon>
+					Land
+					<v-tooltip
+						activator="parent"
+						location="top"
 					>
-						<v-icon start>mdi-airplane-landing</v-icon>
-						Land
-					</v-btn>
-				</v-col>
+						Land at the current position and disarm motors.
+					</v-tooltip>
+				</v-btn>
+			</v-col>
 
-				<v-col
-					cols="6"
-					v-if="getControlstreamByRole('cancel')"
+			<v-col
+				v-if="getControlstreamByRole('cancel')"
+				cols="4"
+			>
+				<v-btn
+					block
+					class="command-btn"
+					color="error"
+					variant="tonal"
+					@click="cancel"
 				>
-					<v-btn
-						block
-						variant="tonal"
-						color="error"
-						@click="cancel"
-						class="command-btn"
+					<v-icon start>mdi-cancel</v-icon>
+					Cancel
+					<v-tooltip
+						activator="parent"
+						location="top"
 					>
-						<v-icon start>mdi-cancel</v-icon>
-						Cancel
-					</v-btn>
-				</v-col>
+						Cancel the current mission or command immediately.
+					</v-tooltip>
+				</v-btn>
+			</v-col>
 
-				<v-col
-					cols="6"
-					v-if="getControlstreamByRole('reboot')"
+			<v-col
+				v-if="getControlstreamByRole('reboot')"
+				cols="4"
+			>
+				<v-btn
+					block
+					class="command-btn"
+					color="error"
+					variant="tonal"
+					@click="reboot"
 				>
-					<v-btn
-						block
-						variant="tonal"
-						color="error"
-						@click="reboot"
-						class="command-btn"
+					<v-icon start>mdi-restart</v-icon>
+					Reboot
+					<v-tooltip
+						activator="parent"
+						location="top"
 					>
-						<v-icon start>mdi-restart</v-icon>
-						Reboot
-					</v-btn>
-				</v-col>
-			</v-row>
-		</div>
+						Restart the flight controller. Vehicle must be disarmed.
+					</v-tooltip>
+				</v-btn>
+			</v-col>
+		</v-row>
 
-		<!--takeoff control-->
-		<div v-if="getControlstreamByRole('takeoff')">
-			<v-divider class="my-4"></v-divider>
-			<div class="section-header mb-3">
-				<v-icon size="small" class="mr-2">mdi-airplane</v-icon>
-				<span class="text-subtitle-2 font-weight-medium">Takeoff Control</span>
-			</div>
-			<v-row density="comfortable" align="center">
-				<v-col
-					cols="6"
+		<!--drive mode-->
+		<v-expansion-panel v-if="getControlstreamByRole('driveMode')">
+			<v-expansion-panel-title>
+				<v-icon class="mr-2" size="small">mdi-car</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">Drive Mode Control</span>
+				<v-tooltip
+					activator="parent"
+					location="top"
 				>
-					<v-text-field
-						v-model.number="takeOffAlt"
-						type="number"
-						label="Altitude (AGL)"
-						density="compact"
-						hide-details
-						suffix="m"
-					/>
-				</v-col>
-				<v-col
-					cols="6"
-				>
-					<v-btn
-						block
-						variant="tonal"
-						color="primary"
-						@click="takeoffCommand"
-						class="command-btn"
-					>
-						<v-icon start>mdi-airplane-takeoff</v-icon>
-						Take Off
-					</v-btn>
-				</v-col>
-			</v-row>
-		</div>
-
-		<!--drive velocity control-->
-		<div v-if="getControlstreamByRole('driveVelocity')">
-			<v-divider class="my-4"></v-divider>
-			<div class="section-header mb-3">
-				<v-icon size="small" class="mr-2">mdi-steering</v-icon>
-				<span class="text-subtitle-2 font-weight-medium">Drive Velocity Control</span>
-			</div>
-			<v-row density="comfortable" align="center">
-				<v-col
-					cols="6"
-				>
-					<v-text-field
-						v-model.number="forwardVelocityDrive"
-						type="number"
-						label="Forward Velocity"
-						density="compact"
-						hide-details
-					/>
-				</v-col>
-				<v-col
-					cols="6"
-				>
-					<v-text-field
-						v-model.number="yawRateDrive"
-						type="number"
-						label="Yaw Rate"
-						density="compact"
-						hide-details
-					/>
-				</v-col>
-				<v-col
-					cols="6"
-				>
-					<v-btn
-						block
-						variant="tonal"
-						color="primary"
-						@click="driveVelocityCommand"
-						class="command-btn"
-					>
-						<v-icon start>mdi-send</v-icon>
-						Send
-					</v-btn>
-				</v-col>
-			</v-row>
-		</div>
-
-		<!--offboard control-->
-		<div v-if="getControlstreamByRole('offboard')">
-			<v-divider class="my-4"></v-divider>
-			<div class="section-header mb-3">
-				<v-icon size="small" class="mr-2">mdi-controller</v-icon>
-				<span class="text-subtitle-2 font-weight-medium">Offboard Control</span>
-			</div>
-			<v-form ref="offboardForm">
-				<v-row density="comfortable" align="center">
-					<v-col
-						cols="6"
-					>
-						<v-text-field
-							v-model.number="xVelocity"
-							type="number"
-							label="Vx"
-							density="compact"
-							hide-details
+				</v-tooltip>
+			</v-expansion-panel-title>
+			<v-expansion-panel-text>
+				<v-row align="center" density="comfortable">
+					<v-col cols="8">
+						<v-select
+							v-model="selectedDriveMode"
+							:items="driveModes"
+							label="Drive Mode"
+							class="mt-2"
 						/>
 					</v-col>
-					<v-col
-						cols="6"
-					>
-						<v-text-field
-							v-model.number="yVelocity"
-							type="number"
-							label="Vy"
-							density="compact"
-							hide-details
-						/>
-					</v-col>
-					<v-col
-						cols="6"
-					>
-						<v-text-field
-							v-model.number="zVelocity"
-							type="number"
-							label="Vz"
-							density="compact"
-							hide-details
-						/>
-					</v-col>
-					<v-col
-						cols="6"
-					>
-						<v-text-field
-							v-model.number="yawRate"
-							type="number"
-							label="Yaw"
-							density="compact"
-							hide-details
-						/>
-					</v-col>
-					<v-col
-						cols="6"
-					>
+					<v-col cols="4">
 						<v-btn
 							block
-							variant="tonal"
-							color="primary"
-							@click="offboard"
 							class="command-btn"
+							color="primary"
+							variant="tonal"
+							@click="driveMode"
 						>
 							<v-icon start>mdi-send</v-icon>
 							Send
 						</v-btn>
 					</v-col>
 				</v-row>
-			</v-form>
-		</div>
+			</v-expansion-panel-text>
+		</v-expansion-panel>
+
+		<!--takeoff control-->
+		<v-expansion-panel v-if="getControlstreamByRole('takeoff')">
+			<v-expansion-panel-title>
+				<v-icon class="mr-2" size="small">mdi-airplane</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">Takeoff Control</span>
+				<v-tooltip
+					activator="parent"
+					location="top"
+				>
+					Set altitude (AGL) and launch the vehicle vertically.
+				</v-tooltip>
+			</v-expansion-panel-title>
+			<v-expansion-panel-text>
+				<v-row align="center" density="comfortable">
+					<v-col cols="4">
+						<v-text-field
+							v-model.number="takeOffAlt"
+							density="compact"
+							hide-details
+							label="Altitude (AGL)"
+							suffix="m"
+							type="number"
+						/>
+					</v-col>
+					<v-col cols="4">
+						<v-btn
+							block
+							class="command-btn"
+							color="primary"
+							variant="tonal"
+							@click="takeoffCommand"
+						>
+							<v-icon start>mdi-airplane-takeoff</v-icon>
+							Take Off
+						</v-btn>
+					</v-col>
+				</v-row>
+			</v-expansion-panel-text>
+		</v-expansion-panel>
+
+		<!--drive velocity control-->
+		<v-expansion-panel v-if="getControlstreamByRole('driveVelocity')">
+			<v-expansion-panel-title>
+				<v-icon class="mr-2" size="small">mdi-steering</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">Drive Velocity Control</span>
+				<v-tooltip
+					activator="parent"
+					location="top"
+				>
+					Control forward speed and yaw rate for manual driving.
+				</v-tooltip>
+			</v-expansion-panel-title>
+			<v-expansion-panel-text>
+				<v-row align="center" density="comfortable">
+					<v-col cols="6">
+						<v-text-field
+							v-model.number="forwardVelocityDrive"
+							density="compact"
+							hide-details
+							label="Forward Velocity"
+							type="number"
+						/>
+					</v-col>
+					<v-col cols="6">
+						<v-text-field
+							v-model.number="yawRateDrive"
+							density="compact"
+							hide-details
+							label="Yaw Rate"
+							type="number"
+						/>
+					</v-col>
+					<v-col cols="6">
+						<v-btn
+							block
+							class="command-btn"
+							color="primary"
+							variant="tonal"
+							@click="driveVelocityCommand"
+						>
+							<v-icon start>mdi-send</v-icon>
+							Send
+						</v-btn>
+					</v-col>
+				</v-row>
+			</v-expansion-panel-text>
+		</v-expansion-panel>
+
+		<!--offboard control-->
+		<v-expansion-panel v-if="getControlstreamByRole('offboard')">
+			<v-expansion-panel-title>
+				<v-icon class="mr-2" size="small">mdi-controller</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">Offboard Control</span>
+				<v-tooltip
+					activator="parent"
+					location="top"
+				>
+					Send direct velocity commands (Vx, Vy, Vz) and yaw rate for manual flight control.
+				</v-tooltip>
+			</v-expansion-panel-title>
+			<v-expansion-panel-text>
+				<v-form ref="offboardForm">
+					<v-row align="center" density="comfortable">
+						<v-col cols="6">
+							<v-text-field
+								v-model.number="xVelocity"
+								density="compact"
+								hide-details
+								label="Vx"
+								type="number"
+							/>
+						</v-col>
+						<v-col cols="6">
+							<v-text-field
+								v-model.number="yVelocity"
+								density="compact"
+								hide-details
+								label="Vy"
+								type="number"
+							/>
+						</v-col>
+						<v-col cols="6">
+							<v-text-field
+								v-model.number="zVelocity"
+								density="compact"
+								hide-details
+								label="Vz"
+								type="number"
+							/>
+						</v-col>
+						<v-col cols="6">
+							<v-text-field
+								v-model.number="yawRate"
+								density="compact"
+								hide-details
+								label="Yaw"
+								type="number"
+							/>
+						</v-col>
+						<v-col cols="6">
+							<v-btn
+								block
+								class="command-btn"
+								color="primary"
+								variant="tonal"
+								@click="offboard"
+							>
+								<v-icon start>mdi-send</v-icon>
+								Send
+							</v-btn>
+						</v-col>
+					</v-row>
+				</v-form>
+			</v-expansion-panel-text>
+		</v-expansion-panel>
 
 		<!--drive to location-->
-		<div v-if="getControlstreamByRole('driveLocation')">
-			<v-divider class="my-4"></v-divider>
-			<div class="section-header mb-3">
-				<v-icon size="small" class="mr-2">mdi-map-marker</v-icon>
+		<v-expansion-panel v-if="getControlstreamByRole('driveLocation')">
+			<v-expansion-panel-title>
+				<v-icon class="mr-2" size="small">mdi-map-marker</v-icon>
 				<span class="text-subtitle-2 font-weight-medium">Drive to Location</span>
-			</div>
-			<v-row density="comfortable" align="center">
-				<v-col cols="auto">
-					<IconButton
-						:color="isDriveLocationMapSelect ? 'primary' : 'grey'"
-						@click="toggleDriveLocationSelect"
-						rounded="xl"
-					>
-						<v-icon>{{
-							isDriveLocationMapSelect ? 'mdi-crosshairs-gps' : 'mdi-crosshairs'
-						}}</v-icon>
-						<v-tooltip
-							activator="parent"
-							location="top"
-						>
-							{{ isDriveLocationMapSelect ? 'Click map to set location' : 'Enable map selection' }}
-						</v-tooltip>
-					</IconButton>
-				</v-col>
-				<v-col>
-					<v-text-field
-						v-model.number="driveLat"
-						type="number"
-						label="Latitude"
-						density="compact"
-						hide-details
-					/>
-				</v-col>
-				<v-col>
-					<v-text-field
-						v-model.number="driveLon"
-						type="number"
-						label="Longitude"
-						density="compact"
-						hide-details
-					/>
-				</v-col>
-			</v-row>
-			<v-row density="comfortable">
-				<v-col>
-					<v-btn
-						block
-						variant="tonal"
-						color="primary"
-						@click="driveLocationCommand"
-						class="command-btn"
-					>
-						<v-icon start>mdi-send</v-icon>
-						Send
-					</v-btn>
-				</v-col>
-			</v-row>
-		</div>
-	</div>
+				<v-tooltip
+					activator="parent"
+					location="top"
+				>
+					Navigate the vehicle to a specific lat/lon coordinate. Use the crosshairs to pick from the map.
+				</v-tooltip>
+			</v-expansion-panel-title>
+			<v-expansion-panel-text>
+				<LocationPicker
+					ref="driveLocationPickerRef"
+					:is-selected="isDriveLocationMapSelect"
+					button-icon="mdi-send"
+					button-label="Send"
+					hide-alt
+					@submit="driveLocationCommand"
+					@toggle="toggleDriveLocationSelect"
+				/>
+			</v-expansion-panel-text>
+		</v-expansion-panel>
+
+		<v-expansion-panel v-if="getControlstreamByRole('homePos')">
+			<v-expansion-panel-title>
+				<v-icon class="mr-2" size="small">mdi-home</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">Home Location</span>
+				<v-tooltip
+					activator="parent"
+					location="top"
+				>
+					Update the vehicles home location. Use the crosshairs to pick from the map.
+				</v-tooltip>
+			</v-expansion-panel-title>
+			<v-expansion-panel-text>
+				<LocationPicker
+					ref="homeLocationPickerRef"
+					:is-selected="isHomeLocationMapSelect"
+					button-icon="mdi-send"
+					button-label="Send"
+					hide-alt
+					@submit="homePositionCommand"
+					@toggle="toggleHomeLocationSelect"
+				/>
+			</v-expansion-panel-text>
+		</v-expansion-panel>
+	</v-expansion-panels>
 </template>
 
 <style scoped>
-.section-header {
-	display: flex;
-	align-items: center;
-	opacity: 0.8;
-}
-
 .command-btn {
 	text-transform: none;
 	font-weight: 500;

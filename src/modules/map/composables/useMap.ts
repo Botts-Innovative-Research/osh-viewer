@@ -3,9 +3,9 @@ import { FoiLayer, useVisualizationStore } from '@/stores/visualizationstore';
 import { computed, onMounted, ref, watch } from 'vue';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import {
-	createDriveLocationLayer,
 	createFOILayer,
 	createGeoPTZLayer,
+	createLocationLayer,
 	createMapVisualizations,
 	createWaypointLayer,
 	rebuildMapVisualizations,
@@ -44,6 +44,7 @@ export function useMap() {
 	// Current GeoPTZ layer
 	const geoPtzLayer = ref<typeof PointMarkerLayer | null>(null);
 	const driveLocationLayer = ref<typeof PointMarkerLayer | null>(null);
+	const homeLocationLayer = ref<typeof PointMarkerLayer | null>(null);
 	// Array of waypoint Pointmarkers for mission builder
 	const waypointLayers = ref<(typeof PointMarkerLayer)[]>([]);
 	// FOI Layers
@@ -282,12 +283,26 @@ export function useMap() {
 			if (mapStore.isDriveLocationSelected) {
 				mapStore.setCurrentLLA(lat, lon, 0);
 
-				const result = await createDriveLocationLayer({ lon, lat, alt: 0 });
+				const result = await createLocationLayer({ lon, lat, alt: 0 }, "driveLocation", "Drive to Location");
 				if (result) {
 					mapAdapter.value?.removeLayer(driveLocationLayer.value);
 					driveLocationLayer.value = result.layer;
 					
 					mapAdapter.value?.addLayer(driveLocationLayer.value);
+					if (result.props) mapAdapter.value?.updateMarker(result.props);
+				}
+			}
+
+			// Home Location
+			if (mapStore.isHomeLocationSelected) {
+				mapStore.setCurrentLLA(lat, lon, 0);
+
+				const result = await createLocationLayer({ lon, lat, alt: 0 }, "homeLocation", "Home Location");
+				if (result) {
+					mapAdapter.value?.removeLayer(homeLocationLayer.value);
+					homeLocationLayer.value = result.layer;
+
+					mapAdapter.value?.addLayer(homeLocationLayer.value);
 					if (result.props) mapAdapter.value?.updateMarker(result.props);
 				}
 			}
@@ -369,6 +384,15 @@ export function useMap() {
 		(selected) => {
 			if (driveLocationLayer.value) mapAdapter.value?.removeLayer(driveLocationLayer.value);
 				driveLocationLayer.value = null;
+		}
+	);
+
+	/* HOME LOCATION */
+	watch(
+		() => mapStore.isHomeLocationSelected,
+		(selected) => {
+			if (homeLocationLayer.value) mapAdapter.value?.removeLayer(homeLocationLayer.value);
+			homeLocationLayer.value = null;
 		}
 	);
 
