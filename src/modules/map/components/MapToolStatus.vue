@@ -9,7 +9,7 @@ const mapStore = useMapStore();
 const settingsStore = useSettingsStore();
 
 const isActive = computed(() => {
-	return !!mapStore.isGeoPTZSelected || !!mapStore.selectedWaypoints;
+	return !!mapStore.isGeoPTZSelected || !!mapStore.selectedWaypoints || !!mapStore.isDriveLocationSelected || !!mapStore.isHomeLocationSelected;
 });
 
 const isHovered = ref(false);
@@ -52,7 +52,7 @@ const isHovered = ref(false);
 				<!-- Mission Builder -->
 				<div
 					class="d-flex align-center ga-2"
-					v-show="!!mapStore.selectedWaypoints"
+					v-show="!!mapStore.selectedWaypoints || !!mapStore.isHomeLocationSelected || !!mapStore.isDriveLocationSelected"
 				>
 					<v-icon
 						icon="mdi-crosshairs-gps"

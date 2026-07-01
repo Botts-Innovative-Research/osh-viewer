@@ -433,6 +433,7 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 					activator="parent"
 					location="top"
 				>
+					Sets the ArduRover flight mode for a ground rover or surface
 				</v-tooltip>
 			</v-expansion-panel-title>
 			<v-expansion-panel-text>
@@ -558,7 +559,7 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 					activator="parent"
 					location="top"
 				>
-					Send direct velocity commands (Vx, Vy, Vz) and yaw rate for manual flight control.
+					Send direct velocity commands and yaw rate for manual flight control.
 				</v-tooltip>
 			</v-expansion-panel-title>
 			<v-expansion-panel-text>
