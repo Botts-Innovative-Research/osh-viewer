@@ -49,7 +49,7 @@ export const SigIntDescriptor: VisualizationDescriptor = {
 		ConfigComponentEllipse,
 		CustomizeComponent,
 	],
-	builder: () => import('@/modules/visualization/visualizations/sigint/Builder'),
+	builder: async () => import('@/modules/visualization/visualizations/sigint/Builder'),
 	supportsCs: false,
 	requireCs: false,
 	supportedMaps: ['cesium'],
