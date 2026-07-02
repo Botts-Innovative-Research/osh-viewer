@@ -1,69 +1,69 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
 import { ref, computed, reactive, watch, ReactiveEffect, onMounted } from 'vue';
-import DataSourcePicker from '../../viz-components/DataSourcePicker.vue';
-import { useComponentValidation } from '../../shared/helpers';
-import { VisualizationComponentEmits } from '../../VisualizationRegistry';
+import DataSourcePicker from '../../wizard/components/DataSourcePicker.vue';
+import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
+import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
 
 // Retrieve datastreams
 const vizwizStore = useVizWizStore()
 
 // Checked status for each role
 const checkedRoles = reactive({
-  x: computed({
-    get: () => vizwizStore.dsConfig.x?.selected ?? true,
-    set: (val: boolean) => vizwizStore.updateDsConfig("x", { selected: val })
+  sampleRate: computed({
+    get: () => vizwizStore.dsConfig.sampleRate?.selected ?? true,
+    set: (val: boolean) => vizwizStore.updateDsConfig("sampleRate", { selected: val })
   }),
-  y: computed({
-    get: () => vizwizStore.dsConfig.y?.selected ?? true,
-    set: (val: boolean) => vizwizStore.updateDsConfig("y", { selected: val })
+  samples: computed({
+    get: () => vizwizStore.dsConfig.samples?.selected ?? true,
+    set: (val: boolean) => vizwizStore.updateDsConfig("samples", { selected: val })
   }),
 })
 
-// Initialize dsConfig with x and y selected by default when mounted
+// Initialize dsConfig with sampleRate and samples selected by default when mounted
 onMounted(() => {
-  if (!vizwizStore.dsConfig.x) {
-    vizwizStore.updateDsConfig("x", { selected: true })
+  if (!vizwizStore.dsConfig.sampleRate) {
+    vizwizStore.updateDsConfig("sampleRate", { selected: true })
   }
-  if (!vizwizStore.dsConfig.y) {
-    vizwizStore.updateDsConfig("y", { selected: true })
+  if (!vizwizStore.dsConfig.samples) {
+    vizwizStore.updateDsConfig("samples", { selected: true })
   }
 })
 
 // If dsConfig is reset, ensure x and y are selected by default
 watch(() => vizwizStore.dsConfig, (newVal) => {
-  if (!newVal.x) {
-    vizwizStore.updateDsConfig("x", { selected: true })
+  if (!newVal.sampleRate) {
+    vizwizStore.updateDsConfig("sampleRate", { selected: true })
   }
-  if (!newVal.y) {
-    vizwizStore.updateDsConfig("y", { selected: true })
+  if (!newVal.samples) {
+    vizwizStore.updateDsConfig("samples", { selected: true })
   }
 }, { deep: true })
 
-// Validation: at least x and y must be selected and configured
+// Validation: at least Sample Rate and Samples must be selected and configured
 const emit = defineEmits<VisualizationComponentEmits>()
-const roleXValid = ref<boolean>(false)
-const roleYValid = ref<boolean>(false)
+const roleSampleRateValid = ref<boolean>(false)
+const roleSamplesValid = ref<boolean>(false)
 const valid = computed(() => {
   // If role is checked, must be valid. If not checked, ignore validity
-  const xValid = checkedRoles.x ? roleXValid.value : true
-  const yValid = checkedRoles.y ? roleYValid.value : true
-  return xValid && yValid
+  const srValid = checkedRoles.sampleRate ? roleSampleRateValid.value : true
+  const sValid = checkedRoles.samples ? roleSamplesValid.value : true
+  return srValid && sValid
 })
 useComponentValidation(valid, emit)
 
 </script>
 <template>
-  <!-- X -->
+  <!-- Sample Rate -->
   <v-container>
-    <v-checkbox label="X Axis" v-model="checkedRoles.x" disabled></v-checkbox>
-    <DataSourcePicker v-if="checkedRoles.x" role="x" v-model:valid="roleXValid" />
+    <v-checkbox label="Sample Rate" v-model="checkedRoles.sampleRate" disabled></v-checkbox>
+    <DataSourcePicker v-if="checkedRoles.sampleRate" role="sampleRate" v-model:valid="roleSampleRateValid" />
   </v-container>
 
-  <!-- Y -->
+  <!-- Samples -->
   <v-container>
-    <v-checkbox label="Y Axis" v-model="checkedRoles.y" disabled></v-checkbox>
-    <DataSourcePicker v-if="checkedRoles.y" role="y" v-model:valid="roleYValid" />
+    <v-checkbox label="Samples" v-model="checkedRoles.samples" disabled></v-checkbox>
+    <DataSourcePicker v-if="checkedRoles.samples" role="samples" v-model:valid="roleSamplesValid" />
   </v-container>
 </template>
 

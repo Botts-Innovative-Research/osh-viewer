@@ -86,7 +86,7 @@ export function CreateAudioViewProps(datastreams: { [key: string]: any }, visOpt
             startTime: 'now',
             endTime: '2125-08-01T00:00:00Z',
             mode: Mode.REAL_TIME,
-            responseFormat: 'application/swe+json',
+            responseFormat: 'application/swe+binary',
             id: randomUUID(),
             properties: properties,
             connectorOpts: {
