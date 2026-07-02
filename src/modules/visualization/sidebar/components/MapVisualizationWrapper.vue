@@ -5,6 +5,7 @@ import DeleteButton from '@/components/ui/DeleteButton.vue';
 import { computed, ref, watch } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
 import { isMapLayerCompatible } from '@/modules/map/supportedMapLayers';
+import MilIcon from '@/components/icons/mil.svg';
 
 const {
 	viz,
@@ -41,15 +42,11 @@ function getIcon(viz: OSHVisualization) {
 	// Use iconName from dataLayer
 	const iconName = viz.visualizationComponents.dataLayer.iconName;
 	if (iconName) {
-		if (viz.visualizationComponents.dataLayer.iconOpacity === 0) {
-			return VisualizationRegistry[viz.type].icon ?? 'mdi-shape';
-		}
-		return `mdi-${iconName}`;
+		if (iconName === 'mil-symbol') return MilIcon;
+		else return `mdi-${iconName}`;
 	}
 	// Otherwise, use viz type icon
-	else {
-		return VisualizationRegistry[viz.type].icon ?? 'mdi-shape';
-	}
+	else return VisualizationRegistry[viz.type].icon ?? 'mdi-shape';
 }
 function getIconColor(viz: OSHVisualization) {
 	if (viz.isParentVisualization()) {
@@ -145,7 +142,7 @@ watch(
 							<v-icon
 								:icon="getIcon(viz)"
 								:color="getIconColor(viz)"
-								size="16"
+								size="24"
 							></v-icon>
 						</v-badge>
 					</template>
@@ -233,7 +230,7 @@ watch(
 								<v-icon
 									:icon="getIcon(viz)"
 									:color="getIconColor(viz)"
-									size="16"
+									size="24"
 								></v-icon>
 							</v-badge>
 						</template>
@@ -319,7 +316,7 @@ watch(
 										<v-icon
 											:icon="getIcon(childViz)"
 											:color="getIconColor(childViz)"
-											size="16"
+											size="24"
 										></v-icon>
 									</v-badge>
 								</template>
@@ -379,5 +376,8 @@ watch(
 .v-list-item:hover .map-actions {
 	max-width: 120px;
 	opacity: 1;
+}
+:deep(.v-list-item__spacer) {
+	width: 16px;
 }
 </style>

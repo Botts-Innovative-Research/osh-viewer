@@ -28,13 +28,6 @@ export const LobConfigRoles: VisualizationConfigRole[] = [
 		multiple: true,
 	},
 	{
-		role: 'lobIconColor',
-		label: 'Icon Color',
-		description: 'Icon color will be generated dynamically based on the selected properties.',
-		type: 'ds',
-		multiple: true,
-	},
-	{
 		role: 'lobLineColor',
 		label: 'Line Color',
 		description: 'Line color will be generated dynamically based on the selected properties.',
