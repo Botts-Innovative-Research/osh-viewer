@@ -133,17 +133,20 @@ export async function createPointMarkerLayer(
 		dsInstances.push(dsInstance);
 	}
 
-	// Color the initial icon
-	const icon = await getColoredIconUrl(
-		`${ICON_BASE}${viz.visualizationComponents.dataLayer.icon}`,
-		viz.visualizationComponents.dataLayer.iconColor
-	);
+	// Color the initial icon if not milsymbol
+	let icon: string = '';
+	if (!getIcon) {
+		icon = await getColoredIconUrl(
+			`${ICON_BASE}${viz.visualizationComponents.dataLayer.icon}`,
+			viz.visualizationComponents.dataLayer.iconColor
+		);
+	}
 
 	const pmLayer = new PointMarkerLayer({
 		...viz.visualizationComponents.dataLayer,
 		name: viz.name,
 		id: viz.id,
-		icon,
+		...(icon ? { icon } : {}),
 		defaultToTerrainElevation: true,
 		dataSourceIds: dsInstances.map((ds) => ds.id),
 		...(getLocation ? { getLocation } : {}),

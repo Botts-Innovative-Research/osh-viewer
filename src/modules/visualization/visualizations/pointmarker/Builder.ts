@@ -94,6 +94,12 @@ export async function CreatePointMarkerVizProps(
 			},
 		};
 		vizDatasources.push(currentDataSource);
+
+		// If milSymbol, change icon name
+		if (properties.milSymbol) {
+			pointMarkerLayer.iconName = 'mil-symbol';
+			pointMarkerLayer.iconColor = ''; // Reset icon color if using milsymbol
+		}
 	}
 
 	return {

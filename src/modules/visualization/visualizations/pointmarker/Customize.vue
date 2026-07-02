@@ -8,10 +8,12 @@ import { useComponentValidation } from '../../wizard/composables/useComponentVal
 import { useVizWizStore } from '@/stores/vizwizstore';
 
 const vizwizStore = useVizWizStore();
-// If milSymbol is selected in Config, add alert to icon customize
-const showFullIcon = computed(() => (vizwizStore.dsConfig.milSymbol ? false : true));
-// If pmIconColor selected in Config, don't show icon color select
-const showIconColor = computed(() => (vizwizStore.dsConfig.pmIconColor ? false : true));
+// If milSymbol is selected in Config, don't show icon select
+const showIcon = computed(() => (vizwizStore.dsConfig.milSymbol ? false : true));
+// If pmIconColor or milSymbol selected in Config, don't show icon color select
+const showIconColor = computed(() =>
+	vizwizStore.dsConfig.pmIconColor || vizwizStore.dsConfig.milSymbol ? false : true
+);
 
 const openPanels = ref<string[]>(['general', 'pointmarker']);
 
@@ -62,23 +64,17 @@ useComponentValidation(valid, emit);
 		>
 			<v-expansion-panel-text>
 				<v-expand-transition>
-					<div v-if="showFullIcon">
+					<div v-if="showIcon">
 						<icon-control roleName="icon"></icon-control>
 					</div>
 					<div
 						v-else
 						class="pa-4"
 					>
-						<v-alert
-							variant="outlined"
-							class="mb-4"
+						<v-alert variant="outlined"
 							>Icon will be dynamically generated with the respective military symbol
 							based on the selected properties from the previous step.</v-alert
 						>
-						<v-alert variant="outlined"
-							>Select an icon to represent in the visualization panel.</v-alert
-						>
-						<icon-control roleName="icon"></icon-control>
 					</div>
 				</v-expand-transition>
 				<v-expand-transition>
