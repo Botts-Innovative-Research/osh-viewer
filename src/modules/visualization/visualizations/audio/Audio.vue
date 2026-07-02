@@ -70,37 +70,38 @@ const dsInstances = ref<(typeof ConSysApi)[]>([]);
    		console.log('[Audio.vue] Audio datasource created:', dsInstance);
    	}
 
-   const audioSpectrogramVisualizer = new AudioSpectrogramVisualizer({
-        fftSize: 2048,
-        container: `spectrogram`,
-   });
-
-   audioViewInstance.value = new AudioView({
-        ...props.audioViewOptions,
-        container: audioId.value,
-        dataSource: dsInstances[0],
-        playSound: false
-   });
-
    const layerOpts = props.audioLayer;
    audioLayer.value = new AudioDataLayer({
    		...layerOpts,
-   		dataSourceIds: dsInstances.map((ds) => ds.id),
+   dataSourceIds: dsInstances.value.map((ds) => ds.id),
    		...(getSampleRate ? { getSampleRate } : {}),
    		...(getFrameData ? { getFrameData } : {}),
    		...(getTimestamp ? { getTimestamp } : {}),
    	});
 
-   audioViewInstance.addVisualizer(audioSpectrogramVisualizer);
+   	const audioSpectrogramVisualizer = new AudioSpectrogramVisualizer({
+        fftSize: 2048,
+        container:  `spectrogram-${audioId.value}`,
+    });
+
+    audioViewInstance.value = new AudioView({
+        ...props.audioViewOptions,
+        container: audioId.value,
+        dataSource: dsInstances.value[0],
+        playSound: false,
+        layers: [audioLayer.value],
+   });
+
+   audioViewInstance.value.addVisualizer(audioSpectrogramVisualizer);
    console.log('[Audio.vue] Audio view created:', audioViewInstance.value);
  }
 
-useVisualizationCleanup(ref(dsInstances));
+useVisualizationCleanup(dsInstances);
 </script>
 
 <template>
   <v-sheet class="audio-card pa-4">
-       <div :id="spectrogram" class="audio-visualizer" style="height: 300px"></div>
+       <div :id="`spectrogram-${audioId}`" class="audio-visualizer" style="height: 300px"></div>
   </v-sheet>
 </template>
 
