@@ -12,7 +12,11 @@ import { EllipseConfigRoles } from '../ellipse/Descriptor';
 
 const vizwizStore = useVizWizStore();
 // POINTMARKER
-const showPmIconColor = computed(() => (vizwizStore.dsConfig.pmIconColor ? false : true));
+// If milSymbol is selected in PM Config, add alert to icon customize
+const showPmIcon = computed(() => (vizwizStore.dsConfig.milSymbol ? false : true));
+const showPmIconColor = computed(() =>
+	vizwizStore.dsConfig.pmIconColor || vizwizStore.dsConfig.milSymbol ? false : true
+);
 // LOB
 const showLobLineColor = computed(() => (vizwizStore.dsConfig.lobLineColor ? false : true));
 // ELLIPSE
@@ -66,7 +70,20 @@ useComponentValidation(valid, emit);
 			value="pointmarker"
 		>
 			<v-expansion-panel-text>
-				<icon-control roleName="pmIcon"></icon-control>
+				<v-expand-transition>
+					<div v-if="showPmIcon">
+						<icon-control roleName="pmIcon"></icon-control>
+					</div>
+					<div
+						v-else
+						class="pa-4"
+					>
+						<v-alert variant="outlined"
+							>Icon will be dynamically generated with the respective military symbol
+							based on the selected properties from the previous step.</v-alert
+						>
+					</div>
+				</v-expand-transition>
 				<v-expand-transition>
 					<div v-if="showPmIconColor">
 						<color-control
