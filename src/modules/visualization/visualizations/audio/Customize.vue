@@ -1,28 +1,15 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
-import IDColorControl from '@/modules/visualization/wizard/customizations/IDColorControl.vue';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import { computed, ref, watch } from 'vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 
-const openPanels = ref<string[]>(['general', 'lines']);
+const openPanels = ref<string[]>(['general']);
 
 const vizwizStore = useVizWizStore();
 const defaultName = ref<string>('');
-// Get properties organized per line
-const lines = computed(() => {
-	const yConfig = vizwizStore.dsConfig.y;
-	if (!yConfig) return [];
-	else return getYLines(yConfig);
-});
-const selectedTab = ref<any>();
 
-watch(lines, (val) => {
-	if (val.length > 0) {
-		selectedTab.value = val[0];
-	}
-});
 
 watch(
     () => vizwizStore.dsConfig.samples,

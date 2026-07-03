@@ -29,6 +29,9 @@ let audioViewInstance = ref<AudioView | null>(null);
 
 onMounted(async () => {
   initializeAudio();
+  setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+  }, 100);
 });
 
 // Array of ConSysApi instances for datasources
