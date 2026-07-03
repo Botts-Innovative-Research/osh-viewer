@@ -7,19 +7,18 @@ import {
 
 export const AudioConfigRoles: VisualizationConfigRole[] = [
   {
-    role: 'x',
-    label: 'X Axis',
-    description: 'Select the property to define the x-axis of the chart (e.g. time)',
+    role: 'sample rate',
+    label: 'Sample Rate',
+    description: 'Select the property to display for the sample rate.',
     type: 'ds',
     required: true,
   },
   {
-    role: 'y',
-    label: 'Y Axis',
-    description: 'Select properties to display on the y-axis, each as a separate line.',
+    role: 'samples',
+    label: 'Samples',
+    description: 'Select the property to display for the samples.',
     type: 'ds',
     required: true,
-    multiple: true,
   },
 ];
 
@@ -47,7 +46,7 @@ export const AudioDescriptor: VisualizationDescriptor = {
   id: 'audio',
   icon: 'volume-high',
   viewLocation: 'panel',
-  layers: ['CurveLayer'],
+  layers: ['AudioDataLayer'],
   description: 'Visualize data as an audio spectrogram.',
   formComponents: [ConfigComponent, CustomizeComponent],
   builder: () => import('@/modules/visualization/visualizations/audio/Builder'),
