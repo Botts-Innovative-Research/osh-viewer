@@ -25,13 +25,13 @@ watch(lines, (val) => {
 });
 
 watch(
-	() => vizwizStore.dsConfig.y,
-	(val) => {
-		if (val && val.label) {
-			defaultName.value = val.label + (val.uom ? ` (${val.uom})` : '');
-		}
-	},
-	{ immediate: true, deep: true }
+    () => vizwizStore.dsConfig.samples,
+    (val) => {
+       if (val && val.label) {
+          defaultName.value = val.label + (val.uom ? ` (${val.uom})` : '');
+       }
+    },
+    { immediate: true, deep: true }
 );
 
 // Validation: Name cannot be empty
@@ -42,23 +42,7 @@ const valid = computed(() => {
 });
 useComponentValidation(valid, emit);
 
-/**
- * Turn dsConfig.y properties into an array of line configurations for the chart visualization
- * @param yConfig
- */
-function getYLines(yConfig: any) {
-	if (!yConfig) return [];
 
-	const yProperties = Array.isArray(yConfig.property) ? yConfig.property : [yConfig.property];
-	const yLabels = Array.isArray(yConfig.label) ? yConfig.label : [yConfig.label];
-	const yUoms = Array.isArray(yConfig.uom) ? yConfig.uom : [yConfig.uom];
-
-	return yProperties.map((prop: string, index: number) => ({
-		property: prop,
-		label: yLabels[index] || `Y-Axis Data ${index + 1}`,
-		uom: yUoms[index] || '',
-	}));
-}
 </script>
 
 <template>
@@ -92,52 +76,6 @@ function getYLines(yConfig: any) {
 				></name-control>
 			</v-expansion-panel-text>
 		</v-expansion-panel>
-		<v-expansion-panel
-			eager
-			title="Line(s)"
-			value="lines"
-		>
-			<v-expansion-panel-text>
-				<v-sheet v-if="lines">
-					<h2>Customize Line{{ lines.length > 1 ? `s` : '' }}</h2>
-					<v-tabs v-model="selectedTab">
-						<v-tab
-							v-for="line in lines"
-							:key="line.property"
-							:value="line"
-						>
-							{{ line.label }}
-						</v-tab>
-					</v-tabs>
-					<v-tabs-window v-model="selectedTab">
-						<v-tabs-window-item
-							v-for="line in lines"
-							:key="line.property"
-							:value="line"
-						>
-							<v-row class="justify-space-between pa-4">
-								<v-col cols="auto">
-									<IDColorControl
-										roleName="lineColor"
-										label="Line Color"
-										:line-id="line.property"
-										default-color="#ff0000"
-										:key="line.property"
-									></IDColorControl>
-								</v-col>
-								<v-col cols="auto">
-									<IDColorControl
-										roleName="backgroundColor"
-										label="Background Color"
-										:line-id="line.property"
-										default-color="#ff000000"
-										:key="`bg-${line.property}`"
-									></IDColorControl>
-								</v-col>
-							</v-row>
-						</v-tabs-window-item>
-					</v-tabs-window> </v-sheet
-			></v-expansion-panel-text>
-		</v-expansion-panel>
+
 	</v-expansion-panels>
 </template>
