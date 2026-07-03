@@ -32,5 +32,6 @@ onMounted(() => {
 		label="Video Format"
 		variant="outlined"
 		density="comfortable"
+		hide-details
 	></v-select>
 </template>

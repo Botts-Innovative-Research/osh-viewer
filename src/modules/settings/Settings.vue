@@ -15,8 +15,8 @@ const appVersion = APP_VERSION;
 			<v-card-title>Settings</v-card-title>
 			<v-card-subtitle>Version: {{ appVersion }}</v-card-subtitle>
 		</v-card-item>
-		<v-card-text>
-			<v-row>
+		<v-card-text class="px-2">
+			<v-row density="compact">
 				<v-col cols="3">
 					<v-navigation-drawer
 						permanent
@@ -59,8 +59,4 @@ const appVersion = APP_VERSION;
 	</v-card>
 </template>
 
-<style scoped>
-.v-btn-toggle {
-	margin-top: 8px;
-}
-</style>
+<style scoped></style>

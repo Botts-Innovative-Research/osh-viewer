@@ -65,22 +65,16 @@ const close = () => {
 };
 </script>
 <template>
-	<v-card
-		class="pa-2 ma-2"
-		width="100%"
-		height="100%"
-		elevation="2"
-	>
-		<v-card-title
-			>Delete <b>{{ props.node?.name }}</b> node?</v-card-title
-		>
+	<v-card>
+		<v-card-item>
+			<v-card-title
+				>Delete <b>{{ props.node?.name }}</b> node?</v-card-title
+			>
+		</v-card-item>
 		<v-card-text>
 			<p>This will remove all associated visualizations and cannot be undone.</p>
 			<v-divider class="my-2"></v-divider>
-			<div
-				v-if="listVizToDelete.length > 0"
-				class="pl-4"
-			>
+			<div v-if="listVizToDelete.length > 0">
 				<ul>
 					<li
 						v-for="viz in listVizToDelete"
@@ -92,22 +86,23 @@ const close = () => {
 			</div>
 			<div
 				v-else
-				class="mt-4 mb-2"
+				class="my-4 mb-2"
 			>
 				There are no visualizations associated with this node.
 			</div>
 		</v-card-text>
 		<v-card-actions>
 			<v-btn
-				type="submit"
-				color="error"
-				@click="deleteNode"
-				>Delete Node</v-btn
-			>
-			<v-btn
 				text
 				@click="close"
 				>Cancel</v-btn
+			>
+			<v-btn
+				type="submit"
+				color="error"
+				variant="flat"
+				@click="deleteNode"
+				>Delete Node</v-btn
 			>
 		</v-card-actions>
 	</v-card>

@@ -20,6 +20,7 @@ const show = ref(false); // Whether the tooltip is toggled on/off
 				icon="mdi-information-outline"
 				size="sm"
 				variant="plain"
+				rounded="xl"
 			></IconButton>
 		</template>
 		<span>{{ props.content }}</span>

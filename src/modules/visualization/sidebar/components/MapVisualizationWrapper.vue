@@ -5,6 +5,7 @@ import DeleteButton from '@/components/ui/DeleteButton.vue';
 import { computed, ref, watch } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
 import { isMapLayerCompatible } from '@/modules/map/supportedMapLayers';
+import MilIcon from '@/components/icons/mil.svg';
 
 const {
 	viz,
@@ -41,15 +42,11 @@ function getIcon(viz: OSHVisualization) {
 	// Use iconName from dataLayer
 	const iconName = viz.visualizationComponents.dataLayer.iconName;
 	if (iconName) {
-		if (viz.visualizationComponents.dataLayer.iconOpacity === 0) {
-			return VisualizationRegistry[viz.type].icon ?? 'mdi-shape';
-		}
-		return `mdi-${iconName}`;
+		if (iconName === 'mil-symbol') return MilIcon;
+		else return `mdi-${iconName}`;
 	}
 	// Otherwise, use viz type icon
-	else {
-		return VisualizationRegistry[viz.type].icon ?? 'mdi-shape';
-	}
+	else return VisualizationRegistry[viz.type].icon ?? 'mdi-shape';
 }
 function getIconColor(viz: OSHVisualization) {
 	if (viz.isParentVisualization()) {
@@ -74,18 +71,6 @@ function getIconColor(viz: OSHVisualization) {
 
 // Parent viz logic
 const childrenOpen = ref(false);
-function handleParentClick(viz: OSHVisualization) {
-	toggleSelectedMapItem(viz);
-
-	// Only toggle children if this is a parent visualization
-	if (!viz.isParentVisualization()) return;
-
-	if (mapStore.selectedMapItem === viz) {
-		childrenOpen.value = true;
-	} else {
-		childrenOpen.value = false;
-	}
-}
 function handleParentVisibilityToggle(viz: OSHVisualization) {
 	toggleMapLayerVisibility(viz);
 
@@ -157,7 +142,7 @@ watch(
 							<v-icon
 								:icon="getIcon(viz)"
 								:color="getIconColor(viz)"
-								size="16"
+								size="24"
 							></v-icon>
 						</v-badge>
 					</template>
@@ -225,7 +210,7 @@ watch(
 			<v-list-item
 				:key="viz.id"
 				:active="isSelected(viz)"
-				@click="handleParentClick(viz)"
+				@click="toggleSelectedMapItem(viz)"
 			>
 				<!-- Icon -->
 				<template #prepend>
@@ -245,7 +230,7 @@ watch(
 								<v-icon
 									:icon="getIcon(viz)"
 									:color="getIconColor(viz)"
-									size="16"
+									size="24"
 								></v-icon>
 							</v-badge>
 						</template>
@@ -253,17 +238,10 @@ watch(
 				</template>
 				<!-- Title -->
 				<template #title>
-					<v-tooltip
-						text="Right click to view child visualizations"
-						location="bottom"
-						><template v-slot:activator="{ props }">
-							<span
-								:style="`text-decoration: ${isMapLayerVisible(viz.id) ? '' : 'line-through'}`"
-								v-bind="props"
-								>{{ viz.name }}</span
-							>
-						</template>
-					</v-tooltip>
+					<span
+						:style="`text-decoration: ${isMapLayerVisible(viz.id) ? '' : 'line-through'}`"
+						>{{ viz.name }}</span
+					>
 				</template>
 				<!-- Actions -->
 				<template #append>
@@ -338,7 +316,7 @@ watch(
 										<v-icon
 											:icon="getIcon(childViz)"
 											:color="getIconColor(childViz)"
-											size="16"
+											size="24"
 										></v-icon>
 									</v-badge>
 								</template>
@@ -398,5 +376,8 @@ watch(
 .v-list-item:hover .map-actions {
 	max-width: 120px;
 	opacity: 1;
+}
+:deep(.v-list-item__spacer) {
+	width: 16px;
 }
 </style>

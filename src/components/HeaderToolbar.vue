@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import Settings from '@/modules/settings/Settings.vue';
 import SaveStateSettings from '@/components/menus/SaveStateSettings.vue';
 import LoadStateSettings from '@/components/menus/LoadStateSettings.vue';
+import NodeIcon from '@/components/icons/node-logo.svg';
 
 const settingsDialog = ref(false);
 const saveDialog = ref(false);
@@ -12,18 +13,30 @@ const viewerName = import.meta.env.VITE_VIEWER_NAME;
 
 <template>
 	<v-toolbar
-		:title="viewerName"
-		color="blue"
+		color="primary"
 		density="comfortable"
+		class="pl-4 pr-2"
 	>
+		<template #prepend>
+			<v-icon :icon="NodeIcon"></v-icon>
+		</template>
+		<template #title>
+			<span class="pl-2">{{ viewerName }}</span>
+		</template>
 		<v-btn
-			icon="mdi-home"
+			icon
 			to="/"
-		/>
+			class="router-link"
+		>
+			<v-icon>mdi-home</v-icon>
+		</v-btn>
 		<v-btn
-			icon="mdi-help"
+			icon
 			to="/about"
-		/>
+			class="router-link"
+		>
+			<v-icon>mdi-help</v-icon>
+		</v-btn>
 
 		<v-btn
 			icon
@@ -84,4 +97,8 @@ const viewerName = import.meta.env.VITE_VIEWER_NAME;
 	</v-toolbar>
 </template>
 
-<style scoped></style>
+<style scoped>
+.router-link {
+	color: rgb(var(--v-theme-on-primary)) !important;
+}
+</style>

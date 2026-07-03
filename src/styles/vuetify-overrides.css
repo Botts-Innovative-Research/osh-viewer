@@ -1,3 +1,26 @@
-.v-btn:not(v-btn--icon) {
-	border-radius: 0px;
+.v-expansion-panel::after {
+	display: none !important;
+}
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+	-webkit-box-shadow: 0 0 0 1000px rgb(var(--v-theme-surface)) inset;
+	-webkit-text-fill-color: inherit;
+	transition: background-color 9999s ease-in-out 0s;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	font-weight: 400;
+}
+
+.v-overlay__content {
+	border-radius: 10px;
+	overflow: hidden;
 }

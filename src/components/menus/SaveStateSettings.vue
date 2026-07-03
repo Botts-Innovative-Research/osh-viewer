@@ -90,15 +90,16 @@ onMounted(fetchConfigs);
 </script>
 
 <template>
-	<v-card class="pa-2">
-		<v-card-title>Save State</v-card-title>
-		<v-card-text>
-			<v-form @submit.prevent="handleSave">
+	<v-card>
+		<v-card-item>
+			<v-card-title>Save State</v-card-title>
+		</v-card-item>
+		<v-form @submit.prevent="handleSave">
+			<v-card-text>
 				<v-select
 					v-model="selectedNode"
 					:items="listNodes"
 					label="Select node to save state to"
-					persistent-hint
 					item-title="name"
 					item-value="id"
 				/>
@@ -107,37 +108,38 @@ onMounted(fetchConfigs);
 					:item-props="itemProps"
 					:items="configList"
 					label="Select a configuration to save to"
-					persistent-hint
 				/>
-				<v-sheet v-if="selectedConfig === CREATE_NEW">
-					<v-divider class="pb-4" />
-					<h4 class="pb-4">Create a New Configuration</h4>
-					<v-text-field
-						v-model="newConfigName"
-						label="Create new config name"
-						persistent-hint
-						:rules="[(v) => validateNewConfigName(v)]"
-						class="pb-4"
-					/>
-					<v-text-field
-						v-model="newConfigDescription"
-						label="Create new config description"
-						persistent-hint
-						:rules="[(v) => !!v || 'Config description is required']"
-					/>
-				</v-sheet>
-				<v-card-actions>
-					<v-btn
-						block
-						type="submit"
-						color="success"
-						variant="tonal"
-						:disabled="!canSave"
-						>Save State</v-btn
-					>
-				</v-card-actions>
-			</v-form>
-		</v-card-text>
+				<v-expand-transition>
+					<v-sheet v-if="selectedConfig === CREATE_NEW">
+						<v-divider />
+						<p class="text-title-medium">Create a New Configuration</p>
+						<v-text-field
+							v-model="newConfigName"
+							label="New config name"
+							persistent-hint
+							:rules="[(v) => validateNewConfigName(v)]"
+							class="pb-4"
+						/>
+						<v-text-field
+							v-model="newConfigDescription"
+							label="New config description"
+							persistent-hint
+							:rules="[(v) => !!v || 'Config description is required']"
+						/>
+					</v-sheet>
+				</v-expand-transition>
+			</v-card-text>
+			<v-card-actions>
+				<v-btn
+					block
+					type="submit"
+					color="primary"
+					variant="tonal"
+					:disabled="!canSave"
+					>Save State</v-btn
+				>
+			</v-card-actions>
+		</v-form>
 	</v-card>
 </template>
 

@@ -29,14 +29,12 @@ const effectiveValid = computed(() => {
 useComponentValidation(effectiveValid, emit);
 </script>
 <template>
-	<v-container
-		v-if="props.optional"
-		class="pa-0"
-	>
+	<v-container v-if="props.optional">
 		<v-switch
 			v-model="include"
 			label="Include in visualization?"
 			color="primary"
+			inset="material"
 		/>
 	</v-container>
 

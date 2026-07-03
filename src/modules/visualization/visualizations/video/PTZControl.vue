@@ -205,7 +205,7 @@ const constraintTooltip = computed(() => {
 </script>
 
 <template>
-	<v-container class="controlsContainer">
+	<v-container class="controlsContainer pa-2">
 		<v-sheet
 			v-if="hasRelative"
 			class="wrapper"
@@ -233,6 +233,7 @@ const constraintTooltip = computed(() => {
 					}"
 					variant="text"
 					size="default"
+					rounded="xl"
 				></IconButton>
 				<IconButton
 					icon="mdi-home-circle"
@@ -242,6 +243,7 @@ const constraintTooltip = computed(() => {
 					variant="text"
 					size="default"
 					:style="{ zIndex: 1000, fontSize: '35px' }"
+					rounded="xl"
 				></IconButton>
 			</v-container>
 			<v-text-field
@@ -377,7 +379,7 @@ const constraintTooltip = computed(() => {
 	align-items: center;
 	width: 200px;
 	height: 200px;
-	border-radius: 50%;
+	border-radius: 100%;
 	border: 1px solid #888;
 	margin-bottom: 5%;
 }

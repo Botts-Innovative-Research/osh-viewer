@@ -18,10 +18,7 @@ const tab = ref('one');
 </script>
 
 <template>
-	<splitpanes
-		class="default-theme"
-		@resized="storePaneSize"
-	>
+	<splitpanes @resized="storePaneSize">
 		<pane
 			key="system-browser"
 			:size="paneSize1"
@@ -64,9 +61,9 @@ const tab = ref('one');
 </template>
 
 <style scoped>
-.splitpanes--horizontal > .splitpanes__splitter {
-	min-height: 6px;
-	background: linear-gradient(0deg, #ccc, #111);
+:global(.splitpanes--vertical > .splitpanes__splitter) {
+	min-width: 8px;
+	background-color: color-mix(in srgb, rgb(var(--v-theme-background)) 92%, black 8%);
 }
 .equal-tabs .v-tab {
 	flex: 1;

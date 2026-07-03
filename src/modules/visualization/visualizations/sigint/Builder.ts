@@ -14,7 +14,7 @@ import { CreateLobVizProps } from '../lob/Builder';
 import { CreateEllipseVizProps } from '../ellipse/Builder';
 import { confirmRoles } from '../../registry/roleUtils';
 
-export default function build() {
+export default async function build() {
 	console.log('Building Sigint Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
@@ -26,7 +26,7 @@ export default function build() {
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
 	// POINTMARKER
-	const pmResult = CreatePointMarkerVizProps(datastreams, {
+	const pmResult = await CreatePointMarkerVizProps(datastreams, {
 		name: vizwizStore.visualizationCustomizationOptions.name,
 		icon: vizwizStore.visualizationCustomizationOptions.pmIcon,
 		iconColor: vizwizStore.visualizationCustomizationOptions.pmIconColor,

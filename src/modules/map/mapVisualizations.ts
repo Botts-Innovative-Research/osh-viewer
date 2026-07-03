@@ -1,5 +1,5 @@
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
-import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
@@ -10,13 +10,14 @@ import { setWaypointData } from './services/missionBuilder.service';
 import { useSettingsStore } from '@/stores/settingsstore';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { getLayerId } from './services/layerId.service';
-import { colorHash } from './services/colorId.service';
+import { colorHash, getColoredIconUrl, getColoredSvgUrl } from './services/colorId.service';
 import { SupportedMapLayer } from './supportedMapLayers';
 import { getGroundAltitude } from './services/altitude.service';
 import { IConSysApiDataSourceProperties } from '../visualization/types/datasource';
 import { setLayerData } from './services/foi.service';
 import { ICON_BASE } from '@/lib/icons';
 import { FoiLayer } from '@/stores/visualizationstore';
+import { getMilSymbol } from './services/milIcon.service';
 
 export interface ICreateMapVisualizationResult {
 	vizLayer: SupportedMapLayer;
@@ -27,7 +28,7 @@ export async function createMapVisualizations(
 	viz: OSHVisualization
 ): Promise<ICreateMapVisualizationResult | null> {
 	if (viz.type === 'pointmarker') {
-		return createPointMarkerLayer(viz, viz.visualizationComponents.dataSource);
+		return await createPointMarkerLayer(viz, viz.visualizationComponents.dataSource);
 	} else if (viz.type === 'lob') {
 		return createLoBLayer(viz, viz.visualizationComponents.dataSource);
 	} else if (viz.type === 'ellipse') {
@@ -40,10 +41,10 @@ export async function createMapVisualizations(
 	}
 }
 
-export function createPointMarkerLayer(
+export async function createPointMarkerLayer(
 	viz: OSHVisualization,
 	dsArray: IConSysApiDataSourceProperties[]
-): ICreateMapVisualizationResult {
+): Promise<ICreateMapVisualizationResult> {
 	// Ds instances created
 	let dsInstances: (typeof ConSysApi)[] = [];
 
@@ -53,6 +54,7 @@ export function createPointMarkerLayer(
 	let getMarkerId: any;
 	let getIconColor: any;
 	let getLabel: any;
+	let getIcon: any;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);
@@ -117,16 +119,34 @@ export function createPointMarkerLayer(
 				},
 			};
 		}
+		// Check for milsymbol property
+		if (dsProps.properties.milSymbol) {
+			getIcon = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return getMilSymbol(rec[dsProps.properties.milSymbol.property]);
+				},
+			};
+		}
 
 		dsInstance.connect();
 		dsInstances.push(dsInstance);
+	}
+
+	// Color the initial icon if not milsymbol
+	let icon: string = '';
+	if (!getIcon) {
+		icon = await getColoredIconUrl(
+			`${ICON_BASE}${viz.visualizationComponents.dataLayer.icon}`,
+			viz.visualizationComponents.dataLayer.iconColor
+		);
 	}
 
 	const pmLayer = new PointMarkerLayer({
 		...viz.visualizationComponents.dataLayer,
 		name: viz.name,
 		id: viz.id,
-		icon: `${ICON_BASE}${viz.visualizationComponents.dataLayer.icon}`,
+		...(icon ? { icon } : {}),
 		defaultToTerrainElevation: true,
 		dataSourceIds: dsInstances.map((ds) => ds.id),
 		...(getLocation ? { getLocation } : {}),
@@ -134,7 +154,11 @@ export function createPointMarkerLayer(
 		...(getMarkerId ? { getMarkerId } : {}),
 		...(getIconColor ? { getIconColor } : {}),
 		...(getLabel ? { getLabel } : {}),
+		...(getIcon ? { getIcon } : {}),
 	});
+
+	const props = setLayerData(pmLayer);
+
 	return { vizLayer: pmLayer, dsInstances };
 }
 export function createLoBLayer(
@@ -148,7 +172,6 @@ export function createLoBLayer(
 	let getOrigin: any;
 	let getBearing: any;
 	let getLobId: any;
-	let getIconColor: any;
 	let getColor: any;
 
 	for (const dsProps of dsArray) {
@@ -191,16 +214,6 @@ export function createLoBLayer(
 				},
 			};
 		}
-		// Check for iconColor property
-		if (dsProps.properties.lobIconColor) {
-			getIconColor = {
-				dataSourceIds: [dsInstance.id],
-				handler: (rec: any) => {
-					return colorHash(getLayerId(rec, dsProps.properties.lobIconColor.property))
-						.rgba;
-				},
-			};
-		}
 		// Check for line color property
 		if (dsProps.properties.lobLineColor) {
 			getColor = {
@@ -220,12 +233,10 @@ export function createLoBLayer(
 		...viz.visualizationComponents.dataLayer,
 		name: viz.name,
 		id: viz.id,
-		icon: `${ICON_BASE}${viz.visualizationComponents.dataLayer.icon}`,
 		dataSourceIds: dsInstances.map((ds) => ds.id),
 		...(getOrigin ? { getOrigin } : {}),
 		...(getBearing ? { getBearing } : {}),
 		...(getLobId ? { getLobId } : {}),
-		...(getIconColor ? { getIconColor } : {}),
 		...(getColor ? { getColor } : {}),
 	});
 
@@ -395,11 +406,17 @@ export async function createGeoPTZLayer(
 ) {
 	const vizId = `geoptz-${randomUUID()}`;
 
+	// Color the geoptz icon
+	const icon = await getColoredIconUrl(
+		`${ICON_BASE}${useSettingsStore().geoPtzIcon}`,
+		useSettingsStore().geoPtzIconColor
+	);
+
 	const geoPtzLayer = new PointMarkerLayer({
 		name: 'GeoPTZ',
 		label: 'GeoPTZ',
 		id: vizId,
-		icon: `${ICON_BASE}${useSettingsStore().geoPtzIcon}`,
+		icon,
 		iconColor: useSettingsStore().geoPtzIconColor,
 		iconSize: [32, 32],
 		iconAnchor: [16, 16],
@@ -436,6 +453,9 @@ export async function createWaypointLayer(
 	layer: typeof PointMarkerLayer;
 	props: any;
 }> {
+	// Color the waypoint icon, default yellow
+	const icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, '#FFFF00');
+
 	const waypointLayer = new PointMarkerLayer({
 		id: `waypoint-${index}`,
 		name: `Waypoint ${index + 1}`,
@@ -444,7 +464,7 @@ export async function createWaypointLayer(
 			y: waypoint.lat,
 			z: waypoint.alt || (await getGroundAltitude(waypoint.lon, waypoint.lat)),
 		},
-		icon: `${ICON_BASE}/icons/map/round-pin.png`,
+		icon,
 		iconSize: [32, 32],
 		iconAnchor: [16, 32],
 		label: `WP ${index + 1}`,
@@ -472,6 +492,9 @@ export async function createFOILayer(foiLayer: FoiLayer) {
 			? foiLayer.geometry.coordinates[2][0]
 			: foiLayer.geometry.coordinates[2];
 
+	// Color the foi icon
+	const icon = await getColoredIconUrl(`${ICON_BASE}${foiLayer.icon}`, foiLayer.color);
+
 	const pmLayer = new PointMarkerLayer({
 		id: foiLayer.geometry.id,
 		location: {
@@ -479,7 +502,7 @@ export async function createFOILayer(foiLayer: FoiLayer) {
 			y: lat,
 			z: alt,
 		},
-		icon: `${ICON_BASE}${foiLayer.icon}`,
+		icon,
 		iconColor: foiLayer.color,
 		iconSize: [32, 32],
 		iconAnchor: [16, 32],
