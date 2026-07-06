@@ -1,6 +1,6 @@
 import * as Cesium from 'cesium';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
-import { CursorMode, MapAdapter, MapClickHandler, MapPoint } from './types';
+import { CursorMode, MapAdapter, MapPoint, MapPointHandler } from './types';
 import { Ion } from 'cesium';
 
 // Showcase examples token :P
@@ -20,11 +20,19 @@ export interface MapLayer {
 export function createCesiumAdapter(): MapAdapter {
 	let mapView: typeof CesiumView | null;
 	let clickHandler: Cesium.ScreenSpaceEventHandler | null = null;
+	let moveHandler: Cesium.ScreenSpaceEventHandler | null = null;
 	let renderedLayers: Map<string, any> = new Map();
 	let terrainProvider: any = null;
 	let buildingsTileset: any = null;
 	let googlePhotorealistic: any = null;
 	let flightPathPolyline: any = null;
+
+	/* Geofence previews */
+	let previewCircle: any = null;
+	let previewCenter: MapPoint | null = null;
+	let previewCenterCartesian: Cesium.Cartesian3 | null = null;
+	/* Geofence entities */
+	let geofenceEntities: any[] = [];
 
 	async function init(container: string) {
 		mapView = new CesiumView({
@@ -70,7 +78,7 @@ export function createCesiumAdapter(): MapAdapter {
 		mapView.viewer.canvas.style.cursor = mode;
 	}
 
-	function onClick(handler: MapClickHandler) {
+	function onClick(handler: MapPointHandler) {
 		const viewer = mapView.viewer;
 		// Description box styling
 		viewer.infoBox.frame.onload = function () {
@@ -98,6 +106,30 @@ export function createCesiumAdapter(): MapAdapter {
 		return () => {
 			clickHandler?.destroy();
 			clickHandler = null;
+		};
+	}
+
+	function onMouseMove(handler: MapPointHandler) {
+		const viewer = mapView.viewer;
+
+		let lat = 0,
+			lon = 0,
+			alt = 0;
+
+		moveHandler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+		moveHandler.setInputAction((movement: any) => {
+			const cartesian = viewer.scene.pickPosition(movement.endPosition);
+			if (!cartesian) return;
+			const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+			lat = Cesium.Math.toDegrees(cartographic.latitude);
+			lon = Cesium.Math.toDegrees(cartographic.longitude);
+			alt = cartographic.height;
+			handler(lat, lon, alt ?? 120);
+		}, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+		return () => {
+			moveHandler?.destroy();
+			moveHandler = null;
 		};
 	}
 
@@ -298,6 +330,87 @@ export function createCesiumAdapter(): MapAdapter {
 		invalidate();
 	}
 
+	/* Geofence Drawing Tools */
+	function handleCirclePreviewClick(center: MapPoint) {
+		// If preview circle already exists, this is second click -> confirm geofence
+		if (previewCircle) {
+			endCirclePreview();
+			return;
+		}
+		// Create new preview circle geofence
+		previewCenter = center; // Save center of circle
+		previewCenterCartesian = Cesium.Cartesian3.fromDegrees(center.lon, center.lat, center.alt);
+		previewCircle = mapView.viewer.entities.add({
+			position: previewCenterCartesian,
+			name: 'Preview circle',
+			ellipse: {
+				semiMajorAxis: new Cesium.ConstantProperty(0),
+				semiMinorAxis: new Cesium.ConstantProperty(0),
+				height: center.alt,
+				material: Cesium.Color.BLUE.withAlpha(0.3),
+				outline: true, // height must be set for outline to display
+			},
+		});
+	}
+
+	function updateCirclePreview(mouse: MapPoint) {
+		if (!previewCircle || !previewCenterCartesian) return;
+
+		const mouseCartesian = Cesium.Cartesian3.fromDegrees(mouse.lon, mouse.lat, mouse.alt);
+		const radius = Cesium.Cartesian3.distance(previewCenterCartesian, mouseCartesian);
+
+		previewCircle.ellipse.semiMajorAxis!.setValue(radius);
+		previewCircle.ellipse.semiMinorAxis!.setValue(radius);
+	}
+
+	function endCirclePreview() {
+		if (!previewCircle || !previewCenter) return;
+
+		// Add to geofence list
+		geofenceEntities.push(previewCircle);
+
+		// Empty preview circle
+		previewCircle = null;
+		previewCenter = null;
+		previewCenterCartesian = null;
+
+		invalidate();
+
+		// mapView.viewer.entities.remove(previewCircle);
+
+		// Extract center
+		// const centerCartesian = previewCircle.position?.getValue(Cesium.JulianDate.now());
+		// if (!centerCartesian) return;
+		// const cartographic = Cesium.Cartographic.fromCartesian(centerCartesian);
+		// const center: MapPoint = {
+		// 	lat: Cesium.Math.toDegrees(cartographic.latitude),
+		// 	lon: Cesium.Math.toDegrees(cartographic.longitude),
+		// 	alt: cartographic.height,
+		// };
+		// // Extract radius (axis)
+		// const radius = previewCircle.ellipse?.semiMajorAxis?.getValue(Cesium.JulianDate.now());
+		// if (radius == null) return;
+
+		// drawCircleGeofence(center, radius);
+		// previewCircle = null;
+	}
+
+	function drawCircleGeofence(center: MapPoint, radius: number) {
+		const newCircle = mapView.viewer.entities.add({
+			position: Cesium.Cartesian3.fromDegrees(center.lon, center.lat),
+			name: 'Preview circle',
+			ellipse: {
+				semiMinorAxis: radius,
+				semiMajorAxis: radius,
+				material: Cesium.Color.BLUE,
+				outline: true, // height must be set for outline to display
+				classificationType: Cesium.ClassificationType.TERRAIN,
+			},
+		});
+		geofenceEntities.push(newCircle);
+		invalidate();
+	}
+
 	return {
 		init,
 		destroy,
@@ -305,6 +418,7 @@ export function createCesiumAdapter(): MapAdapter {
 		removeLayer,
 		setCursor,
 		onClick,
+		onMouseMove,
 		flyToPoint,
 		updateMarker,
 		drawMissionPath,
@@ -319,5 +433,9 @@ export function createCesiumAdapter(): MapAdapter {
 		removeMapLayer,
 		destroyAllLayers,
 		rebuildMapLayers,
+		handleCirclePreviewClick,
+		updateCirclePreview,
+		endCirclePreview,
+		drawCircleGeofence,
 	};
 }

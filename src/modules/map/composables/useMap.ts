@@ -260,11 +260,17 @@ export function useMap() {
 		foiLayers.value = foiLayers.value.filter((foiLayer) => foiLayer.layer !== remove?.layer);
 	}
 
+	const drawStatus = ref(false); // Idle waiting
+
 	/** MAP INTERACTIONS */
 	function bindMapInteractions() {
 		if (!mapAdapter.value) return;
 
 		mapAdapter.value.onClick(async (lat, lon, alt) => {
+			// Handle geofence
+			mapAdapter.value?.handleCirclePreviewClick({ lat, lon, alt });
+			drawStatus.value = !drawStatus.value;
+
 			// GeoPTZ
 			if (mapStore.isGeoPTZSelected && mapStore.selectedGeoPTZ) {
 				// Calculate alt if needed
@@ -303,6 +309,11 @@ export function useMap() {
 			}
 			// Add additional onClick functions
 		});
+		mapAdapter.value.onMouseMove(async (lat: number, lon: number, alt: number) => {
+			if (drawStatus.value) {
+				mapAdapter.value?.updateCirclePreview({ lat, lon, alt });
+			}
+		});
 	}
 	watch(
 		() => mapStore.mapCursorMode,
@@ -321,7 +332,8 @@ export function useMap() {
 			if (!layer) return;
 
 			const layerProps = layer.getCurrentProps();
-			const location = layerProps.location ?? layerProps.position ?? layerProps.locations?.[0]; // Handle location for PM/LoB, position for ellipse, locations[0] for polyline
+			const location =
+				layerProps.location ?? layerProps.position ?? layerProps.locations?.[0]; // Handle location for PM/LoB, position for ellipse, locations[0] for polyline
 			if (!location) return;
 
 			mapAdapter.value?.flyToPoint(location);
@@ -375,7 +387,11 @@ export function useMap() {
 
 	/* DRIVE LOCATION */
 	async function addDriveLocationLayer(lon: number, lat: number) {
-		const result = await createLocationLayer({ lon, lat, alt: 0 }, "driveLocation", "Drive to Location");
+		const result = await createLocationLayer(
+			{ lon, lat, alt: 0 },
+			'driveLocation',
+			'Drive to Location'
+		);
 		if (result) {
 			removeDriveLocationLayer();
 			driveLocationLayer.value = result.layer;
@@ -397,7 +413,11 @@ export function useMap() {
 	/* HOME LOCATION */
 	async function addHomeLocationLayer(lon: number, lat: number) {
 		if (!mapAdapter.value) return;
-		const result = await createLocationLayer({ lon, lat, alt: 0 }, "homeLocation", "Home Location");
+		const result = await createLocationLayer(
+			{ lon, lat, alt: 0 },
+			'homeLocation',
+			'Home Location'
+		);
 		if (result) {
 			removeHomeLocationLayer();
 			homeLocationLayer.value = result.layer;

@@ -1,6 +1,6 @@
 import { MapLayer } from './cesium.adapter';
 
-export type MapClickHandler = (lat: number, lon: number, alt: number) => void;
+export type MapPointHandler = (lat: number, lon: number, alt: number) => void;
 export type CursorMode = 'default' | 'crosshair';
 export type MapPoint = {
 	lat: number;
@@ -15,7 +15,8 @@ export interface MapAdapter {
 	addLayer(layer: any): void;
 	removeLayer(layer: any): Promise<void>;
 
-	onClick(handler: MapClickHandler): () => void;
+	onClick(handler: MapPointHandler): () => void;
+	onMouseMove(handler: MapPointHandler): () => void;
 	setCursor(mode: CursorMode): void;
 	flyToPoint(location: { x: number; y: number; z: number }): void;
 
@@ -24,6 +25,12 @@ export interface MapAdapter {
 	/* Mission Builder */
 	drawMissionPath(waypoints: MapPoint[]): void;
 	clearMissionPath(): void;
+
+	/* Geofence */
+	handleCirclePreviewClick(center: MapPoint): void;
+	updateCirclePreview(mouse: MapPoint): void;
+	endCirclePreview(): void;
+	drawCircleGeofence(center: MapPoint, radius: number): void;
 
 	/* CESIUM ONLY */
 	addTerrain?(): void;
