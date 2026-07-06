@@ -7,7 +7,7 @@ import {
 
 export const AudioConfigRoles: VisualizationConfigRole[] = [
   {
-    role: 'sample rate',
+    role: 'sampleRate',
     label: 'Sample Rate',
     description: 'Select the property to display for the sample rate.',
     type: 'ds',

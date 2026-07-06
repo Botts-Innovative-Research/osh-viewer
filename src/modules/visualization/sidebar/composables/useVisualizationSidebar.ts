@@ -81,6 +81,13 @@ export function useVisualizationSidebar() {
 			openPanels.value = openPanels.value.filter((id: string) => id !== 'mission');
 		}
 	}
+
+	function handleOpenPanel() {
+		const newIds = panelVisualizations.value
+			.map((v) => v.id)
+			.filter((id) => !openPanelVisualizations.value.includes(id));
+		openPanelVisualizations.value.push(...newIds);
+	}
 	watch(
 		() => mapVisualizations.value.length,
 		() => {
@@ -98,6 +105,13 @@ export function useVisualizationSidebar() {
 		() => missionVisualizations.value.length,
 		() => {
 			handleOpenMissionPanel();
+		}
+	);
+
+	watch(
+		() => panelVisualizations.value.length,
+		() => {
+			handleOpenPanel();
 		}
 	);
 	/* GEOPTZ HELPERS */

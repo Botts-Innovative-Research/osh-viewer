@@ -101,12 +101,16 @@ useVisualizationCleanup(dsInstances);
 
 <template>
   <v-sheet class="audio-card pa-4">
-       <div :id="`spectrogram-${audioId}`" class="audio-visualizer" style="height: 300px"></div>
+       <div :id="`spectrogram-${audioId}`" class="audio-visualizer"></div>
   </v-sheet>
 </template>
 
 <style scoped>
 .audio-card {
   height: auto;
+}
+.audio-visualizer {
+    height: 200px;
+    width: 300px;
 }
 </style>

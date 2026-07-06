@@ -481,7 +481,7 @@ export class Geometry {
 }
 
 export type OSHLayer =
-	// | 'AudioDataLayer'
+	| 'AudioDataLayer'
 	// | 'BinaryDataLayer'
 	// | 'CoPlanarPolygonLayer'
 	| 'CurveLayer'
