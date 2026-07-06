@@ -434,8 +434,12 @@ export async function createLocationLayer(location: {
 	alt: number;
 }, name: string, label: string): Promise<{ layer: typeof PointMarkerLayer; props: any }> {
 	const vizId = `location-${randomUUID()}`;
+	let icon;
+	if (name.endsWith("homeLocation")) {
+		icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/home-map-marker.png`, '#FFFB00');
+	} else
+		icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, '#00BFFF');
 
-	const icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, '#00BFFF');
 
 	const locationLayer = new PointMarkerLayer({
 		id: vizId,
@@ -447,6 +451,7 @@ export async function createLocationLayer(location: {
 			z: location.alt,
 		},
 		icon,
+		iconColor: '#FFFFFF',
 		iconSize: [32, 32],
 		iconAnchor: [16, 32],
 		labelColor: '#FFFFFF',
@@ -469,8 +474,8 @@ export async function createWaypointLayer(
 	layer: typeof PointMarkerLayer;
 	props: any;
 }> {
-	// Color the waypoint icon, default yellow
-	const icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, '#FFFF00');
+
+	const icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, 'green');
 
 	const waypointLayer = new PointMarkerLayer({
 		id: `waypoint-${index}`,

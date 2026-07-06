@@ -120,6 +120,17 @@ export function useMap() {
 			})
 		);
 		drawMissionPath(mapStore.missionWaypoints);
+
+		if (driveLocationLayer.value && mapStore.currentLLA) {
+			const loc = driveLocationLayer.value.properties.location;
+			driveLocationLayer.value = null;
+			await addDriveLocationLayer(loc.x, loc.y);
+		}
+		if (homeLocationLayer.value && mapStore.currentLLA) {
+			const loc = homeLocationLayer.value.properties.location;
+			homeLocationLayer.value = null;
+			await addHomeLocationLayer(loc.x, loc.y);
+		}
 	}
 	watch(mapType, async () => {
 		await switchMap();
@@ -282,29 +293,13 @@ export function useMap() {
 			// Drive Location
 			if (mapStore.isDriveLocationSelected) {
 				mapStore.setCurrentLLA(lat, lon, 0);
-
-				const result = await createLocationLayer({ lon, lat, alt: 0 }, "driveLocation", "Drive to Location");
-				if (result) {
-					mapAdapter.value?.removeLayer(driveLocationLayer.value);
-					driveLocationLayer.value = result.layer;
-					
-					mapAdapter.value?.addLayer(driveLocationLayer.value);
-					if (result.props) mapAdapter.value?.updateMarker(result.props);
-				}
+				await addDriveLocationLayer(lon, lat);
 			}
 
 			// Home Location
 			if (mapStore.isHomeLocationSelected) {
 				mapStore.setCurrentLLA(lat, lon, 0);
-
-				const result = await createLocationLayer({ lon, lat, alt: 0 }, "homeLocation", "Home Location");
-				if (result) {
-					mapAdapter.value?.removeLayer(homeLocationLayer.value);
-					homeLocationLayer.value = result.layer;
-
-					mapAdapter.value?.addLayer(homeLocationLayer.value);
-					if (result.props) mapAdapter.value?.updateMarker(result.props);
-				}
+				await addHomeLocationLayer(lon, lat);
 			}
 			// Add additional onClick functions
 		});
@@ -379,20 +374,45 @@ export function useMap() {
 	);
 
 	/* DRIVE LOCATION */
+	async function addDriveLocationLayer(lon: number, lat: number) {
+		const result = await createLocationLayer({ lon, lat, alt: 0 }, "driveLocation", "Drive to Location");
+		if (result) {
+			removeDriveLocationLayer();
+			driveLocationLayer.value = result.layer;
+			mapAdapter.value?.addLayer(driveLocationLayer.value);
+			if (result.props) mapAdapter.value?.updateMarker(result.props);
+		}
+	}
+	function removeDriveLocationLayer() {
+		if (driveLocationLayer.value) mapAdapter.value?.removeLayer(driveLocationLayer.value);
+		driveLocationLayer.value = null;
+	}
 	watch(
 		() => mapStore.isDriveLocationSelected,
 		(selected) => {
-			if (driveLocationLayer.value) mapAdapter.value?.removeLayer(driveLocationLayer.value);
-				driveLocationLayer.value = null;
+			removeDriveLocationLayer();
 		}
 	);
 
 	/* HOME LOCATION */
+	async function addHomeLocationLayer(lon: number, lat: number) {
+		if (!mapAdapter.value) return;
+		const result = await createLocationLayer({ lon, lat, alt: 0 }, "homeLocation", "Home Location");
+		if (result) {
+			removeHomeLocationLayer();
+			homeLocationLayer.value = result.layer;
+			mapAdapter.value?.addLayer(homeLocationLayer.value);
+			if (result.props) mapAdapter.value?.updateMarker(result.props);
+		}
+	}
+	function removeHomeLocationLayer() {
+		if (homeLocationLayer.value) mapAdapter.value?.removeLayer(homeLocationLayer.value);
+		homeLocationLayer.value = null;
+	}
 	watch(
 		() => mapStore.isHomeLocationSelected,
 		(selected) => {
-			if (homeLocationLayer.value) mapAdapter.value?.removeLayer(homeLocationLayer.value);
-			homeLocationLayer.value = null;
+			removeHomeLocationLayer();
 		}
 	);
 

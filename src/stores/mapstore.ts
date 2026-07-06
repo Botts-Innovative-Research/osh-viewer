@@ -59,9 +59,7 @@ export const useMapStore = defineStore(
 		}
 		function setIsGeoPTZSelected(val: boolean) {
 			if (val) {
-				disableWaypointSelection();
-				isDriveLocationSelected.value = false;
-				isHomeLocationSelected.value = false;
+				deselectAllTools();
 			}
 			isGeoPTZSelected.value = val;
 			toggleMapCursorMode();
@@ -81,9 +79,7 @@ export const useMapStore = defineStore(
 			commandBaseUrl: string,
 			auth: string
 		) {
-			if (isGeoPTZSelected.value) setIsGeoPTZSelected(false);
-			isDriveLocationSelected.value = false;
-			isHomeLocationSelected.value = false;
+			deselectAllTools();
 			selectedWaypoints.value = { controlStreamId, commandBaseUrl, auth };
 			toggleMapCursorMode();
 		}
@@ -112,9 +108,7 @@ export const useMapStore = defineStore(
 		// Drive Location functions
 		function setIsDriveLocationSelected(val: boolean) {
 			if (val) {
-				disableWaypointSelection();
-				isHomeLocationSelected.value = false;
-				isGeoPTZSelected.value = false;
+				deselectAllTools();
 			}
 			isDriveLocationSelected.value = val;
 			toggleMapCursorMode();
@@ -123,9 +117,7 @@ export const useMapStore = defineStore(
 		// Home Location functions
 		function setIsHomeLocationSelected(val: boolean) {
 			if (val) {
-				disableWaypointSelection();
-				isDriveLocationSelected.value = false;
-				isGeoPTZSelected.value = false;
+				deselectAllTools();
 			}
 			isHomeLocationSelected.value = val;
 			toggleMapCursorMode();
@@ -138,6 +130,13 @@ export const useMapStore = defineStore(
 		}
 		function removeLayer(id: string) {
 			cesiumMapLayers.value = cesiumMapLayers.value.filter((layer: any) => layer.id !== id);
+		}
+
+		function deselectAllTools() {
+			disableWaypointSelection();
+			isDriveLocationSelected.value = false;
+			isHomeLocationSelected.value = false;
+			isGeoPTZSelected.value = false;
 		}
 
 		return {
@@ -170,6 +169,7 @@ export const useMapStore = defineStore(
 			removeLayer,
 			mapCursorMode,
 			toggleMapCursorMode,
+			deselectAllTools,
 		};
 	},
 	{ persist: { pick: ['cesiumMapLayers'] } }

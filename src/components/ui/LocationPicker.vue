@@ -60,7 +60,7 @@ defineExpose({ setLatLonAlt, setLatLonAltAndSubmit });
 		<v-row
 			density="comfortable"
 			cols="12"
-			class="d-flex align-start justify-center"
+			class="d-flex align-center justify-center pb-4"
 		>
 			<v-col
 				cols="auto"
@@ -90,6 +90,7 @@ defineExpose({ setLatLonAlt, setLatLonAltAndSubmit });
 			<v-col
 				cols="2.5"
 				xs="3"
+				class="field-floating-details"
 			>
 				<v-text-field
 					v-model.number="latInput"
@@ -105,6 +106,7 @@ defineExpose({ setLatLonAlt, setLatLonAltAndSubmit });
 			<v-col
 				cols="2.5"
 				xs="3"
+				class="field-floating-details"
 			>
 				<v-text-field
 					v-model.number="lonInput"
@@ -121,6 +123,7 @@ defineExpose({ setLatLonAlt, setLatLonAltAndSubmit });
 				v-if="!hideAlt"
 				cols="2.5"
 				xs="3"
+				class="field-floating-details"
 			>
 				<v-text-field
 					v-model.number="altInput"
@@ -145,3 +148,16 @@ defineExpose({ setLatLonAlt, setLatLonAltAndSubmit });
 		</v-row>
 	</v-form>
 </template>
+
+<style scoped>
+.field-floating-details {
+	position: relative;
+}
+
+.field-floating-details :deep(.v-input__details) {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+}
+</style>

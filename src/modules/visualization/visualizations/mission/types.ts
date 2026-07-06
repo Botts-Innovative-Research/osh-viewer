@@ -1,8 +1,7 @@
-export interface Waypoint {
+import { MapPoint } from '@/modules/map/adapters/types';
+
+export interface Waypoint extends MapPoint{
 	id: string;
-	lat: number;
-	lon: number;
-	alt: number;
 }
 
 export interface MissionSettings {
