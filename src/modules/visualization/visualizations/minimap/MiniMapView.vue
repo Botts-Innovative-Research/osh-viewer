@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { onMounted, onBeforeUnmount, ref, watch, toRaw } from 'vue';
+import { onMounted, onBeforeUnmount, ref, computed, watch, toRaw } from 'vue';
 import * as Cesium from 'cesium';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
 import VideoView from 'osh-js/source/core/ui/view/video/VideoView.js';
@@ -121,9 +121,12 @@ let videoDsInstance: typeof ConSysApi | null = null;
 let videoDsProps: IConSysApiDataSourceProperties | null = null;
 
 function createVideoView() {
-	if (arVideoView || !videoDsInstance || !videoDsProps) return;
+	if (arVideoView || !videoDsProps) return;
 
 	const rawDs = toRaw(videoDsProps);
+
+	videoDsInstance = createDatasource(rawDs);
+
 	const getFrameData = {
 		dataSourceIds: [videoDsInstance.id],
 		handler: (rec: any) => {
@@ -148,23 +151,25 @@ function createVideoView() {
 	arVideoLayer = new VideoDataLayer({
 		name: 'ar-video',
 		dataSourceIds: [videoDsInstance.id],
-		getFrameData,
-		getTimestamp,
+		...(getFrameData ? { getFrameData } : {}),
+		...(getTimestamp ? { getTimestamp } : {})
 	});
 
 	arVideoView.addLayer(arVideoLayer);
+	videoDsInstance.connect();
 }
 
 function destroyVideoView() {
+	if (videoDsInstance) {
+		videoDsInstance.disconnect();
+		videoDsInstance = null;
+	}
 	if (arVideoView) {
 		try { arVideoView.destroy(); } catch (e) {}
 		arVideoView = null;
 		arVideoLayer = null;
 	}
 }
-
-let arFrustumCuller: Cesium.Event.RemoveCallback | null = null;
-
 
 // show only markers/layers that the 'camera' can currently see
 function cullToFrustum() {
@@ -183,7 +188,7 @@ function cullToFrustum() {
 			const bb = mapView.billboardCollection.get(i);
 			if (bb.position) {
 				const visibility = cullingVolume.computeVisibility(
-					new Cesium.BoundingSphere(bb.position, 1)
+					new Cesium.BoundingSphere(bb.position, 50)
 				);
 				bb.show = visibility !== Cesium.Intersect.OUTSIDE;
 			}
@@ -194,7 +199,7 @@ function cullToFrustum() {
 			const lb = mapView.labelCollection.get(i);
 			if (lb.position) {
 				const visibility = cullingVolume.computeVisibility(
-					new Cesium.BoundingSphere(lb.position, 1)
+					new Cesium.BoundingSphere(lb.position, 50)
 				);
 				lb.show = visibility !== Cesium.Intersect.OUTSIDE;
 			}
@@ -230,10 +235,6 @@ function toggleAROverlay() {
 		viewer.scene.backgroundColor = Cesium.Color.TRANSPARENT;
 		updateARFov();
 		createVideoView();
-
-		arFrustumCuller = viewer.scene.postUpdate.addEventListener(() => {
-			cullToFrustum();
-		});
 	} else {
 		viewMode.value = viewModeBeforeAR.value;
 
@@ -241,11 +242,6 @@ function toggleAROverlay() {
 		viewer.scene.backgroundColor = Cesium.Color.BLACK;
 		viewer.scene.moon.show = true;
 		destroyVideoView();
-
-		if (arFrustumCuller) {
-			arFrustumCuller();
-			arFrustumCuller = null;
-		}
 		restoreBillboardVisibility();
 	}
 
@@ -345,6 +341,10 @@ function updateCamera() {
 		}
 	}
 
+	if (showAROverlay.value) {
+		cullToFrustum();
+	}
+
 	viewer.scene.requestRender();
 }
 
@@ -368,10 +368,17 @@ onMounted(async () => {
 	});
 	await new Promise(requestAnimationFrame);
 
-	mapView.viewer.scene.globe.depthTestAgainstTerrain = false;
-	mapView.viewer.terrainProvider = await Cesium.CesiumTerrainProvider.fromIonAssetId(1, {
+	const viewer = mapView.viewer;
+	viewer.scene.globe.depthTestAgainstTerrain = false;
+	viewer.terrainProvider = await Cesium.CesiumTerrainProvider.fromIonAssetId(1, {
 		requestVertexNormals: true,
 	});
+
+	viewer.scene.requestRenderMode = true;
+	viewer.scene.maximumRenderTimeChange = Infinity;
+
+	viewer.scene.fog.enabled = false;
+	viewer.scene.shadowMap.enabled = false;
 
 	setSceneInputEnabled(mapView.viewer, false);
 
@@ -386,8 +393,8 @@ onMounted(async () => {
 
 		if (ds?.properties?.video) {
 			hasVideo.value = true;
-			videoDsInstance = dsInstance;
 			videoDsProps = ds;
+			continue;
 		}
 
 		dsInstance.connect();
@@ -444,10 +451,6 @@ watch(
 );
 
 onBeforeUnmount(() => {
-	if (arFrustumCuller) {
-		arFrustumCuller();
-		arFrustumCuller = null;
-	}
 	destroyVideoView();
 	if (mapView) {
 		mapView.destroy();
