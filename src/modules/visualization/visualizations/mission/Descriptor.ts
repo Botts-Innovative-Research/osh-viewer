@@ -13,7 +13,7 @@ export const MissionConfigRoles: VisualizationConfigRole[] = [
 		description: 'Select the data stream for the vehicle\'s live position.',
 		type: 'ds',
 		required: true,
-		showPropertySelector: false,
+		showPropertySelector: true,
 	},
 	{
 		role: 'home',
@@ -21,7 +21,7 @@ export const MissionConfigRoles: VisualizationConfigRole[] = [
 		description: 'Select the data stream with the home/launch position used as the reference point for the mission.',
 		type: 'ds',
 		required: true,
-		showPropertySelector: false,
+		showPropertySelector: true,
 	},
 	{
 		role: 'plan',

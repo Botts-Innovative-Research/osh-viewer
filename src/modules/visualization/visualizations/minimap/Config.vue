@@ -12,9 +12,10 @@ import ControlStreamPicker from '@/modules/visualization/wizard/components/Contr
 
 const props = withDefaults(defineProps<{ configRoles: VisualizationConfigRole[] }>(), {
 	configRoles: () => MiniMapConfigRoles,
+	optional: false,
 });
 
-const { checkedRoles, validRoles, valid } = useConfig(props.configRoles);
+const { checkedRoles, validRoles, valid } = useConfig(props.configRoles, !props.optional);
 
 // Validation
 const emit = defineEmits<VisualizationComponentEmits>();

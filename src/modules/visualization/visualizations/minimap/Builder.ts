@@ -12,7 +12,7 @@ import {
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
 import { VisualizationComponents } from '../../types/visualization';
-import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IConSysApiDataSourceProperties } from '../../types/datasource';
 
 
 export default function build() {
@@ -20,7 +20,13 @@ export default function build() {
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
 
-	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
+	const dsConfig = { ...vizwizStore.dsConfig };
+	for (const [role, entry] of Object.entries(dsConfig)) {
+		if ((entry as any).dsId && !(entry as any).selected) {
+			(dsConfig as any)[role] = { ...entry as any, selected: true };
+		}
+	}
+	const datastreams = AggregateDatastreams(dsConfig);
 
 	const minimapResult = CreateMiniMapVizProps(datastreams);
 
@@ -48,27 +54,29 @@ export function CreateMiniMapVizProps(datastreams: { [key: string]: any }
 ) {
 	const datastreamStore = useDataStreamStore();
 
-	const vizDatastreams: ISweApiDataSourceProperties[] = [];
+	const vizDatastreams: IConSysApiDataSourceProperties[] = [];
 
 	for (const [dsId, entry] of Object.entries(datastreams)) {
 		const properties = BuildRoleProperty(entry);
 
 		const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
 
-		const currentDatastream: ISweApiDataSourceProperties = {
+		const hasVideoRole = properties.video !== undefined;
+
+		const currentDatastream: IConSysApiDataSourceProperties = {
 			endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
 			resource: `/datastreams/${dsId}/observations`,
 			tls: currentOSHDatastream[0].datastream.networkProperties.tls,
 			protocol: 'ws',
 			mode: Mode.REAL_TIME,
-			responseFormat: 'application/swe+json',
+			responseFormat: hasVideoRole ? 'application/swe+binary' : 'application/swe+json',
 			id: currentOSHDatastream[0].id,
 			properties: properties,
 			connectorOpts: {
 				username:
-					currentOSHDatastream[0].datastream.networkProperties.connectorOpts.username,
+				currentOSHDatastream[0].datastream.networkProperties.connectorOpts.username,
 				password:
-					currentOSHDatastream[0].datastream.networkProperties.connectorOpts.password,
+				currentOSHDatastream[0].datastream.networkProperties.connectorOpts.password,
 			},
 		};
 		vizDatastreams.push(currentDatastream);
