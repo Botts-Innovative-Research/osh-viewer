@@ -446,6 +446,45 @@ export async function createGeoPTZLayer(
 
 	return { layer: geoPtzLayer, props };
 }
+export async function createLocationLayer(location: {
+	lat: number;
+	lon: number;
+	alt: number;
+}, name: string, label: string): Promise<{ layer: typeof PointMarkerLayer; props: any }> {
+	const vizId = `location-${randomUUID()}`;
+	let icon;
+	if (name.endsWith("homeLocation")) {
+		icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/home-map-marker.png`, '#FFFB00');
+	} else
+		icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, '#00BFFF');
+
+
+	const locationLayer = new PointMarkerLayer({
+		id: vizId,
+		name: name,
+		label: label,
+		location: {
+			x: location.lon,
+			y: location.lat,
+			z: location.alt,
+		},
+		icon,
+		iconColor: '#FFFFFF',
+		iconSize: [32, 32],
+		iconAnchor: [16, 32],
+		labelColor: '#FFFFFF',
+		labelOutlineColor: '#000000',
+		labelSize: 14,
+		labelOffset: [0, -36],
+		defaultToTerrainElevation: true,
+		markerId: vizId + '-location' + randomUUID(),
+	});
+
+	const props = await setLayerData(locationLayer);
+
+	return { layer: locationLayer, props };
+}
+
 export async function createWaypointLayer(
 	waypoint: MapPoint,
 	index: string
@@ -453,8 +492,8 @@ export async function createWaypointLayer(
 	layer: typeof PointMarkerLayer;
 	props: any;
 }> {
-	// Color the waypoint icon, default yellow
-	const icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, '#FFFF00');
+
+	const icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, 'green');
 
 	const waypointLayer = new PointMarkerLayer({
 		id: `waypoint-${index}`,

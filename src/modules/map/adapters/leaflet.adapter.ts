@@ -53,6 +53,7 @@ export function createLeafletAdapter(): MapAdapter {
 	}
 
 	function drawMissionPath(waypoints: MapPoint[]) {
+		clearMissionPath();
 		const latLngs = waypoints.map((wp: MapPoint) => [wp.lat, wp.lon]);
 		flightPathPolyline = L.polyline(latLngs, {
 			color: 'red',

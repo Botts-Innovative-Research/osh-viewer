@@ -9,10 +9,19 @@ const mapStore = useMapStore();
 const settingsStore = useSettingsStore();
 
 const isActive = computed(() => {
-	return !!mapStore.isGeoPTZSelected || !!mapStore.selectedWaypoints;
+	return !!mapStore.isGeoPTZSelected || !!mapStore.selectedWaypoints || !!mapStore.isDriveLocationSelected || !!mapStore.isHomeLocationSelected;
 });
 
 const isHovered = ref(false);
+
+const toolLabel = computed(() => {
+	const parts: { label: string; icon: string; color: string }[] = [];
+	if (mapStore.isDriveLocationSelected) parts.push({ label: 'Drive Location', icon: 'mdi-steering', color: 'blue' });
+	if (mapStore.isHomeLocationSelected) parts.push({ label: 'Home Location', icon: 'mdi-home-map-marker', color: 'yellow' });
+	if (mapStore.selectedWaypoints) parts.push({ label: 'Waypoint Selector', icon: 'mdi-map-marker-path', color: 'green' });
+	if (mapStore.isGeoPTZSelected) parts.push({ label: 'GeoPTZ', icon: 'mdi-crosshairs-gps', color: 'red' });
+	return parts;
+});
 </script>
 
 <template>
@@ -30,35 +39,17 @@ const isHovered = ref(false);
 			v-show="isActive"
 		>
 			<v-card-text class="d-flex flex-column ga-2 pa-2">
-				<!-- GeoPTZ -->
 				<div
+					v-for="item in toolLabel"
+					:key="item.label"
 					class="d-flex align-center ga-2"
-					v-show="mapStore.isGeoPTZSelected"
+					v-show="isActive"
 				>
 					<v-icon
-						icon="mdi-crosshairs-gps"
-						color="green"
+						:icon="item.icon"
+						:color="item.color"
 					/>
-					<span>GeoPTZ</span>
-					<transition name="fade-slide-x">
-						<span
-							v-if="isHovered"
-							class="ml-1 text-grey"
-						>
-							cursor active
-						</span>
-					</transition>
-				</div>
-				<!-- Mission Builder -->
-				<div
-					class="d-flex align-center ga-2"
-					v-show="!!mapStore.selectedWaypoints"
-				>
-					<v-icon
-						icon="mdi-crosshairs-gps"
-						color="green"
-					/>
-					<span>Mission Builder</span>
+					<span>{{ item.label }}</span>
 					<transition name="fade-slide-x">
 						<span
 							v-if="isHovered"

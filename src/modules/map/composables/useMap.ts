@@ -5,6 +5,7 @@ import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import {
 	createFOILayer,
 	createGeoPTZLayer,
+	createLocationLayer,
 	createMapVisualizations,
 	createWaypointLayer,
 	rebuildMapVisualizations,
@@ -42,6 +43,8 @@ export function useMap() {
 	const listDataSourceInstances = ref<(typeof ConSysApi)[]>([]);
 	// Current GeoPTZ layer
 	const geoPtzLayer = ref<typeof PointMarkerLayer | null>(null);
+	const driveLocationLayer = ref<typeof PointMarkerLayer | null>(null);
+	const homeLocationLayer = ref<typeof PointMarkerLayer | null>(null);
 	// Array of waypoint Pointmarkers for mission builder
 	const waypointLayers = ref<(typeof PointMarkerLayer)[]>([]);
 	// FOI Layers
@@ -117,6 +120,17 @@ export function useMap() {
 			})
 		);
 		drawMissionPath(mapStore.missionWaypoints);
+
+		if (driveLocationLayer.value && mapStore.currentLLA) {
+			const loc = driveLocationLayer.value.properties.location;
+			driveLocationLayer.value = null;
+			await addDriveLocationLayer(loc.x, loc.y);
+		}
+		if (homeLocationLayer.value && mapStore.currentLLA) {
+			const loc = homeLocationLayer.value.properties.location;
+			homeLocationLayer.value = null;
+			await addHomeLocationLayer(loc.x, loc.y);
+		}
 	}
 	watch(mapType, async () => {
 		await switchMap();
@@ -276,6 +290,17 @@ export function useMap() {
 			}
 			// Mission Planner
 			if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lon, 0);
+			// Drive Location
+			if (mapStore.isDriveLocationSelected) {
+				mapStore.setCurrentLLA(lat, lon, 0);
+				await addDriveLocationLayer(lon, lat);
+			}
+
+			// Home Location
+			if (mapStore.isHomeLocationSelected) {
+				mapStore.setCurrentLLA(lat, lon, 0);
+				await addHomeLocationLayer(lon, lat);
+			}
 			// Add additional onClick functions
 		});
 	}
@@ -296,7 +321,7 @@ export function useMap() {
 			if (!layer) return;
 
 			const layerProps = layer.getCurrentProps();
-			const location = layerProps.location ?? layerProps.position ?? layerProps.locations[0]; // Handle location for PM/LoB, position for ellipse, locations[0] for polyline
+			const location = layerProps.location ?? layerProps.position ?? layerProps.locations?.[0]; // Handle location for PM/LoB, position for ellipse, locations[0] for polyline
 			if (!location) return;
 
 			mapAdapter.value?.flyToPoint(location);
@@ -345,6 +370,49 @@ export function useMap() {
 			// Remove old pointmarker on selection change
 			if (geoPtzLayer.value) mapAdapter.value?.removeLayer(geoPtzLayer.value);
 			geoPtzLayer.value = null;
+		}
+	);
+
+	/* DRIVE LOCATION */
+	async function addDriveLocationLayer(lon: number, lat: number) {
+		const result = await createLocationLayer({ lon, lat, alt: 0 }, "driveLocation", "Drive to Location");
+		if (result) {
+			removeDriveLocationLayer();
+			driveLocationLayer.value = result.layer;
+			mapAdapter.value?.addLayer(driveLocationLayer.value);
+			if (result.props) mapAdapter.value?.updateMarker(result.props);
+		}
+	}
+	function removeDriveLocationLayer() {
+		if (driveLocationLayer.value) mapAdapter.value?.removeLayer(driveLocationLayer.value);
+		driveLocationLayer.value = null;
+	}
+	watch(
+		() => mapStore.isDriveLocationSelected,
+		(selected) => {
+			removeDriveLocationLayer();
+		}
+	);
+
+	/* HOME LOCATION */
+	async function addHomeLocationLayer(lon: number, lat: number) {
+		if (!mapAdapter.value) return;
+		const result = await createLocationLayer({ lon, lat, alt: 0 }, "homeLocation", "Home Location");
+		if (result) {
+			removeHomeLocationLayer();
+			homeLocationLayer.value = result.layer;
+			mapAdapter.value?.addLayer(homeLocationLayer.value);
+			if (result.props) mapAdapter.value?.updateMarker(result.props);
+		}
+	}
+	function removeHomeLocationLayer() {
+		if (homeLocationLayer.value) mapAdapter.value?.removeLayer(homeLocationLayer.value);
+		homeLocationLayer.value = null;
+	}
+	watch(
+		() => mapStore.isHomeLocationSelected,
+		(selected) => {
+			removeHomeLocationLayer();
 		}
 	);
 
