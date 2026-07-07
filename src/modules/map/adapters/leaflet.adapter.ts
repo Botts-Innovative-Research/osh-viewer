@@ -9,6 +9,8 @@ export function createLeafletAdapter(): MapAdapter {
 
 	/* Geofence previews */
 	let previewCircle: L.Circle | null = null;
+	let previewPoints: MapPoint[] = [];
+	let previewLinePoints: L.Polyline | L.Polygon | null = null;
 	/* Geofence entities */
 	let geofenceEntities: any[] = [];
 
@@ -111,14 +113,14 @@ export function createLeafletAdapter(): MapAdapter {
 	function endCirclePreview() {
 		if (!previewCircle) return;
 		mapView.map.removeLayer(previewCircle);
-		drawCircleGeofence(
+		drawCircleGeoOverlay(
 			{ lat: previewCircle.getLatLng().lat, lon: previewCircle.getLatLng().lng, alt: 120 },
 			previewCircle.getRadius()
 		);
 		previewCircle = null;
 	}
 
-	function drawCircleGeofence(center: MapPoint, radius: number) {
+	function drawCircleGeoOverlay(center: MapPoint, radius: number) {
 		const newCircle = L.circle([center.lat, center.lon], {
 			radius,
 			color: 'blue',
@@ -128,6 +130,31 @@ export function createLeafletAdapter(): MapAdapter {
 		});
 		newCircle.addTo(mapView.map);
 		geofenceEntities.push(newCircle);
+	}
+
+	function addPolylinePointPreview(point: MapPoint) {
+		previewPoints.push(point);
+		if (previewLinePoints) clearPreviews();
+		previewLinePoints = L.polyline(
+			previewPoints.map((p) => [p.lat, p.lon]),
+			{ color: 'red', weight: 5 }
+		);
+		previewLinePoints.addTo(mapView.map);
+	}
+
+	function addPolygonPointPreview(point: MapPoint) {
+		previewPoints.push(point);
+		if (previewLinePoints) clearPreviews();
+		previewLinePoints = L.polygon(
+			previewPoints.map((p) => [p.lat, p.lon]),
+			{ color: 'red', weight: 5 }
+		);
+		previewLinePoints.addTo(mapView.map);
+	}
+
+	function clearPreviews() {
+		if (previewCircle) mapView.map.removeLayer(previewCircle);
+		if (previewLinePoints) mapView.map.removeLayer(previewLinePoints);
 	}
 
 	return {
@@ -145,6 +172,9 @@ export function createLeafletAdapter(): MapAdapter {
 		handleCirclePreviewClick,
 		updateCirclePreview,
 		endCirclePreview,
-		drawCircleGeofence,
+		drawCircleGeoOverlay,
+		addPolylinePointPreview,
+		addPolygonPointPreview,
+		clearPreviews,
 	};
 }

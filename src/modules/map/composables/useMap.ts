@@ -267,10 +267,12 @@ export function useMap() {
 	function bindMapInteractions() {
 		if (!mapAdapter.value) return;
 
+		/* MOUSE CLICK */
 		mapAdapter.value.onClick(async (lat, lon, alt) => {
 			// Handle geo-overlay
-			mapAdapter.value?.handleCirclePreviewClick({ lat, lon, alt });
-			drawStatus.value = !drawStatus.value;
+			// mapAdapter.value?.handleCirclePreviewClick({ lat, lon, alt });
+			// drawStatus.value = !drawStatus.value;
+			mapAdapter.value?.addPolylinePointPreview({ lat, lon, alt });
 
 			// GeoPTZ
 			if (mapStore.isGeoPTZSelected && mapStore.selectedGeoPTZ) {
@@ -310,10 +312,12 @@ export function useMap() {
 			}
 			// Add additional onClick functions
 		});
+
+		/* MOUSE MOVE */
 		mapAdapter.value.onMouseMove(async (lat: number, lon: number, alt: number) => {
-			if (drawStatus.value) {
-				mapAdapter.value?.updateCirclePreview({ lat, lon, alt });
-			}
+			// if (drawStatus.value) {
+			// 	mapAdapter.value?.updateCirclePreview({ lat, lon, alt });
+			// }
 		});
 	}
 	watch(

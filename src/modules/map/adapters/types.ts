@@ -21,14 +21,18 @@ export interface MapAdapter {
 
 	/* GeoOverlay */
 	// Circle
-	handleCirclePreviewClick(center: MapPoint): void;
-	updateCirclePreview(mouse: MapPoint): void;
+	handleCirclePreviewClick(center: MapPoint): void; // Handles center click and radius confirmation click
+	updateCirclePreview(mouse: MapPoint): void; // Handles radius preview
 	endCirclePreview(): void;
 	drawCircleGeoOverlay(center: MapPoint, radius: number): void;
 	// Polyline
+	addPolylinePointPreview(point: MapPoint): void;
 	// drawPolylineGeoOverlay(): void;
 	// Polygon
+	addPolygonPointPreview(point: MapPoint): void;
 	// drawPolygonGeoOverlay(): void;
+	// Cleanup
+	clearPreviews(): void;
 
 	/* CESIUM ONLY */
 	addTerrain?(): void;

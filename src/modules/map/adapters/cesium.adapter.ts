@@ -29,9 +29,13 @@ export function createCesiumAdapter(): MapAdapter {
 	let flightPathPolyline: any = null;
 
 	/* Geofence previews */
+	// Circle
 	let previewCircle: any = null;
 	let previewCenter: MapPoint | null = null;
 	let previewCenterCartesian: Cesium.Cartesian3 | null = null;
+	// Polyline and Polygon
+	let previewPoints: MapPoint[] = [];
+	let previewLinePoints: any = null;
 	/* Geofence entities */
 	let geofenceEntities: any[] = [];
 
@@ -376,27 +380,9 @@ export function createCesiumAdapter(): MapAdapter {
 		previewCenterCartesian = null;
 
 		invalidate();
-
-		// mapView.viewer.entities.remove(previewCircle);
-
-		// Extract center
-		// const centerCartesian = previewCircle.position?.getValue(Cesium.JulianDate.now());
-		// if (!centerCartesian) return;
-		// const cartographic = Cesium.Cartographic.fromCartesian(centerCartesian);
-		// const center: MapPoint = {
-		// 	lat: Cesium.Math.toDegrees(cartographic.latitude),
-		// 	lon: Cesium.Math.toDegrees(cartographic.longitude),
-		// 	alt: cartographic.height,
-		// };
-		// // Extract radius (axis)
-		// const radius = previewCircle.ellipse?.semiMajorAxis?.getValue(Cesium.JulianDate.now());
-		// if (radius == null) return;
-
-		// drawCircleGeofence(center, radius);
-		// previewCircle = null;
 	}
 
-	function drawCircleGeofence(center: MapPoint, radius: number) {
+	function drawCircleGeoOverlay(center: MapPoint, radius: number) {
 		const newCircle = mapView.viewer.entities.add({
 			position: Cesium.Cartesian3.fromDegrees(center.lon, center.lat),
 			name: 'Preview circle',
@@ -411,6 +397,71 @@ export function createCesiumAdapter(): MapAdapter {
 		});
 		geofenceEntities.push(newCircle);
 		invalidate();
+	}
+
+	function addPolylinePointPreview(point: MapPoint) {
+		previewPoints.push(point);
+		if (previewLinePoints) clearPreviews();
+
+		// Get cartesian points
+		const positions = previewPoints.map((mp: MapPoint) => {
+			return Cesium.Cartesian3.fromDegrees(mp.lon, mp.lat, mp.alt || 0);
+		});
+
+		previewLinePoints = mapView.viewer.entities.add({
+			polyline: {
+				positions: positions,
+				width: 5,
+				material: new Cesium.PolylineOutlineMaterialProperty({
+					color: Cesium.Color.RED,
+					outlineWidth: 2,
+				}),
+				clampToGround: true,
+			},
+		});
+		invalidate();
+	}
+
+	function addPolygonPointPreview(point: MapPoint) {
+		previewPoints.push(point);
+		if (previewLinePoints) clearPreviews();
+
+		// Get cartesian points
+		const positions = previewPoints.map((mp: MapPoint) => {
+			return Cesium.Cartesian3.fromDegrees(mp.lon, mp.lat, mp.alt || 0);
+		});
+
+		// If < 3 points, make polyline instead
+		if (previewPoints.length < 3) {
+			previewLinePoints = mapView.viewer.entities.add({
+				polyline: {
+					positions: positions,
+					width: 5,
+					material: new Cesium.PolylineOutlineMaterialProperty({
+						color: Cesium.Color.RED,
+						outlineWidth: 2,
+					}),
+					clampToGround: true,
+				},
+			});
+		} else {
+			previewLinePoints = mapView.viewer.entities.add({
+				polygon: {
+					hierarchy: new Cesium.PolygonHierarchy(positions),
+					material: Cesium.Color.RED.withAlpha(0.3),
+					outline: true,
+					classificationType: Cesium.ClassificationType.TERRAIN,
+				},
+			});
+		}
+		invalidate();
+	}
+
+	function clearPreviews() {
+		mapView.viewer.entities.remove(previewCircle);
+		mapView.viewer.entities.remove(previewLinePoints);
+		previewCircle = null;
+		previewLinePoints = null;
 	}
 
 	return {
@@ -438,6 +489,9 @@ export function createCesiumAdapter(): MapAdapter {
 		handleCirclePreviewClick,
 		updateCirclePreview,
 		endCirclePreview,
-		drawCircleGeofence,
+		drawCircleGeoOverlay,
+		addPolylinePointPreview,
+		addPolygonPointPreview,
+		clearPreviews,
 	};
 }
