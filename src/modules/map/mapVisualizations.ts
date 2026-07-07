@@ -5,7 +5,6 @@ import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import EllipseLayer from 'osh-js/source/core/ui/layer/EllipseLayer';
 import PolylineLayer from 'osh-js/source/core/ui/layer/PolylineLayer';
-import { MapPoint } from './adapters/types';
 import { setWaypointData } from './services/missionBuilder.service';
 import { useSettingsStore } from '@/stores/settingsstore';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
@@ -18,6 +17,7 @@ import { setLayerData } from './services/foi.service';
 import { ICON_BASE } from '@/lib/icons';
 import { FoiLayer } from '@/stores/visualizationstore';
 import { getMilSymbol } from './services/milIcon.service';
+import { MapPoint } from '@/modules/map/types';
 
 export interface ICreateMapVisualizationResult {
 	vizLayer: SupportedMapLayer;
@@ -446,18 +446,23 @@ export async function createGeoPTZLayer(
 
 	return { layer: geoPtzLayer, props };
 }
-export async function createLocationLayer(location: {
-	lat: number;
-	lon: number;
-	alt: number;
-}, name: string, label: string): Promise<{ layer: typeof PointMarkerLayer; props: any }> {
+export async function createLocationLayer(
+	location: {
+		lat: number;
+		lon: number;
+		alt: number;
+	},
+	name: string,
+	label: string
+): Promise<{ layer: typeof PointMarkerLayer; props: any }> {
 	const vizId = `location-${randomUUID()}`;
 	let icon;
-	if (name.endsWith("homeLocation")) {
-		icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/home-map-marker.png`, '#FFFB00');
-	} else
-		icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, '#00BFFF');
-
+	if (name.endsWith('homeLocation')) {
+		icon = await getColoredIconUrl(
+			`${ICON_BASE}/icons/waypoint/home-map-marker.png`,
+			'#FFFB00'
+		);
+	} else icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, '#00BFFF');
 
 	const locationLayer = new PointMarkerLayer({
 		id: vizId,
@@ -492,7 +497,6 @@ export async function createWaypointLayer(
 	layer: typeof PointMarkerLayer;
 	props: any;
 }> {
-
 	const icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, 'green');
 
 	const waypointLayer = new PointMarkerLayer({

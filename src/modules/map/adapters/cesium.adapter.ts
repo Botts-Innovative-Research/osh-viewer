@@ -1,7 +1,8 @@
 import * as Cesium from 'cesium';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
-import { CursorMode, MapAdapter, MapPoint, MapPointHandler } from './types';
+import { MapAdapter } from './types';
 import { Ion } from 'cesium';
+import { CursorMode, MapPoint, MapPointHandler } from '@/modules/map/types';
 
 // Showcase examples token :P
 // Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0NTkzNS02NzI0LTQwNDktODk4Zi0zZDJjOWI2NTdmYTMiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI1ODJ9.IbAajOLYnsoyKy1BOd7fY1p6GH-wwNVMdMduA2IzGjA';
@@ -332,12 +333,12 @@ export function createCesiumAdapter(): MapAdapter {
 
 	/* Geofence Drawing Tools */
 	function handleCirclePreviewClick(center: MapPoint) {
-		// If preview circle already exists, this is second click -> confirm geofence
+		// If preview circle already exists, this is second click -> confirm geo-overlay
 		if (previewCircle) {
 			endCirclePreview();
 			return;
 		}
-		// Create new preview circle geofence
+		// Create new preview circle geo-overlay
 		previewCenter = center; // Save center of circle
 		previewCenterCartesian = Cesium.Cartesian3.fromDegrees(center.lon, center.lat, center.alt);
 		previewCircle = mapView.viewer.entities.add({
@@ -366,7 +367,7 @@ export function createCesiumAdapter(): MapAdapter {
 	function endCirclePreview() {
 		if (!previewCircle || !previewCenter) return;
 
-		// Add to geofence list
+		// Add to geo-overlay list
 		geofenceEntities.push(previewCircle);
 
 		// Empty preview circle
@@ -403,6 +404,7 @@ export function createCesiumAdapter(): MapAdapter {
 				semiMinorAxis: radius,
 				semiMajorAxis: radius,
 				material: Cesium.Color.BLUE,
+				height: center.alt,
 				outline: true, // height must be set for outline to display
 				classificationType: Cesium.ClassificationType.TERRAIN,
 			},

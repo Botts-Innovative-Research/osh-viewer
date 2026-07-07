@@ -1,12 +1,5 @@
 import { MapLayer } from './cesium.adapter';
-
-export type MapPointHandler = (lat: number, lon: number, alt: number) => void;
-export type CursorMode = 'default' | 'crosshair';
-export type MapPoint = {
-	lat: number;
-	lon: number;
-	alt: number;
-};
+import { CursorMode, MapPoint, MapPointHandler } from '@/modules/map/types';
 
 export interface MapAdapter {
 	init(container: string): Promise<void>;
@@ -26,11 +19,16 @@ export interface MapAdapter {
 	drawMissionPath(waypoints: MapPoint[]): void;
 	clearMissionPath(): void;
 
-	/* Geofence */
+	/* GeoOverlay */
+	// Circle
 	handleCirclePreviewClick(center: MapPoint): void;
 	updateCirclePreview(mouse: MapPoint): void;
 	endCirclePreview(): void;
-	drawCircleGeofence(center: MapPoint, radius: number): void;
+	drawCircleGeoOverlay(center: MapPoint, radius: number): void;
+	// Polyline
+	// drawPolylineGeoOverlay(): void;
+	// Polygon
+	// drawPolygonGeoOverlay(): void;
 
 	/* CESIUM ONLY */
 	addTerrain?(): void;

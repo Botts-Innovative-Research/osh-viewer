@@ -3,8 +3,8 @@ import { ref, Ref } from 'vue';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 // @ts-ignore
 import { MapLayer } from '@/modules/map/adapters/cesium.adapter';
-import { CursorMode, MapPoint } from '@/modules/map/adapters/types';
 import { fetchLayerFromUrl } from '@/modules/map/services/cesiumLayer.service';
+import { CursorMode, MapPoint } from '@/modules/map/types';
 
 export const useMapStore = defineStore(
 	'map',
@@ -27,7 +27,6 @@ export const useMapStore = defineStore(
 		/* HOME LOCATION */
 		const isHomeLocationSelected: Ref<boolean> = ref(false);
 
-
 		/* MISSION PLANNER */
 		const selectedWaypoints: Ref<{
 			controlStreamId: string;
@@ -43,7 +42,12 @@ export const useMapStore = defineStore(
 		}
 
 		function toggleMapCursorMode() {
-			if (isGeoPTZSelected.value || selectedWaypoints.value || isDriveLocationSelected.value || isHomeLocationSelected.value)
+			if (
+				isGeoPTZSelected.value ||
+				selectedWaypoints.value ||
+				isDriveLocationSelected.value ||
+				isHomeLocationSelected.value
+			)
 				mapCursorMode.value = 'crosshair';
 			else mapCursorMode.value = 'default';
 		}

@@ -14,7 +14,7 @@ import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import { createCesiumAdapter } from '../adapters/cesium.adapter';
 import { taskGeoPTZ } from '../services/geoPTZ.service';
-import { MapAdapter, MapPoint } from '../adapters/types';
+import { MapAdapter } from '../adapters/types';
 import { createLeafletAdapter } from '../adapters/leaflet.adapter';
 import { useSettingsStore } from '@/stores/settingsstore';
 import { isMapLayerCompatible, SupportedMapLayer } from '../supportedMapLayers';
@@ -24,6 +24,7 @@ import {
 } from '@/modules/visualization/services/datasource.service';
 import { getGroundAltitude } from '../services/altitude.service';
 import { setLayerData } from '../services/foi.service';
+import { MapPoint } from '@/modules/map/types';
 
 export function useMap() {
 	// Stores
@@ -267,7 +268,7 @@ export function useMap() {
 		if (!mapAdapter.value) return;
 
 		mapAdapter.value.onClick(async (lat, lon, alt) => {
-			// Handle geofence
+			// Handle geo-overlay
 			mapAdapter.value?.handleCirclePreviewClick({ lat, lon, alt });
 			drawStatus.value = !drawStatus.value;
 
