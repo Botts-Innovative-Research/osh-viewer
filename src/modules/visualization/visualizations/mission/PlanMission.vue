@@ -111,7 +111,6 @@ function toggle() {
 	const cs = props.missionControlStream;
 	if (isSelected.value) {
 		mapInteractionStore.deselectTool('missionWaypoint');
-		missionStore.clearMissionWaypoints();
 	} else if (cs) {
 		mapInteractionStore.selectTool('missionWaypoint');
 	}
