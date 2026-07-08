@@ -17,9 +17,6 @@ export const useMapStore = defineStore(
 		/* CESIUM */
 		const cesiumMapLayers: Ref<MapLayer[]> = ref([]);
 
-		/* GEOPTZ */
-		const isGeoPTZSelected: Ref<boolean> = ref(false); // Whether a GeoPTZ visualization is currently selected
-
 		/* DRIVE LOCATION */
 		const isDriveLocationSelected: Ref<boolean> = ref(false);
 
@@ -49,23 +46,6 @@ export const useMapStore = defineStore(
 			)
 				mapCursorMode.value = 'crosshair';
 			else mapCursorMode.value = 'default';
-		}
-
-		// GeoPTZ functions
-		function setSelectedGeoPTZ(vizList: OSHVisualization[]) {
-			selectedGeoPTZ.value = vizList;
-			if (vizList?.length === 0) setIsGeoPTZSelected(false); // If list is empty, disselect geoptz
-		}
-		function clearSelectedGeoPTZ() {
-			selectedGeoPTZ.value = null;
-			setIsGeoPTZSelected(false);
-		}
-		function setIsGeoPTZSelected(val: boolean) {
-			if (val) {
-				deselectAllTools();
-			}
-			isGeoPTZSelected.value = val;
-			toggleMapCursorMode();
 		}
 
 		// Handle current LLA coordinates
@@ -146,8 +126,6 @@ export const useMapStore = defineStore(
 			selectedMapItem,
 			currentLLA,
 			cesiumMapLayers,
-			selectedGeoPTZ,
-			isGeoPTZSelected,
 			selectedWaypoints,
 			missionWaypoints,
 			clearMissionWaypointsMarkers,
@@ -156,9 +134,6 @@ export const useMapStore = defineStore(
 			setSelectedMapItem,
 			setCurrentLLA,
 			clearCurrentLLA,
-			setSelectedGeoPTZ,
-			clearSelectedGeoPTZ,
-			setIsGeoPTZSelected,
 			setSelectedWaypoints,
 			clearSelectedMissionWaypoints,
 			disableWaypointSelection,

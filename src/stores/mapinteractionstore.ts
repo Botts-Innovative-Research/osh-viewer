@@ -16,10 +16,9 @@ export const useMapInteractionStore = defineStore(
 	() => {
 		// Active map states
 		const interactionMode = ref<MapInteractionMode>('none');
-		const mapCursorMode = computed<CursorMode>(() => {
-			if (interactionMode.value === 'none') return 'default';
-			return 'crosshair';
-		});
+		const mapCursorMode = computed<CursorMode>(() =>
+			interactionMode.value === 'none' ? 'default' : 'crosshair'
+		);
 
 		// Set and toggle selected tool
 		function selectTool(tool: MapInteractionMode) {

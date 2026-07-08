@@ -25,10 +25,12 @@ import {
 import { getGroundAltitude } from '../services/altitude.service';
 import { setLayerData } from '../services/foi.service';
 import { MapPoint } from '@/modules/map/types';
+import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 
 export function useMap() {
 	// Stores
 	const mapStore = useMapStore();
+	const mapInteractionStore = useMapInteractionStore();
 	const visualizationStore = useVisualizationStore();
 	const settingsStore = useSettingsStore();
 
@@ -275,14 +277,14 @@ export function useMap() {
 			mapAdapter.value?.addPolylinePointPreview({ lat, lon, alt });
 
 			// GeoPTZ
-			if (mapStore.isGeoPTZSelected && mapStore.selectedGeoPTZ) {
+			if (mapInteractionStore.isGeoPTZSelected && mapInteractionStore.selectedGeoPTZ) {
 				// Calculate alt if needed
 				const calcAlt = alt ?? (await getGroundAltitude(lon, lat)) ?? 0;
 
 				// Create pointmarker
 				const result = await createGeoPTZLayer(
 					{ lon, lat, alt: calcAlt },
-					mapStore.selectedGeoPTZ
+					mapInteractionStore.selectedGeoPTZ
 				);
 				if (result) {
 					// Remove old pointmarker
@@ -382,7 +384,7 @@ export function useMap() {
 
 	/* GEOPTZ */
 	watch(
-		() => mapStore.isGeoPTZSelected,
+		() => mapInteractionStore.isGeoPTZSelected,
 		(selected) => {
 			// Remove old pointmarker on selection change
 			if (geoPtzLayer.value) mapAdapter.value?.removeLayer(geoPtzLayer.value);
