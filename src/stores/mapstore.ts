@@ -12,16 +12,9 @@ export const useMapStore = defineStore(
 		const selectedMapItem: Ref<any | null> = ref(null); // Currently selected map item from list of map visualizations
 		const currentLLA: Ref<{ latitude: number; longitude: number; altitude: number } | null> =
 			ref(null); // Currently selected LLA coordinates
-		const mapCursorMode = ref<CursorMode>('default');
 
 		/* CESIUM */
 		const cesiumMapLayers: Ref<MapLayer[]> = ref([]);
-
-		/* DRIVE LOCATION */
-		const isDriveLocationSelected: Ref<boolean> = ref(false);
-
-		/* HOME LOCATION */
-		const isHomeLocationSelected: Ref<boolean> = ref(false);
 
 		/* MISSION PLANNER */
 		const selectedWaypoints: Ref<{
@@ -35,17 +28,6 @@ export const useMapStore = defineStore(
 		// Handle selection of map item
 		function setSelectedMapItem(item: any | null) {
 			selectedMapItem.value = item;
-		}
-
-		function toggleMapCursorMode() {
-			if (
-				isGeoPTZSelected.value ||
-				selectedWaypoints.value ||
-				isDriveLocationSelected.value ||
-				isHomeLocationSelected.value
-			)
-				mapCursorMode.value = 'crosshair';
-			else mapCursorMode.value = 'default';
 		}
 
 		// Handle current LLA coordinates
@@ -88,24 +70,6 @@ export const useMapStore = defineStore(
 			clearMissionWaypointsMarkers.value = false;
 		}
 
-		// Drive Location functions
-		function setIsDriveLocationSelected(val: boolean) {
-			if (val) {
-				deselectAllTools();
-			}
-			isDriveLocationSelected.value = val;
-			toggleMapCursorMode();
-		}
-
-		// Home Location functions
-		function setIsHomeLocationSelected(val: boolean) {
-			if (val) {
-				deselectAllTools();
-			}
-			isHomeLocationSelected.value = val;
-			toggleMapCursorMode();
-		}
-
 		// Cesium
 		async function addLayer(url: string) {
 			const newLayer: MapLayer = await fetchLayerFromUrl(url);
@@ -129,8 +93,6 @@ export const useMapStore = defineStore(
 			selectedWaypoints,
 			missionWaypoints,
 			clearMissionWaypointsMarkers,
-			isDriveLocationSelected,
-			isHomeLocationSelected,
 			setSelectedMapItem,
 			setCurrentLLA,
 			clearCurrentLLA,
@@ -141,12 +103,8 @@ export const useMapStore = defineStore(
 			setFlightPathWaypoints,
 			triggerClearWaypointMarkers,
 			resetClearWaypointMarkersSignal,
-			setIsDriveLocationSelected,
-			setIsHomeLocationSelected,
 			addLayer,
 			removeLayer,
-			mapCursorMode,
-			toggleMapCursorMode,
 			deselectAllTools,
 		};
 	},

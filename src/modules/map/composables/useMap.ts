@@ -302,13 +302,13 @@ export function useMap() {
 			// Mission Planner
 			if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lon, 0);
 			// Drive Location
-			if (mapStore.isDriveLocationSelected) {
+			if (mapInteractionStore.isDriveLocationSelected) {
 				mapStore.setCurrentLLA(lat, lon, 0);
 				await addDriveLocationLayer(lon, lat);
 			}
 
 			// Home Location
-			if (mapStore.isHomeLocationSelected) {
+			if (mapInteractionStore.isHomeLocationSelected) {
 				mapStore.setCurrentLLA(lat, lon, 0);
 				await addHomeLocationLayer(lon, lat);
 			}
@@ -411,7 +411,7 @@ export function useMap() {
 		driveLocationLayer.value = null;
 	}
 	watch(
-		() => mapStore.isDriveLocationSelected,
+		() => mapInteractionStore.isDriveLocationSelected,
 		(selected) => {
 			removeDriveLocationLayer();
 		}
@@ -437,7 +437,7 @@ export function useMap() {
 		homeLocationLayer.value = null;
 	}
 	watch(
-		() => mapStore.isHomeLocationSelected,
+		() => mapInteractionStore.isHomeLocationSelected,
 		(selected) => {
 			removeHomeLocationLayer();
 		}
