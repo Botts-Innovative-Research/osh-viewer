@@ -18,7 +18,6 @@ export const useMapStore = defineStore(
 		const cesiumMapLayers: Ref<MapLayer[]> = ref([]);
 
 		/* GEOPTZ */
-		const selectedGeoPTZ: Ref<OSHVisualization[] | null> = ref(null); // Currently selected GeoPTZ Visualization(s) or null if none selected
 		const isGeoPTZSelected: Ref<boolean> = ref(false); // Whether a GeoPTZ visualization is currently selected
 
 		/* DRIVE LOCATION */
