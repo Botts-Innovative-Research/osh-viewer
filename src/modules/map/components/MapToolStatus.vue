@@ -9,7 +9,7 @@ const mapInteractionStore = useMapInteractionStore();
 const isActive = computed(() => {
 	return (
 		mapInteractionStore.isGeoPTZSelected ||
-		!!mapStore.selectedWaypoints ||
+		mapInteractionStore.isMissionWaypointSelected ||
 		mapInteractionStore.isDriveLocationSelected ||
 		mapInteractionStore.isHomeLocationSelected
 	);
@@ -23,7 +23,7 @@ const toolLabel = computed(() => {
 		parts.push({ label: 'Drive Location', icon: 'mdi-steering', color: 'blue' });
 	if (mapInteractionStore.isHomeLocationSelected)
 		parts.push({ label: 'Home Location', icon: 'mdi-home-map-marker', color: 'yellow' });
-	if (mapStore.selectedWaypoints)
+	if (mapInteractionStore.isMissionWaypointSelected)
 		parts.push({ label: 'Waypoint Selector', icon: 'mdi-map-marker-path', color: 'green' });
 	if (mapInteractionStore.isGeoPTZSelected)
 		parts.push({ label: 'GeoPTZ', icon: 'mdi-crosshairs-gps', color: 'red' });

@@ -26,12 +26,14 @@ import { getGroundAltitude } from '../services/altitude.service';
 import { setLayerData } from '../services/foi.service';
 import { MapPoint } from '@/modules/map/types';
 import { useMapInteractionStore } from '@/stores/mapinteractionstore';
+import { useMissionStore } from '@/stores/missionstore';
 
 export function useMap() {
 	// Stores
 	const mapStore = useMapStore();
 	const mapInteractionStore = useMapInteractionStore();
 	const visualizationStore = useVisualizationStore();
+	const missionStore = useMissionStore();
 	const settingsStore = useSettingsStore();
 
 	// Map state
@@ -118,11 +120,11 @@ export function useMap() {
 		// Rebuild all waypoints
 		waypointLayers.value = [];
 		await Promise.all(
-			mapStore.missionWaypoints.map(async (waypoint: MapPoint, index: number) => {
+			missionStore.missionWaypoints.map(async (waypoint: MapPoint, index: number) => {
 				await addWaypointLayer(waypoint, index);
 			})
 		);
-		drawMissionPath(mapStore.missionWaypoints);
+		drawMissionPath(missionStore.missionWaypoints);
 
 		if (driveLocationLayer.value && mapStore.currentLLA) {
 			const loc = driveLocationLayer.value.properties.location;
@@ -274,7 +276,7 @@ export function useMap() {
 			// Handle geo-overlay
 			// mapAdapter.value?.handleCirclePreviewClick({ lat, lon, alt });
 			// drawStatus.value = !drawStatus.value;
-			mapAdapter.value?.addPolylinePointPreview({ lat, lon, alt });
+			// mapAdapter.value?.addPolylinePointPreview({ lat, lon, alt });
 
 			// GeoPTZ
 			if (mapInteractionStore.isGeoPTZSelected && mapInteractionStore.selectedGeoPTZ) {
@@ -299,8 +301,8 @@ export function useMap() {
 					taskGeoPTZ(lat, lon, calcAlt);
 				}
 			}
-			// Mission Planner
-			if (mapStore.selectedWaypoints) mapStore.setCurrentLLA(lat, lon, 0);
+			// Mission Planner (enabled by interaction mode)
+			if (mapInteractionStore.isMissionWaypointSelected) mapStore.setCurrentLLA(lat, lon, 0);
 			// Drive Location
 			if (mapInteractionStore.isDriveLocationSelected) {
 				mapStore.setCurrentLLA(lat, lon, 0);
@@ -323,7 +325,7 @@ export function useMap() {
 		});
 	}
 	watch(
-		() => mapStore.mapCursorMode,
+		() => mapInteractionStore.mapCursorMode,
 		(mode) => {
 			if (mode) {
 				mapAdapter.value?.setCursor(mode);
@@ -445,16 +447,7 @@ export function useMap() {
 
 	/* MISSION BUILDER */
 	watch(
-		() => mapStore.clearMissionWaypointsMarkers,
-		(clear: boolean) => {
-			if (!clear || !mapAdapter.value) return;
-
-			clearMission();
-			mapStore.resetClearWaypointMarkersSignal();
-		}
-	);
-	watch(
-		() => mapStore.missionWaypoints,
+		() => missionStore.missionWaypoints,
 		async (waypoints) => {
 			if (!mapAdapter.value) return;
 
