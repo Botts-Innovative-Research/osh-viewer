@@ -345,22 +345,6 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 			</v-col>
 
 			<v-col
-				v-if="getControlstreamByRole('takeoff')"
-				cols="4"
-			>
-				<v-btn
-					block
-					class="command-btn"
-					color="primary"
-					variant="tonal"
-					@click="takeoffCommand"
-				>
-					<v-icon start>mdi-airplane-takeoff</v-icon>
-					Take Off
-				</v-btn>
-			</v-col>
-
-			<v-col
 				v-if="getControlstreamByRole('land')"
 				cols="4"
 			>
