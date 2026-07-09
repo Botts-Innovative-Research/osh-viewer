@@ -10,7 +10,7 @@ import {
 	createWaypointLayer,
 	rebuildMapVisualizations,
 } from '../mapVisualizations';
-import { Geometry, OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import { createCesiumAdapter } from '../adapters/cesium.adapter';
 import { taskGeoPTZ } from '../services/geoPTZ.service';

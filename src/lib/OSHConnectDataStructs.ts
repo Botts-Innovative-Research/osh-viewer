@@ -455,28 +455,41 @@ export class OSHVisualization {
 	}
 }
 
+/**
+ * Follows GeoJSON format, with optional systemId property for OSH FOIs
+ */
 export class Geometry {
 	id: string;
-	systemId: string;
 	type: string;
 	coordinates: number[] | number[][];
 	properties?: any;
 	bbox?: number[] | undefined;
+	systemId?: string | undefined;
 
 	constructor(
 		id: string,
-		systemId: string,
 		type: string,
 		coordinates: number[] | number[][],
 		properties?: any,
-		bbox?: number[]
+		bbox?: number[],
+		systemId?: string
 	) {
 		this.id = id;
-		this.systemId = systemId;
 		this.type = type;
 		this.coordinates = coordinates;
 		this.properties = properties || {};
 		this.bbox = bbox;
+		this.systemId = systemId;
+	}
+
+	toGeoJSON() {
+		return {
+			id: this.id,
+			type: this.type,
+			coordinates: this.coordinates,
+			properties: this.properties,
+			bbox: this.bbox,
+		};
 	}
 }
 
