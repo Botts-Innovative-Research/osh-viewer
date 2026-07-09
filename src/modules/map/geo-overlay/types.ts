@@ -1,126 +1,79 @@
-import { MapPoint } from '@/modules/map/types';
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+import { Geometry } from '@/lib/OSHConnectDataStructs';
 
-export type GeoOverlayType = 'circle' | 'polygon' | 'polyline';
+// NOTE: Circle is not an existing GeoJSON type
+export type GeoOverlayType = 'Point' | 'LineString' | 'Polygon' | 'Circle';
 export type GeofenceMode = 'include' | 'exclude';
-
-export abstract class GeoOverlay {
-	uuid: string;
-	type: GeoOverlayType;
-	isGeofence: boolean;
+export const GeofenceExcludeDefaults = {
+	geofenceMode: 'exclude',
+	borderColor: '#FF0000',
+	fillColor: '#FF000080',
+};
+export const GeofenceIncludeDefaults = {
+	geofenceMode: 'include',
+	borderColor: '#00FF00',
+	fillColor: '#00FF0080',
+};
+/**
+ * Properties for a GeoOverlay Geometry object
+ */
+export interface GeoOverlayProperties {
 	borderColor: string;
 	fillColor: string;
+	radius?: number; // For "Circle" type, store radius here
+}
+
+/**
+ * Defines the structure of a GeoOverlay object, which represents a geometric shape on a map.
+ * Includes properties for the geometry, type, and geofence settings.
+ */
+export class GeoOverlay {
+	uuid: string;
+	geometry: Geometry;
+	name: string;
+	type: GeoOverlayType;
+	isGeofence: boolean;
 	geofenceMode?: GeofenceMode;
 
-	constructor(
-		type: GeoOverlayType,
-		isGeofence = false,
-		borderColor = 'blue',
-		fillColor = 'transparent'
-	) {
-		this.uuid = randomUUID();
-		this.type = type;
+	constructor(geometry: Geometry, name: string, isGeofence = false, geofenceMode?: GeofenceMode) {
+		this.uuid = geometry.id;
+		this.type = geometry.type as GeoOverlayType;
+		this.geometry = geometry;
+		this.name = name;
 		this.isGeofence = isGeofence;
-		this.borderColor = borderColor;
-		this.fillColor = fillColor;
+		this.geofenceMode = geofenceMode;
+
+		// Set default properties
+		if (!geometry.properties.borderColor) {
+			this.geometry.properties.borderColor = '#FF0000';
+		}
+		if (!geometry.properties.fillColor) {
+			this.geometry.properties.fillColor = '#FF000000';
+		}
+	}
+
+	setName(name: string) {
+		this.name = name;
 	}
 
 	setBorderColor(color: string) {
-		this.borderColor = color;
+		this.geometry.properties.borderColor = color;
 	}
 
 	setFillColor(color: string) {
-		this.fillColor = color;
+		this.geometry.properties.fillColor = color;
 	}
 
 	setIsGeofence(isGeofence: boolean) {
 		this.isGeofence = isGeofence;
-		// If geofence, set default mode to include
-		this.geofenceMode = isGeofence ? 'include' : undefined;
+		// If geofence, set defaults for include
+		if (isGeofence) {
+			this.setGeofenceMode(GeofenceIncludeDefaults.geofenceMode as GeofenceMode);
+			this.setBorderColor(GeofenceIncludeDefaults.borderColor);
+			this.setFillColor(GeofenceIncludeDefaults.fillColor);
+		} else this.setGeofenceMode(undefined);
 	}
 
-	setGeofenceMode(mode: GeofenceMode) {
+	setGeofenceMode(mode: GeofenceMode | undefined) {
 		this.geofenceMode = mode;
-	}
-}
-
-export class CircleGeoOverlay extends GeoOverlay {
-	center: MapPoint;
-	radius: number;
-
-	constructor(
-		isGeofence = false,
-		center: MapPoint,
-		radius: number,
-		borderColor?: string,
-		fillColor?: string
-	) {
-		super('circle', isGeofence, borderColor, fillColor);
-		this.center = center;
-		this.radius = radius;
-	}
-
-	setCenter(center: MapPoint) {
-		this.center = center;
-	}
-
-	setRadius(radius: number) {
-		this.radius = radius;
-	}
-}
-
-export class PolylineGeoOverlay extends GeoOverlay {
-	points: MapPoint[] = [];
-
-	constructor(
-		isGeofence = false,
-		points?: MapPoint | MapPoint[],
-		borderColor?: string,
-		fillColor?: string
-	) {
-		super('polyline', isGeofence, borderColor, fillColor);
-		if (points) this.addPoints(points);
-	}
-
-	addPoints(point: MapPoint | MapPoint[]) {
-		if (Array.isArray(point)) {
-			this.points.push(...point);
-		} else this.points.push(point);
-	}
-
-	removePoint(point: MapPoint) {
-		this.points.splice(this.points.indexOf(point), 1);
-	}
-
-	clearPoints() {
-		this.points = [];
-	}
-}
-
-export class PolygonGeoOverlay extends GeoOverlay {
-	points: MapPoint[] = [];
-
-	constructor(
-		isGeofence = false,
-		points?: MapPoint | MapPoint[],
-		borderColor?: string,
-		fillColor?: string
-	) {
-		super('polygon', isGeofence, borderColor, fillColor);
-		if (points) this.addPoints(points);
-	}
-
-	addPoints(point: MapPoint | MapPoint[]) {
-		if (Array.isArray(point)) {
-			this.points.push(...point);
-		} else this.points.push(point);
-	}
-
-	removePoint(point: MapPoint) {
-		this.points.splice(this.points.indexOf(point), 1);
-	}
-
-	clearPoints() {
-		this.points = [];
 	}
 }
