@@ -265,8 +265,6 @@ export function useMap() {
 		foiLayers.value = foiLayers.value.filter((foiLayer) => foiLayer.layer !== remove?.layer);
 	}
 
-	const drawStatus = ref(false); // Idle waiting
-
 	/** MAP INTERACTIONS */
 	function bindMapInteractions() {
 		if (!mapAdapter.value) return;
@@ -277,6 +275,9 @@ export function useMap() {
 			// mapAdapter.value?.handleCirclePreviewClick({ lat, lon, alt });
 			// drawStatus.value = !drawStatus.value;
 			// mapAdapter.value?.addPolylinePointPreview({ lat, lon, alt });
+			if (mapInteractionStore.isGeoOverlayLineStringSelected) {
+				mapAdapter.value?.addPolylinePointPreview({ lat, lon, alt });
+			}
 
 			// GeoPTZ
 			if (mapInteractionStore.isGeoPTZSelected && mapInteractionStore.selectedGeoPTZ) {

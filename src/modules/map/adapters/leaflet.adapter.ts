@@ -2,14 +2,15 @@ import LeafletView from 'osh-js/source/core/ui/view/map/LeafletView';
 import L from 'leaflet';
 import { MapAdapter } from './types';
 import { MapPoint, MapPointHandler } from '@/modules/map/types';
+import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
 
 export function createLeafletAdapter(): MapAdapter {
 	let mapView: typeof LeafletView | null;
 	let flightPathPolyline: any = null;
 
 	/* Geofence previews */
+	const previewStore = useGeoOverlayPreviewStore();
 	let previewCircle: L.Circle | null = null;
-	let previewPoints: MapPoint[] = [];
 	let previewLinePoints: L.Polyline | L.Polygon | null = null;
 	/* Geofence entities */
 	let geofenceEntities: any[] = [];
@@ -133,20 +134,20 @@ export function createLeafletAdapter(): MapAdapter {
 	}
 
 	function addPolylinePointPreview(point: MapPoint) {
-		previewPoints.push(point);
+		previewStore.points.push(point);
 		if (previewLinePoints) clearPreviews();
 		previewLinePoints = L.polyline(
-			previewPoints.map((p) => [p.lat, p.lon]),
+			previewStore.points.map((p) => [p.lat, p.lon]),
 			{ color: 'red', weight: 5 }
 		);
 		previewLinePoints.addTo(mapView.map);
 	}
 
 	function addPolygonPointPreview(point: MapPoint) {
-		previewPoints.push(point);
+		previewStore.points.push(point);
 		if (previewLinePoints) clearPreviews();
 		previewLinePoints = L.polygon(
-			previewPoints.map((p) => [p.lat, p.lon]),
+			previewStore.points.map((p) => [p.lat, p.lon]),
 			{ color: 'red', weight: 5 }
 		);
 		previewLinePoints.addTo(mapView.map);

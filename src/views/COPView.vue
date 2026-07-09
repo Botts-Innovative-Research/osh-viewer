@@ -6,6 +6,7 @@ import VisualizationSidebar from '@/modules/visualization/sidebar/components/Vis
 import { Splitpanes, Pane } from 'splitpanes';
 import 'splitpanes/dist/splitpanes.css';
 import MapToolStatus from '@/modules/map/components/MapToolStatus.vue';
+import MapSidebar from '@/modules/map/geo-overlay/MapSidebar.vue';
 
 const paneSize1 = ref(localStorage.paneSize1 ?? 30); // System browser AND Visualization pane
 const paneSize2 = ref(localStorage.paneSize2 ?? 70); // Map view pane
@@ -36,6 +37,7 @@ const tab = ref('one');
 				>
 					<v-tab value="one">Nodes</v-tab>
 					<v-tab value="two">Visualizations</v-tab>
+					<v-tab value="three">Map</v-tab>
 				</v-tabs>
 
 				<v-divider></v-divider>
@@ -46,6 +48,9 @@ const tab = ref('one');
 					</v-tabs-window-item>
 					<v-tabs-window-item value="two">
 						<VisualizationSidebar />
+					</v-tabs-window-item>
+					<v-tabs-window-item value="three">
+						<MapSidebar />
 					</v-tabs-window-item>
 				</v-tabs-window>
 			</v-sheet>

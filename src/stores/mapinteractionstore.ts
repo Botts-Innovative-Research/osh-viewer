@@ -9,7 +9,10 @@ export type MapInteractionMode =
 	| 'missionWaypoint'
 	| 'driveLocation'
 	| 'homeLocation'
-	| 'geoOverlay';
+	| 'geoOverlayPoint'
+	| 'geoOverlayLineString'
+	| 'geoOverlayPolygon'
+	| 'geoOverlayCircle';
 
 export const useMapInteractionStore = defineStore(
 	'mapInteraction',
@@ -46,7 +49,18 @@ export const useMapInteractionStore = defineStore(
 		);
 		const isDriveLocationSelected = computed(() => interactionMode.value === 'driveLocation');
 		const isHomeLocationSelected = computed(() => interactionMode.value === 'homeLocation');
-		const isGeoOverlaySelected = computed(() => interactionMode.value === 'geoOverlay');
+		const isGeoOverlayPointSelected = computed(
+			() => interactionMode.value === 'geoOverlayPoint'
+		);
+		const isGeoOverlayLineStringSelected = computed(
+			() => interactionMode.value === 'geoOverlayLineString'
+		);
+		const isGeoOverlayPolygonSelected = computed(
+			() => interactionMode.value === 'geoOverlayPolygon'
+		);
+		const isGeoOverlayCircleSelected = computed(
+			() => interactionMode.value === 'geoOverlayCircle'
+		);
 
 		/* GeoPTZ */
 		const selectedGeoPTZ: Ref<OSHVisualization[] | null> = ref(null); // Currently selected GeoPTZ Visualization(s) or null if none selected
@@ -69,7 +83,10 @@ export const useMapInteractionStore = defineStore(
 			isMissionWaypointSelected,
 			isDriveLocationSelected,
 			isHomeLocationSelected,
-			isGeoOverlaySelected,
+			isGeoOverlayPointSelected,
+			isGeoOverlayLineStringSelected,
+			isGeoOverlayPolygonSelected,
+			isGeoOverlayCircleSelected,
 			selectedGeoPTZ,
 			setSelectedGeoPTZ,
 			clearSelectedGeoPTZ,
