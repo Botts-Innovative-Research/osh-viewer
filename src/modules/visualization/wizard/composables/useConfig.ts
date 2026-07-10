@@ -4,6 +4,8 @@ import { useValidRoles } from './useValidRoles';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import type { VisualizationConfigRole } from '../../registry/types';
 import { confirmRoles } from '../../registry/roleUtils';
+import { autoMapControlStreams } from '../../services/autoMapControlStreams';
+import { autoMapDataStreams } from '../../services/autoMapDataStreams';
 
 export function useConfig(configRoles: VisualizationConfigRole[], defaultInclude: boolean) {
 	const vizwizStore = useVizWizStore();
@@ -59,6 +61,20 @@ export function useConfig(configRoles: VisualizationConfigRole[], defaultInclude
 	// React to toggle
 	watch(include, syncConfigState);
 
+	function autoMap() {
+		const mappedCs = autoMapControlStreams(vizwizStore.controlstreams);
+		for (const [role, csId] of Object.entries(mappedCs)) {
+			checkedRoles[role] = true;
+			vizwizStore.updateCsConfig(role, { csId, property: null, selected: true });
+		}
+
+		const mappedDs = autoMapDataStreams(vizwizStore.datastreams);
+		for (const [role, dsId] of Object.entries(mappedDs)) {
+			checkedRoles[role] = true;
+			vizwizStore.updateDsConfig(role, { dsId, property: null, selected: true });
+		}
+	}
+
 	const valid = computed(() =>
 		configRoles.every((config) => {
 			if (!checkedRoles[config.role]) return true;
@@ -71,5 +87,6 @@ export function useConfig(configRoles: VisualizationConfigRole[], defaultInclude
 		validRoles,
 		valid,
 		include,
+		autoMap,
 	};
 }
