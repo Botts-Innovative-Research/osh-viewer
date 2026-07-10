@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { GeoOverlayType } from '@/modules/map/geo-overlay/types';
 import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
 import { MapInteractionMode, useMapInteractionStore } from '@/stores/mapinteractionstore';
@@ -23,7 +23,6 @@ export function useGeoOverlayConfig(options: { type: GeoOverlayType }) {
 		previewStore.reset();
 
 		// Initialize preview store
-		previewStore.id = randomUUID();
 		previewStore.type = options.type;
 
 		// Select correct tool
@@ -36,22 +35,25 @@ export function useGeoOverlayConfig(options: { type: GeoOverlayType }) {
 		// Tool should be active on first step only
 		if (step.value === 1) {
 			mapInteractionStore.selectTool(mapTool.value);
-			previewStore.isActive = true;
 		}
 		if (step.value === 2) {
 			mapInteractionStore.deselectTool(mapTool.value);
-			previewStore.isActive = false;
 		}
 	}
 
 	function submit() {
 		mapInteractionStore.deselectTool(mapTool.value);
+		previewStore.submit();
 	}
+
+	onMounted(init);
+	onUnmounted(() => {
+		mapInteractionStore.deselectTool(mapTool.value);
+	});
 
 	return {
 		step,
 		mapTool,
-		init,
 		changeStep,
 		submit,
 	};

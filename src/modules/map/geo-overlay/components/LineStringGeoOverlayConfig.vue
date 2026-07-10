@@ -10,11 +10,9 @@ import { useGeoOverlayConfig } from '@/modules/map/geo-overlay/composables/useGe
 
 const TYPE = 'LineString';
 
-const { step, init, changeStep, submit } = useGeoOverlayConfig({ type: TYPE });
+const { step, changeStep, submit } = useGeoOverlayConfig({ type: TYPE });
 
 const previewStore = useGeoOverlayPreviewStore();
-
-onMounted(init);
 </script>
 <template>
 	<v-stepper-vertical
@@ -27,17 +25,21 @@ onMounted(init);
 			subtitle="Click on the map to add points for the polyline."
 			:complete="step > 1"
 		>
-			<h4>Click on the map to add points for the polyline.</h4>
+			<h4 class="mt-0">Click on the map to add points for the polyline.</h4>
 			<MapPointCollectionEditor
-				:model-value="previewStore.points ?? []"
+				v-show="useGeoOverlayPreviewStore().points"
+				v-model="previewStore.points"
+				title="Points"
 			></MapPointCollectionEditor>
 			<template #next>
 				<v-btn
 					color="primary"
 					@click="changeStep(1)"
+					:disabled="previewStore.points.length < 2"
 					>Next</v-btn
 				>
 			</template>
+			<template #prev></template>
 		</v-stepper-vertical-item>
 		<v-stepper-vertical-item
 			title="Customize Polyline"
@@ -55,6 +57,9 @@ onMounted(init);
 					@click="submit"
 					>Submit</v-btn
 				>
+			</template>
+			<template #prev>
+				<v-btn @click="changeStep(-1)">Previous</v-btn>
 			</template>
 		</v-stepper-vertical-item>
 	</v-stepper-vertical>

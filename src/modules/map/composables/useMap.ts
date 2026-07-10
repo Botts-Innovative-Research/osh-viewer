@@ -27,6 +27,9 @@ import { setLayerData } from '../services/foi.service';
 import { MapPoint } from '@/modules/map/types';
 import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 import { useMissionStore } from '@/stores/missionstore';
+import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
+import { storeToRefs } from 'pinia';
+import { useGeoOverlayStore } from '@/stores/geooverlaystore';
 
 export function useMap() {
 	// Stores
@@ -35,6 +38,22 @@ export function useMap() {
 	const visualizationStore = useVisualizationStore();
 	const missionStore = useMissionStore();
 	const settingsStore = useSettingsStore();
+	const previewStore = useGeoOverlayPreviewStore();
+	const geoOverlayStore = useGeoOverlayStore();
+
+	// Store Refs
+	const {
+		id: previewId,
+		type: previewType,
+		name: previewName,
+		isGeofence: previewIsGeofence,
+		geofenceMode: previewGeofenceMode,
+		borderColor: previewBorderColor,
+		fillColor: previewFillColor,
+		points: previewPoints,
+		radius: previewRadius,
+	} = storeToRefs(previewStore);
+	const { geoOverlays } = storeToRefs(geoOverlayStore);
 
 	// Map state
 	const mapAdapter = ref<MapAdapter | null>(null);
@@ -276,7 +295,7 @@ export function useMap() {
 			// drawStatus.value = !drawStatus.value;
 			// mapAdapter.value?.addPolylinePointPreview({ lat, lon, alt });
 			if (mapInteractionStore.isGeoOverlayLineStringSelected) {
-				mapAdapter.value?.addPolylinePointPreview({ lat, lon, alt });
+				previewPoints.value.push({ lat, lon, alt });
 			}
 
 			// GeoPTZ
@@ -384,6 +403,30 @@ export function useMap() {
 			console.log('Hid visualization:', viz);
 		}
 	}
+
+	/* GEO OVERLAY */
+	watch(geoOverlays, (newOverlays, oldOverlays) => {
+		const removed = oldOverlays?.filter((oldVal) => !newOverlays.some((val) => val === oldVal));
+		const added = newOverlays?.filter((newVal) => !oldOverlays?.some((val) => val === newVal));
+
+		console.log('Added:', added);
+	});
+	watch(
+		previewPoints,
+		(newPoints) => {
+			if (previewType.value === 'LineString')
+				mapAdapter.value?.updatePolylinePreview(newPoints, previewBorderColor.value);
+		},
+		{ deep: true }
+	);
+	watch(
+		previewBorderColor,
+		(newColor) => {
+			if (previewType.value === 'LineString')
+				mapAdapter.value?.updatePolylinePreview(previewPoints.value, newColor);
+		},
+		{ deep: true }
+	);
 
 	/* GEOPTZ */
 	watch(

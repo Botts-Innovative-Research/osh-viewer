@@ -26,13 +26,13 @@ export interface MapAdapter {
 	endCirclePreview(): void;
 	drawCircleGeoOverlay(center: MapPoint, radius: number): void;
 	// Polyline
-	addPolylinePointPreview(point: MapPoint): void;
+	updatePolylinePreview(points: MapPoint[], borderColor: string | null): void;
 	// drawPolylineGeoOverlay(): void;
 	// Polygon
 	addPolygonPointPreview(point: MapPoint): void;
 	// drawPolygonGeoOverlay(): void;
 	// Cleanup
-	clearPreviews(): void;
+	clearPreview(): void;
 
 	/* CESIUM ONLY */
 	addTerrain?(): void;

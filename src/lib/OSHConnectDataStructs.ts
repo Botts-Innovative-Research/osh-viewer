@@ -480,7 +480,6 @@ export class Geometry {
 		this.properties = properties || {};
 		this.bbox = bbox;
 		this.systemId = systemId;
-		console.log(this.type);
 	}
 
 	// TODO: Handle "Circle" type

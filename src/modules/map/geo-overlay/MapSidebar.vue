@@ -1,9 +1,19 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { GeoOverlayType } from '@/modules/map/geo-overlay/types';
 import LineStringGeoOverlayConfig from '@/modules/map/geo-overlay/components/LineStringGeoOverlayConfig.vue';
+import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
+
+const previewStore = useGeoOverlayPreviewStore();
 
 const selectedTool = ref<GeoOverlayType | null>(null);
+
+watch(selectedTool, (newVal) => {
+	if (!newVal) {
+		previewStore.reset();
+		return;
+	}
+});
 </script>
 <template>
 	<v-sheet
@@ -78,10 +88,10 @@ const selectedTool = ref<GeoOverlayType | null>(null);
 			<v-divider></v-divider>
 		</div>
 		<!-- TOOL CONFIGS -->
-		<v-sheet v-show="selectedTool">
+		<v-expand-transition>
 			<!-- LineString -->
 			<LineStringGeoOverlayConfig v-if="selectedTool === 'LineString'" />
-		</v-sheet>
+		</v-expand-transition>
 	</v-sheet>
 </template>
 <style scoped>

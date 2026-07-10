@@ -12,6 +12,7 @@ export function createLeafletAdapter(): MapAdapter {
 	const previewStore = useGeoOverlayPreviewStore();
 	let previewCircle: L.Circle | null = null;
 	let previewLinePoints: L.Polyline | L.Polygon | null = null;
+	let previewEntity: any = null;
 	/* Geofence entities */
 	let geofenceEntities: any[] = [];
 
@@ -133,19 +134,20 @@ export function createLeafletAdapter(): MapAdapter {
 		geofenceEntities.push(newCircle);
 	}
 
-	function addPolylinePointPreview(point: MapPoint) {
-		previewStore.points.push(point);
-		if (previewLinePoints) clearPreviews();
-		previewLinePoints = L.polyline(
-			previewStore.points.map((p) => [p.lat, p.lon]),
-			{ color: 'red', weight: 5 }
+	function updatePolylinePreview(points: MapPoint[], borderColor: string | null) {
+		// Remove old layer
+		if (previewEntity) clearPreview();
+		// Build new entity
+		previewEntity = L.polyline(
+			points.map((p) => [p.lat, p.lon]),
+			{ color: borderColor ?? 'red', weight: 5 }
 		);
-		previewLinePoints.addTo(mapView.map);
+		// Add to map
+		previewEntity.addTo(mapView.map);
 	}
 
 	function addPolygonPointPreview(point: MapPoint) {
-		previewStore.points.push(point);
-		if (previewLinePoints) clearPreviews();
+		if (previewLinePoints) clearPreview();
 		previewLinePoints = L.polygon(
 			previewStore.points.map((p) => [p.lat, p.lon]),
 			{ color: 'red', weight: 5 }
@@ -153,7 +155,8 @@ export function createLeafletAdapter(): MapAdapter {
 		previewLinePoints.addTo(mapView.map);
 	}
 
-	function clearPreviews() {
+	function clearPreview() {
+		if (previewEntity) mapView.map.removeLayer(previewEntity);
 		if (previewCircle) mapView.map.removeLayer(previewCircle);
 		if (previewLinePoints) mapView.map.removeLayer(previewLinePoints);
 	}
@@ -174,8 +177,8 @@ export function createLeafletAdapter(): MapAdapter {
 		updateCirclePreview,
 		endCirclePreview,
 		drawCircleGeoOverlay,
-		addPolylinePointPreview,
+		updatePolylinePreview,
 		addPolygonPointPreview,
-		clearPreviews,
+		clearPreview,
 	};
 }

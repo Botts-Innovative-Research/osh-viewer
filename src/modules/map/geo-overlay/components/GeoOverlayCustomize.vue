@@ -14,7 +14,6 @@ const previewStore = useGeoOverlayPreviewStore();
 onMounted(() => {
 	// Set with default name
 	previewStore.name = props.defaultName;
-	console.log(props.type === 'Circle');
 });
 </script>
 <template>
@@ -31,13 +30,13 @@ onMounted(() => {
 			<v-list-item>
 				<v-list-item-title>Border Color</v-list-item-title>
 				<template #append>
-					<ColorPicker :model-value="previewStore.borderColor ?? ''" />
+					<ColorPicker v-model="previewStore.borderColor" />
 				</template>
 			</v-list-item>
 			<v-list-item v-show="props.type === 'Circle' || props.type === 'Polygon'">
 				<v-list-item-title>Fill Color</v-list-item-title>
 				<template #append>
-					<ColorPicker :model-value="previewStore.fillColor ?? ''" />
+					<ColorPicker v-model="previewStore.fillColor" />
 				</template>
 			</v-list-item>
 			<!-- Geofence -->
