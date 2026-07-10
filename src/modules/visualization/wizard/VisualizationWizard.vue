@@ -31,6 +31,8 @@ function handleStepBinds(
 	// Handle data step
 	if (stepIndex === 0) {
 		return {
+			supportsDs: VisualizationRegistry[selectedType]?.supportsDs ?? true,
+			requireDs: VisualizationRegistry[selectedType]?.requireDs ?? true,
 			supportsCs: VisualizationRegistry[selectedType]?.supportsCs,
 			requireCs: VisualizationRegistry[selectedType]?.requireCs,
 		};

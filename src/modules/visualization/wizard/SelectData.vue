@@ -10,10 +10,14 @@ import { useComponentValidation } from './composables/useComponentValidation';
 
 const props = withDefaults(
 	defineProps<{
+		supportsDs: boolean;
+		requireDs: boolean;
 		supportsCs: boolean;
 		requireCs: boolean;
 	}>(),
 	{
+		supportsDs: true,
+		requireDs: true,
 		supportsCs: true,
 		requireCs: false,
 	}
@@ -76,7 +80,7 @@ watch(selectedControlstreams, (newVal, oldVal) => {
 const emit = defineEmits<VisualizationComponentEmits>();
 const valid = computed(() => {
 	const hasSystem = selectedSystems.value.length > 0;
-	const hasDatastream = selectedDatastreams.value.length > 0;
+	const hasDatastream = props.requireDs ? selectedDatastreams.value.length > 0 : true;
 	const hasControlstream = props.requireCs ? selectedControlstreams.value.length > 0 : true;
 	return hasSystem && hasDatastream && hasControlstream;
 });
@@ -101,10 +105,11 @@ useComponentValidation(valid, emit);
 	></v-autocomplete>
 	<!-- Select for datastreams -->
 	<v-autocomplete
+		v-if="props.supportsDs"
 		v-model="selectedDatastreams"
 		:items="listDatastreams"
 		hint="Select one or more datastreams"
-		label="Datastream(s)*"
+		:label="'Datastream(s)' + (props.requireDs ? '*' : '')"
 		multiple
 		persistent-hint
 		item-title="name"
@@ -113,7 +118,11 @@ useComponentValidation(valid, emit);
 		chips
 		clearable
 		validate-on="blur"
-		:rules="[(v: any) => !!v.length || 'At least one datastream must be selected']"
+		:rules="
+			props.requireDs
+				? [(v: any) => !!v.length || 'At least one datastream must be selected']
+				: []
+		"
 		:disabled="!selectedSystems.length"
 	></v-autocomplete>
 	<!-- Select for controlstreams -->
