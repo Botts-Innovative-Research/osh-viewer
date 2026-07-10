@@ -30,6 +30,7 @@ import { useMissionStore } from '@/stores/missionstore';
 import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
 import { storeToRefs } from 'pinia';
 import { useGeoOverlayStore } from '@/stores/geooverlaystore';
+import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 
 export function useMap() {
 	// Stores
@@ -405,12 +406,31 @@ export function useMap() {
 	}
 
 	/* GEO OVERLAY */
-	watch(geoOverlays, (newOverlays, oldOverlays) => {
-		const removed = oldOverlays?.filter((oldVal) => !newOverlays.some((val) => val === oldVal));
-		const added = newOverlays?.filter((newVal) => !oldOverlays?.some((val) => val === newVal));
+	watch(
+		geoOverlays,
+		(newOverlays, oldOverlays) => {
+			console.log('Here');
+			console.log(newOverlays === oldOverlays);
+			console.log(newOverlays.length, oldOverlays?.length);
 
-		console.log('Added:', added);
-	});
+			const removed = oldOverlays?.filter(
+				(oldVal) => !newOverlays.some((val) => val === oldVal)
+			);
+			const added = newOverlays?.filter(
+				(newVal) => !oldOverlays?.some((val) => val === newVal)
+			);
+
+			console.log(added);
+
+			// Add new geo overlays
+			if (added) {
+				added.map((newOverlay: GeoOverlay) => {
+					mapAdapter.value?.addGeoOverlay(newOverlay);
+				});
+			}
+		},
+		{ deep: true }
+	);
 	watch(
 		previewPoints,
 		(newPoints) => {

@@ -3,6 +3,7 @@ import L from 'leaflet';
 import { MapAdapter } from './types';
 import { MapPoint, MapPointHandler } from '@/modules/map/types';
 import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
+import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 
 export function createLeafletAdapter(): MapAdapter {
 	let mapView: typeof LeafletView | null;
@@ -10,8 +11,8 @@ export function createLeafletAdapter(): MapAdapter {
 
 	/* Geofence previews */
 	const previewStore = useGeoOverlayPreviewStore();
-	let previewCircle: L.Circle | null = null;
-	let previewLinePoints: L.Polyline | L.Polygon | null = null;
+	let previewCircle: L.circle | null = null;
+	let previewLinePoints: L.polyline | L.polygon | null = null;
 	let previewEntity: any = null;
 	/* Geofence entities */
 	let geofenceEntities: any[] = [];
@@ -23,7 +24,6 @@ export function createLeafletAdapter(): MapAdapter {
 			autoZoomOnFirstMarker: true,
 		});
 	}
-
 	function destroy() {
 		mapView?.destroy();
 		mapView = null;
@@ -32,7 +32,6 @@ export function createLeafletAdapter(): MapAdapter {
 	function addLayer(layer: any) {
 		mapView.addLayer(layer);
 	}
-
 	async function removeLayer(layer: any): Promise<void> {
 		mapView.removeAllFromLayer(layer);
 		return;
@@ -41,7 +40,6 @@ export function createLeafletAdapter(): MapAdapter {
 	function setCursor(mode: any) {
 		mapView.map.getContainer().style.cursor = mode;
 	}
-
 	function onClick(handler: MapPointHandler) {
 		const clickFn = (e: any) => {
 			handler(e.latlng.lat, e.latlng.lng, 120);
@@ -53,7 +51,6 @@ export function createLeafletAdapter(): MapAdapter {
 			mapView.map.off('click', clickFn);
 		};
 	}
-
 	function onMouseMove(handler: MapPointHandler) {
 		const moveFn = (e: any) => {
 			handler(e.latlng.lat, e.latlng.lng, 120);
@@ -65,7 +62,6 @@ export function createLeafletAdapter(): MapAdapter {
 			mapView.map.off('mousemove', moveFn);
 		};
 	}
-
 	function flyToPoint(location: { x: number; y: number; z: number }) {
 		mapView.map.flyTo([location.y, location.x]);
 	}
@@ -73,6 +69,20 @@ export function createLeafletAdapter(): MapAdapter {
 	function updateMarker(props: any) {
 		mapView.updateMarker(props);
 	}
+
+	function drawPoint(point: MapPoint): L.point {}
+	function drawCircle(center: MapPoint, radius: number): L.circle {}
+	function drawPolyline(points: MapPoint[], borderColor: string | null): L.polyline {
+		return L.polyline(
+			points.map((p) => [p.lat, p.lon]),
+			{ color: borderColor ?? 'red', weight: 5 }
+		);
+	}
+	function drawPolygon(
+		points: MapPoint[],
+		borderColor: string | null,
+		fillColor: string | null
+	): L.polygon {}
 
 	function drawMissionPath(waypoints: MapPoint[]) {
 		clearMissionPath();
@@ -138,10 +148,7 @@ export function createLeafletAdapter(): MapAdapter {
 		// Remove old layer
 		if (previewEntity) clearPreview();
 		// Build new entity
-		previewEntity = L.polyline(
-			points.map((p) => [p.lat, p.lon]),
-			{ color: borderColor ?? 'red', weight: 5 }
-		);
+		previewEntity = drawPolyline(points, borderColor);
 		// Add to map
 		previewEntity.addTo(mapView.map);
 	}
@@ -161,6 +168,30 @@ export function createLeafletAdapter(): MapAdapter {
 		if (previewLinePoints) mapView.map.removeLayer(previewLinePoints);
 	}
 
+	function addGeoOverlay(geoOverlay: GeoOverlay) {
+		console.log('here');
+
+		if (!geoOverlay) return;
+
+		// Clear preview before adding final geoOverlay
+		clearPreview();
+
+		if (geoOverlay.type === 'LineString') {
+			const coordinates = geoOverlay.geometry.coordinates as number[][];
+			drawPolyline(
+				coordinates.map(([lon, lat, alt]) => ({
+					lat,
+					lon,
+					alt,
+				})),
+				geoOverlay.geometry.properties.borderColor
+			).addTo(mapView.map);
+			console.log('Added!');
+		}
+	}
+
+	function removeGeoOverlay(geoOverlay: GeoOverlay) {}
+
 	return {
 		init,
 		destroy,
@@ -171,6 +202,10 @@ export function createLeafletAdapter(): MapAdapter {
 		onMouseMove,
 		flyToPoint,
 		updateMarker,
+		drawPoint,
+		drawCircle,
+		drawPolyline,
+		drawPolygon,
 		drawMissionPath,
 		clearMissionPath,
 		handleCirclePreviewClick,
@@ -180,5 +215,7 @@ export function createLeafletAdapter(): MapAdapter {
 		updatePolylinePreview,
 		addPolygonPointPreview,
 		clearPreview,
+		addGeoOverlay,
+		removeGeoOverlay,
 	};
 }

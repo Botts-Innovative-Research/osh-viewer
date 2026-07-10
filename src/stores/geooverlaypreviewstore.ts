@@ -12,6 +12,7 @@ import { MapPoint } from '@/modules/map/types';
 import { Geometry } from '@/lib/OSHConnectDataStructs';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useGeoOverlayStore } from '@/stores/geooverlaystore';
+import { showToast } from '@/composables/useToast';
 
 export const useGeoOverlayPreviewStore = defineStore('geoOverlayPreview', () => {
 	// General properties
@@ -94,6 +95,10 @@ export const useGeoOverlayPreviewStore = defineStore('geoOverlayPreview', () => 
 
 		// Add to geooverlay store
 		useGeoOverlayStore().addGeoOverlay(newGeoOverlay);
+		showToast(
+			`${type.value === 'LineString' ? 'Polyline' : type.value} "${name.value}" created`,
+			'SUCCESS'
+		);
 	}
 
 	return {

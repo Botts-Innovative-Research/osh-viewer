@@ -49,6 +49,7 @@ export function useGeoOverlayConfig(options: { type: GeoOverlayType }) {
 	onMounted(init);
 	onUnmounted(() => {
 		mapInteractionStore.deselectTool(mapTool.value);
+		previewStore.reset();
 	});
 
 	return {

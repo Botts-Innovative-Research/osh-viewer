@@ -90,7 +90,10 @@ watch(selectedTool, (newVal) => {
 		<!-- TOOL CONFIGS -->
 		<v-expand-transition>
 			<!-- LineString -->
-			<LineStringGeoOverlayConfig v-if="selectedTool === 'LineString'" />
+			<LineStringGeoOverlayConfig
+				v-if="selectedTool === 'LineString'"
+				@close="selectedTool = null"
+			/>
 		</v-expand-transition>
 	</v-sheet>
 </template>

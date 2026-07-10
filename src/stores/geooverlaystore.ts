@@ -23,12 +23,14 @@ export const useGeoOverlayStore = defineStore('geoOverlays', () => {
 	});
 
 	function addGeoOverlay(geoOverlay: GeoOverlay) {
-		geoOverlays.value.push(geoOverlay);
+		geoOverlays.value = [...geoOverlays.value, geoOverlay];
 		console.log('GeoOverlay added to store:', geoOverlay);
 	}
 
 	function removeGeoOverlay(geoOverlay: GeoOverlay) {
-		geoOverlays.value = geoOverlays.value.filter((go: GeoOverlay) => go === geoOverlay);
+		geoOverlays.value = geoOverlays.value.filter(
+			(go: GeoOverlay) => go.uuid !== geoOverlay.uuid
+		);
 	}
 
 	function removeAllGeoOverlays() {

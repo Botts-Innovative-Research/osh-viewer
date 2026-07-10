@@ -1,5 +1,6 @@
 import { MapLayer } from './cesium.adapter';
 import { CursorMode, MapPoint, MapPointHandler } from '@/modules/map/types';
+import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 
 export interface MapAdapter {
 	init(container: string): Promise<void>;
@@ -14,6 +15,11 @@ export interface MapAdapter {
 	flyToPoint(location: { x: number; y: number; z: number }): void;
 
 	updateMarker(props: any): void;
+
+	drawPoint(point: MapPoint): any;
+	drawCircle(center: MapPoint, radius: number): any;
+	drawPolyline(points: MapPoint[], borderColor: string | null): any;
+	drawPolygon(points: MapPoint[], borderColor: string | null, fillColor: string | null): any;
 
 	/* Mission Builder */
 	drawMissionPath(waypoints: MapPoint[]): void;
@@ -33,6 +39,8 @@ export interface MapAdapter {
 	// drawPolygonGeoOverlay(): void;
 	// Cleanup
 	clearPreview(): void;
+	addGeoOverlay(geoOverlay: GeoOverlay): void;
+	removeGeoOverlay(geoOverlay: GeoOverlay): void;
 
 	/* CESIUM ONLY */
 	addTerrain?(): void;

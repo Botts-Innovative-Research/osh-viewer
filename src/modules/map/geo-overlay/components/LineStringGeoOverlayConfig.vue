@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import { VueDraggable } from 'vue-draggable-plus';
-import { MapPoint } from '@/modules/map/types';
-import { onMounted, ref } from 'vue';
 import MapPointCollectionEditor from '@/components/ui/MapPointCollectionEditor.vue';
 import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
-import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 import GeoOverlayCustomize from '@/modules/map/geo-overlay/components/GeoOverlayCustomize.vue';
 import { useGeoOverlayConfig } from '@/modules/map/geo-overlay/composables/useGeoOverlayConfig';
+
+const emit = defineEmits<{
+	close: [];
+}>();
+
+function handleSubmit() {
+	submit();
+	emit('close');
+}
 
 const TYPE = 'LineString';
 
@@ -54,7 +59,7 @@ const previewStore = useGeoOverlayPreviewStore();
 			<template #next>
 				<v-btn
 					color="success"
-					@click="submit"
+					@click="handleSubmit"
 					>Submit</v-btn
 				>
 			</template>
