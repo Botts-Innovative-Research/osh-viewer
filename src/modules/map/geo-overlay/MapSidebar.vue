@@ -3,6 +3,7 @@ import { ref, watch } from 'vue';
 import { GeoOverlayType } from '@/modules/map/geo-overlay/types';
 import LineStringGeoOverlayConfig from '@/modules/map/geo-overlay/components/LineStringGeoOverlayConfig.vue';
 import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
+import PolygonGeoOverlayConfig from '@/modules/map/geo-overlay/components/PolygonGeoOverlayConfig.vue';
 
 const previewStore = useGeoOverlayPreviewStore();
 
@@ -92,6 +93,11 @@ watch(selectedTool, (newVal) => {
 			<!-- LineString -->
 			<LineStringGeoOverlayConfig
 				v-if="selectedTool === 'LineString'"
+				@close="selectedTool = null"
+			/>
+			<!-- Polygon -->
+			<PolygonGeoOverlayConfig
+				v-if="selectedTool === 'Polygon'"
 				@close="selectedTool = null"
 			/>
 		</v-expand-transition>

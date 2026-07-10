@@ -14,7 +14,7 @@ function handleSubmit() {
 	emit('close');
 }
 
-const TYPE: GeoOverlayType = 'LineString';
+const TYPE: GeoOverlayType = 'Polygon';
 
 const { step, changeStep, submit } = useGeoOverlayConfig({ type: TYPE });
 
@@ -26,12 +26,12 @@ const previewStore = useGeoOverlayPreviewStore();
 		color="primary"
 	>
 		<v-stepper-vertical-item
-			title="Draw Polyline"
+			title="Draw Polygon"
 			value="1"
-			subtitle="Click on the map to add points for the polyline."
+			subtitle="Click on the map to add points for the polygon."
 			:complete="step > 1"
 		>
-			<h4 class="mt-0">Click on the map to add points for the polyline.</h4>
+			<h4 class="mt-0">Click on the map to add points for the polygon.</h4>
 			<MapPointCollectionEditor
 				v-show="useGeoOverlayPreviewStore().points"
 				v-model="previewStore.points"
@@ -48,13 +48,13 @@ const previewStore = useGeoOverlayPreviewStore();
 			<template #prev></template>
 		</v-stepper-vertical-item>
 		<v-stepper-vertical-item
-			title="Customize Polyline"
+			title="Customize Polygon"
 			value="2"
-			subtitle="Select polyline customizations."
+			subtitle="Select polygon customizations."
 			:complete="step > 2"
 		>
 			<GeoOverlayCustomize
-				defaultName="New Polyline"
+				defaultName="New Polygon"
 				:type="TYPE"
 			/>
 			<template #next>

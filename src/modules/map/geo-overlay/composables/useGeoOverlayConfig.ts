@@ -19,6 +19,8 @@ export function useGeoOverlayConfig(options: { type: GeoOverlayType }) {
 	});
 
 	async function init() {
+		console.log('Init');
+
 		// Reset preview store
 		previewStore.reset();
 

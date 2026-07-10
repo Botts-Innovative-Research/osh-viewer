@@ -291,11 +291,12 @@ export function useMap() {
 
 		/* MOUSE CLICK */
 		mapAdapter.value.onClick(async (lat, lon, alt) => {
-			// Handle geo-overlay
-			// mapAdapter.value?.handleCirclePreviewClick({ lat, lon, alt });
-			// drawStatus.value = !drawStatus.value;
-			// mapAdapter.value?.addPolylinePointPreview({ lat, lon, alt });
+			// Polyline GeoOverlay
 			if (mapInteractionStore.isGeoOverlayLineStringSelected) {
+				previewPoints.value.push({ lat, lon, alt });
+			}
+			// Polygon GeoOverlay
+			if (mapInteractionStore.isGeoOverlayPolygonSelected) {
 				previewPoints.value.push({ lat, lon, alt });
 			}
 
@@ -434,16 +435,45 @@ export function useMap() {
 	watch(
 		previewPoints,
 		(newPoints) => {
+			// Polyline
 			if (previewType.value === 'LineString')
 				mapAdapter.value?.updatePolylinePreview(newPoints, previewBorderColor.value);
+			// Polygon
+			if (previewType.value === 'Polygon')
+				mapAdapter.value?.updatePolygonPreview(
+					newPoints,
+					previewBorderColor.value,
+					previewFillColor.value
+				);
 		},
 		{ deep: true }
 	);
 	watch(
 		previewBorderColor,
 		(newColor) => {
+			// Polyline
 			if (previewType.value === 'LineString')
 				mapAdapter.value?.updatePolylinePreview(previewPoints.value, newColor);
+			// Polygon
+			if (previewType.value === 'Polygon')
+				mapAdapter.value?.updatePolygonPreview(
+					previewPoints.value,
+					newColor,
+					previewFillColor.value
+				);
+		},
+		{ deep: true }
+	);
+	watch(
+		previewFillColor,
+		(newColor) => {
+			// Polygon
+			if (previewType.value === 'Polygon')
+				mapAdapter.value?.updatePolygonPreview(
+					previewPoints.value,
+					previewBorderColor.value,
+					newColor
+				);
 		},
 		{ deep: true }
 	);

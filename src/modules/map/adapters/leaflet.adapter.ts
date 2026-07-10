@@ -75,14 +75,24 @@ export function createLeafletAdapter(): MapAdapter {
 	function drawPolyline(points: MapPoint[], borderColor: string | null): L.polyline {
 		return L.polyline(
 			points.map((p) => [p.lat, p.lon]),
-			{ color: borderColor ?? 'red', weight: 5 }
+			{ color: borderColor ?? '#FF0000', weight: 5 }
 		);
 	}
 	function drawPolygon(
 		points: MapPoint[],
 		borderColor: string | null,
 		fillColor: string | null
-	): L.polygon {}
+	): L.polygon {
+		return L.polygon(
+			points.map((p) => [p.lat, p.lon]),
+			{
+				color: borderColor ?? '#FF0000',
+				fillColor: fillColor ?? '#FF000080',
+				fillOpacity: 1,
+				weight: 5,
+			}
+		);
+	}
 
 	function drawMissionPath(waypoints: MapPoint[]) {
 		clearMissionPath();
@@ -153,13 +163,17 @@ export function createLeafletAdapter(): MapAdapter {
 		previewEntity.addTo(mapView.map);
 	}
 
-	function addPolygonPointPreview(point: MapPoint) {
-		if (previewLinePoints) clearPreview();
-		previewLinePoints = L.polygon(
-			previewStore.points.map((p) => [p.lat, p.lon]),
-			{ color: 'red', weight: 5 }
-		);
-		previewLinePoints.addTo(mapView.map);
+	function updatePolygonPreview(
+		points: MapPoint[],
+		borderColor: string | null,
+		fillColor: string | null
+	) {
+		// Remove old layer
+		if (previewEntity) clearPreview();
+		// Build new entity
+		previewEntity = drawPolygon(points, borderColor, fillColor);
+		// Add to map
+		previewEntity.addTo(mapView.map);
 	}
 
 	function clearPreview() {
@@ -169,13 +183,12 @@ export function createLeafletAdapter(): MapAdapter {
 	}
 
 	function addGeoOverlay(geoOverlay: GeoOverlay) {
-		console.log('here');
-
 		if (!geoOverlay) return;
 
 		// Clear preview before adding final geoOverlay
 		clearPreview();
 
+		// Polyline
 		if (geoOverlay.type === 'LineString') {
 			const coordinates = geoOverlay.geometry.coordinates as number[][];
 			drawPolyline(
@@ -186,7 +199,19 @@ export function createLeafletAdapter(): MapAdapter {
 				})),
 				geoOverlay.geometry.properties.borderColor
 			).addTo(mapView.map);
-			console.log('Added!');
+		}
+		// Polygon
+		if (geoOverlay.type === 'Polygon') {
+			const coordinates = geoOverlay.geometry.coordinates as number[][];
+			drawPolygon(
+				coordinates.map(([lon, lat, alt]) => ({
+					lat,
+					lon,
+					alt,
+				})),
+				geoOverlay.geometry.properties.borderColor,
+				geoOverlay.geometry.properties.fillColor
+			).addTo(mapView.map);
 		}
 	}
 
@@ -213,7 +238,7 @@ export function createLeafletAdapter(): MapAdapter {
 		endCirclePreview,
 		drawCircleGeoOverlay,
 		updatePolylinePreview,
-		addPolygonPointPreview,
+		updatePolygonPreview,
 		clearPreview,
 		addGeoOverlay,
 		removeGeoOverlay,

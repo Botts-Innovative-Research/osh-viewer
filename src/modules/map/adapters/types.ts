@@ -33,11 +33,11 @@ export interface MapAdapter {
 	drawCircleGeoOverlay(center: MapPoint, radius: number): void;
 	// Polyline
 	updatePolylinePreview(points: MapPoint[], borderColor: string | null): void;
-	// drawPolylineGeoOverlay(): void;
-	// Polygon
-	addPolygonPointPreview(point: MapPoint): void;
-	// drawPolygonGeoOverlay(): void;
-	// Cleanup
+	updatePolygonPreview(
+		points: MapPoint[],
+		borderColor: string | null,
+		fillColor: string | null
+	): void;
 	clearPreview(): void;
 	addGeoOverlay(geoOverlay: GeoOverlay): void;
 	removeGeoOverlay(geoOverlay: GeoOverlay): void;
