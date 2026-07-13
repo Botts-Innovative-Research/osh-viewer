@@ -20,6 +20,7 @@ export interface GeoOverlayProperties {
 	borderColor: string;
 	fillColor: string;
 	radius?: number; // For "Circle" type, store radius here
+	icon?: string; // For "Point" type, store icon path here
 }
 
 /**
@@ -75,5 +76,9 @@ export class GeoOverlay {
 
 	setGeofenceMode(mode: GeofenceMode | undefined) {
 		this.geofenceMode = mode;
+	}
+
+	setIcon(icon: string) {
+		this.geometry.properties.icon = icon;
 	}
 }

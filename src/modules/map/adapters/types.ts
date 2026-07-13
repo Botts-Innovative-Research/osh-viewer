@@ -16,6 +16,7 @@ export interface MapAdapter {
 
 	updateMarker(props: any): void;
 
+	/* Map Drawing */
 	drawPoint(point: MapPoint): any;
 	drawCircle(
 		center: MapPoint,
@@ -31,11 +32,6 @@ export interface MapAdapter {
 	clearMissionPath(): void;
 
 	/* GeoOverlay */
-	// Circle
-	// handleCirclePreviewClick(center: MapPoint): void; // Handles center click and radius confirmation click
-	// endCirclePreview(): void;
-	// drawCircleGeoOverlay(center: MapPoint, radius: number): void;
-
 	updateCirclePreview(
 		center: MapPoint,
 		radius: number,

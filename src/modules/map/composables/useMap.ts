@@ -351,7 +351,6 @@ export function useMap() {
 				mapStore.setCurrentLLA(lat, lon, 0);
 				await addDriveLocationLayer(lon, lat);
 			}
-
 			// Home Location
 			if (mapInteractionStore.isHomeLocationSelected) {
 				mapStore.setCurrentLLA(lat, lon, 0);

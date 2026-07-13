@@ -2,19 +2,14 @@ import LeafletView from 'osh-js/source/core/ui/view/map/LeafletView';
 import L from 'leaflet';
 import { MapAdapter } from './types';
 import { MapPoint, MapPointHandler } from '@/modules/map/types';
-import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 
 export function createLeafletAdapter(): MapAdapter {
 	let mapView: typeof LeafletView | null;
 	let flightPathPolyline: any = null;
 
-	/* Geofence previews */
-	const previewStore = useGeoOverlayPreviewStore();
-	let previewCircle: L.circle | null = null;
-	let previewLinePoints: L.polyline | L.polygon | null = null;
+	/* GeoOverlays */
 	let previewEntity: any = null;
-	/* Geofence entities */
 	let geofenceEntities: any[] = [];
 
 	async function init(container: string) {
@@ -161,8 +156,6 @@ export function createLeafletAdapter(): MapAdapter {
 
 	function clearPreview() {
 		if (previewEntity) mapView.map.removeLayer(previewEntity);
-		if (previewCircle) mapView.map.removeLayer(previewCircle);
-		if (previewLinePoints) mapView.map.removeLayer(previewLinePoints);
 	}
 
 	function addGeoOverlay(geoOverlay: GeoOverlay) {

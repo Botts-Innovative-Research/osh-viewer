@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { Ref, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import {
 	GeofenceExcludeDefaults,
 	GeofenceIncludeDefaults,
