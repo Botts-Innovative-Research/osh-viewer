@@ -44,7 +44,7 @@ function getIconColor(overlay: GeoOverlay) {
 	<v-list
 		activatable
 		density="compact"
-		select-strategy="leaf"
+		select-strategy="single-leaf"
 		class="pa-0"
 	>
 		<v-list-item :key="overlay.uuid">
@@ -60,6 +60,16 @@ function getIconColor(overlay: GeoOverlay) {
 			<template #title
 				><span>{{ overlay.name }}</span></template
 			>
+			<!-- Subtitle for Geofence -->
+			<template #subtitle>
+				<span
+					><i>{{
+						overlay.isGeofence
+							? `Geofence: ${overlay.geofenceMode === 'include' ? 'Inclusion' : 'Exclusion'}`
+							: ''
+					}}</i></span
+				>
+			</template>
 			<!-- Actions -->
 			<template #append>
 				<div class="overlay-actions">

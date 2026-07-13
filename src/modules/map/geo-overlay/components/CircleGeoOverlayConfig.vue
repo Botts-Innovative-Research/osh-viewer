@@ -115,11 +115,11 @@ function defaultToZero(key: keyof MapPoint) {
 				<v-text-field
 					v-model.number="previewStore.radius"
 					type="number"
-					label="Radius"
+					label="Radius (m)"
 					placeholder="1.0"
 					hint="Meters (m)"
 					min="0"
-					:rules="[(v) => v >= 0 || 'Must be at least 0']"
+					:rules="[(v) => v > 0 || 'Must be at greater than 0']"
 					:disabled="previewStore.circleCreationStep === 'center'"
 				/>
 			</v-row>
@@ -133,7 +133,11 @@ function defaultToZero(key: keyof MapPoint) {
 				<v-btn
 					color="primary"
 					@click="changeStep(1)"
-					:disabled="!(previewStore.circleCreationStep === null)"
+					:disabled="
+						!(previewStore.circleCreationStep === null) ||
+						previewStore.points.length === 0 ||
+						!previewStore.radius
+					"
 					>Next</v-btn
 				>
 			</template>
@@ -152,6 +156,7 @@ function defaultToZero(key: keyof MapPoint) {
 				<v-btn
 					color="success"
 					@click="handleSubmit"
+					:disabled="!previewStore.name"
 					>Submit</v-btn
 				>
 			</template>
