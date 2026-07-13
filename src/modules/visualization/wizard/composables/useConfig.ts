@@ -4,8 +4,8 @@ import { useValidRoles } from './useValidRoles';
 import { useVizWizStore } from '@/stores/vizwizstore';
 import type { VisualizationConfigRole } from '../../registry/types';
 import { confirmRoles } from '../../registry/roleUtils';
-import { autoMapControlStreams } from '../../services/autoMapControlStreams';
-import { autoMapDataStreams } from '../../services/autoMapDataStreams';
+import { autoMapControlStreams } from '../../services/autoMapControlStreams.service';
+import { autoMapDataStreams } from '../../services/autoMapDataStreams.service';
 
 export function useConfig(configRoles: VisualizationConfigRole[], defaultInclude: boolean) {
 	const vizwizStore = useVizWizStore();
