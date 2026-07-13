@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { onUnmounted, ref, watch } from 'vue';
 import { GeoOverlayType } from '@/modules/map/geo-overlay/types';
 import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
 import PolygonGeoOverlayConfig from '@/modules/map/geo-overlay/components/PolygonGeoOverlayConfig.vue';
@@ -16,6 +16,10 @@ watch(selectedTool, (newVal) => {
 		return;
 	}
 });
+
+onUnmounted(() => {
+	previewStore.reset();
+});
 </script>
 <template>
 	<v-sheet
@@ -28,20 +32,20 @@ watch(selectedTool, (newVal) => {
 				v-model="selectedTool"
 				class="ga-2"
 			>
-				<v-btn
-					prepend-icon="mdi-map-marker-outline"
-					variant="tonal"
-					color="primary"
-					value="Point"
-				>
-					<v-tooltip
-						text="Draw point overlay on map"
-						location="bottom"
-						activator="parent"
-					>
-					</v-tooltip>
-					Point
-				</v-btn>
+				<!--				<v-btn-->
+				<!--					prepend-icon="mdi-map-marker-outline"-->
+				<!--					variant="tonal"-->
+				<!--					color="primary"-->
+				<!--					value="Point"-->
+				<!--				>-->
+				<!--					<v-tooltip-->
+				<!--						text="Draw point overlay on map"-->
+				<!--						location="bottom"-->
+				<!--						activator="parent"-->
+				<!--					>-->
+				<!--					</v-tooltip>-->
+				<!--					Point-->
+				<!--				</v-btn>-->
 				<v-btn
 					prepend-icon="mdi-vector-circle-variant"
 					variant="tonal"

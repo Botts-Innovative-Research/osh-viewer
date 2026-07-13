@@ -50,7 +50,7 @@ const tab = ref('one');
 						<VisualizationSidebar />
 					</v-tabs-window-item>
 					<v-tabs-window-item value="three">
-						<MapSidebar />
+						<MapSidebar v-if="tab === 'three'" />
 					</v-tabs-window-item>
 				</v-tabs-window>
 			</v-sheet>

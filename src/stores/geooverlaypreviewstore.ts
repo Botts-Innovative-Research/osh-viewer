@@ -62,6 +62,7 @@ export const useGeoOverlayPreviewStore = defineStore('geoOverlayPreview', () => 
 	}
 
 	function reset() {
+		type.value = null;
 		id.value = `geoOverlay-${randomUUID()}`;
 		name.value = null;
 		isGeofence.value = false;
