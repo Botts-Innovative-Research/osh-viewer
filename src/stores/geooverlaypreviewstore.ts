@@ -31,6 +31,7 @@ export const useGeoOverlayPreviewStore = defineStore('geoOverlayPreview', () => 
 	// Circle tool status
 	const circleCreationStep = ref<'center' | 'radius' | null>(null);
 
+	// Apply default geofence styling
 	watch(geofenceMode, (value) => {
 		if (!value) return;
 		if (value === 'include') {
@@ -42,6 +43,7 @@ export const useGeoOverlayPreviewStore = defineStore('geoOverlayPreview', () => 
 		}
 	});
 
+	// Automatically update geofence mode
 	watch(isGeofence, (value) => {
 		if (value) geofenceMode.value = 'include';
 		else geofenceMode.value = undefined;

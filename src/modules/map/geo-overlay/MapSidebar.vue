@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { GeoOverlayType } from '@/modules/map/geo-overlay/types';
-import LineStringGeoOverlayConfig from '@/modules/map/geo-overlay/components/LineStringGeoOverlayConfig.vue';
 import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
 import PolygonGeoOverlayConfig from '@/modules/map/geo-overlay/components/PolygonGeoOverlayConfig.vue';
+import CircleGeoOverlayConfig from '@/modules/map/geo-overlay/components/CircleGeoOverlayConfig.vue';
+import LineStringGeoOverlayConfig from '@/modules/map/geo-overlay/components/LineStringGeoOverlayConfig.vue';
 
 const previewStore = useGeoOverlayPreviewStore();
 
@@ -90,6 +91,11 @@ watch(selectedTool, (newVal) => {
 		</div>
 		<!-- TOOL CONFIGS -->
 		<v-expand-transition>
+			<!-- Circle -->
+			<CircleGeoOverlayConfig
+				v-if="selectedTool === 'Circle'"
+				@close="selectedTool = null"
+			/>
 			<!-- LineString -->
 			<LineStringGeoOverlayConfig
 				v-if="selectedTool === 'LineString'"

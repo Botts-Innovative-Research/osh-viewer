@@ -29,6 +29,11 @@ export function useGeoOverlayConfig(options: { type: GeoOverlayType }) {
 
 		// Select correct tool
 		mapInteractionStore.selectTool(mapTool.value);
+
+		// Circle initialization
+		if (options.type === 'Circle') {
+			previewStore.circleCreationStep = 'center';
+		}
 	}
 
 	function changeStep(delta: number) {

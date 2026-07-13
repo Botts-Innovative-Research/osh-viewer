@@ -22,7 +22,7 @@ import {
 	connectDatasources as connect,
 	disconnectDatasources as disconnect,
 } from '@/modules/visualization/services/datasource.service';
-import { getGroundAltitude } from '../services/altitude.service';
+import { getDistanceBetween, getGroundAltitude } from '../services/geospatial.service';
 import { setLayerData } from '../services/foi.service';
 import { MapPoint } from '@/modules/map/types';
 import { useMapInteractionStore } from '@/stores/mapinteractionstore';
@@ -53,6 +53,7 @@ export function useMap() {
 		fillColor: previewFillColor,
 		points: previewPoints,
 		radius: previewRadius,
+		circleCreationStep: previewCircleCreationStep,
 	} = storeToRefs(previewStore);
 	const { geoOverlays } = storeToRefs(geoOverlayStore);
 
@@ -291,6 +292,26 @@ export function useMap() {
 
 		/* MOUSE CLICK */
 		mapAdapter.value.onClick(async (lat, lon, alt) => {
+			// Circle GeoOverlay
+			if (mapInteractionStore.isGeoOverlayCircleSelected) {
+				// Handle second click FIRST - radius
+				if (previewCircleCreationStep.value === 'radius') {
+					// Calculate final radius in meters
+					previewRadius.value = getDistanceBetween(previewPoints.value[0], {
+						lat,
+						lon,
+						alt,
+					});
+					// Deselect tool
+					previewCircleCreationStep.value = null;
+					mapInteractionStore.deselectTool('geoOverlayCircle');
+				}
+				// Handle first click AFTER - center
+				else if (previewCircleCreationStep.value === 'center') {
+					previewPoints.value = [{ lat, lon, alt }];
+					previewCircleCreationStep.value = 'radius';
+				}
+			}
 			// Polyline GeoOverlay
 			if (mapInteractionStore.isGeoOverlayLineStringSelected) {
 				previewPoints.value.push({ lat, lon, alt });
@@ -341,9 +362,18 @@ export function useMap() {
 
 		/* MOUSE MOVE */
 		mapAdapter.value.onMouseMove(async (lat: number, lon: number, alt: number) => {
-			// if (drawStatus.value) {
-			// 	mapAdapter.value?.updateCirclePreview({ lat, lon, alt });
-			// }
+			// Circle GeoOverlay
+			if (
+				mapInteractionStore.isGeoOverlayCircleSelected &&
+				previewCircleCreationStep.value === 'radius'
+			) {
+				// Calculate radius in meters
+				previewRadius.value = getDistanceBetween(previewPoints.value[0], {
+					lat,
+					lon,
+					alt,
+				});
+			}
 		});
 	}
 	watch(
@@ -410,10 +440,6 @@ export function useMap() {
 	watch(
 		geoOverlays,
 		(newOverlays, oldOverlays) => {
-			console.log('Here');
-			console.log(newOverlays === oldOverlays);
-			console.log(newOverlays.length, oldOverlays?.length);
-
 			const removed = oldOverlays?.filter(
 				(oldVal) => !newOverlays.some((val) => val === oldVal)
 			);
@@ -435,6 +461,17 @@ export function useMap() {
 	watch(
 		previewPoints,
 		(newPoints) => {
+			// Circle
+			if (previewType.value === 'Circle') {
+				const center = newPoints[0];
+				if (!center) return;
+				mapAdapter.value?.updateCirclePreview(
+					center,
+					previewRadius.value ?? 0, // Default radius = 0
+					previewBorderColor.value,
+					previewFillColor.value
+				);
+			}
 			// Polyline
 			if (previewType.value === 'LineString')
 				mapAdapter.value?.updatePolylinePreview(newPoints, previewBorderColor.value);
@@ -449,8 +486,33 @@ export function useMap() {
 		{ deep: true }
 	);
 	watch(
+		previewRadius,
+		(newRadius) => {
+			const center = previewPoints.value[0];
+			if (!center) return;
+			mapAdapter.value?.updateCirclePreview(
+				center,
+				newRadius ?? 0, // Default radius = 0
+				previewBorderColor.value,
+				previewFillColor.value
+			);
+		},
+		{ deep: true }
+	);
+	watch(
 		previewBorderColor,
 		(newColor) => {
+			// Circle
+			if (previewType.value === 'Circle') {
+				const center = previewPoints.value[0];
+				if (!center) return;
+				mapAdapter.value?.updateCirclePreview(
+					center,
+					previewRadius.value ?? 0, // Default radius = 0
+					newColor,
+					previewFillColor.value
+				);
+			}
 			// Polyline
 			if (previewType.value === 'LineString')
 				mapAdapter.value?.updatePolylinePreview(previewPoints.value, newColor);
@@ -467,6 +529,17 @@ export function useMap() {
 	watch(
 		previewFillColor,
 		(newColor) => {
+			// Circle
+			if (previewType.value === 'Circle') {
+				const center = previewPoints.value[0];
+				if (!center) return;
+				mapAdapter.value?.updateCirclePreview(
+					center,
+					previewRadius.value ?? 0, // Default radius = 0
+					previewBorderColor.value,
+					newColor
+				);
+			}
 			// Polygon
 			if (previewType.value === 'Polygon')
 				mapAdapter.value?.updatePolygonPreview(

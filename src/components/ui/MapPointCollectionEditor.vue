@@ -127,7 +127,7 @@ function clearPoints() {
 						<v-tooltip
 							activator="parent"
 							location="top"
-							>Remove waypoint</v-tooltip
+							>Remove point</v-tooltip
 						>
 					</v-btn>
 				</div>

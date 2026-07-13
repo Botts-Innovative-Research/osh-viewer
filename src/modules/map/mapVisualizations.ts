@@ -11,7 +11,7 @@ import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { getLayerId } from './services/layerId.service';
 import { colorHash, getColoredIconUrl, getColoredSvgUrl } from './services/colorId.service';
 import { SupportedMapLayer } from './supportedMapLayers';
-import { getGroundAltitude } from './services/altitude.service';
+import { getGroundAltitude } from './services/geospatial.service';
 import { IConSysApiDataSourceProperties } from '../visualization/types/datasource';
 import { setLayerData } from './services/foi.service';
 import { ICON_BASE } from '@/lib/icons';

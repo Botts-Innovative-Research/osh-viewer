@@ -71,7 +71,20 @@ export function createLeafletAdapter(): MapAdapter {
 	}
 
 	function drawPoint(point: MapPoint): L.point {}
-	function drawCircle(center: MapPoint, radius: number): L.circle {}
+	function drawCircle(
+		center: MapPoint,
+		radius: number,
+		borderColor: string | null,
+		fillColor: string | null
+	): L.circle {
+		return L.circle([center.lat, center.lon], {
+			radius,
+			color: borderColor ?? '#FF0000',
+			weight: 2,
+			fillColor: fillColor ?? '#FF000080',
+			fillOpacity: 1,
+		});
+	}
 	function drawPolyline(points: MapPoint[], borderColor: string | null): L.polyline {
 		return L.polyline(
 			points.map((p) => [p.lat, p.lon]),
@@ -110,48 +123,18 @@ export function createLeafletAdapter(): MapAdapter {
 	}
 
 	/* Geofence Drawing Tools */
-	function handleCirclePreviewClick(center: MapPoint) {
-		if (previewCircle) endCirclePreview();
-		else {
-			previewCircle = L.circle([center.lat, center.lon], {
-				color: 'blue',
-				weight: 2,
-				fillColor: 'lightblue',
-				fillOpacity: 0.5,
-				radius: 0,
-			}).addTo(mapView.map);
-		}
-	}
-
-	function updateCirclePreview(mouse: MapPoint) {
-		if (!previewCircle) return;
-		const radius = L.latLng(
-			previewCircle.getLatLng().lat,
-			previewCircle.getLatLng().lng
-		).distanceTo(L.latLng(mouse.lat, mouse.lon));
-		previewCircle.setRadius(radius);
-	}
-
-	function endCirclePreview() {
-		if (!previewCircle) return;
-		mapView.map.removeLayer(previewCircle);
-		drawCircleGeoOverlay(
-			{ lat: previewCircle.getLatLng().lat, lon: previewCircle.getLatLng().lng, alt: 120 },
-			previewCircle.getRadius()
-		);
-		previewCircle = null;
-	}
-
-	function drawCircleGeoOverlay(center: MapPoint, radius: number) {
-		const newCircle = L.circle([center.lat, center.lon], {
-			radius,
-			color: 'blue',
-			weight: 2,
-			fillColor: 'lightcoral',
-			fillOpacity: 0.5,
-		});
-		newCircle.addTo(mapView.map);
-		geofenceEntities.push(newCircle);
+	function updateCirclePreview(
+		center: MapPoint,
+		radius: number,
+		borderColor: string | null,
+		fillColor: string | null
+	): L.circle {
+		// Remove old layer
+		if (previewEntity) clearPreview();
+		// Build new entity
+		previewEntity = drawCircle(center, radius, borderColor, fillColor);
+		// Add to map
+		previewEntity.addTo(mapView.map);
 	}
 
 	function updatePolylinePreview(points: MapPoint[], borderColor: string | null) {
@@ -188,6 +171,21 @@ export function createLeafletAdapter(): MapAdapter {
 		// Clear preview before adding final geoOverlay
 		clearPreview();
 
+		// Circle
+		if (geoOverlay.type === 'Circle') {
+			const [lon, lat, alt] = geoOverlay.geometry.coordinates as [number, number, number];
+			const center: MapPoint = {
+				lat,
+				lon,
+				alt,
+			};
+			drawCircle(
+				center,
+				geoOverlay.geometry.properties.radius,
+				geoOverlay.geometry.properties.borderColor,
+				geoOverlay.geometry.properties.fillColor
+			).addTo(mapView.map);
+		}
 		// Polyline
 		if (geoOverlay.type === 'LineString') {
 			const coordinates = geoOverlay.geometry.coordinates as number[][];
@@ -233,10 +231,7 @@ export function createLeafletAdapter(): MapAdapter {
 		drawPolygon,
 		drawMissionPath,
 		clearMissionPath,
-		handleCirclePreviewClick,
 		updateCirclePreview,
-		endCirclePreview,
-		drawCircleGeoOverlay,
 		updatePolylinePreview,
 		updatePolygonPreview,
 		clearPreview,

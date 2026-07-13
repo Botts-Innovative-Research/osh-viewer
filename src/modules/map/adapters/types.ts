@@ -17,7 +17,12 @@ export interface MapAdapter {
 	updateMarker(props: any): void;
 
 	drawPoint(point: MapPoint): any;
-	drawCircle(center: MapPoint, radius: number): any;
+	drawCircle(
+		center: MapPoint,
+		radius: number,
+		borderColor: string | null,
+		fillColor: string | null
+	): any;
 	drawPolyline(points: MapPoint[], borderColor: string | null): any;
 	drawPolygon(points: MapPoint[], borderColor: string | null, fillColor: string | null): any;
 
@@ -27,11 +32,16 @@ export interface MapAdapter {
 
 	/* GeoOverlay */
 	// Circle
-	handleCirclePreviewClick(center: MapPoint): void; // Handles center click and radius confirmation click
-	updateCirclePreview(mouse: MapPoint): void; // Handles radius preview
-	endCirclePreview(): void;
-	drawCircleGeoOverlay(center: MapPoint, radius: number): void;
-	// Polyline
+	// handleCirclePreviewClick(center: MapPoint): void; // Handles center click and radius confirmation click
+	// endCirclePreview(): void;
+	// drawCircleGeoOverlay(center: MapPoint, radius: number): void;
+
+	updateCirclePreview(
+		center: MapPoint,
+		radius: number,
+		borderColor: string | null,
+		fillColor: string | null
+	): void;
 	updatePolylinePreview(points: MapPoint[], borderColor: string | null): void;
 	updatePolygonPreview(
 		points: MapPoint[],
