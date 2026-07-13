@@ -458,6 +458,9 @@ export function useMap() {
 		},
 		{ deep: true }
 	);
+	watch(previewType, () => {
+		mapAdapter.value?.clearPreview();
+	});
 	watch(
 		previewPoints,
 		(newPoints) => {

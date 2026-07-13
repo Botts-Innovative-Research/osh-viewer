@@ -41,7 +41,12 @@ export function useGeoOverlayConfig(options: { type: GeoOverlayType }) {
 
 		// Tool should be active on first step only
 		if (step.value === 1) {
-			mapInteractionStore.selectTool(mapTool.value);
+			// Don't reselect for circle if already added
+			if (options.type === 'Circle' && previewStore.points.length) {
+				return;
+			} else {
+				mapInteractionStore.selectTool(mapTool.value);
+			}
 		}
 		if (step.value === 2) {
 			mapInteractionStore.deselectTool(mapTool.value);
