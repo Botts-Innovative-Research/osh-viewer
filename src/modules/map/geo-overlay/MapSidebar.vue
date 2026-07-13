@@ -5,8 +5,13 @@ import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
 import PolygonGeoOverlayConfig from '@/modules/map/geo-overlay/components/PolygonGeoOverlayConfig.vue';
 import CircleGeoOverlayConfig from '@/modules/map/geo-overlay/components/CircleGeoOverlayConfig.vue';
 import LineStringGeoOverlayConfig from '@/modules/map/geo-overlay/components/LineStringGeoOverlayConfig.vue';
+import { VueDraggable } from 'vue-draggable-plus';
+import MapVisualizationWrapper from '@/modules/visualization/sidebar/components/MapVisualizationWrapper.vue';
+import GeoOverlayWrapper from '@/modules/map/geo-overlay/components/GeoOverlayWrapper.vue';
+import { useGeoOverlayStore } from '@/stores/geooverlaystore';
 
 const previewStore = useGeoOverlayPreviewStore();
+const geoOverlayStore = useGeoOverlayStore();
 
 const selectedTool = ref<GeoOverlayType | null>(null);
 
@@ -90,9 +95,6 @@ onUnmounted(() => {
 				</v-btn>
 			</v-btn-toggle>
 		</v-sheet>
-		<div class="pt-2 pb-4">
-			<v-divider></v-divider>
-		</div>
 		<!-- TOOL CONFIGS -->
 		<v-expand-transition>
 			<!-- Circle -->
@@ -111,11 +113,33 @@ onUnmounted(() => {
 				@close="selectedTool = null"
 			/>
 		</v-expand-transition>
+		<div class="pt-4 pb-4">
+			<v-divider>Overlays</v-divider>
+		</div>
+		<v-sheet class="geooverlay-list overflow-y-auto">
+			<VueDraggable
+				v-model="geoOverlayStore.geoOverlays"
+				item-key="id"
+				:animation="150"
+				tag="div"
+				style="display: contents"
+			>
+				<GeoOverlayWrapper
+					v-for="overlay in geoOverlayStore.geoOverlays"
+					:overlay="overlay"
+				/>
+			</VueDraggable>
+		</v-sheet>
 	</v-sheet>
 </template>
 <style scoped>
 #map-sidebar {
 	width: 100%;
 	height: 100%;
+}
+.geooverlay-list {
+	display: flex;
+	flex-direction: column;
+	overflow-y: scroll;
 }
 </style>

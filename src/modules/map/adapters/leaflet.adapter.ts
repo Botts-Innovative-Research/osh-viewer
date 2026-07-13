@@ -10,7 +10,7 @@ export function createLeafletAdapter(): MapAdapter {
 
 	/* GeoOverlays */
 	let previewEntity: any = null;
-	let geofenceEntities: any[] = [];
+	let geoOverlayEntities: any[] = [];
 
 	async function init(container: string) {
 		mapView = new LeafletView({
@@ -172,29 +172,36 @@ export function createLeafletAdapter(): MapAdapter {
 				lon,
 				alt,
 			};
-			drawCircle(
+			const newCircle = drawCircle(
 				center,
 				geoOverlay.geometry.properties.radius,
 				geoOverlay.geometry.properties.borderColor,
 				geoOverlay.geometry.properties.fillColor
-			).addTo(mapView.map);
+			);
+			newCircle.uuid = geoOverlay.uuid;
+			newCircle.addTo(mapView.map);
+			geoOverlayEntities.push(newCircle);
 		}
 		// Polyline
 		if (geoOverlay.type === 'LineString') {
 			const coordinates = geoOverlay.geometry.coordinates as number[][];
-			drawPolyline(
+			const newPolyline = drawPolyline(
 				coordinates.map(([lon, lat, alt]) => ({
 					lat,
 					lon,
 					alt,
 				})),
 				geoOverlay.geometry.properties.borderColor
-			).addTo(mapView.map);
+			);
+			newPolyline.uuid = geoOverlay.uuid;
+			newPolyline.addTo(mapView.map);
+			geoOverlayEntities.push(newPolyline);
+			console.log(geoOverlayEntities);
 		}
 		// Polygon
 		if (geoOverlay.type === 'Polygon') {
 			const coordinates = geoOverlay.geometry.coordinates as number[][];
-			drawPolygon(
+			const newPolygon = drawPolygon(
 				coordinates.map(([lon, lat, alt]) => ({
 					lat,
 					lon,
@@ -202,11 +209,20 @@ export function createLeafletAdapter(): MapAdapter {
 				})),
 				geoOverlay.geometry.properties.borderColor,
 				geoOverlay.geometry.properties.fillColor
-			).addTo(mapView.map);
+			);
+			newPolygon.uuid = geoOverlay.uuid;
+			newPolygon.addTo(mapView.map);
+			geoOverlayEntities.push(newPolygon);
 		}
 	}
 
-	function removeGeoOverlay(geoOverlay: GeoOverlay) {}
+	function removeGeoOverlay(geoOverlay: GeoOverlay) {
+		const findGeoOverlay = geoOverlayEntities.find(
+			(item: any) => item.uuid === geoOverlay.uuid
+		);
+		if (findGeoOverlay) mapView.map.removeLayer(findGeoOverlay);
+		geoOverlayEntities.filter((item: any) => item.uuid !== geoOverlay.uuid);
+	}
 
 	return {
 		init,

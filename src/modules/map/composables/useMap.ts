@@ -439,17 +439,23 @@ export function useMap() {
 	watch(
 		geoOverlays,
 		(newOverlays, oldOverlays) => {
-			const removed = oldOverlays?.filter(
-				(oldVal) => !newOverlays.some((val) => val === oldVal)
+			const added = newOverlays.filter(
+				(newOverlay) =>
+					!oldOverlays.some((oldOverlay) => oldOverlay.uuid === newOverlay.uuid)
 			);
-			const added = newOverlays?.filter(
-				(newVal) => !oldOverlays?.some((val) => val === newVal)
+			const removed = oldOverlays.filter(
+				(oldOverlay) =>
+					!newOverlays.some((newOverlay) => newOverlay.uuid === oldOverlay.uuid)
 			);
 
-			console.log(added);
-
+			// Remove old geo overlays
+			if (removed.length) {
+				removed.map((removedOverlay: GeoOverlay) => {
+					mapAdapter.value?.removeGeoOverlay(removedOverlay);
+				});
+			}
 			// Add new geo overlays
-			if (added) {
+			if (added.length) {
 				added.map((newOverlay: GeoOverlay) => {
 					mapAdapter.value?.addGeoOverlay(newOverlay);
 				});
