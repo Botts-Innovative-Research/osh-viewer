@@ -76,6 +76,8 @@ export interface VisualizationDescriptor {
 	description: string;
 	formComponents: VisualizationFormComponent[];
 	builder: () => Promise<{ default: VisualizationBuilderModule }>;
+	supportsDs?: boolean; // Optional flag to indicate if the visualization can support a datastream if available
+	requireDs?: boolean; // Optional flag to indicate if the visualization requires a datastream
 	supportsCs: boolean; // Optional flag to indicate if the visualization can support a controlstream if available
 	requireCs: boolean; // Optional flag to indicate if the visualization requires a controlstream
 	supportedMaps?: ('cesium' | 'leaflet')[]; // If map-related, specify what maps it is supported by
