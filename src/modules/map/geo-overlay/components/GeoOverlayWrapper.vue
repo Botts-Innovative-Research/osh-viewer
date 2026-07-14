@@ -41,59 +41,52 @@ function getIconColor(overlay: GeoOverlay) {
 </script>
 
 <template>
-	<v-list
-		activatable
-		density="compact"
-		select-strategy="single-leaf"
-		class="pa-0"
-	>
-		<v-list-item :key="overlay.uuid">
-			<!-- Icon -->
-			<template #prepend>
-				<v-icon
-					:icon="getIcon(overlay)"
-					:color="getIconColor(overlay)"
-					size="24"
-				></v-icon>
-			</template>
-			<!-- Title -->
-			<template #title
-				><span>{{ overlay.name }}</span></template
+	<v-list-item :key="overlay.uuid">
+		<!-- Icon -->
+		<template #prepend>
+			<v-icon
+				:icon="getIcon(overlay)"
+				:color="getIconColor(overlay)"
+				size="24"
+			></v-icon>
+		</template>
+		<!-- Title -->
+		<template #title
+			><span>{{ overlay.name }}</span></template
+		>
+		<!-- Subtitle for Geofence -->
+		<template #subtitle>
+			<span
+				><i>{{
+					overlay.isGeofence
+						? `Geofence: ${overlay.geofenceMode === 'include' ? 'Inclusion' : 'Exclusion'}`
+						: ''
+				}}</i></span
 			>
-			<!-- Subtitle for Geofence -->
-			<template #subtitle>
-				<span
-					><i>{{
-						overlay.isGeofence
-							? `Geofence: ${overlay.geofenceMode === 'include' ? 'Inclusion' : 'Exclusion'}`
-							: ''
-					}}</i></span
+		</template>
+		<!-- Actions -->
+		<template #append>
+			<div class="overlay-actions">
+				<v-tooltip
+					text="Toggle Visibility"
+					location="bottom"
 				>
-			</template>
-			<!-- Actions -->
-			<template #append>
-				<div class="overlay-actions">
-					<v-tooltip
-						text="Toggle Visibility"
-						location="bottom"
-					>
-						<template v-slot:activator="{ props }">
-							<IconButton
-								v-bind="props"
-								aria-label="Toggle Visibility"
-								size="x-small"
-								variant="plain"
-							></IconButton>
-						</template>
-					</v-tooltip>
-					<DeleteButton
-						label="Remove"
-						@delete="geoOverlayStore.removeGeoOverlay(overlay)"
-					></DeleteButton>
-				</div>
-			</template>
-		</v-list-item>
-	</v-list>
+					<template v-slot:activator="{ props }">
+						<IconButton
+							v-bind="props"
+							aria-label="Toggle Visibility"
+							size="x-small"
+							variant="plain"
+						></IconButton>
+					</template>
+				</v-tooltip>
+				<DeleteButton
+					label="Remove"
+					@delete="geoOverlayStore.removeGeoOverlay(overlay)"
+				></DeleteButton>
+			</div>
+		</template>
+	</v-list-item>
 </template>
 
 <style scoped>

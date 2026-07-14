@@ -3,7 +3,6 @@ import { computed, ref } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
 import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 
-const mapStore = useMapStore();
 const mapInteractionStore = useMapInteractionStore();
 
 const isActive = computed(() => {
@@ -11,7 +10,11 @@ const isActive = computed(() => {
 		mapInteractionStore.isGeoPTZSelected ||
 		mapInteractionStore.isMissionWaypointSelected ||
 		mapInteractionStore.isDriveLocationSelected ||
-		mapInteractionStore.isHomeLocationSelected
+		mapInteractionStore.isHomeLocationSelected ||
+		mapInteractionStore.isGeoOverlayPointSelected ||
+		mapInteractionStore.isGeoOverlayCircleSelected ||
+		mapInteractionStore.isGeoOverlayLineStringSelected ||
+		mapInteractionStore.isGeoOverlayPolygonSelected
 	);
 });
 
@@ -27,6 +30,14 @@ const toolLabel = computed(() => {
 		parts.push({ label: 'Waypoint Selector', icon: 'mdi-map-marker-path', color: 'green' });
 	if (mapInteractionStore.isGeoPTZSelected)
 		parts.push({ label: 'GeoPTZ', icon: 'mdi-crosshairs-gps', color: 'red' });
+	if (mapInteractionStore.isGeoOverlayPointSelected)
+		parts.push({ label: 'Point Overlay', icon: 'mdi-map-marker', color: 'red' });
+	if (mapInteractionStore.isGeoOverlayCircleSelected)
+		parts.push({ label: 'Circle Overlay', icon: 'mdi-vector-circle-variant', color: 'red' });
+	if (mapInteractionStore.isGeoOverlayLineStringSelected)
+		parts.push({ label: 'Polyline Overlay', icon: 'mdi-vector-polyline', color: 'red' });
+	if (mapInteractionStore.isGeoOverlayPolygonSelected)
+		parts.push({ label: 'Polygon Overlay', icon: 'mdi-vector-polygon-variant', color: 'red' });
 	return parts;
 });
 </script>
@@ -45,7 +56,7 @@ const toolLabel = computed(() => {
 			@mouseleave="isHovered = false"
 			v-show="isActive"
 		>
-			<v-card-text class="d-flex flex-column ga-2 pa-2">
+			<v-card-text class="d-flex flex-column ga-2 pa-0">
 				<div
 					v-for="item in toolLabel"
 					:key="item.label"

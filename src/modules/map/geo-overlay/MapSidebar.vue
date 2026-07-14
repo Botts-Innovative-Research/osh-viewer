@@ -124,10 +124,17 @@ onUnmounted(() => {
 				tag="div"
 				style="display: contents"
 			>
-				<GeoOverlayWrapper
-					v-for="overlay in geoOverlayStore.geoOverlays"
-					:overlay="overlay"
-				/>
+				<v-list
+					activatable
+					density="compact"
+					select-strategy="leaf"
+					class="pa-0"
+				>
+					<GeoOverlayWrapper
+						v-for="overlay in geoOverlayStore.geoOverlays"
+						:overlay="overlay"
+					/>
+				</v-list>
 			</VueDraggable>
 		</v-sheet>
 	</v-sheet>
