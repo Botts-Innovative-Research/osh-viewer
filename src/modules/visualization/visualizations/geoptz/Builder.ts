@@ -23,13 +23,11 @@ export default function build() {
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
 
-	const datastreams = vizwizStore.datastreams;
 	const controlstreams = AggregateControlstreams(vizwizStore.csConfig);
 
-	const geoPtzResult = CreateGeoPtzVizProps(datastreams[0], controlstreams);
+	const geoPtzResult = CreateGeoPtzVizProps(controlstreams);
 
 	const visualizationComponents: VisualizationComponents = {
-		dataSource: geoPtzResult.vizDatasources,
 		dataLayer: [],
 		controlstream: geoPtzResult.vizControlstreams,
 	};
@@ -39,7 +37,7 @@ export default function build() {
 		vizwizStore.visualizationCustomizationOptions.name,
 		'geoPtz',
 		GeoPtzDescriptor.viewLocation,
-		datastreams,
+		null,
 		getUsedControlstreams(vizwizStore.controlstreams, vizwizStore.csConfig)
 	);
 	newViz.setVisualizationComponents(visualizationComponents);
@@ -49,30 +47,10 @@ export default function build() {
 }
 
 export function CreateGeoPtzVizProps(
-	datastream: OSHDatastream,
 	controlstreams: { [key: string]: any }
 ) {
 	const controlstreamStore = useControlStreamStore();
-
 	const vizControlstreams: IConSysApiControlStreamProperties[] = [];
-
-	// Push new IConSysApiDataSourceProperties
-	const currentDataSource: IConSysApiDataSourceProperties = {
-		endpointUrl: datastream.datastream.networkProperties.endpointUrl,
-		resource: `/datastreams/${datastream.id}/observations`,
-		tls: datastream.datastream.networkProperties.tls,
-		protocol: 'ws',
-		startTime: 'now',
-		endTime: '2125-08-01T00:00:00Z',
-		mode: Mode.REAL_TIME,
-		responseFormat: 'application/swe+json',
-		id: randomUUID(),
-		properties: {},
-		connectorOpts: {
-			username: datastream.datastream.networkProperties.connectorOpts.username,
-			password: datastream.datastream.networkProperties.connectorOpts.password,
-		},
-	};
 
 	// Iterate through each unique controlstream ID
 	for (const [csId, entry] of Object.entries(controlstreams)) {
@@ -104,7 +82,6 @@ export function CreateGeoPtzVizProps(
 	}
 
 	return {
-		vizDatasources: [currentDataSource],
 		vizControlstreams: vizControlstreams,
 	};
 }
