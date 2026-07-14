@@ -199,14 +199,16 @@ export function createCesiumAdapter(): MapAdapter {
 		return new Cesium.Entity({
 			id: id ?? randomUUID(),
 			polygon: {
-				hierarchy: Cesium.Cartesian3.fromDegreesArray(
+				hierarchy: Cesium.Cartesian3.fromDegreesArrayHeights(
 					points.flatMap(({ lat, lon, alt }) => {
-						return [lon, lat];
+						return [lon, lat, alt ?? 0];
 					})
 				),
+				perPositionHeight: true,
 				material: Cesium.Color.fromCssColorString(fillColor ?? '#FF000080'),
 				outline: true,
 				outlineColor: Cesium.Color.fromCssColorString(borderColor ?? '#FF0000'),
+				outlineWidth: 3,
 				classificationType: Cesium.ClassificationType.TERRAIN,
 			},
 		});
