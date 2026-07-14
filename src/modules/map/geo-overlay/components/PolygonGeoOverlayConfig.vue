@@ -41,7 +41,7 @@ const previewStore = useGeoOverlayPreviewStore();
 				<v-btn
 					color="primary"
 					@click="changeStep(1)"
-					:disabled="previewStore.points.length < 2"
+					:disabled="previewStore.points.length < 3"
 					>Next</v-btn
 				>
 			</template>

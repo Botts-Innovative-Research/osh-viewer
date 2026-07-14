@@ -123,7 +123,7 @@ export function createLeafletAdapter(): MapAdapter {
 		radius: number,
 		borderColor: string | null,
 		fillColor: string | null
-	): L.circle {
+	) {
 		// Remove old layer
 		if (previewEntity) clearPreview();
 		// Build new entity
@@ -156,6 +156,7 @@ export function createLeafletAdapter(): MapAdapter {
 
 	function clearPreview() {
 		if (previewEntity) mapView.map.removeLayer(previewEntity);
+		previewEntity = null;
 	}
 
 	function addGeoOverlay(geoOverlay: GeoOverlay) {
@@ -196,7 +197,6 @@ export function createLeafletAdapter(): MapAdapter {
 			newPolyline.uuid = geoOverlay.uuid;
 			newPolyline.addTo(mapView.map);
 			geoOverlayEntities.push(newPolyline);
-			console.log(geoOverlayEntities);
 		}
 		// Polygon
 		if (geoOverlay.type === 'Polygon') {

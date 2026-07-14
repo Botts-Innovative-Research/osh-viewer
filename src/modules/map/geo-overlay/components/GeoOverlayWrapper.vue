@@ -20,7 +20,7 @@ function getIcon(overlay: GeoOverlay) {
 	if (overlay.type === 'Polygon') return `mdi-vector-polygon-variant`;
 }
 function getIconColor(overlay: GeoOverlay) {
-	return overlay.geometry.properties.fillColor ?? overlay.geometry.properties.borderColor;
+	return overlay.geometry.properties.borderColor;
 }
 
 // watch(

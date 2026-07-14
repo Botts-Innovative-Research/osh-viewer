@@ -95,9 +95,6 @@ function defaultToZero(key: keyof MapPoint) {
 						type="number"
 						label="Altitude"
 						placeholder="0.0"
-						hint="Min 0"
-						min="0"
-						:rules="[(v) => v >= 0 || 'Must be at least 0']"
 						@blur="defaultToZero('alt')"
 						:disabled="previewStore.circleCreationStep === 'center'"
 					/>

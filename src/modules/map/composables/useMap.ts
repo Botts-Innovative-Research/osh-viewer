@@ -484,12 +484,13 @@ export function useMap() {
 			if (previewType.value === 'LineString')
 				mapAdapter.value?.updatePolylinePreview(newPoints, previewBorderColor.value);
 			// Polygon
-			if (previewType.value === 'Polygon')
+			if (previewType.value === 'Polygon') {
 				mapAdapter.value?.updatePolygonPreview(
 					newPoints,
 					previewBorderColor.value,
 					previewFillColor.value
 				);
+			}
 		},
 		{ deep: true }
 	);

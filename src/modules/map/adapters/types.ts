@@ -36,13 +36,15 @@ export interface MapAdapter {
 		center: MapPoint,
 		radius: number,
 		borderColor: string | null,
-		fillColor: string | null
+		fillColor: string | null,
+		id?: string
 	): void;
-	updatePolylinePreview(points: MapPoint[], borderColor: string | null): void;
+	updatePolylinePreview(points: MapPoint[], borderColor: string | null, id?: string): void;
 	updatePolygonPreview(
 		points: MapPoint[],
 		borderColor: string | null,
-		fillColor: string | null
+		fillColor: string | null,
+		id?: string
 	): void;
 	clearPreview(): void;
 	addGeoOverlay(geoOverlay: GeoOverlay): void;
