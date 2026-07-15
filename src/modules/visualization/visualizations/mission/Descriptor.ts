@@ -24,18 +24,18 @@ export const MissionConfigRoles: VisualizationConfigRole[] = [
 	},
 	{
 		role: 'plan',
-		label: 'UAV Mission Plan',
-		description: 'Select the control stream used to upload and run a UAV (aerial) mission. Includes takeoff, landing, and altitude.',
+		label: 'Mission Plan',
+		description: 'Select the control stream used to upload and run a QGC mission.',
 		type: 'cs',
 		showPropertySelector: false,
 	},
-	{
-		role: 'roverPlan',
-		label: 'Rover Mission Plan',
-		description: 'Select the control stream used to upload and run a rover (ground vehicle) mission. Ground-based waypoints without takeoff/landing.',
-		type: 'cs',
-		showPropertySelector: false,
-	},
+	// {
+	// 	role: 'roverPlan',
+	// 	label: 'Rover Mission Plan',
+	// 	description: 'Select the control stream used to upload and run a rover (ground vehicle) mission. Ground-based waypoints without takeoff/landing.',
+	// 	type: 'cs',
+	// 	showPropertySelector: false,
+	// },
 	{
 		role: 'takeoff',
 		label: 'Takeoff Control',
