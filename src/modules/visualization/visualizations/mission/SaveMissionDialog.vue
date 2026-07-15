@@ -95,7 +95,7 @@ function cancel() {
         >
         <v-btn
             color="primary"
-            variant="flat"
+            variant="tonal"
             @click="save"
         >Save</v-btn
         >

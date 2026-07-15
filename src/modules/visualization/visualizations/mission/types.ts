@@ -1,5 +1,16 @@
 import { MapPoint } from '@/modules/map/adapters/types';
 
+export interface Controlstream {
+	id: string;
+	endpointUrl: string;
+	tls: boolean;
+	properties?: Record<string, any>;
+	connectorOpts: {
+		username: string;
+		password: string;
+	};
+}
+
 export interface Waypoint extends MapPoint{
 	id: string;
 }

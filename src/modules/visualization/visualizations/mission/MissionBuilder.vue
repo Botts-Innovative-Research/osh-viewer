@@ -13,17 +13,7 @@ import {
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
 import { VisualizationComponents } from '../../types/visualization';
-
-interface Controlstream {
-	id: string;
-	endpointUrl: string;
-	tls: boolean;
-	properties?: Record<string, any>;
-	connectorOpts: {
-		username: string;
-		password: string;
-	};
-}
+import type { Controlstream } from './types';
 
 const props = defineProps<{
 	visualizations: OSHVisualization[];
@@ -56,7 +46,6 @@ function getControlstreamByRole(role: string) {
 	return controlstreams.value.find((cs: any) => cs.properties && cs.properties[role]);
 }
 
-const isRover = computed(() => !!getControlstreamByRole('roverPlan'));
 
 const missionControlStream = computed<Controlstream | undefined>(
 	() => getControlstreamByRole('roverPlan') ?? getControlstreamByRole('plan')
@@ -73,15 +62,28 @@ interface LLAData {
 }
 
 const receivedLLA = ref<LLAData>({ lat: 0, lon: 0, alt: 0 });
-const mapStore = useMapStore();
+const receivedStatus = ref("");
 
-const droneDatasourceLLA = ref<typeof ConSysApi | null>(null);
-const droneHomeDatasource = ref<typeof ConSysApi | null>(null);
+const llaDatasource = ref<typeof ConSysApi | null>(null);
+const homeDatasource = ref<typeof ConSysApi | null>(null);
+const statusDatasource = ref<typeof ConSysApi | null>(null);
 let dsInstances = ref<(typeof ConSysApi)[]>([]);
 
 let homeLocation = ref<{ lat: number; lon: number; alt: number }>({ lat: 0, lon: 0, alt: 0 });
 
-function onLLAListener(dsInstance: ConSysApi) {
+function onStatusListener(dsInstance: typeof ConSysApi) {
+  const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
+
+  dataBroadcastChannel.onmessage = (message) => {
+    if (message.data.type === 'data') {
+      const data = message.data.values[0].data;
+      receivedStatus.value = data.Status;
+    }
+  };
+}
+
+
+function onLLAListener(dsInstance: typeof ConSysApi) {
 	const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
 
 	dataBroadcastChannel.onmessage = (message) => {
@@ -96,7 +98,7 @@ function onLLAListener(dsInstance: ConSysApi) {
 	};
 }
 
-function onHomeLocationListener(dsInstance: ConSysApi) {
+function onHomeLocationListener(dsInstance: typeof ConSysApi) {
 	const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
 
 	dataBroadcastChannel.onmessage = (message) => {
@@ -112,10 +114,12 @@ function onHomeLocationListener(dsInstance: ConSysApi) {
 }
 
 function cleanupDatasources() {
-	if (droneDatasourceLLA.value) disconnectDatasources(droneDatasourceLLA);
-	if (droneHomeDatasource.value) disconnectDatasources(droneHomeDatasource);
-	droneDatasourceLLA.value = null;
-	droneHomeDatasource.value = null;
+	if (llaDatasource.value) disconnectDatasources(llaDatasource);
+	if (homeDatasource.value) disconnectDatasources(homeDatasource);
+	if (statusDatasource.value) disconnectDatasources(statusDatasource);
+	llaDatasource.value = null;
+  homeDatasource.value = null;
+  statusDatasource.value = null;
 	dsInstances.value.forEach((ds) => ds.disconnect());
 	dsInstances.value = [];
 }
@@ -126,7 +130,7 @@ async function connectDatasources() {
 		dsInstance.connect();
 
 		if (ds?.properties?.home) {
-			droneHomeDatasource.value = dsInstance;
+			homeDatasource.value = dsInstance;
 			let homeLLAResults = await getLatestObservation(ds);
 			homeLocation.value = {
 				lat: homeLLAResults.result.Home.lat,
@@ -135,9 +139,12 @@ async function connectDatasources() {
 			};
 			onHomeLocationListener(dsInstance);
 		} else if (ds?.properties?.lla) {
-			droneDatasourceLLA.value = dsInstance;
+			llaDatasource.value = dsInstance;
 			onLLAListener(dsInstance);
-		}
+		} else if (ds?.properties.status) {
+      statusDatasource.value = dsInstance;
+      onStatusListener(dsInstance);
+    }
 
 		dsInstances.value.push(dsInstance);
 	}
@@ -212,7 +219,6 @@ const hasCommandPad = computed(
 					<v-card-title>{{ receivedLLA.lon.toFixed(6) }}</v-card-title>
 				</v-col>
 				<v-col
-					v-if="!isRover"
 					cols="12"
 					md="4"
 				>
@@ -221,6 +227,15 @@ const hasCommandPad = computed(
 				</v-col>
 			</v-row>
 		</v-card>
+
+    <v-card
+        v-if="!noController"
+    >
+      <v-row density="comfortable">
+        <v-card-subtitle>Status:</v-card-subtitle>
+        <v-card-subtitle>{{ receivedStatus }}</v-card-subtitle>
+      </v-row>
+    </v-card>
 
 		<v-sheet
 			v-if="!noController"
@@ -244,7 +259,6 @@ const hasCommandPad = computed(
 				<v-window-item value="plan">
 					<PlanMission
 						:home-location="homeLocation"
-						:is-rover="isRover"
 						:mission-control-stream="missionControlStream"
 						:no-controller="noController"
 					/>

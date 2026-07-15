@@ -7,23 +7,14 @@ import { useMissionStore } from '@/stores/missionstore';
 import { showToast } from '@/composables/useToast';
 import { fetchCsSchema, mineControlObsPropsFromCS, sendCommand, } from '../../services/controlstream.service';
 import MissionWaypointBuilder from './MissionWaypointBuilder.vue';
+import MissionSummaryDialog from './MissionSummaryDialog.vue';
 import SaveMissionDialog from './SaveMissionDialog.vue';
 import DeleteMissionDialog from './DeleteMissionDialog.vue';
-import type { MissionSettings, SavedMission, Waypoint } from './types';
-
-interface Controlstream {
-	id: string;
-	endpointUrl: string;
-	tls: boolean;
-	properties?: Record<string, any>;
-	connectorOpts: {
-		username: string;
-		password: string;
-	};
-}
+import ExportMissionDialog from './ExportMissionDialog.vue';
+import type { Controlstream, MissionSettings, SavedMission, Waypoint } from './types';
+import DeleteButton from "@/components/ui/DeleteButton.vue";
 
 const props = defineProps<{
-	isRover: boolean;
 	noController: boolean;
 	homeLocation: { lat: number; lon: number; alt: number };
 	missionControlStream?: Controlstream;
@@ -37,14 +28,27 @@ const waypoints = ref<Waypoint[]>([]);
 const waypointBuilderRef = ref<InstanceType<typeof MissionWaypointBuilder> | null>(null);
 const fileInputRef = ref<any | null>(null);
 const selectedFile = ref<File | null>(null);
-const exportFilename = ref<string>('mission');
 
-const cruiseSpeed = ref<number>(0.25);
-const hoverSpeed = ref<number>(0.25);
+const cruiseSpeed = ref<number>(5);
+const hoverSpeed = ref<number>(2);
 const waypointAltitude = ref<number>(25);
-const altitudeMode = ref<number>(1);
-const autoContinue = ref<boolean>(true);
-const amslAltAboveTerrain = ref<number | null>(null);
+const altitudeMode = ref<number>(0);
+const autoContinue = true;
+const amslAltAboveTerrain = null;
+const vehicleType = ref<string>('UAV');
+
+const geoFenceCircles = ref<[]>([]);
+const geoFencePolygons = ref<[]>([]);
+const rallyPoints = ref<[]>([]);
+
+const isRover = computed(() => vehicleType.value === 'Ground Rover' || vehicleType.value === 'Surface Boat');
+
+const qgcVehicleTypeMap: Record<string, number> = {
+	'UAV': 2,
+	'Ground Rover': 10,
+	'Surface Boat': 11,
+	'Submarine': 12,
+};
 
 const isSelected = ref<boolean>(false);
 const showMissionSummary = ref(false);
@@ -119,6 +123,32 @@ function toggle() {
 	}
 }
 
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+	const R = 6371000;
+	const toRad = (deg: number) => (deg * Math.PI) / 180;
+	const dLat = toRad(lat2 - lat1);
+	const dLon = toRad(lon2 - lon1);
+	const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+	return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+const totalDistance = computed(() => {
+	let total = 0;
+	for (let i = 0; i < waypoints.value.length - 1; i++) {
+		const a = waypoints.value[i], b = waypoints.value[i + 1];
+		const ground = haversineDistance(a.lat, a.lon, b.lat, b.lon);
+		const altDiff = (b.alt || 0) - (a.alt || 0);
+		total += Math.sqrt(ground ** 2 + altDiff ** 2);
+	}
+	return total;
+});
+
+const estimatedTime = computed(() => {
+	if (cruiseSpeed.value <= 0) return 0;
+	return totalDistance.value / cruiseSpeed.value;
+});
+
+
 function confirmSendMission() {
 	showMissionSummary.value = true;
 }
@@ -140,8 +170,8 @@ function getCurrentSettings(): MissionSettings {
 		hoverSpeed: hoverSpeed.value,
 		waypointAltitude: waypointAltitude.value,
 		altitudeMode: altitudeMode.value,
-		autoContinue: autoContinue.value,
-		amslAltAboveTerrain: amslAltAboveTerrain.value,
+		autoContinue,
+		amslAltAboveTerrain,
 	};
 }
 
@@ -172,8 +202,6 @@ function loadMission(mission: SavedMission) {
 	hoverSpeed.value = mission.settings.hoverSpeed;
 	waypointAltitude.value = mission.settings.waypointAltitude;
 	altitudeMode.value = mission.settings.altitudeMode;
-	autoContinue.value = mission.settings.autoContinue;
-	amslAltAboveTerrain.value = mission.settings.amslAltAboveTerrain;
 
 	waypoints.value = mission.waypoints.map((wp) => ({ ...wp }));
 
@@ -196,14 +224,13 @@ function deleteSavedMission() {
 	missionToDelete.value = null;
 }
 
-function exportMissionPlan() {
+function exportMissionPlan(exportName: string) {
 	const plan = generateMissionControlPlan();
 	if (!plan) {
 		showToast('No waypoints to export', 'ERROR');
 		return;
 	}
-	const name = exportFilename.value.trim() || 'mission';
-	const filename = name.endsWith('.plan') ? name : name + '.plan';
+	const filename = exportName.endsWith('.plan') ? exportName : exportName + '.plan';
 	const blob = new Blob([JSON.stringify(plan, null, 2)], { type: 'application/json' });
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement('a');
@@ -414,13 +441,13 @@ function generateMissionControlPlan() {
 
 	const items: any[] = [];
 
-	if (!props.isRover) {
+	if (!isRover.value) {
 		const takeoffLocation = props.homeLocation ?? waypoints.value[0];
 		items.push({
-			AMSLAltAboveTerrain: amslAltAboveTerrain.value,
+			AMSLAltAboveTerrain: amslAltAboveTerrain,
 			Altitude: waypointAltitude.value,
 			AltitudeMode: altitudeMode.value,
-			autoContinue: autoContinue.value,
+			autoContinue,
 			command: 22,
 			doJumpId: 1,
 			frame: 3,
@@ -431,24 +458,24 @@ function generateMissionControlPlan() {
 
 	waypoints.value.forEach((wp) => {
 		items.push({
-			AMSLAltAboveTerrain: props.isRover ? 0 : (amslAltAboveTerrain.value ?? 0),
-			Altitude: props.isRover ? 0 : waypointAltitude.value,
-			AltitudeMode: props.isRover ? 0 : altitudeMode.value,
-			autoContinue: autoContinue.value,
+			AMSLAltAboveTerrain: isRover.value ? 0 : (amslAltAboveTerrain ?? 0),
+			Altitude: isRover.value ? 0 : waypointAltitude.value,
+			AltitudeMode: isRover.value ? 0 : altitudeMode.value,
+			autoContinue,
 			command: 16,
 			doJumpId: items.length + 1,
-			frame: props.isRover ? 0 : 3,
-			params: [0, 0, 0, null, wp.lat, wp.lon, props.isRover ? 0 : wp.alt],
+			frame: isRover.value ? 0 : 3,
+			params: [0, 0, 0, null, wp.lat, wp.lon, isRover.value ? 0 : wp.alt],
 			type: 'SimpleItem',
 		});
 	});
 
-	if (!props.isRover) {
+	if (!isRover.value) {
 		items.push({
-			AMSLAltAboveTerrain: amslAltAboveTerrain.value,
+			AMSLAltAboveTerrain: amslAltAboveTerrain,
 			Altitude: 0,
 			AltitudeMode: altitudeMode.value,
-			autoContinue: autoContinue.value,
+			autoContinue,
 			command: 21,
 			doJumpId: items.length + 1,
 			frame: 3,
@@ -472,10 +499,10 @@ function generateMissionControlPlan() {
 			cruiseSpeed: cruiseSpeed.value,
 			firmwareType: 3,
 			globalPlanAltitudeMode: 0,
-			hoverSpeed: props.isRover ? 0 : hoverSpeed.value,
+			hoverSpeed: isRover.value ? 0 : hoverSpeed.value,
 			items: items,
 			plannedHomePosition: plannedHomePosition,
-			vehicleType: props.isRover ? 10 : 2,
+			vehicleType: qgcVehicleTypeMap[vehicleType.value] ?? 2,
 			version: 2,
 		},
 		geoFence: {
@@ -509,7 +536,7 @@ onBeforeUnmount(() => {
 			value="waypoints"
 		>
 			<span class="d-none d-sm-inline">Build</span>
-			<span class="d-sm-none">Waypoints</span>
+			<span class="d-sm-none">Build</span>
 		</v-tab>
 		<v-tab
 			prepend-icon="mdi-file-upload"
@@ -522,8 +549,8 @@ onBeforeUnmount(() => {
 			prepend-icon="mdi-content-save-all"
 			value="saved"
 		>
-			<span class="d-none d-sm-inline">Saved</span>
-			<span class="d-sm-none">Saved</span>
+      <span class="d-none d-sm-inline">Mission Library</span>
+			<span class="d-sm-none">Mission Library</span>
 		</v-tab>
 	</v-tabs>
 
@@ -535,14 +562,12 @@ onBeforeUnmount(() => {
 			<MissionWaypointBuilder
 				ref="waypointBuilderRef"
 				v-model:altitudeMode="altitudeMode"
-				v-model:amslAltAboveTerrain="amslAltAboveTerrain"
-				v-model:autoContinue="autoContinue"
 				v-model:cruiseSpeed="cruiseSpeed"
 				v-model:hoverSpeed="hoverSpeed"
+				v-model:vehicleType="vehicleType"
 				v-model:waypointAltitude="waypointAltitude"
 				v-model:waypoints="waypoints"
 				:home-location="homeLocation"
-				:is-rover="isRover"
 				:is-selected="isSelected"
 				:no-controller="noController"
 				@toggle="toggle"
@@ -637,27 +662,27 @@ onBeforeUnmount(() => {
 								>Load mission</v-tooltip
 							>
 						</v-btn>
-						<v-btn
-							icon
-							size="x-small"
-							variant="text"
-							@click="confirmDeleteMission(mission.id)"
-						>
-							<v-icon size="small">mdi-window-close</v-icon>
-							<v-tooltip
-								activator="parent"
-								location="top"
-								>Delete mission</v-tooltip
-							>
-						</v-btn>
+
+
+            <DeleteButton
+                label="Remove"
+                @delete="confirmDeleteMission(mission.id)"
+            ></DeleteButton>
 					</template>
 				</v-list-item>
 			</v-list>
 			<div
 				v-else
-				class="text-caption text-grey text-center pa-4"
+        class="text-center"
 			>
-				No saved missions yet. Build a mission and save it here.
+
+        <v-card-text>
+          No Missions Saved
+        </v-card-text>
+        <v-card-subtitle>
+          Plan a mission and use “Save current mission” to add it to your library.
+
+        </v-card-subtitle>
 			</div>
 		</v-window-item>
 	</v-window>
@@ -689,7 +714,7 @@ onBeforeUnmount(() => {
 				activator="parent"
 				location="bottom"
 			>
-				Save Mission
+				Save current mission
 			</v-tooltip>
 		</v-btn>
 
@@ -703,102 +728,29 @@ onBeforeUnmount(() => {
 				activator="parent"
 				location="bottom"
 			>
-				Download Mission as .plan file
+				Download mission as .plan file
 			</v-tooltip>
 		</v-btn>
 	</div>
 
-	<v-dialog
+	<ExportMissionDialog
 		v-model="showExportDialog"
-		max-width="400"
-	>
-		<v-card>
-			<v-card-title>Export Mission</v-card-title>
-			<v-card-text>
-				<v-text-field
-					v-model="exportFilename"
-					autofocus
-					density="compact"
-					label="Filename"
-					suffix=".plan"
-					@keyup.enter="exportMissionPlan"
-				/>
-			</v-card-text>
-			<v-card-actions>
-				<v-spacer />
-				<v-btn
-					variant="text"
-					@click="showExportDialog = false"
-					>Cancel</v-btn
-				>
-				<v-btn
-					color="primary"
-					prepend-icon="mdi-download"
-					variant="flat"
-					@click="exportMissionPlan"
-					>Export</v-btn
-				>
-			</v-card-actions>
-		</v-card>
-	</v-dialog>
+		@export="exportMissionPlan"
+	/>
 
-	<v-dialog
+	<MissionSummaryDialog
 		v-model="showMissionSummary"
-		max-width="500"
-	>
-		<v-card>
-			<v-card-title>Mission Summary</v-card-title>
-			<v-card-text>
-				<v-table density="compact">
-					<tbody>
-						<tr>
-							<td class="font-weight-medium">Source</td>
-							<td>
-								{{ missionSource === 'waypoints' ? 'Waypoints' : 'Plan File' }}
-							</td>
-						</tr>
-						<tr v-if="missionSource === 'waypoints'">
-							<td class="font-weight-medium">Waypoints</td>
-							<td>{{ waypoints.length }}</td>
-						</tr>
-						<tr v-if="missionSource === 'waypoints'">
-							<td class="font-weight-medium">
-								{{ isRover ? 'Ground Speed' : 'Cruise Speed' }}
-							</td>
-							<td>{{ cruiseSpeed }} m/s</td>
-						</tr>
-						<tr v-if="missionSource === 'waypoints'">
-							<td class="font-weight-medium">Vehicle Type</td>
-							<td>{{ isRover ? 'Rover' : 'UAV' }}</td>
-						</tr>
-						<tr v-if="missionSource === 'waypoints' && !isRover">
-							<td class="font-weight-medium">Altitude</td>
-							<td>{{ waypointAltitude }} m</td>
-						</tr>
-						<tr v-if="missionSource === 'file' && selectedFile">
-							<td class="font-weight-medium">File</td>
-							<td>{{ selectedFile.name }}</td>
-						</tr>
-					</tbody>
-				</v-table>
-			</v-card-text>
-			<v-card-actions>
-				<v-spacer />
-				<v-btn
-					variant="text"
-					@click="showMissionSummary = false"
-					>Cancel</v-btn
-				>
-				<v-btn
-					color="primary"
-					prepend-icon="mdi-send"
-					variant="flat"
-					@click="sendMission"
-					>Send</v-btn
-				>
-			</v-card-actions>
-		</v-card>
-	</v-dialog>
+		:mission-source="missionSource"
+		:waypoint-count="waypoints.length"
+		:cruise-speed="cruiseSpeed"
+		:vehicle-type="vehicleType"
+		:waypoint-altitude="waypointAltitude"
+		:is-rover="isRover"
+		:total-distance="totalDistance"
+		:estimated-time="estimatedTime"
+		:selected-file-name="selectedFile?.name"
+		@send="sendMission"
+	/>
 
 	<SaveMissionDialog
 		v-model="showSaveDialog"

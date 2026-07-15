@@ -22,6 +22,14 @@ export const MissionConfigRoles: VisualizationConfigRole[] = [
 		required: true,
 		showPropertySelector: false,
 	},
+    {
+        role: 'status',
+        label: 'Status',
+        description: 'Select the data stream that outputs the systems status messages.',
+        type: 'ds',
+        required: true,
+        showPropertySelector: false,
+    },
 	{
 		role: 'plan',
 		label: 'Mission Plan',
@@ -29,13 +37,6 @@ export const MissionConfigRoles: VisualizationConfigRole[] = [
 		type: 'cs',
 		showPropertySelector: false,
 	},
-	// {
-	// 	role: 'roverPlan',
-	// 	label: 'Rover Mission Plan',
-	// 	description: 'Select the control stream used to upload and run a rover (ground vehicle) mission. Ground-based waypoints without takeoff/landing.',
-	// 	type: 'cs',
-	// 	showPropertySelector: false,
-	// },
 	{
 		role: 'takeoff',
 		label: 'Takeoff Control',
