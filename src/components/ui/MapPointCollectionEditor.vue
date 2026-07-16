@@ -3,10 +3,15 @@ import { VueDraggable } from 'vue-draggable-plus';
 import { MapPoint } from '@/modules/map/types';
 import { ref } from 'vue';
 
-const props = defineProps<{
-	title: string;
-	showAlt?: boolean;
-}>();
+const props = withDefaults(
+	defineProps<{
+		title: string;
+		hideAlt?: boolean;
+	}>(),
+	{
+		hideAlt: false,
+	}
+);
 const points = defineModel<MapPoint[]>({
 	required: true,
 });
@@ -104,7 +109,10 @@ function clearPoints() {
 							type="number"
 						/>
 					</v-col>
-					<v-col cols="4">
+					<v-col
+						cols="4"
+						v-if="!hideAlt"
+					>
 						<v-text-field
 							v-model.number="point.alt"
 							density="compact"

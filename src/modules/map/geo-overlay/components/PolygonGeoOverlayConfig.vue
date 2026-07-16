@@ -4,6 +4,10 @@ import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
 import GeoOverlayCustomize from '@/modules/map/geo-overlay/components/GeoOverlayCustomize.vue';
 import { useGeoOverlayConfig } from '@/modules/map/geo-overlay/composables/useGeoOverlayConfig';
 import { GeoOverlayType } from '@/modules/map/geo-overlay/types';
+import MapPointEditor from '@/components/ui/MapPointEditor.vue';
+import { ref } from 'vue';
+import { MapPoint } from '@/modules/map/types';
+import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 
 const emit = defineEmits<{
 	close: [];
@@ -17,8 +21,13 @@ function handleSubmit() {
 const TYPE: GeoOverlayType = 'Polygon';
 
 const { step, changeStep, submit } = useGeoOverlayConfig({ type: TYPE });
-
 const previewStore = useGeoOverlayPreviewStore();
+const mapInteractionStore = useMapInteractionStore();
+
+const tempPoint = ref<MapPoint>({ lat: 0, lon: 0, alt: 0 });
+function handleSubmitPoint(point: MapPoint) {
+	previewStore.points.push(point);
+}
 </script>
 <template>
 	<v-stepper-vertical
@@ -31,7 +40,16 @@ const previewStore = useGeoOverlayPreviewStore();
 			subtitle="Click on the map to add points for the polygon."
 			:complete="step > 1"
 		>
-			<h4 class="mt-0">Click on the map to add points for the polygon.</h4>
+			<h4 class="mt-0">
+				Click on the map or manually input LLA to add points for the polygon.
+			</h4>
+			<MapPointEditor
+				v-model="tempPoint"
+				:isSelected="mapInteractionStore.isGeoOverlayPolygonSelected"
+				:isSelectorDisabled="false"
+				@submit="handleSubmitPoint"
+				@toggle="mapInteractionStore.toggleTool('geoOverlayPolygon')"
+			></MapPointEditor>
 			<MapPointCollectionEditor
 				v-show="useGeoOverlayPreviewStore().points"
 				v-model="previewStore.points"

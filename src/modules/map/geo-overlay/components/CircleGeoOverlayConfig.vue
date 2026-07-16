@@ -4,7 +4,7 @@ import GeoOverlayCustomize from '@/modules/map/geo-overlay/components/GeoOverlay
 import { useGeoOverlayConfig } from '@/modules/map/geo-overlay/composables/useGeoOverlayConfig';
 import { GeoOverlayType } from '@/modules/map/geo-overlay/types';
 import { MapPoint } from '@/modules/map/types';
-import { computed, onMounted, ref } from 'vue';
+import { computed } from 'vue';
 
 const emit = defineEmits<{
 	close: [];
