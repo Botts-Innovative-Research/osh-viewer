@@ -25,59 +25,35 @@ const props = defineProps<{
 	visualizations: OSHVisualization[];
 }>();
 
-const activeVisualization = computed(() => {
-	if (!props.visualizations.length) return null;
-	const viz = props.visualizations[0];
-	if (Array.isArray(viz.visualizationComponents)) return null;
-	return viz;
-});
+const systemStates = reactive(new Map<string, SystemState>());
+const activeSystemId = ref<string | null>(null);
+const activeTab = ref<'plan' | 'control'>('plan');
 
-const datasources = computed(() => {
-	if (!activeVisualization.value) return [];
-	return (
-		(activeVisualization.value.visualizationComponents as VisualizationComponents).dataSource ??
-		[]
-	);
-});
-
-const controlstreams = computed(() => {
-	if (!activeVisualization.value) return [];
-	return (
-		(activeVisualization.value.visualizationComponents as VisualizationComponents)
-			.controlstream ?? []
-	);
-});
-
-function getControlstreamByRole(role: string) {
-	return controlstreams.value.find((cs: any) => cs.properties && cs.properties[role]);
-}
+const noController = computed(() => props.visualizations.length === 0);
 
 const validVisualizations = computed(() =>
 	props.visualizations.filter((viz) => !Array.isArray(viz.visualizationComponents))
 );
 
-const missionControlStream = computed<IConSysApiControlStreamProperties | undefined>(
-	() => getControlstreamByRole('roverPlan') ?? getControlstreamByRole('plan')
+const activeVisualization = computed(() =>
+	validVisualizations.value.find((v) => v.id === activeSystemId.value) ?? null
 );
 
-const noController = computed(() => props.visualizations.length === 0);
+const controlstreams = computed(() => {
+	if (!activeVisualization.value) return [];
+	return (activeVisualization.value.visualizationComponents as VisualizationComponents).controlstream ?? [];
+});
 
-const activeTab = ref<'plan' | 'control'>('plan');
-const minimapViewActive = ref(false);
-
-interface LLAData {
-	lat: number;
-	lon: number;
-	alt: number;
+function getControlstreamByRole(role: string, viz?: OSHVisualization) {
 }
 
 const minimapViz = computed(() =>
 	activeVisualization.value?.children?.find((c: OSHVisualization) => c.type === 'minimap') ?? null
 );
 
-
 const receivedLLA = ref<LLAData>({ lat: 0, lon: 0, alt: 0 });
 const receivedStatus = ref("");
+
 function detectVehicleType(viz: OSHVisualization): string {
 	const hasGroundControls =
 		!!getControlstreamByRole('driveVelocity', viz) ||
@@ -92,6 +68,10 @@ function detectVehicleType(viz: OSHVisualization): string {
 	return 'UAV';
 }
 
+const activeSystemState = computed(() => {
+	if (!activeSystemId.value) return null;
+	return systemStates.get(activeSystemId.value) ?? null;
+});
 
 let homeLocation = ref<{ lat: number; lon: number; alt: number }>({ lat: 0, lon: 0, alt: 0 });
 
@@ -332,6 +312,7 @@ const hasCommandPad = computed(
 			@click="sendAllMissions"
 		>
 			Send All Missions
+		</v-btn>
 	</v-container>
 </template>
 
