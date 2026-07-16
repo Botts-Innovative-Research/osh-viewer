@@ -3,17 +3,15 @@ import { computed, ref, watch } from 'vue';
 import { sendCommand } from '../../services/controlstream.service';
 import { useMapStore } from '@/stores/mapstore';
 import LocationPicker from '@/components/ui/LocationPicker.vue';
+import type { IConSysApiControlStreamProperties } from '../../types/datasource';
+import SendButton from "@/components/ui/SendButton.vue";
 
-const props = defineProps({
-	controlstreams: {
-		type: Array,
-		required: true,
-		default: () => [],
-	},
-});
+const props = defineProps<{
+	controlstreams: IConSysApiControlStreamProperties[];
+}>();
 
 function getControlstreamByRole(role: string) {
-	return props.controlstreams.find((cs: any) => cs.properties && cs.properties[role]);
+	return props.controlstreams.find((cs) => cs.properties && cs.properties[role]);
 }
 
 const mapStore = useMapStore();
@@ -21,17 +19,11 @@ const mapStore = useMapStore();
 const driveLocationPickerRef = ref<InstanceType<typeof LocationPicker> | null>(null);
 const isDriveLocationMapSelect = computed(() => mapStore.isDriveLocationSelected);
 
-const homeLocationPickerRef = ref<InstanceType<typeof LocationPicker> | null>(null);
-const isHomeLocationMapSelect = computed(() => mapStore.isHomeLocationSelected);
-
 watch(
 	() => mapStore.currentLLA,
 	(newVal) => {
 		if (isDriveLocationMapSelect.value && newVal) {
-			driveLocationPickerRef.value?.setLatLonAlt(newVal.latitude, newVal.longitude, 0);
-		}
-		if (isHomeLocationMapSelect.value && newVal) {
-			homeLocationPickerRef.value?.setLatLonAlt(newVal.latitude, newVal.longitude, 0);
+			driveLocationPickerRef.value?.setLatLonAlt(newVal.latitude, newVal.longitude, newVal.altitude ?? 0);
 		}
 	}
 );
@@ -44,30 +36,21 @@ function toggleHomeLocationSelect() {
 	mapStore.setIsHomeLocationSelected(!mapStore.isHomeLocationSelected);
 }
 
-const xVelocity = ref<number>(0.0);
-const yVelocity = ref<number>(0.0);
-const zVelocity = ref<number>(0.0);
-const yawRate = ref<number>(0.0);
-const takeOffAlt = ref<number>(0.0);
-const yawRateDrive = ref<number>(0.0);
-const forwardVelocityDrive = ref<number>(0.0);
+const xVelocity = ref(0.0);
+const yVelocity = ref(0.0);
+const zVelocity = ref(0.0);
+const yawRate = ref(0.0);
+const takeOffAlt = ref(0.0);
+const yawRateDrive = ref(0.0);
+const forwardVelocityDrive = ref(0.0);
 const offboardForm = ref<any>(null);
 const isPaused = ref(false);
 const isArmed = ref(false);
 const isHold = ref(false);
-const driveModes = ref([
-	'MANUAL',
-	'ACRO',
-	'STEERING',
-	'HOLD',
-	'LOITER',
-	'FOLLOW',
-	'SIMPLE',
-	'DOCK',
-	'AUTO',
-	'RTL',
-	'GUIDED',
-]);
+const driveModes = [
+	'MANUAL', 'ACRO', 'STEERING', 'HOLD', 'LOITER',
+	'FOLLOW', 'SIMPLE', 'DOCK', 'AUTO', 'RTL', 'GUIDED',
+];
 const selectedDriveMode = ref('HOLD');
 
 function getControlstreamConfig(cs: any) {
@@ -86,7 +69,6 @@ function sendCommandToRole(role: string, payload: any) {
 		console.warn(`[MissionCommandPad] No controlstream configured for role: ${role}`);
 		return;
 	}
-
 	const config = getControlstreamConfig(cs);
 	if (!config) return;
 
@@ -96,168 +78,79 @@ function sendCommandToRole(role: string, payload: any) {
 
 function pause() {
 	isPaused.value = !isPaused.value;
-	// resume = true , pause = false
-	const payload = {
-		parameters: {
-			Resume: isPaused.value,
-		},
-	};
-
-	sendCommandToRole('pause', payload);
+	sendCommandToRole('pause', { parameters: { Resume: !isPaused.value } });
 }
 
 function arm() {
 	isArmed.value = !isArmed.value;
-	// arm = true , disarm = false
-	const payload = {
-		parameters: {
-			ARM: isArmed.value,
-		},
-	};
-
-	sendCommandToRole('arm', payload);
+	sendCommandToRole('arm', { parameters: { ARM: isArmed.value } });
 }
 
 function hold() {
 	isHold.value = !isHold.value;
-	const payload = {
-		parameters: {
-			engageHold: isHold.value,
-		},
-	};
-
-	sendCommandToRole('hold', payload);
+	sendCommandToRole('hold', { parameters: { engageHold: isHold.value } });
 }
 
 function reboot() {
-	const payload = {
-		parameters: {
-			reboot: true,
-		},
-	};
-
-	sendCommandToRole('reboot', payload);
+	sendCommandToRole('reboot', { parameters: { reboot: true } });
 }
 
 function returnToLaunch() {
-	const payload = {
-		parameters: {
-			rtl: true,
-		},
-	};
-	sendCommandToRole('rtl', payload);
+	sendCommandToRole('rtl', { parameters: { rtl: true } });
 }
 
 function land() {
-	const payload = {
-		parameters: {
-			disarm: true,
-		},
-	};
-	sendCommandToRole('land', payload);
+	sendCommandToRole('land', { parameters: { disarm: true } });
 }
 
 function cancel() {
-	const payload = {
-		parameters: {},
-	};
-	sendCommandToRole('cancel', payload);
+	sendCommandToRole('cancel', { parameters: {} });
 }
 
 async function offboard() {
 	const { valid } = await offboardForm.value.validate();
 	if (!valid) return;
 
-	const payload = {
+	sendCommandToRole('offboard', {
 		parameters: {
-			velocity: {
-				vx: xVelocity.value,
-				vy: yVelocity.value,
-				vz: zVelocity.value,
-			},
+			velocity: { vx: xVelocity.value, vy: yVelocity.value, vz: zVelocity.value },
 			yawRate: yawRate.value,
 		},
-	};
-
-	sendCommandToRole('offboard', payload);
+	});
 }
 
 function takeoffCommand() {
-	const payload = {
-		parameters: {
-			TakeoffAltitudeAGL: takeOffAlt.value,
-		},
-	};
-
-	sendCommandToRole('takeoff', payload);
+	sendCommandToRole('takeoff', { parameters: { TakeoffAltitudeAGL: takeOffAlt.value } });
 }
 
 function driveVelocityCommand() {
-	const payload = {
-		parameters: {
-			forwardVelocity: forwardVelocityDrive.value,
-			yawRate: yawRateDrive.value,
-		},
-	};
-
-	sendCommandToRole('driveVelocity', payload);
+	sendCommandToRole('driveVelocity', {
+		parameters: { forwardVelocity: forwardVelocityDrive.value, yawRate: yawRateDrive.value },
+	});
 }
 
 function driveMode() {
-	const payload = {
-		parameters: {
-			mode: selectedDriveMode.value,
-		},
-	};
-	sendCommandToRole('driveMode', payload);
+	sendCommandToRole('driveMode', { parameters: { mode: selectedDriveMode.value } });
 }
 
-function homePositionCommand(location: { lat: number; lon: number }) {
-	const payload = {
-		parameters: {
-			locationVectorLL: {
-				Latitude: location.lat,
-				Longitude: location.lon,
-			},
-		},
-	};
-
-	sendCommandToRole('homePos', payload);
-}
 
 function driveLocationCommand(location: { lat: number; lon: number; alt: number }) {
-	const payload = {
-		parameters: {
-			locationVectorLL: {
-				Latitude: location.lat,
-				Longitude: location.lon,
-			},
-		},
-	};
-
-	sendCommandToRole('driveLocation', payload);
+	sendCommandToRole('driveLocation', {
+		parameters: { locationVectorLL: { Latitude: location.lat, Longitude: location.lon } },
+	});
 }
+
+const hasSimpleCommands = computed(() =>
+	['pause', 'rtl', 'land', 'cancel', 'arm', 'hold', 'reboot']
+		.some((role) => getControlstreamByRole(role))
+);
 </script>
 
 <template>
-	<v-expansion-panels multiple>
-		<!--commands-->
-		<v-row
-			v-if="
-				getControlstreamByRole('pause') ||
-				getControlstreamByRole('rtl') ||
-				getControlstreamByRole('land') ||
-				getControlstreamByRole('cancel') ||
-				getControlstreamByRole('arm') ||
-				getControlstreamByRole('hold') ||
-				getControlstreamByRole('reboot')
-			"
-			density="comfortable"
-		>
-			<v-col
-				v-if="getControlstreamByRole('arm')"
-				cols="4"
-			>
+		<div v-if="hasSimpleCommands" class="command-section">
+
+		<v-row class="command-grid pa-2" density="comfortable">
+			<v-col v-if="getControlstreamByRole('arm')" cols="4">
 				<v-btn
 					:color="isArmed ? 'primary' : 'grey'"
 					block
@@ -288,7 +181,7 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 					variant="tonal"
 					@click="hold"
 				>
-					<v-icon start>{{ isHold ? 'mdi-shield-off' : 'mdi-shield-check' }}</v-icon>
+					<v-icon start>{{ isHold ? 'mdi-pause-circle-outline' : 'mdi-hand-back-right' }}</v-icon>
 					{{ isHold ? 'Release' : 'Hold' }}
 					<v-tooltip
 						activator="parent"
@@ -410,24 +303,17 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 				</v-btn>
 			</v-col>
 		</v-row>
+		</div>
 
-		<!--drive mode-->
-		<v-expansion-panel v-if="getControlstreamByRole('driveMode')">
-			<v-expansion-panel-title>
-				<v-icon
-					class="mr-2"
-					size="small"
-					>mdi-car</v-icon
-				>
-				<span class="text-subtitle-2 font-weight-medium">Drive Mode Control</span>
-				<v-tooltip
-					activator="parent"
-					location="top"
-				>
+		<!-- Drive mode -->
+		<div v-if="getControlstreamByRole('driveMode')" class="command-section">
+			<div class="section-header">
+				<v-icon size="small" class="mr-2">mdi-car</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">Drive Mode</span>
+				<v-tooltip activator="parent" location="top">
 					Sets the ArduRover flight mode for a ground rover or surface
 				</v-tooltip>
-			</v-expansion-panel-title>
-			<v-expansion-panel-text>
+			</div>
 				<v-row
 					align="center"
 					density="comfortable"
@@ -441,38 +327,22 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 						/>
 					</v-col>
 					<v-col cols="4">
-						<v-btn
-							block
-							class="command-btn"
-							color="primary"
-							variant="tonal"
-							@click="driveMode"
-						>
-							<v-icon start>mdi-send</v-icon>
-							Send
-						</v-btn>
+            <SendButton
+                @send="driveMode()"
+            />
 					</v-col>
 				</v-row>
-			</v-expansion-panel-text>
-		</v-expansion-panel>
+		</div>
 
-		<!--takeoff control-->
-		<v-expansion-panel v-if="getControlstreamByRole('takeoff')">
-			<v-expansion-panel-title>
-				<v-icon
-					class="mr-2"
-					size="small"
-					>mdi-airplane</v-icon
-				>
-				<span class="text-subtitle-2 font-weight-medium">Takeoff Control</span>
-				<v-tooltip
-					activator="parent"
-					location="top"
-				>
+		<!-- Takeoff control -->
+		<div v-if="getControlstreamByRole('takeoff')" class="command-section">
+			<div class="section-header">
+				<v-icon size="small" class="mr-2">mdi-airplane-takeoff</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">Takeoff</span>
+				<v-tooltip activator="parent" location="top">
 					Set altitude (AGL) and launch the vehicle vertically.
 				</v-tooltip>
-			</v-expansion-panel-title>
-			<v-expansion-panel-text>
+			</div>
 				<v-row
 					align="center"
 					density="comfortable"
@@ -488,38 +358,22 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 						/>
 					</v-col>
 					<v-col cols="4">
-						<v-btn
-							block
-							class="command-btn"
-							color="primary"
-							variant="tonal"
-							@click="takeoffCommand"
-						>
-							<v-icon start>mdi-airplane-takeoff</v-icon>
-							Take Off
-						</v-btn>
+            <SendButton
+                @send="takeoffCommand()"
+            />
 					</v-col>
 				</v-row>
-			</v-expansion-panel-text>
-		</v-expansion-panel>
+		</div>
 
-		<!--drive velocity control-->
-		<v-expansion-panel v-if="getControlstreamByRole('driveVelocity')">
-			<v-expansion-panel-title>
-				<v-icon
-					class="mr-2"
-					size="small"
-					>mdi-steering</v-icon
-				>
-				<span class="text-subtitle-2 font-weight-medium">Drive Velocity Control</span>
-				<v-tooltip
-					activator="parent"
-					location="top"
-				>
+		<!-- Drive velocity control -->
+		<div v-if="getControlstreamByRole('driveVelocity')" class="command-section">
+			<div class="section-header">
+				<v-icon size="small" class="mr-2">mdi-steering</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">Drive Velocity</span>
+				<v-tooltip activator="parent" location="top">
 					Control forward speed and yaw rate for manual driving.
 				</v-tooltip>
-			</v-expansion-panel-title>
-			<v-expansion-panel-text>
+			</div>
 				<v-row
 					align="center"
 					density="comfortable"
@@ -543,38 +397,22 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 						/>
 					</v-col>
 					<v-col cols="4">
-						<v-btn
-							block
-							class="command-btn"
-							color="primary"
-							variant="tonal"
-							@click="driveVelocityCommand"
-						>
-							<v-icon start>mdi-send</v-icon>
-							Send
-						</v-btn>
+            <SendButton
+                @send="driveVelocityCommand()"
+            />
 					</v-col>
 				</v-row>
-			</v-expansion-panel-text>
-		</v-expansion-panel>
+		</div>
 
-		<!--offboard control-->
-		<v-expansion-panel v-if="getControlstreamByRole('offboard')">
-			<v-expansion-panel-title>
-				<v-icon
-					class="mr-2"
-					size="small"
-					>mdi-controller</v-icon
-				>
+		<!-- Offboard control -->
+		<div v-if="getControlstreamByRole('offboard')" class="command-section">
+			<div class="section-header">
+				<v-icon size="small" class="mr-2">mdi-remote</v-icon>
 				<span class="text-subtitle-2 font-weight-medium">Offboard Control</span>
-				<v-tooltip
-					activator="parent"
-					location="top"
-				>
+				<v-tooltip activator="parent" location="top">
 					Send direct velocity commands and yaw rate for manual flight control.
 				</v-tooltip>
-			</v-expansion-panel-title>
-			<v-expansion-panel-text>
+			</div>
 				<v-form ref="offboardForm">
 					<v-row
 						align="center"
@@ -617,40 +455,23 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 							/>
 						</v-col>
 						<v-col cols="6">
-							<v-btn
-								block
-								class="command-btn"
-								color="primary"
-								variant="tonal"
-								@click="offboard"
-							>
-								<v-icon start>mdi-send</v-icon>
-								Send
-							</v-btn>
+              <SendButton
+                  @send="offboard()"
+              />
 						</v-col>
 					</v-row>
 				</v-form>
-			</v-expansion-panel-text>
-		</v-expansion-panel>
+    </div>
 
-		<!--drive to location-->
-		<v-expansion-panel v-if="getControlstreamByRole('driveLocation')">
-			<v-expansion-panel-title>
-				<v-icon
-					class="mr-2"
-					size="small"
-					>mdi-map-marker</v-icon
-				>
+		<!-- Drive to location -->
+		<div v-if="getControlstreamByRole('driveLocation')" class="command-section">
+			<div class="section-header">
+				<v-icon size="small" class="mr-2">mdi-map-marker</v-icon>
 				<span class="text-subtitle-2 font-weight-medium">Drive to Location</span>
-				<v-tooltip
-					activator="parent"
-					location="top"
-				>
-					Navigate the vehicle to a specific lat/lon coordinate. Use the crosshairs to
-					pick from the map.
+				<v-tooltip activator="parent" location="top">
+					Navigate the vehicle to a specific lat/lon coordinate. Use the crosshairs to pick from the map.
 				</v-tooltip>
-			</v-expansion-panel-title>
-			<v-expansion-panel-text>
+			</div>
 				<LocationPicker
 					ref="driveLocationPickerRef"
 					:is-selected="isDriveLocationMapSelect"
@@ -660,49 +481,23 @@ function driveLocationCommand(location: { lat: number; lon: number; alt: number 
 					@submit="driveLocationCommand"
 					@toggle="toggleDriveLocationSelect"
 				/>
-			</v-expansion-panel-text>
-		</v-expansion-panel>
+		</div>
 
-		<v-expansion-panel v-if="getControlstreamByRole('homePos')">
-			<v-expansion-panel-title>
-				<v-icon
-					class="mr-2"
-					size="small"
-					>mdi-home</v-icon
-				>
-				<span class="text-subtitle-2 font-weight-medium">Home Location</span>
-				<v-tooltip
-					activator="parent"
-					location="top"
-				>
-					Update the vehicles home location. Use the crosshairs to pick from the map.
-				</v-tooltip>
-			</v-expansion-panel-title>
-			<v-expansion-panel-text>
-				<LocationPicker
-					ref="homeLocationPickerRef"
-					:is-selected="isHomeLocationMapSelect"
-					button-icon="mdi-send"
-					button-label="Send"
-					hide-alt
-					@submit="homePositionCommand"
-					@toggle="toggleHomeLocationSelect"
-				/>
-			</v-expansion-panel-text>
-		</v-expansion-panel>
-	</v-expansion-panels>
 </template>
 
 <style scoped>
-.command-btn {
-	text-transform: none;
-	font-weight: 500;
-	transition: all 0.2s ease;
+.command-section {
+	border: 1px solid rgba(var(--v-border-color), 0.12);
+	border-radius: 8px;
+	padding: 8px 12px 12px;
+	margin-bottom: 8px;
 }
 
-.command-btn:hover {
-	transform: translateY(-1px);
-	filter: brightness(1.2);
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+.section-header {
+	display: flex;
+	align-items: center;
+	margin-bottom: 6px;
+	padding-bottom: 4px;
 }
+
 </style>

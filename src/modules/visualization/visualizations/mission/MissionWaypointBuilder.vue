@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed, ref} from 'vue';
+import {computed, ref, watch} from 'vue';
 // @ts-ignore
 import {randomUUID} from 'osh-js/source/core/utils/Utils.js';
 import {VueDraggable} from 'vue-draggable-plus';
@@ -78,6 +78,8 @@ defineExpose({ setLatLonAlt });
     <info-tooltip content="Pick the vehicle type for vehicle-specific planning" />
   </div>
 
+  <v-divider class="mt-4 mb-3" />
+
   <div class="d-flex align-center ga-2 mb-4">
     <LocationPicker
         ref="locationPickerRef"
@@ -91,8 +93,6 @@ defineExpose({ setLatLonAlt });
         @toggle="emit('toggle')"
     />
   </div>
-
-  <v-divider class="mb-3" />
 
   <div class="d-flex justify-space-between align-center mb-2" v-if="waypoints.length > 0">
     <span class="text-subtitle-2">Waypoints</span>
@@ -207,7 +207,6 @@ defineExpose({ setLatLonAlt });
   >
     No waypoints added. Click on the map or use the form above.
   </div>
-
 
   <v-divider class="mt-4 mb-3" />
 

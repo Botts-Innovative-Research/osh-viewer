@@ -13,7 +13,7 @@ import {
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
 import { VisualizationComponents } from '../../types/visualization';
-import type { Controlstream } from './types';
+import type { IConSysApiControlStreamProperties } from '../../types/datasource';
 
 const props = defineProps<{
 	visualizations: OSHVisualization[];
@@ -47,7 +47,7 @@ function getControlstreamByRole(role: string) {
 }
 
 
-const missionControlStream = computed<Controlstream | undefined>(
+const missionControlStream = computed<IConSysApiControlStreamProperties | undefined>(
 	() => getControlstreamByRole('roverPlan') ?? getControlstreamByRole('plan')
 );
 
@@ -133,9 +133,9 @@ async function connectDatasources() {
 			homeDatasource.value = dsInstance;
 			let homeLLAResults = await getLatestObservation(ds);
 			homeLocation.value = {
-				lat: homeLLAResults.result.Home.lat,
-				lon: homeLLAResults.result.Home.lon,
-				alt: homeLLAResults.result.Home.alt,
+				lat: homeLLAResults?.result.Home.lat,
+				lon: homeLLAResults?.result.Home.lon,
+				alt: homeLLAResults?.result.Home.alt,
 			};
 			onHomeLocationListener(dsInstance);
 		} else if (ds?.properties?.lla) {
@@ -176,6 +176,8 @@ const hasCommandPad = computed(
 		getControlstreamByRole('driveLocation') ||
 		getControlstreamByRole('arm') ||
 		getControlstreamByRole('reboot') ||
+		getControlstreamByRole('hold') ||
+		getControlstreamByRole('homePos') ||
 		getControlstreamByRole('driveMode')
 );
 </script>
@@ -228,14 +230,12 @@ const hasCommandPad = computed(
 			</v-row>
 		</v-card>
 
-    <v-card
-        v-if="!noController"
-    >
-      <v-row density="comfortable">
-        <v-card-subtitle>Status:</v-card-subtitle>
-        <v-card-subtitle>{{ receivedStatus }}</v-card-subtitle>
-      </v-row>
-    </v-card>
+		<v-card v-if="!noController" class="status-card">
+			<v-card-text class="d-flex align-center">
+				<span class="text-subtitle-2 font-weight-medium mr-2">Status:</span>
+				<span class="text-title-large">{{ receivedStatus || 'N/A' }}</span>
+			</v-card-text>
+		</v-card>
 
 		<v-sheet
 			v-if="!noController"
