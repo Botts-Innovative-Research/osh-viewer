@@ -5,21 +5,12 @@ import {AggregateDatastreams, BuildRoleProperty, getUsedDatastreams} from '../..
 import {useDataStreamStore} from "@/stores/datastreamstore";
 import {VisualizationComponents} from '../../types/visualization';
 //@ts-ignore
-import { IChartCustomizationOptions } from '../../types/customization';
 import { IConSysApiDataSourceProperties } from '../../types/datasource';
-import { ICurveLayerProperties } from '../../types/layers';
-import { IChartViewProperties } from '../../types/views';
 import {Mode} from 'osh-js/source/core/datasource/Mode';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { AudioDescriptor } from "./Descriptor";
-import AudioSpectrogramVisualizer
-    from "osh-js/source/core/ui/view/audio/visualizer/spectrogram/AudioSpectrogramVisualizer";
-import AudioView from 'osh-js/source/core/ui/view/audio/AudioView';
-import AudioFrequencyChartJsVisualizer from 'osh-js/source/core/ui/view/audio/visualizer/frequency/AudioFrequencyChartJsVisualizer';
-import AudioTimeChartJsVisualizer from 'osh-js/source/core/ui/view/audio/visualizer/time/AudioTimeChartJsVisualizer';
-import AudioDataLayer from 'osh-js/source/core/ui/layer/AudioDataLayer';
 
 
 export default function build() {
@@ -36,8 +27,11 @@ export default function build() {
 	);
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: audioResult.vizDatasources,
-		spectrogramOptions: audioResult.spectrogramOptions,
-        audioViewOptions: audioResult.audioViewOptions,
+        dataLayer: audioResult.audioLayer,
+        dataView: {
+            ...audioResult.audioViewOptions,
+            spectrogramOptions: audioResult.spectrogramOptions,
+        },
 	};
 
 	const newViz: OSHVisualization = new OSHVisualization(
@@ -72,7 +66,14 @@ export function CreateAudioViewProps(datastreams: { [key: string]: any }, visOpt
         css: 'audio-view',
         datasetOptions: { tension: 0.2 },
         refreshRate: 1000,
+        showSpectrogram: visOptions.spectrogram ?? true,
+        showChartTime: visOptions.chartTime ?? false,
+        showChartFreq: visOptions.chartFreq ?? false,
     }
+
+    const audioLayer = {
+        name: visOptions.name,
+    };
 
     for (const [dsId, entry] of Object.entries(datastreams)) {
         const properties = BuildRoleProperty(entry);
@@ -105,5 +106,6 @@ export function CreateAudioViewProps(datastreams: { [key: string]: any }, visOpt
         vizDatasources,
         spectrogramOptions,
         audioViewOptions,
+        audioLayer,
     };
 }

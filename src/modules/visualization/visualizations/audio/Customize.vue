@@ -4,8 +4,9 @@ import NameControl from '@/modules/visualization/wizard/customizations/NameContr
 import { computed, ref, watch } from 'vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
+import AudioOptions from '@/modules/visualization/wizard/customizations/AudioOptions.vue';
 
-const openPanels = ref<string[]>(['general']);
+const openPanels = ref<string[]>(['general', 'audio']);
 
 const vizwizStore = useVizWizStore();
 const defaultName = ref<string>('');
@@ -24,9 +25,8 @@ watch(
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>();
 const nameValid = ref<boolean>(false);
-const valid = computed(() => {
-	return nameValid.value;
-});
+const audioOptionsValid = ref<boolean>(false);
+const valid = computed(() => nameValid.value && audioOptionsValid.value);
 useComponentValidation(valid, emit);
 
 
@@ -63,6 +63,14 @@ useComponentValidation(valid, emit);
 				></name-control>
 			</v-expansion-panel-text>
 		</v-expansion-panel>
-
+        <v-expansion-panel
+            eager
+            title="Chart Options"
+            value="audio"
+        >
+            <v-expansion-panel-text>
+                <AudioOptions v-model:valid="audioOptionsValid" />
+            </v-expansion-panel-text>
+        </v-expansion-panel>
 	</v-expansion-panels>
 </template>
