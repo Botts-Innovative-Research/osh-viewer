@@ -30,7 +30,7 @@ function confirm() {
 					>Cancel</v-btn
 				>
 				<v-btn
-					color="primary"
+					color="error"
 					variant="tonal"
 					@click="confirm"
 					>Delete</v-btn
