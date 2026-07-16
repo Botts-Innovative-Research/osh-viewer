@@ -3,8 +3,6 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { onMounted, onBeforeUnmount, ref, computed, watch, toRaw } from 'vue';
 import * as Cesium from 'cesium';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
-import VideoView from 'osh-js/source/core/ui/view/video/VideoView.js';
-import VideoDataLayer from 'osh-js/source/core/ui/layer/VideoDataLayer.js';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import {
 	createDatasource,
@@ -52,8 +50,6 @@ const minimapContainerId = `minimap-${Date.now()}`;
 const viewMode = ref<'platform' | 'follow' | 'overhead' | 'freelook'>('follow');
 const showHUD = ref(false);
 const showAROverlay = ref(false);
-const viewModeBeforeAR = ref<'platform' | 'follow' | 'overhead' | 'freelook'>('follow');
-const arFov = ref(85);
 
 const hasOrientation = ref(false);
 const hasVideo = ref(false);
@@ -114,150 +110,6 @@ function onOrientationListener(dsInstance: typeof ConSysApi, ds: IConSysApiDataS
 	};
 }
 
-const videoContainerId = `minimap-video-${Date.now()}`;
-let arVideoView: any = null;
-let arVideoLayer: any = null;
-let videoDsInstance: typeof ConSysApi | null = null;
-let videoDsProps: IConSysApiDataSourceProperties | null = null;
-
-function createVideoView() {
-	if (arVideoView || !videoDsProps) return;
-
-	const rawDs = toRaw(videoDsProps);
-
-	videoDsInstance = createDatasource(rawDs);
-
-	const getFrameData = {
-		dataSourceIds: [videoDsInstance.id],
-		handler: (rec: any) => {
-			return rec[rawDs.properties.video.property];
-		}
-	};
-
-	const getTimestamp = {
-		dataSourceIds: [videoDsInstance.id],
-		handler: (rec: any) => rec.timestamp,
-	};
-
-	arVideoView = new VideoView({
-		container: videoContainerId,
-		css: 'video-view',
-		layers: [],
-		useWebCodecApi: true,
-		showTime: false,
-		showStats: false,
-	});
-
-	arVideoLayer = new VideoDataLayer({
-		name: 'ar-video',
-		dataSourceIds: [videoDsInstance.id],
-		...(getFrameData ? { getFrameData } : {}),
-		...(getTimestamp ? { getTimestamp } : {})
-	});
-
-	arVideoView.addLayer(arVideoLayer);
-	videoDsInstance.connect();
-}
-
-function destroyVideoView() {
-	if (videoDsInstance) {
-		videoDsInstance.disconnect();
-		videoDsInstance = null;
-	}
-	if (arVideoView) {
-		try { arVideoView.destroy(); } catch (e) {}
-		arVideoView = null;
-		arVideoLayer = null;
-	}
-}
-
-// show only markers/layers that the 'camera' can currently see
-function cullToFrustum() {
-	if (!mapView?.viewer) return;
-	const camera = mapView.viewer.camera;
-	const frustum = camera.frustum;
-
-	const cullingVolume = frustum.computeCullingVolume(
-		camera.positionWC,
-		camera.directionWC,
-		camera.upWC
-	);
-
-	if (mapView.billboardCollection) {
-		for (let i = 0; i < mapView.billboardCollection.length; i++) {
-			const bb = mapView.billboardCollection.get(i);
-			if (bb.position) {
-				const visibility = cullingVolume.computeVisibility(
-					new Cesium.BoundingSphere(bb.position, 50)
-				);
-				bb.show = visibility !== Cesium.Intersect.OUTSIDE;
-			}
-		}
-	}
-	if (mapView.labelCollection) {
-		for (let i = 0; i < mapView.labelCollection.length; i++) {
-			const lb = mapView.labelCollection.get(i);
-			if (lb.position) {
-				const visibility = cullingVolume.computeVisibility(
-					new Cesium.BoundingSphere(lb.position, 50)
-				);
-				lb.show = visibility !== Cesium.Intersect.OUTSIDE;
-			}
-		}
-	}
-}
-
-function restoreBillboardVisibility() {
-	if (!mapView) return;
-	if (mapView.billboardCollection) {
-		for (let i = 0; i < mapView.billboardCollection.length; i++) {
-			mapView.billboardCollection.get(i).show = true;
-		}
-	}
-	if (mapView.labelCollection) {
-		for (let i = 0; i < mapView.labelCollection.length; i++) {
-			mapView.labelCollection.get(i).show = true;
-		}
-	}
-}
-
-function toggleAROverlay() {
-	showAROverlay.value = !showAROverlay.value;
-
-	if (!mapView?.viewer) return;
-	const viewer = mapView.viewer;
-
-	if (showAROverlay.value) {
-		viewModeBeforeAR.value = viewMode.value;
-		viewMode.value = 'platform';
-		// render cesium on transparent background
-		viewer.scene.globe.show = false;
-		viewer.scene.backgroundColor = Cesium.Color.TRANSPARENT;
-		updateARFov();
-		createVideoView();
-	} else {
-		viewMode.value = viewModeBeforeAR.value;
-
-		viewer.scene.globe.show = true;
-		viewer.scene.backgroundColor = Cesium.Color.BLACK;
-		viewer.scene.moon.show = true;
-		destroyVideoView();
-		restoreBillboardVisibility();
-	}
-
-	viewer.scene.requestRender();
-}
-
-function updateARFov() {
-	if (!mapView?.viewer || !showAROverlay.value) return;
-	const frustum = mapView.viewer.camera.frustum;
-	if (frustum instanceof Cesium.PerspectiveFrustum) {
-		frustum.fov = Cesium.Math.toRadians(arFov.value);
-		mapView.viewer.scene.requestRender();
-	}
-}
-
-watch(arFov, () => updateARFov());
 
 function setSceneInputEnabled(viewer: any, enabled: boolean) {
 	const controller = viewer.scene.screenSpaceCameraController;
@@ -340,11 +192,7 @@ function updateCamera() {
 			break;
 		}
 	}
-
-	if (showAROverlay.value) {
-		cullToFrustum();
-	}
-
+  
 	viewer.scene.requestRender();
 }
 
@@ -393,7 +241,6 @@ onMounted(async () => {
 
 		if (ds?.properties?.video) {
 			hasVideo.value = true;
-			videoDsProps = ds;
 			continue;
 		}
 
@@ -451,7 +298,6 @@ watch(
 );
 
 onBeforeUnmount(() => {
-	destroyVideoView();
 	if (mapView) {
 		mapView.destroy();
 		mapView = null;
@@ -514,15 +360,9 @@ useVisualizationCleanup(dsInstances);
 		</div>
 		<div class="minimap-scene">
 			<div
-				:id="videoContainerId"
-				class="video-background"
-				:class="{ 'video-visible': showAROverlay && hasVideo }"
-			></div>
-			<div
 				:id="minimapContainerId"
 				class="minimap-viewer"
-				:class="{ 'ar-transparent': showAROverlay }"
-			></div>
+      ></div>
 
 			<div class="overlay-toggles">
 				<v-btn
@@ -533,31 +373,6 @@ useVisualizationCleanup(dsInstances);
 				>
 					HUD
 				</v-btn>
-				<v-btn
-					v-if="hasVideo"
-					class="overlay-toggle-btn"
-					:color="showAROverlay ? 'green' : undefined"
-					size="x-small"
-					@click="toggleAROverlay"
-				>
-					<v-icon start size="small">mdi-augmented-reality</v-icon>
-					AR
-				</v-btn>
-			</div>
-
-			<div v-if="showAROverlay" class="ar-fov-control">
-				<span class="ar-fov-label">FOV {{ arFov }}°</span>
-				<v-slider
-					v-model="arFov"
-					:min="30"
-					:max="120"
-					:step="1"
-					density="compact"
-					hide-details
-					thumb-size="12"
-					track-size="2"
-					color="green"
-				/>
 			</div>
 
 			<div v-if="showHUD" class="hud-overlay" :style="{ transform: `rotate(${-receivedOrientation.roll}deg)` }">
@@ -617,50 +432,6 @@ useVisualizationCleanup(dsInstances);
 	z-index: 2;
 	display: flex;
 	gap: 4px;
-}
-
-.ar-fov-control {
-	position: absolute;
-	bottom: 8px;
-	right: 8px;
-	z-index: 2;
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	background: rgba(0, 0, 0, 0.6);
-	border-radius: 4px;
-	padding: 4px 12px;
-	width: 200px;
-}
-.ar-fov-label {
-	color: #00ff41;
-	font-family: 'Courier New', monospace;
-	font-size: 11px;
-	white-space: nowrap;
-}
-
-.video-background {
-	position: absolute;
-	inset: 0;
-	z-index: 0;
-	background: #000;
-	overflow: hidden;
-	visibility: hidden;
-	pointer-events: none;
-}
-.video-background.video-visible {
-	visibility: visible;
-}
-
-.minimap-viewer.ar-transparent {
-	position: absolute;
-	inset: 0;
-	z-index: 1;
-}
-.minimap-viewer.ar-transparent :deep(.cesium-viewer),
-.minimap-viewer.ar-transparent :deep(.cesium-widget),
-.minimap-viewer.ar-transparent :deep(.cesium-widget canvas) {
-	background: transparent !important;
 }
 
 .hud-overlay {
@@ -728,10 +499,4 @@ useVisualizationCleanup(dsInstances);
 	margin-left: 1px;
 }
 
-.video-background :deep(canvas),
-.video-background :deep(img) {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover;
-}
 </style>
