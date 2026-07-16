@@ -163,6 +163,9 @@ watch(
 	{ immediate: true }
 );
 
+async function sendAllMissions() {
+  console.log('send all missions')
+}
 onBeforeUnmount(() => {
 	cleanupDatasources();
 });
@@ -290,6 +293,16 @@ const hasCommandPad = computed(
 				</v-window-item>
 			</v-window>
 		</v-sheet>
+
+		<v-btn
+			v-if="validVisualizations.length > 1"
+			block
+			class="mt-4"
+			color="primary"
+			variant="tonal"
+			@click="sendAllMissions"
+		>
+			Send All Missions
 	</v-container>
 </template>
 
