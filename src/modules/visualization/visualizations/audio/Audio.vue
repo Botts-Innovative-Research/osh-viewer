@@ -18,7 +18,7 @@ import { IAudioViewProperties } from '../../types/views';
 const props = defineProps<{
 	visualization: OSHVisualization;
 	datasource: IConSysApiDataSourceProperties[];
-	audioDataLayer: IAudioDataLayerProperties[];
+	audioDataLayer: IAudioLayerProperties[];
 	audioView: IAudioViewProperties;
 }>();
 
@@ -34,21 +34,21 @@ onMounted(async () => {
 // Array of ConSysApi instances for datasources
 const dsInstances = ref<(typeof ConSysApi)[]>([]);
 
- function initializeAudio() {
+function initializeAudio() {
    const viz = props.visualization;
    if (!viz || viz.type !== 'audio') return;
 
    const dsArray: IConSysApiDataSourceProperties[] = props.datasource;
 
-    let getSampleRate: any;
-   	let getFrameData: any;
-   	let getTimestamp: any;
+   let getSampleRate: any;
+   let getFrameData: any;
+   let getTimestamp: any;
 
    for (const dsProps of dsArray) {
         const rawDs = toRaw(dsProps);
-   		const dsInstance = createDatasource(dsProps);
+        const dsInstance = createDatasource(dsProps);
 
-   		if (rawDs.properties.sampleRate) {
+        if (rawDs.properties.sampleRate) {
             getSampleRate = {
                 dataSourceIds: [dsInstance.id],
                 handler: (rec: any) => rec[rawDs.properties.sampleRate.property],
@@ -65,27 +65,39 @@ const dsInstances = ref<(typeof ConSysApi)[]>([]);
             handler: (rec: any) => new Date(rec.time).getTime(),
         };
 
-   		dsInstance.connect();
-   		dsInstances.value.push(dsInstance);
-   		console.log('[Audio.vue] Audio datasource created:', dsInstance);
-   	}
+        dsInstance.connect();
+        dsInstances.value.push(dsInstance);
+        console.log('[Audio.vue] Audio datasource created:', dsInstance);
+    }
 
-   const layerOpts = props.audioLayer;
+   const layerOpts = props.audioDataLayer;
    audioLayer.value = new AudioDataLayer({
-   		...layerOpts,
-   dataSourceIds: dsInstances.value.map((ds) => ds.id),
-   		...(getSampleRate ? { getSampleRate } : {}),
-   		...(getFrameData ? { getFrameData } : {}),
-   		...(getTimestamp ? { getTimestamp } : {}),
-   	});
-
-   	const audioSpectrogramVisualizer = new AudioSpectrogramVisualizer({
-        fftSize: 2048,
-        container:  `spectrogram-${audioId.value}`,
+        ...layerOpts,
+        dataSourceIds: dsInstances.value.map((ds) => ds.id),
+        ...(getSampleRate ? { getSampleRate } : {}),
+        ...(getFrameData ? { getFrameData } : {}),
+        ...(getTimestamp ? { getTimestamp } : {}),
     });
 
-    audioViewInstance.value = new AudioView({
-        ...props.audioViewOptions,
+   const audioSpectrogramVisualizer = new AudioSpectrogramVisualizer({
+        fftSize: 2048,
+        container: `spectrogram-${audioId.value}`,
+   });
+
+   const audioFrequencyVisualizer = new AudioFrequencyChartJsVisualizer({
+        fftSize: 32,
+        container: `chart-freq-${audioId.value}`,
+        options: {},
+        datasetOptions: {
+            borderColor: 'rgba(0,0,0,0.5)',
+            backgroundColor: 'rgba(210,210,210,0.8)',
+            barThickness: 20,
+            borderWidth: 1,
+        },
+   });
+
+   audioViewInstance.value = new AudioView({
+        ...props.audioView,
         container: audioId.value,
         dataSource: dsInstances.value[0],
         playSound: false,
@@ -93,6 +105,8 @@ const dsInstances = ref<(typeof ConSysApi)[]>([]);
    });
 
    audioViewInstance.value.addVisualizer(audioSpectrogramVisualizer);
+   audioViewInstance.value.addVisualizer(audioFrequencyVisualizer);
+
    console.log('[Audio.vue] Audio view created:', audioViewInstance.value);
  }
 
@@ -101,7 +115,8 @@ useVisualizationCleanup(dsInstances);
 
 <template>
   <v-sheet class="audio-card pa-4">
-       <div :id="`spectrogram-${audioId}`" class="audio-visualizer"></div>
+    <div :id="`spectrogram-${audioId}`" class="audio-visualizer"></div>
+    <div :id="`chart-freq-${audioId}`" class="audio-chart"></div>
   </v-sheet>
 </template>
 
@@ -110,6 +125,10 @@ useVisualizationCleanup(dsInstances);
   height: auto;
 }
 .audio-visualizer {
+    height: 200px;
+    width: 300px;
+}
+.audio-chart {
     height: 200px;
     width: 300px;
 }
