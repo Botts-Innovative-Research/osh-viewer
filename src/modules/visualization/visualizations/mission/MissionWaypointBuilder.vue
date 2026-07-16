@@ -1,17 +1,17 @@
 <script lang="ts" setup>
-import {computed, ref, watch} from 'vue';
+import {computed, ref} from 'vue';
 // @ts-ignore
 import {randomUUID} from 'osh-js/source/core/utils/Utils.js';
 import {VueDraggable} from 'vue-draggable-plus';
 import type {Waypoint} from './types';
-import InfoTooltip from "@/components/ui/InfoTooltip.vue";
 import LocationPicker from "@/components/ui/LocationPicker.vue";
 import DeleteButton from "@/components/ui/DeleteButton.vue";
 
-defineProps<{
+const props = defineProps<{
   noController: boolean;
   isSelected: boolean;
   homeLocation: { lat: number; lon: number; alt: number };
+  vehicleType: string;
 }>();
 
 const emit = defineEmits<{
@@ -24,8 +24,6 @@ const waypointAltitude = defineModel<number>('waypointAltitude', { required: tru
 const cruiseSpeed = defineModel<number>('cruiseSpeed', { required: true });
 const hoverSpeed = defineModel<number>('hoverSpeed', { required: true });
 const altitudeMode = defineModel<number>('altitudeMode', { required: true });
-const vehicleType = defineModel<string>('vehicleType', {required: true});
-
 const locationPickerRef = ref<InstanceType<typeof LocationPicker> | null>(null);
 const showClearConfirm = ref(false);
 
@@ -35,9 +33,7 @@ const altitudeModeOptions = [
   { title: 'Above Terrain / AGL', value: 2 },
   // { title: 'Mixed Modes', value: 3 },
 ];
-const vehicleTypes = ['UAV', 'Ground Rover', 'Submarine', 'Surface Boat'];
-
-const isGroundVehicle = computed(() => vehicleType.value === 'Ground Rover' || vehicleType.value === 'Surface Boat');
+const isGroundVehicle = computed(() => props.vehicleType === 'Ground Rover' || props.vehicleType === 'Surface Boat');
 
 function addWaypointFromMap(payload: { lat: number; lon: number; alt: number }) {
   const newWaypoint: Waypoint = {
@@ -67,19 +63,6 @@ defineExpose({ setLatLonAlt });
 </script>
 
 <template>
-  <div class="d-flex align-center ga-2 mb-5">
-    <v-select
-        v-model="vehicleType"
-        :items="vehicleTypes"
-        hide-details
-        density="compact"
-        label="Planning for"
-    />
-    <info-tooltip content="Pick the vehicle type for vehicle-specific planning" />
-  </div>
-
-  <v-divider class="mt-4 mb-3" />
-
   <div class="d-flex align-center ga-2 mb-4">
     <LocationPicker
         ref="locationPickerRef"
