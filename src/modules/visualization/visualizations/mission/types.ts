@@ -1,4 +1,5 @@
 import { MapPoint } from '@/modules/map/adapters/types';
+import ConSysApi from "osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js";
 
 export interface Waypoint extends MapPoint{
 	id: string;
@@ -20,4 +21,14 @@ export interface SavedMission {
 	settings: MissionSettings;
 	createdAt: string;
 	updatedAt: string;
+}
+
+export interface SystemState {
+    receivedLLA: { lat: number; lon: number; alt: number };
+    receivedStatus: string;
+    homeLocation: { lat: number; lon: number; alt: number };
+    llaDatasource: typeof ConSysApi | null;
+    homeDatasource: typeof ConSysApi | null;
+    statusDatasource: typeof ConSysApi | null;
+    dsInstances: (typeof ConSysApi)[];
 }
