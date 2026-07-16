@@ -8,10 +8,10 @@ import {
 	createDatasource,
 	getLatestObservation,
 } from '@/modules/visualization/services/datasource.service';
+import { sendCommand } from '../../services/controlstream.service';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
 import { VisualizationComponents } from '../../types/visualization';
-import { showToast } from '@/composables/useToast';
 import { useMapStore } from '@/stores/mapstore';
 import {SystemState} from "@/modules/visualization/visualizations/mission/types";
 
@@ -58,6 +58,17 @@ function detectVehicleType(viz: OSHVisualization): string {
 
 	if (hasGroundControls && !hasAerialControls) return 'Ground Rover';
 	return 'UAV';
+}
+function onSetHome(location: { lat: number; lon: number }, viz: OSHVisualization) {
+	const cs = getControlstreamByRole('homePos', viz);
+	if (!cs) return;
+	const protocol = cs.tls ? 'https' : 'http';
+	sendCommand(
+		`${protocol}://${cs.endpointUrl}`,
+		cs.id,
+		{ parameters: { locationVectorLL: { Latitude: location.lat, Longitude: location.lon } } },
+		`${cs.connectorOpts.username}:${cs.connectorOpts.password}`
+	);
 }
 
 const activeSystemState = computed(() => {
@@ -215,7 +226,7 @@ async function sendAllMissions() {
 	for (const viz of systems) {
 		const planRef = planMissionRefs.value.get(viz.id);
 		if (planRef) {
-			await planRef.sendMission();
+      planRef.sendMission();
 		}
 	}
 }
@@ -351,6 +362,7 @@ const hasCommandPad = computed(
 							:no-controller="false"
 							:system-id="viz.id"
 							:vehicle-type="detectVehicleType(viz)"
+							@set-home="(loc) => onSetHome(loc, viz)"
 						/>
 					</div>
 				</v-window-item>

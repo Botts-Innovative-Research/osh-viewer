@@ -23,6 +23,9 @@ const props = defineProps<{
 	systemId: string;
 }>();
 
+const emit = defineEmits<{
+  setHome: [location: { lat: number; lon: number }];
+}>();
 
 const mapStore = useMapStore();
 const missionStore = useMissionStore();
@@ -576,6 +579,7 @@ onBeforeUnmount(() => {
 				:vehicle-type="vehicleType"
 				@toggle="toggle"
 				@clear-waypoints="onClearWaypoints"
+				@set-home="(loc) => emit('setHome', loc)"
 			/>
 		</v-window-item>
 

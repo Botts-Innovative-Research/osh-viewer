@@ -32,10 +32,6 @@ function toggleDriveLocationSelect() {
 	mapStore.setIsDriveLocationSelected(!mapStore.isDriveLocationSelected);
 }
 
-function toggleHomeLocationSelect() {
-	mapStore.setIsHomeLocationSelected(!mapStore.isHomeLocationSelected);
-}
-
 const xVelocity = ref(0.0);
 const yVelocity = ref(0.0);
 const zVelocity = ref(0.0);
@@ -53,7 +49,7 @@ const driveModes = [
 ];
 const selectedDriveMode = ref('HOLD');
 
-function getControlstreamConfig(cs: any) {
+function getControlstreamConfig(cs: IConSysApiControlStreamProperties) {
 	if (!cs) return null;
 	const protocol = cs.tls ? 'https' : 'http';
 	return {
@@ -132,7 +128,6 @@ function driveVelocityCommand() {
 function driveMode() {
 	sendCommandToRole('driveMode', { parameters: { mode: selectedDriveMode.value } });
 }
-
 
 function driveLocationCommand(location: { lat: number; lon: number; alt: number }) {
 	sendCommandToRole('driveLocation', {
