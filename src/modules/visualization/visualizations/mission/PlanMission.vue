@@ -520,6 +520,7 @@ function generateMissionControlPlan() {
 	};
 }
 
+defineExpose({ sendMission });
 onBeforeUnmount(() => {
 	if (isSelected.value) mapStore.disableWaypointSelection();
 	clearWaypoints();
