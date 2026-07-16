@@ -14,6 +14,7 @@ import {
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
 import { VisualizationComponents } from '../../types/visualization';
+import type { IConSysApiControlStreamProperties } from '../../types/datasource';
 import { IConSysApiDataSourceProperties } from '@/modules/visualization/types/datasource';
 
 const props = defineProps<{
@@ -47,9 +48,8 @@ function getControlstreamByRole(role: string) {
 	return controlstreams.value.find((cs: any) => cs.properties && cs.properties[role]);
 }
 
-const isRover = computed(() => !!getControlstreamByRole('roverPlan'));
 
-const missionControlStream = computed<Controlstream | undefined>(
+const missionControlStream = computed<IConSysApiControlStreamProperties | undefined>(
 	() => getControlstreamByRole('roverPlan') ?? getControlstreamByRole('plan')
 );
 
@@ -79,19 +79,19 @@ let dsInstances = ref<(typeof ConSysApi)[]>([]);
 
 let homeLocation = ref<{ lat: number; lon: number; alt: number }>({ lat: 0, lon: 0, alt: 0 });
 
-function onStatusListener(dsInstance: typeof ConSysApi, ds: IConSysApiDataSourceProperties)) {
+function onStatusListener(dsInstance: typeof ConSysApi, ds: IConSysApiDataSourceProperties) {
   const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
 
   dataBroadcastChannel.onmessage = (message) => {
     if (message.data.type === 'data') {
       const data = message.data.values[0].data;
-      receivedStatus.value = data[ds.properites.status.property];
+      receivedStatus.value = data[ds.properties.status.property];
     }
   };
 }
 
 
-function onLLAListener(dsInstance: typeof ConSysApi, ds: IConSysApiDataSourceProperties)) {
+function onLLAListener(dsInstance: typeof ConSysApi, ds: IConSysApiDataSourceProperties) {
 	const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
 
 	dataBroadcastChannel.onmessage = (message) => {
@@ -187,6 +187,8 @@ const hasCommandPad = computed(
 		getControlstreamByRole('driveLocation') ||
 		getControlstreamByRole('arm') ||
 		getControlstreamByRole('reboot') ||
+		getControlstreamByRole('hold') ||
+		getControlstreamByRole('homePos') ||
 		getControlstreamByRole('driveMode')
 );
 </script>
@@ -216,10 +218,7 @@ const hasCommandPad = computed(
         </div>
         <PanelVisualizationWrapper :viz="minimapViz" />
       </v-card>
-      <v-card
-          v-if="!noController"
-          class="telemetry-card"
-      >
+      <v-card class="telemetry-card">
         <v-card-text>Live Telemetry</v-card-text>
         <v-row density="comfortable">
           <v-col
@@ -246,13 +245,11 @@ const hasCommandPad = computed(
         </v-row>
       </v-card>
 
-      <v-card
-          v-if="!noController"
-      >
-        <v-row density="comfortable">
-          <v-card-subtitle>Status:</v-card-subtitle>
-          <v-card-subtitle>{{ receivedStatus }}</v-card-subtitle>
-        </v-row>
+      <v-card class="status-card">
+        <v-card-text class="d-flex align-center">
+          <span class="text-subtitle-2 font-weight-medium mr-2">Status:</span>
+          <span class="text-title-large">{{ receivedStatus || 'N/A' }}</span>
+        </v-card-text>
       </v-card>
     </v-sheet>
 
@@ -278,7 +275,6 @@ const hasCommandPad = computed(
 				<v-window-item value="plan">
 					<PlanMission
 						:home-location="homeLocation"
-						:is-rover="isRover"
 						:mission-control-stream="missionControlStream"
 						:no-controller="noController"
 					/>

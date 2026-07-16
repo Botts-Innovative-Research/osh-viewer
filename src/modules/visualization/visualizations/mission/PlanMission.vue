@@ -15,7 +15,8 @@ import MissionSummaryDialog from './MissionSummaryDialog.vue';
 import SaveMissionDialog from './SaveMissionDialog.vue';
 import DeleteMissionDialog from './DeleteMissionDialog.vue';
 import ExportMissionDialog from './ExportMissionDialog.vue';
-import type { Controlstream, MissionSettings, SavedMission, Waypoint } from './types';
+import type { MissionSettings, SavedMission, Waypoint } from './types';
+import type { IConSysApiControlStreamProperties } from '../../types/datasource';
 import DeleteButton from "@/components/ui/DeleteButton.vue";
 import type { MissionSettings, SavedMission, Waypoint } from './types';
 import { useMapInteractionStore } from '@/stores/mapinteractionstore';
@@ -25,7 +26,9 @@ import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 const props = defineProps<{
 	noController: boolean;
 	homeLocation: { lat: number; lon: number; alt: number };
-	missionControlStream?: Controlstream;
+	missionControlStream?: IConSysApiControlStreamProperties;
+}>();
+
 }>();
 
 const mapStore = useMapStore();

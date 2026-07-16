@@ -1,7 +1,7 @@
 import { MapPoint } from '@/modules/map/types';
 
 export interface Waypoint extends MapPoint {
-	id: string;
+    id: string;
 }
 
 export interface MissionSettings {
