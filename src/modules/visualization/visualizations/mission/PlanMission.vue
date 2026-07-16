@@ -21,7 +21,6 @@ const props = defineProps<{
 	missionControlStream?: IConSysApiControlStreamProperties;
 }>();
 
-}>();
 
 const mapStore = useMapStore();
 const missionStore = useMissionStore();
