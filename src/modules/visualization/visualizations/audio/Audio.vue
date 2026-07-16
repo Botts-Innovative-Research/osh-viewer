@@ -14,11 +14,14 @@ import AudioTimeChartJsVisualizer from 'osh-js/source/core/ui/view/audio/visuali
 import AudioDataLayer from 'osh-js/source/core/ui/layer/AudioDataLayer';
 import { IAudioLayerProperties } from '../../types/layers';
 import { IAudioViewProperties } from '../../types/views';
+import { Chart, LinearScale, TimeScale, CategoryScale, LineController, BarController, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
+
+Chart.register(LinearScale, TimeScale, CategoryScale, LineController, BarController, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
 const props = defineProps<{
 	visualization: OSHVisualization;
 	datasource: IConSysApiDataSourceProperties[];
-	audioDataLayer: IAudioDataLayerProperties[];
+	audioDataLayer: IAudioLayerProperties[];
 	audioView: IAudioViewProperties;
 }>();
 
@@ -34,21 +37,21 @@ onMounted(async () => {
 // Array of ConSysApi instances for datasources
 const dsInstances = ref<(typeof ConSysApi)[]>([]);
 
- function initializeAudio() {
+function initializeAudio() {
    const viz = props.visualization;
    if (!viz || viz.type !== 'audio') return;
 
    const dsArray: IConSysApiDataSourceProperties[] = props.datasource;
 
-    let getSampleRate: any;
-   	let getFrameData: any;
-   	let getTimestamp: any;
+   let getSampleRate: any;
+   let getFrameData: any;
+   let getTimestamp: any;
 
    for (const dsProps of dsArray) {
         const rawDs = toRaw(dsProps);
-   		const dsInstance = createDatasource(dsProps);
+        const dsInstance = createDatasource(dsProps);
 
-   		if (rawDs.properties.sampleRate) {
+        if (rawDs.properties.sampleRate) {
             getSampleRate = {
                 dataSourceIds: [dsInstance.id],
                 handler: (rec: any) => rec[rawDs.properties.sampleRate.property],
@@ -65,27 +68,32 @@ const dsInstances = ref<(typeof ConSysApi)[]>([]);
             handler: (rec: any) => new Date(rec.time).getTime(),
         };
 
-   		dsInstance.connect();
-   		dsInstances.value.push(dsInstance);
-   		console.log('[Audio.vue] Audio datasource created:', dsInstance);
-   	}
+        dsInstance.connect();
+        dsInstances.value.push(dsInstance);
+        console.log('[Audio.vue] Audio datasource created:', dsInstance);
+    }
 
-   const layerOpts = props.audioLayer;
+   const layerOpts = props.audioDataLayer;
    audioLayer.value = new AudioDataLayer({
-   		...layerOpts,
-   dataSourceIds: dsInstances.value.map((ds) => ds.id),
-   		...(getSampleRate ? { getSampleRate } : {}),
-   		...(getFrameData ? { getFrameData } : {}),
-   		...(getTimestamp ? { getTimestamp } : {}),
-   	});
-
-   	const audioSpectrogramVisualizer = new AudioSpectrogramVisualizer({
-        fftSize: 2048,
-        container:  `spectrogram-${audioId.value}`,
+        ...layerOpts,
+        dataSourceIds: dsInstances.value.map((ds) => ds.id),
+        ...(getSampleRate ? { getSampleRate } : {}),
+        ...(getFrameData ? { getFrameData } : {}),
+        ...(getTimestamp ? { getTimestamp } : {}),
     });
 
-    audioViewInstance.value = new AudioView({
-        ...props.audioViewOptions,
+   const audioSpectrogramVisualizer = new AudioSpectrogramVisualizer({
+        fftSize: 2048,
+        container: `spectrogram-${audioId.value}`,
+   });
+
+   const audioChartTimeVisualizer = new AudioTimeChartJsVisualizer({
+       fftSize: 1024,
+       container: `chart-time-${audioId.value}`,
+   });
+
+   audioViewInstance.value = new AudioView({
+        ...props.audioView,
         container: audioId.value,
         dataSource: dsInstances.value[0],
         playSound: false,
@@ -93,6 +101,8 @@ const dsInstances = ref<(typeof ConSysApi)[]>([]);
    });
 
    audioViewInstance.value.addVisualizer(audioSpectrogramVisualizer);
+   audioViewInstance.value.addVisualizer(audioChartTimeVisualizer);
+
    console.log('[Audio.vue] Audio view created:', audioViewInstance.value);
  }
 
@@ -101,7 +111,8 @@ useVisualizationCleanup(dsInstances);
 
 <template>
   <v-sheet class="audio-card pa-4">
-       <div :id="`spectrogram-${audioId}`" class="audio-visualizer"></div>
+    <div :id="`spectrogram-${audioId}`" class="audio-visualizer"></div>
+    <div :id="`chart-time-${audioId}`" class="audio-chart"></div>
   </v-sheet>
 </template>
 
@@ -110,6 +121,10 @@ useVisualizationCleanup(dsInstances);
   height: auto;
 }
 .audio-visualizer {
+    height: 200px;
+    width: 300px;
+}
+.audio-chart {
     height: 200px;
     width: 300px;
 }
