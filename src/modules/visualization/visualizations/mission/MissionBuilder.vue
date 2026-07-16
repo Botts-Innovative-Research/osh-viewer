@@ -219,7 +219,15 @@ function setPlanMissionRef(vizId: string, el: any) {
 }
 
 async function sendAllMissions() {
-  console.log('send all missions')
+	const systems = validVisualizations.value;
+	if (systems.length === 0) return;
+
+	for (const viz of systems) {
+		const planRef = planMissionRefs.value.get(viz.id);
+		if (planRef) {
+			await planRef.sendMission();
+		}
+	}
 }
 
 onBeforeUnmount(() => {

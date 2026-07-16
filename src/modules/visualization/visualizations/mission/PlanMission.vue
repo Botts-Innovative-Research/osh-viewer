@@ -518,6 +518,7 @@ function generateMissionControlPlan() {
 	};
 }
 
+defineExpose({ sendMission });
 onBeforeUnmount(() => {
 	mapInteractionStore.deselectTool('missionWaypoint');
 	clearWaypoints();
