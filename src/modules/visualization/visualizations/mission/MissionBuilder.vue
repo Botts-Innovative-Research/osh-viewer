@@ -66,6 +66,19 @@ interface LLAData {
 
 const receivedLLA = ref<LLAData>({ lat: 0, lon: 0, alt: 0 });
 const receivedStatus = ref("");
+function detectVehicleType(viz: OSHVisualization): string {
+	const hasGroundControls =
+		!!getControlstreamByRole('driveVelocity', viz) ||
+		!!getControlstreamByRole('driveLocation', viz) ||
+		!!getControlstreamByRole('driveMode', viz);
+	const hasAerialControls =
+		!!getControlstreamByRole('takeoff', viz) ||
+		!!getControlstreamByRole('land', viz) ||
+		!!getControlstreamByRole('offboard', viz);
+
+	if (hasGroundControls && !hasAerialControls) return 'Ground Rover';
+	return 'UAV';
+}
 
 const llaDatasource = ref<typeof ConSysApi | null>(null);
 const homeDatasource = ref<typeof ConSysApi | null>(null);

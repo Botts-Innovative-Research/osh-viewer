@@ -24,9 +24,9 @@ export interface SavedMission {
 }
 
 export interface SystemState {
-    receivedLLA: { lat: number; lon: number; alt: number };
+    receivedLLA: MapPoint;
     receivedStatus: string;
-    homeLocation: { lat: number; lon: number; alt: number };
+    homeLocation: MapPoint;
     llaDatasource: typeof ConSysApi | null;
     homeDatasource: typeof ConSysApi | null;
     statusDatasource: typeof ConSysApi | null;
