@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
-import { useMapStore } from '@/stores/mapstore';
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
 import PanelVisualizationWrapper from '../../sidebar/components/PanelVisualizationWrapper.vue';
@@ -15,7 +14,12 @@ import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
 import { VisualizationComponents } from '../../types/visualization';
 import type { IConSysApiControlStreamProperties } from '../../types/datasource';
+import { showToast } from '@/composables/useToast';
+import { useMapStore } from '@/stores/mapstore';
+import {SystemState} from "@/modules/visualization/visualizations/mission/types";
 import { IConSysApiDataSourceProperties } from '@/modules/visualization/types/datasource';
+
+const mapStore = useMapStore();
 
 const props = defineProps<{
 	visualizations: OSHVisualization[];
@@ -88,10 +92,6 @@ function detectVehicleType(viz: OSHVisualization): string {
 	return 'UAV';
 }
 
-const llaDatasource = ref<typeof ConSysApi | null>(null);
-const homeDatasource = ref<typeof ConSysApi | null>(null);
-const statusDatasource = ref<typeof ConSysApi | null>(null);
-let dsInstances = ref<(typeof ConSysApi)[]>([]);
 
 let homeLocation = ref<{ lat: number; lon: number; alt: number }>({ lat: 0, lon: 0, alt: 0 });
 
