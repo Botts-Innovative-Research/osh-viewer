@@ -46,6 +46,9 @@ function getControlstreamByRole(role: string) {
 	return controlstreams.value.find((cs: any) => cs.properties && cs.properties[role]);
 }
 
+const validVisualizations = computed(() =>
+	props.visualizations.filter((viz) => !Array.isArray(viz.visualizationComponents))
+);
 
 const missionControlStream = computed<IConSysApiControlStreamProperties | undefined>(
 	() => getControlstreamByRole('roverPlan') ?? getControlstreamByRole('plan')
@@ -199,6 +202,22 @@ const hasCommandPad = computed(
 			</v-col>
 		</v-row>
 		<v-divider v-if="!noController"></v-divider>
+
+		<div
+			v-if="validVisualizations.length > 1"
+		>
+			<v-chip
+				v-for="viz in validVisualizations"
+				:key="viz.id"
+			>
+				<v-icon
+					start
+					icon="mdi-quadcopter"
+					size="small"
+				/>
+				{{ viz.name }}
+			</v-chip>
+		</div>
 
 		<v-card
 			v-if="!noController"
