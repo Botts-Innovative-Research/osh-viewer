@@ -23,7 +23,7 @@ watch(chartFreq, (val) => {
 });
 
 onMounted(() => {
-	if (!vwStore.visualizationCustomizationOptions.spectrogram === undefined) {
+	if (vwStore.visualizationCustomizationOptions.spectrogram === undefined) {
 		vwStore.updateVisualizationCustomizationOptions({
 			spectrogram: spectrogram.value,
 		});

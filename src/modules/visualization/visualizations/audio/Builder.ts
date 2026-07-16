@@ -51,6 +51,8 @@ export function CreateAudioViewProps(datastreams: { [key: string]: any }, visOpt
     const vizwizStore = useVizWizStore();
     const datastreamStore = useDataStreamStore();
 
+    console.log('AT BUILD TIME:', visOptions);
+
     // Create datasources, layer, and view
     const vizDatasources: IConSysApiDataSourceProperties[] = [];
 
