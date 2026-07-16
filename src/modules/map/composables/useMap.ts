@@ -141,6 +141,17 @@ export function useMap() {
 		);
 		drawMissionPath(missionStore.missionWaypoints);
 
+        // 	waypointLayers.value = [];
+        // 		let idx = 0;
+        // 		for (const [, systemWaypoints] of mapStore.missionWaypointsBySystem) {
+        // 			for (const waypoint of systemWaypoints) {
+        // 				await addWaypointLayer(waypoint, idx);
+        //                 idx++;
+        // 			}
+        // 			if (systemWaypoints.length >= 2) {
+        // 				mapAdapter.value?.drawMissionPath(systemWaypoints);
+        // 			}
+        // 		}
 		if (driveLocationLayer.value && mapStore.currentLLA) {
 			const loc = driveLocationLayer.value.properties.location;
 			driveLocationLayer.value = null;
@@ -668,12 +679,16 @@ export function useMap() {
 			// Remove waypoints
 			clearMission();
 
-			// Add waypoints
-			for (const [index, waypoint] of waypoints.entries()) {
-				await addWaypointLayer(waypoint, index);
-			}
-			// Draw mission path
-			drawMissionPath(waypoints);
+			let idx = 0;
+			for (const [, systemWaypoints] of mapStore.missionWaypointsBySystem) {
+				// Add waypoints
+				for (const waypoint of systemWaypoints) {
+					await addWaypointLayer(waypoint, idx);
+					idx++;
+				}
+                // Draw mission path
+                drawMissionPath(systemWaypoints)
+            }
 		}
 	);
 	async function addWaypointLayer(waypoint: MapPoint, index: number) {

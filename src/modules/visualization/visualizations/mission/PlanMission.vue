@@ -33,7 +33,6 @@ const props = defineProps<{
 
 
 const mapStore = useMapStore();
-const mapInteractionStore = useMapInteractionStore();
 const missionStore = useMissionStore();
 
 const missionSource = ref<'waypoints' | 'file' | 'saved'>('waypoints');
@@ -104,13 +103,14 @@ watch(
 
 watch(
 	waypoints,
-	(newWaypoints) => {
+	() => {
 		missionStore.setMissionWaypoints(
 			newWaypoints.map((wp) => ({
 				lat: wp.lat,
 				lon: wp.lon,
 				alt: wp.alt,
-			}))
+			})),
+        props.systemId
 		);
 	},
 	{ deep: true }
@@ -157,10 +157,12 @@ function confirmSendMission() {
 
 function clearWaypoints() {
 	waypoints.value = [];
+  mapStore.clearSystemWaypoints(props.systemId);
 	missionStore.clearMissionWaypoints();
 }
 
 function onClearWaypoints() {
+  mapStore.clearSystemWaypoints(props.systemId);
 	missionStore.clearMissionWaypoints();
 }
 
