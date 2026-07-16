@@ -27,6 +27,8 @@ const props = defineProps<{
 	noController: boolean;
 	homeLocation: { lat: number; lon: number; alt: number };
 	missionControlStream?: IConSysApiControlStreamProperties;
+	vehicleType: string;
+	systemId: string;
 }>();
 
 
@@ -46,13 +48,11 @@ const waypointAltitude = ref<number>(25);
 const altitudeMode = ref<number>(0);
 const autoContinue = true;
 const amslAltAboveTerrain = null;
-const vehicleType = ref<string>('UAV');
-
 const geoFenceCircles = ref<[]>([]);
 const geoFencePolygons = ref<[]>([]);
 const rallyPoints = ref<[]>([]);
 
-const isRover = computed(() => vehicleType.value === 'Ground Rover' || vehicleType.value === 'Surface Boat');
+const isRover = computed(() => props.vehicleType === 'Ground Rover' || props.vehicleType === 'Surface Boat');
 
 const qgcVehicleTypeMap: Record<string, number> = {
 	'UAV': 2,
@@ -502,7 +502,7 @@ function generateMissionControlPlan() {
 			hoverSpeed: isRover.value ? 0 : hoverSpeed.value,
 			items: items,
 			plannedHomePosition: plannedHomePosition,
-			vehicleType: qgcVehicleTypeMap[vehicleType.value] ?? 2,
+			vehicleType: qgcVehicleTypeMap[props.vehicleType] ?? 2,
 			version: 2,
 		},
 		geoFence: {
@@ -564,12 +564,12 @@ onBeforeUnmount(() => {
 				v-model:altitudeMode="altitudeMode"
 				v-model:cruiseSpeed="cruiseSpeed"
 				v-model:hoverSpeed="hoverSpeed"
-				v-model:vehicleType="vehicleType"
 				v-model:waypointAltitude="waypointAltitude"
 				v-model:waypoints="waypoints"
 				:home-location="homeLocation"
 				:is-selected="isSelected"
 				:no-controller="noController"
+				:vehicle-type="vehicleType"
 				@toggle="toggle"
 				@clear-waypoints="onClearWaypoints"
 			/>
@@ -743,7 +743,7 @@ onBeforeUnmount(() => {
 		:mission-source="missionSource"
 		:waypoint-count="waypoints.length"
 		:cruise-speed="cruiseSpeed"
-		:vehicle-type="vehicleType"
+		:vehicle-type="props.vehicleType"
 		:waypoint-altitude="waypointAltitude"
 		:is-rover="isRover"
 		:total-distance="totalDistance"
