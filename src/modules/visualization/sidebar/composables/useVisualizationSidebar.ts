@@ -81,13 +81,6 @@ export function useVisualizationSidebar() {
 			openPanels.value = openPanels.value.filter((id: string) => id !== 'mission');
 		}
 	}
-
-	function handleOpenPanel() {
-		const newIds = panelVisualizations.value
-			.map((v) => v.id)
-			.filter((id) => !openPanelVisualizations.value.includes(id));
-		openPanelVisualizations.value.push(...newIds);
-	}
 	watch(
 		() => mapVisualizations.value.length,
 		() => {
@@ -108,12 +101,15 @@ export function useVisualizationSidebar() {
 		}
 	);
 
-	watch(
-		() => panelVisualizations.value.length,
-		() => {
-			handleOpenPanel();
-		}
-	);
+	watch(missionVisualizations, (current) => {
+		const selectedIds = new Set(selectedMissionControllers.value.map((v) => v.id));
+
+		const updatedSelected = current.filter((v) => selectedIds.has(v.id));
+		const newVizs = current.filter((v) => !selectedIds.has(v.id));
+
+		selectedMissionControllers.value = [...updatedSelected, ...newVizs];
+	}, { deep: true });
+
 	/* GEOPTZ HELPERS */
 	function removeGeoPTZ(controller: OSHVisualization) {
 		visualizationStore.removeVisualization(controller); // Remove from visualization store
