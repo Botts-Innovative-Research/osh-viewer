@@ -1,11 +1,12 @@
 <script lang="ts" setup>
-import {computed, ref} from 'vue';
+import {computed, ref, watch} from 'vue';
 // @ts-ignore
 import {randomUUID} from 'osh-js/source/core/utils/Utils.js';
 import {VueDraggable} from 'vue-draggable-plus';
 import type {Waypoint} from './types';
 import LocationPicker from "@/components/ui/LocationPicker.vue";
 import DeleteButton from "@/components/ui/DeleteButton.vue";
+import {useMapStore} from "@/stores/mapstore";
 
 const props = defineProps<{
   noController: boolean;
@@ -17,6 +18,7 @@ const props = defineProps<{
 const emit = defineEmits<{
 	toggle: [];
 	clearWaypoints: [];
+	setHome: [location: { lat: number; lon: number }];
 }>();
 
 const waypoints = defineModel<Waypoint[]>('waypoints', { required: true });
@@ -57,6 +59,24 @@ function clearAll() {
 
 function setLatLonAlt(lat: number, lon: number, alt: number) {
 	locationPickerRef.value?.setLatLonAltAndSubmit(lat, lon, alt);
+}
+
+const mapStore = useMapStore();
+
+const isHomeLocationMapSelect = computed(() => mapStore.isHomeLocationSelected);
+
+watch(
+    () => mapStore.currentLLA,
+    (newVal) => {
+      if (isHomeLocationMapSelect.value && newVal) {
+        emit('setHome', { lat: newVal.latitude, lon: newVal.longitude });
+        mapStore.setIsHomeLocationSelected(false);
+      }
+    }
+);
+
+function toggleHomeLocationSelect() {
+  mapStore.setIsHomeLocationSelected(!mapStore.isHomeLocationSelected);
 }
 
 defineExpose({ setLatLonAlt });
@@ -193,7 +213,22 @@ defineExpose({ setLatLonAlt });
 
   <v-divider class="mt-4 mb-3" />
 
-  <v-row density="comfortable" class="mt-1">
+  <v-row density="comfortable">
+    <v-btn
+        block
+        :color="isHomeLocationMapSelect ? 'primary' : 'grey'"
+        variant="tonal"
+        @click="toggleHomeLocationSelect"
+        prepend-icon="mdi-home-map-marker"
+    >
+      {{ isHomeLocationMapSelect ? 'Click map to set home...' : 'Set Home Waypoint' }}
+      <v-tooltip activator="parent" location="top">
+        Click to select a home position from the map.
+      </v-tooltip>
+    </v-btn>
+  </v-row>
+
+  <v-row density="comfortable" class="mt-4">
     <v-col :cols="isGroundVehicle ? 12 : 6">
       <v-text-field
           v-model.number="cruiseSpeed"

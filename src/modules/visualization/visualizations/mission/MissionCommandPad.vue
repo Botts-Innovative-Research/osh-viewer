@@ -55,7 +55,7 @@ const driveModes = [
 ];
 const selectedDriveMode = ref('HOLD');
 
-function getControlstreamConfig(cs: any) {
+function getControlstreamConfig(cs: IConSysApiControlStreamProperties) {
 	if (!cs) return null;
 	const protocol = cs.tls ? 'https' : 'http';
 	return {
