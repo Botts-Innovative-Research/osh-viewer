@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, Ref } from 'vue';
+import { computed, reactive, ref, Ref } from 'vue';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 // @ts-ignore
 import { MapLayer } from '@/modules/map/adapters/cesium.adapter';
@@ -34,7 +34,14 @@ export const useMapStore = defineStore(
 			commandBaseUrl: string;
 			auth: string;
 		} | null> = ref(null); // Currently selected waypoints for mission planner, including control stream ID, command base URL, and auth token
-		const missionWaypoints: Ref<MapPoint[]> = ref([]); // List of waypoints for mission planner
+		const missionWaypointsBySystem = reactive(new Map<string, MapPoint[]>()); // waypoints per sys for mission planner
+		const missionWaypoints = computed<MapPoint[]>(() => {
+			const all: MapPoint[] = [];
+			for (const waypoints of missionWaypointsBySystem.values()) {
+				all.push(...waypoints);
+			}
+			return all;
+		});
 		const clearMissionWaypointsMarkers: Ref<boolean> = ref(false); // Flag to trigger clearing of mission waypoint markers on the map
 
 		// Handle selection of map item
@@ -85,7 +92,7 @@ export const useMapStore = defineStore(
 		}
 		function clearSelectedMissionWaypoints() {
 			selectedWaypoints.value = null;
-			missionWaypoints.value = [];
+			missionWaypointsBySystem.clear();
 			toggleMapCursorMode();
 		}
 		function disableWaypointSelection() {
@@ -93,10 +100,17 @@ export const useMapStore = defineStore(
 			toggleMapCursorMode();
 		}
 		function clearMissionWaypoints() {
-			missionWaypoints.value = [];
+			missionWaypointsBySystem.clear();
 		}
-		function setFlightPathWaypoints(waypoints: MapPoint[]) {
-			missionWaypoints.value = waypoints;
+		function setFlightPathWaypoints(waypoints: MapPoint[], systemId: string) {
+			if (waypoints.length === 0) {
+				missionWaypointsBySystem.delete(systemId);
+			} else {
+				missionWaypointsBySystem.set(systemId, waypoints);
+			}
+		}
+		function clearSystemWaypoints(systemId: string) {
+			missionWaypointsBySystem.delete(systemId);
 		}
 		function triggerClearWaypointMarkers() {
 			clearMissionWaypointsMarkers.value = true;
@@ -147,6 +161,7 @@ export const useMapStore = defineStore(
 			isGeoPTZSelected,
 			selectedWaypoints,
 			missionWaypoints,
+			missionWaypointsBySystem,
 			clearMissionWaypointsMarkers,
 			isDriveLocationSelected,
 			isHomeLocationSelected,
@@ -160,6 +175,7 @@ export const useMapStore = defineStore(
 			clearSelectedMissionWaypoints,
 			disableWaypointSelection,
 			clearMissionWaypoints,
+			clearSystemWaypoints,
 			setFlightPathWaypoints,
 			triggerClearWaypointMarkers,
 			resetClearWaypointMarkersSignal,

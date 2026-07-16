@@ -98,16 +98,18 @@ watch(
 	}
 );
 
+
 watch(
 	waypoints,
-	(newWaypoints) => {
-		mapStore.setFlightPathWaypoints(
-			newWaypoints.map((wp) => ({
-				lat: wp.lat,
-				lon: wp.lon,
-				alt: wp.alt,
-			}))
-		);
+	() => {
+    mapStore.setFlightPathWaypoints(
+        waypoints.value.map((wp) => ({
+          lat: wp.lat,
+          lon: wp.lon,
+          alt: wp.alt,
+        })),
+        props.systemId
+    );
 	},
 	{ deep: true }
 );
@@ -157,12 +159,12 @@ function confirmSendMission() {
 
 function clearWaypoints() {
 	waypoints.value = [];
-	mapStore.clearMissionWaypoints();
+	mapStore.clearSystemWaypoints(props.systemId);
 	mapStore.triggerClearWaypointMarkers();
 }
 
 function onClearWaypoints() {
-	mapStore.clearMissionWaypoints();
+	mapStore.clearSystemWaypoints(props.systemId);
 	mapStore.triggerClearWaypointMarkers();
 }
 
@@ -523,7 +525,6 @@ function generateMissionControlPlan() {
 defineExpose({ sendMission });
 onBeforeUnmount(() => {
 	if (isSelected.value) mapStore.disableWaypointSelection();
-	clearWaypoints();
 });
 </script>
 

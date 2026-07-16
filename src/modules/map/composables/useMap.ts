@@ -112,14 +112,18 @@ export function useMap() {
 			mapAdapter.value?.updateMarker(foi.props);
 		});
 
-		// Rebuild all waypoints
+		// Rebuild all waypoints and mission paths per system
 		waypointLayers.value = [];
-		await Promise.all(
-			mapStore.missionWaypoints.map(async (waypoint: MapPoint, index: number) => {
-				await addWaypointLayer(waypoint, index);
-			})
-		);
-		drawMissionPath(mapStore.missionWaypoints);
+		let idx = 0;
+		for (const [, systemWaypoints] of mapStore.missionWaypointsBySystem) {
+			for (const waypoint of systemWaypoints) {
+				await addWaypointLayer(waypoint, idx);
+                idx++;
+			}
+			if (systemWaypoints.length >= 2) {
+				mapAdapter.value?.drawMissionPath(systemWaypoints);
+			}
+		}
 
 		if (driveLocationLayer.value && mapStore.currentLLA) {
 			const loc = driveLocationLayer.value.properties.location;
@@ -428,18 +432,22 @@ export function useMap() {
 	);
 	watch(
 		() => mapStore.missionWaypoints,
-		async (waypoints) => {
+		async () => {
 			if (!mapAdapter.value) return;
 
 			// Remove waypoints
 			clearMission();
 
-			// Add waypoints
-			for (const [index, waypoint] of waypoints.entries()) {
-				await addWaypointLayer(waypoint, index);
-			}
-			// Draw mission path
-			drawMissionPath(waypoints);
+			let idx = 0;
+			for (const [, systemWaypoints] of mapStore.missionWaypointsBySystem) {
+				// Add waypoints
+				for (const waypoint of systemWaypoints) {
+					await addWaypointLayer(waypoint, idx);
+					idx++;
+				}
+                // Draw mission path
+                drawMissionPath(systemWaypoints)
+            }
 		}
 	);
 	async function addWaypointLayer(waypoint: MapPoint, index: number) {
