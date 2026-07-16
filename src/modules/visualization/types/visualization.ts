@@ -18,7 +18,7 @@ import {
 import { DataViewProperties, IChartViewProperties, IVideoViewProperties } from './views';
 
 export interface VisualizationComponents {
-	dataSource: IConSysApiDataSourceProperties[];
+	dataSource?: IConSysApiDataSourceProperties[];
 	dataLayer: VisualizationLayerProperties | VisualizationLayerProperties[];
 	dataView?: VisualizationViewProperties | VisualizationViewProperties[];
 	controlstream?: IConSysApiControlStreamProperties[]; // Optional controlstream for visualization
