@@ -51,20 +51,41 @@ export function useGeoOverlayConfig(options: { type: GeoOverlayType }) {
 		}
 	}
 
+	function deselectTool() {
+		mapInteractionStore.deselectTool(mapTool.value);
+		previewStore.circleCreationStep = null;
+	}
+
+	function toggleTool() {
+		mapInteractionStore.toggleTool(mapTool.value);
+		if (mapInteractionStore.isGeoOverlayCircleSelected)
+			previewStore.circleCreationStep = 'center';
+	}
+
+	function keyboardClick(event: KeyboardEvent) {
+		// Use 'Escape' (case-sensitive) to deselect tool
+		if (event.key === 'Escape') deselectTool();
+	}
+
 	function submit() {
 		mapInteractionStore.deselectTool(mapTool.value);
 		previewStore.submit();
 	}
 
-	onMounted(init);
+	onMounted(async () => {
+		await init();
+		window.addEventListener('keydown', keyboardClick);
+	});
 	onUnmounted(() => {
 		mapInteractionStore.deselectTool(mapTool.value);
 		previewStore.reset();
+		window.removeEventListener('keydown', keyboardClick);
 	});
 
 	return {
 		step,
 		mapTool,
+		toggleTool,
 		changeStep,
 		submit,
 	};

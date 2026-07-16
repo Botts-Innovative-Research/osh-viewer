@@ -20,7 +20,7 @@ function handleSubmit() {
 
 const TYPE: GeoOverlayType = 'LineString';
 
-const { step, changeStep, submit } = useGeoOverlayConfig({ type: TYPE });
+const { step, changeStep, toggleTool, submit } = useGeoOverlayConfig({ type: TYPE });
 const previewStore = useGeoOverlayPreviewStore();
 const mapInteractionStore = useMapInteractionStore();
 
@@ -48,7 +48,7 @@ function handleSubmitPoint(point: MapPoint) {
 				:isSelected="mapInteractionStore.isGeoOverlayLineStringSelected"
 				:isSelectorDisabled="false"
 				@submit="handleSubmitPoint"
-				@toggle="mapInteractionStore.toggleTool('geoOverlayLineString')"
+				@toggle="toggleTool"
 			></MapPointEditor>
 			<MapPointCollectionEditor
 				v-show="useGeoOverlayPreviewStore().points"

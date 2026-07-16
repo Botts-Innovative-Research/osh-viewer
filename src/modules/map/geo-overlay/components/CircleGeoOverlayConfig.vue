@@ -5,6 +5,8 @@ import { useGeoOverlayConfig } from '@/modules/map/geo-overlay/composables/useGe
 import { GeoOverlayType } from '@/modules/map/geo-overlay/types';
 import { MapPoint } from '@/modules/map/types';
 import { computed } from 'vue';
+import MapPointEditor from '@/components/ui/MapPointEditor.vue';
+import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 
 const emit = defineEmits<{
 	close: [];
@@ -17,21 +19,15 @@ function handleSubmit() {
 
 const TYPE: GeoOverlayType = 'Circle';
 
-const { step, changeStep, submit } = useGeoOverlayConfig({ type: TYPE });
+const { step, changeStep, toggleTool, submit } = useGeoOverlayConfig({ type: TYPE });
 
 const previewStore = useGeoOverlayPreviewStore();
+const mapInteractionStore = useMapInteractionStore();
 
 const lla = computed({
 	get: () => previewStore.points[0] ?? { lat: 0, lon: 0, alt: 0 },
 	set: (point: MapPoint) => (previewStore.points[0] = point),
 });
-// Set default value of input to 0 when none given
-function defaultToZero(key: keyof MapPoint) {
-	const value = lla.value[key] as number | '' | null | undefined;
-	if (value == null || value === '') {
-		lla.value[key] = 0;
-	}
-}
 </script>
 <template>
 	<v-stepper-vertical
@@ -51,55 +47,14 @@ function defaultToZero(key: keyof MapPoint) {
 					1. Click on the map to set the center of the circle.
 				</h4>
 			</v-expand-transition>
-			<v-row class="pb-2">
-				<v-col
-					cols="2.5"
-					xs="3"
-				>
-					<v-text-field
-						:model-value="lla.lat"
-						type="number"
-						label="Latitude"
-						placeholder="0.0"
-						hint="-90 to 90"
-						min="-90"
-						max="90"
-						:rules="[(v) => (v >= -90 && v <= 90) || 'Must be -90 to 90']"
-						@blur="defaultToZero('lat')"
-						:disabled="previewStore.circleCreationStep === 'center'"
-					/>
-				</v-col>
-				<v-col
-					cols="2.5"
-					xs="3"
-				>
-					<v-text-field
-						v-model.number="lla.lon"
-						type="number"
-						label="Longitude"
-						placeholder="0.0"
-						hint="-180 to 180"
-						min="-180"
-						max="180"
-						:rules="[(v) => (v >= -180 && v <= 180) || 'Must be -180 to 180']"
-						@blur="defaultToZero('lon')"
-						:disabled="previewStore.circleCreationStep === 'center'"
-					/>
-				</v-col>
-				<v-col
-					cols="2.5"
-					xs="3"
-				>
-					<v-text-field
-						v-model.number="lla.alt"
-						type="number"
-						label="Altitude"
-						placeholder="0.0"
-						@blur="defaultToZero('alt')"
-						:disabled="previewStore.circleCreationStep === 'center'"
-					/>
-				</v-col>
-			</v-row>
+			<MapPointEditor
+				v-model="lla"
+				:isSelected="mapInteractionStore.isGeoOverlayCircleSelected"
+				:isSelectorDisabled="false"
+				:hasSubmit="false"
+				@toggle="toggleTool"
+				class="pb-4"
+			></MapPointEditor>
 			<v-expand-transition>
 				<h4
 					class="mt-0"

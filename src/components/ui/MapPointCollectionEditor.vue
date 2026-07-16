@@ -66,8 +66,11 @@ function clearPoints() {
 			</v-card>
 		</v-dialog>
 	</div>
+	<p v-if="points.length === 0">
+		No {{ props.title }} added. Click on the map or use the form above.
+	</p>
 	<VueDraggable
-		v-if="points.length > 0"
+		v-else
 		v-model="points"
 		handle=".drag-handle"
 	>
