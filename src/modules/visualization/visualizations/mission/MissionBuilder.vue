@@ -23,6 +23,7 @@ const props = defineProps<{
 
 const systemStates = reactive(new Map<string, SystemState>());
 const activeSystemId = ref<string | null>(null);
+const planMissionRefs = ref<Map<string, InstanceType<typeof PlanMission>>>(new Map());
 const activeTab = ref<'plan' | 'control'>('plan');
 
 const noController = computed(() => props.visualizations.length === 0);
@@ -198,6 +199,15 @@ watch(
 	{ immediate: true }
 );
 
+
+function setPlanMissionRef(vizId: string, el: any) {
+	if (el) {
+		planMissionRefs.value.set(vizId, el);
+	} else {
+		planMissionRefs.value.delete(vizId);
+	}
+}
+
 async function sendAllMissions() {
   console.log('send all missions')
 }
@@ -321,11 +331,20 @@ const hasCommandPad = computed(
 
 			<v-window v-model="activeTab">
 				<v-window-item value="plan">
-					<PlanMission
-						:home-location="homeLocation"
-						:mission-control-stream="missionControlStream"
-						:no-controller="noController"
-					/>
+					<div
+						v-for="viz in validVisualizations"
+						:key="viz.id"
+						:style="viz.id !== activeSystemId ? 'display: none' : ''"
+					>
+						<PlanMission
+							:ref="(el: any) => setPlanMissionRef(viz.id, el)"
+							:home-location="systemStates.get(viz.id)?.homeLocation ?? { lat: 0, lon: 0, alt: 0 }"
+							:mission-control-stream="getControlstreamByRole('roverPlan', viz) ?? getControlstreamByRole('plan', viz)"
+							:no-controller="false"
+							:system-id="viz.id"
+							:vehicle-type="detectVehicleType(viz)"
+						/>
+					</div>
 				</v-window-item>
 
 				<v-window-item value="control">
