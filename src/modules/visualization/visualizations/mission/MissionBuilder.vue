@@ -295,7 +295,7 @@ const hasCommandPad = computed(
 
 <style scoped>
 .minimap-card {
-	height: 300px;
+	height: 425px;
 	overflow: hidden;
 }
 </style>
