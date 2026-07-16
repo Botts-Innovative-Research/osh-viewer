@@ -8,6 +8,8 @@ export type MapPoint = {
 	alt: number;
 };
 
+export type MapMoveHandler = (lat: number, lon: number, alt: number) => void;
+
 export interface MapAdapter {
 	init(container: string): Promise<void>;
 	destroy(): void;
@@ -16,6 +18,7 @@ export interface MapAdapter {
 	removeLayer(layer: any): Promise<void>;
 
 	onClick(handler: MapClickHandler): () => void;
+	onMouseMove?(handler: MapMoveHandler): () => void;
 	setCursor(mode: CursorMode): void;
 	flyToPoint(location: { x: number; y: number; z: number }): void;
 
@@ -24,6 +27,8 @@ export interface MapAdapter {
 	/* Mission Builder */
 	drawMissionPath(waypoints: MapPoint[]): void;
 	clearMissionPath(): void;
+	drawPreviewLine?(from: MapPoint, to: MapPoint): void;
+	clearPreviewLine?(): void;
 
 	/* CESIUM ONLY */
 	addTerrain?(): void;

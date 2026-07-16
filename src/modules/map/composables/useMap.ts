@@ -80,6 +80,8 @@ export function useMap() {
 		bindMapInteractions();
 	}
 	function destroyMap() {
+		destroyMoveHandler?.();
+		destroyMoveHandler = null;
 		mapAdapter.value?.destroy();
 		mapAdapter.value = null;
 	}
@@ -261,8 +263,23 @@ export function useMap() {
 	}
 
 	/** MAP INTERACTIONS */
+	let destroyMoveHandler: (() => void) | null = null;
+
 	function bindMapInteractions() {
 		if (!mapAdapter.value) return;
+
+		if (mapAdapter.value.onMouseMove) {
+			destroyMoveHandler = mapAdapter.value.onMouseMove((lat, lon, alt) => {
+				if (!mapAdapter.value) return;
+
+				if (mapStore.selectedWaypoints && mapStore.missionWaypoints.length > 0) {
+					const lastWp = mapStore.missionWaypoints[mapStore.missionWaypoints.length - 1];
+					mapAdapter.value.drawPreviewLine?.(lastWp, { lat, lon, alt: lastWp.alt });
+				} else {
+					mapAdapter.value.clearPreviewLine?.();
+				}
+			});
+		}
 
 		mapAdapter.value.onClick(async (lat, lon, alt) => {
 			// GeoPTZ
@@ -412,11 +429,21 @@ export function useMap() {
 	watch(
 		() => mapStore.isHomeLocationSelected,
 		(selected) => {
-			removeHomeLocationLayer();
+			if (selected) {
+				removeHomeLocationLayer();
+			}
 		}
 	);
 
 	/* MISSION BUILDER */
+	watch(
+		() => mapStore.selectedWaypoints,
+		(selected) => {
+			if (!selected) {
+				mapAdapter.value?.clearPreviewLine?.();
+			}
+		}
+	);
 	watch(
 		() => mapStore.clearMissionWaypointsMarkers,
 		(clear: boolean) => {
@@ -467,6 +494,7 @@ export function useMap() {
 		waypointLayers.value = [];
 
 		mapAdapter.value?.clearMissionPath();
+		mapAdapter.value?.clearPreviewLine?.();
 	}
 
 	/* CESIUM-ONLY FEATURES */

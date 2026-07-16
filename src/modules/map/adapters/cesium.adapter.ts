@@ -1,6 +1,6 @@
 import * as Cesium from 'cesium';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
-import { CursorMode, MapAdapter, MapClickHandler, MapPoint } from './types';
+import { CursorMode, MapAdapter, MapClickHandler, MapMoveHandler, MapPoint } from './types';
 import { Ion } from 'cesium';
 
 // Showcase examples token :P
@@ -25,6 +25,8 @@ export function createCesiumAdapter(): MapAdapter {
 	let buildingsTileset: any = null;
 	let googlePhotorealistic: any = null;
 	let flightPathPolyline: any = null;
+	let previewLineEntity: any = null;
+	let moveHandler: Cesium.ScreenSpaceEventHandler | null = null;
 
 	async function init(container: string) {
 		mapView = new CesiumView({
@@ -47,6 +49,9 @@ export function createCesiumAdapter(): MapAdapter {
 		}
 		if (renderedLayers) destroyAllLayers();
 
+		clearPreviewLine();
+		moveHandler?.destroy();
+		moveHandler = null;
 		mapView?.destroy();
 		clickHandler?.destroy();
 		clickHandler = null;
@@ -129,9 +134,9 @@ export function createCesiumAdapter(): MapAdapter {
 				positions: positions,
 				width: 5,
 				material: new Cesium.PolylineOutlineMaterialProperty({
-					color: Cesium.Color.RED,
+					color: Cesium.Color.BLUE,
 					outlineWidth: 2,
-					outlineColor: Cesium.Color.BLACK,
+					outlineColor: Cesium.Color.BLUE,
 				}),
 				clampToGround: true,
 			},
@@ -141,6 +146,50 @@ export function createCesiumAdapter(): MapAdapter {
 		if (!mapView) return;
 		mapView.viewer.entities.remove(flightPathPolyline);
 		flightPathPolyline = null;
+	}
+
+	function onMouseMove(handler: MapMoveHandler) {
+		const viewer = mapView.viewer;
+		moveHandler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+		moveHandler.setInputAction((movement: any) => {
+			const cartesian = viewer.scene.pickPosition(movement.endPosition);
+			if (!cartesian) return;
+			const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+			handler(
+				Cesium.Math.toDegrees(cartographic.latitude),
+				Cesium.Math.toDegrees(cartographic.longitude),
+				cartographic.height ?? 0
+			);
+		}, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+		return () => {
+			moveHandler?.destroy();
+			moveHandler = null;
+		};
+	}
+
+	function drawPreviewLine(from: MapPoint, to: MapPoint) {
+		clearPreviewLine();
+		previewLineEntity = mapView.viewer.entities.add({
+			polyline: {
+				positions: [
+					Cesium.Cartesian3.fromDegrees(from.lon, from.lat, from.alt || 0),
+					Cesium.Cartesian3.fromDegrees(to.lon, to.lat, to.alt || 0),
+				],
+				width: 3,
+				material: new Cesium.PolylineDashMaterialProperty({
+					color: Cesium.Color.BLUE.withAlpha(0.7),
+					dashLength: 16,
+				}),
+				clampToGround: true,
+			},
+		});
+	}
+
+	function clearPreviewLine() {
+		if (!mapView || !previewLineEntity) return;
+		mapView.viewer.entities.remove(previewLineEntity);
+		previewLineEntity = null;
 	}
 
 	async function addTerrain() {
@@ -309,6 +358,9 @@ export function createCesiumAdapter(): MapAdapter {
 		updateMarker,
 		drawMissionPath,
 		clearMissionPath,
+		onMouseMove,
+		drawPreviewLine,
+		clearPreviewLine,
 		addTerrain,
 		removeTerrain,
 		addBuildings,
