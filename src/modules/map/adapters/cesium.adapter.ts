@@ -28,7 +28,7 @@ export function createCesiumAdapter(): MapAdapter {
 	let terrainProvider: any = null;
 	let buildingsTileset: any = null;
 	let googlePhotorealistic: any = null;
-	let flightPathPolyline: any = null;
+	let flightPathPolylines: any[] = [];
 
 	/* GeoOverlays */
 	let previewEntity: any = null;
@@ -214,11 +214,10 @@ export function createCesiumAdapter(): MapAdapter {
 	}
 
 	function drawMissionPath(waypoints: MapPoint[]) {
-		clearMissionPath();
 		const positions = waypoints.map((wp: MapPoint) => {
 			return Cesium.Cartesian3.fromDegrees(wp.lon, wp.lat, wp.alt || 0);
 		});
-		flightPathPolyline = mapView.viewer.entities.add({
+		const entity = mapView.viewer.entities.add({
 			polyline: {
 				positions: positions,
 				width: 5,
@@ -230,11 +229,14 @@ export function createCesiumAdapter(): MapAdapter {
 				clampToGround: true,
 			},
 		});
+		flightPathPolylines.push(entity);
 	}
 	function clearMissionPath() {
 		if (!mapView) return;
-		mapView.viewer.entities.remove(flightPathPolyline);
-		flightPathPolyline = null;
+		for (const entity of flightPathPolylines) {
+			mapView.viewer.entities.remove(entity);
+		}
+		flightPathPolylines = [];
 	}
 
 	async function addTerrain() {
