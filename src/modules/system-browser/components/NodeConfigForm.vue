@@ -86,11 +86,11 @@ function sanitizeAPIRoot(path: any) {
 					:rules="[(v) => !!v || 'Host is required']"
 					required
 				/>
-				<v-text-field
+				<v-number-input
 					label="Node Port"
-					v-model="nodePort"
+					:v-model="parseInt(nodePort)"
 					placeholder="8181"
-					type="number"
+					variant="outlined"
 					inputmode="numeric"
 					onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault();"
 					:rules="[(v) => !!v || 'Port is required']"

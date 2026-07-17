@@ -52,3 +52,13 @@ export interface IPolylineLayerProperties extends DataLayerProperties {
 	opacity: number;
 	iconName: string; // Used for display in map visualizations list
 }
+
+export interface IFrustumLayerProperties extends DataLayerProperties {
+	color: any;
+	borderColor: any;
+	opacity: number;
+	fov: number;
+	range: number;
+	aspectRatio: number;
+	iconName: string; // Used for display in map visualizations list
+}

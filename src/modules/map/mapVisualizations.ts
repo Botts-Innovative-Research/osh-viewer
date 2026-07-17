@@ -2,6 +2,7 @@ import { createDatasource } from '@/modules/visualization/services/datasource.se
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
+import FrustumLayer from 'osh-js/source/core/ui/layer/FrustumLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import EllipseLayer from 'osh-js/source/core/ui/layer/EllipseLayer';
 import PolylineLayer from 'osh-js/source/core/ui/layer/PolylineLayer';
@@ -35,6 +36,8 @@ export async function createMapVisualizations(
 		return createEllipseLayer(viz, viz.visualizationComponents.dataSource);
 	} else if (viz.type === 'polyline') {
 		return createPolylineLayer(viz, viz.visualizationComponents.dataSource);
+	} else if (viz.type === 'frustum') {
+		return createFrustumLayer(viz, viz.visualizationComponents.dataSource);
 	} else {
 		console.warn(`Visualization type ${viz.type} not supported for map view`);
 		return null;
@@ -399,6 +402,72 @@ export function createPolylineLayer(
 	});
 
 	return { vizLayer: polylineLayer, dsInstances };
+}
+export function createFrustumLayer(
+	viz: OSHVisualization,
+	dsArray: IConSysApiDataSourceProperties[]
+): ICreateMapVisualizationResult {
+	// Ds instances created
+	let dsInstances: (typeof ConSysApi)[] = [];
+
+	// Undefined initially
+	let getOrigin: any;
+	let getSensorOrientation: any;
+
+	for (const dsProps of dsArray) {
+		const dsInstance = createDatasource(dsProps);
+
+		// Check for location property
+		if (dsProps.properties.origin) {
+			getOrigin = {
+				dataSourceIds: [dsInstance.id],
+				handler: async (rec: any) => {
+					const lon = rec[dsProps.properties.origin.property].lon;
+					const lat = rec[dsProps.properties.origin.property].lat;
+					return {
+						x: lon,
+						y: lat,
+						z:
+							rec[dsProps.properties.origin.property].alt ||
+							(await getGroundAltitude(lon, lat)),
+					};
+				},
+			};
+		}
+		if (dsProps.properties.sensorOrientation) {
+			getSensorOrientation = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return {
+						yaw: rec[dsProps.properties.sensorOrientation.property].heading,
+						pitch: rec[dsProps.properties.sensorOrientation.property].pitch,
+						roll: rec[dsProps.properties.sensorOrientation.property].roll,
+					};
+				},
+			};
+		}
+
+		dsInstance.connect();
+		dsInstances.push(dsInstance);
+	}
+
+	const pmLayer = new FrustumLayer({
+		...viz.visualizationComponents.dataLayer,
+		name: viz.name,
+		id: viz.id,
+		dataSourceIds: dsInstances.map((ds) => ds.id),
+		...(getOrigin ? { getOrigin } : {}),
+		...(getSensorOrientation
+			? { getSensorOrientation }
+			: {
+					sensorOrientation: {
+						yaw: 0.0,
+						pitch: 0.0,
+						roll: 0.0,
+					},
+				}),
+	});
+	return { vizLayer: pmLayer, dsInstances };
 }
 export async function createGeoPTZLayer(
 	location: { lat: number; lon: number; alt: number },

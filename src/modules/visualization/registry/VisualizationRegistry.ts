@@ -9,6 +9,7 @@ import { VisualizationDescriptor } from './types';
 import { EllipseDescriptor } from '../visualizations/ellipse/Descriptor';
 import { SigIntDescriptor } from '../visualizations/sigint/Descriptor';
 import { PolylineDescriptor } from '../visualizations/polyline/Descriptor';
+import { FrustumDescriptor } from '../visualizations/frustum/Descriptor';
 import { MiniMapDescriptor } from '../visualizations/minimap/Descriptor';
 
 /**
@@ -26,6 +27,7 @@ export const VisualizationRegistry: { [key: string]: VisualizationDescriptor } =
 	[EllipseDescriptor.id]: EllipseDescriptor,
 	[SigIntDescriptor.id]: SigIntDescriptor,
 	[PolylineDescriptor.id]: PolylineDescriptor,
+	[FrustumDescriptor.id]: FrustumDescriptor,
 	[MiniMapDescriptor.id]: MiniMapDescriptor,
 };
 
