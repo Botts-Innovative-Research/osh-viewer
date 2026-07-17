@@ -1,78 +1,54 @@
 <script lang="ts" setup>
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
-import { useMapStore } from '@/stores/mapstore';
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
 import PanelVisualizationWrapper from '../../sidebar/components/PanelVisualizationWrapper.vue';
 import PlanMission from './PlanMission.vue';
+import MissionSummaryDialog from './MissionSummaryDialog.vue';
+import type { MissionSummary } from './MissionSummaryDialog.vue';
 import {
 	createDatasource,
-	disconnectDatasources,
 	getLatestObservation,
 } from '@/modules/visualization/services/datasource.service';
+import { sendCommand } from '../../services/controlstream.service';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
 import { VisualizationComponents } from '../../types/visualization';
-import { IConSysApiDataSourceProperties } from '@/modules/visualization/types/datasource';
+import { useMapStore } from '@/stores/mapstore';
+import { useMissionStore } from '@/stores/missionstore';
+import {SystemState} from "@/modules/visualization/visualizations/mission/types";
 
-interface Controlstream {
-	id: string;
-	endpointUrl: string;
-	tls: boolean;
-	properties?: Record<string, any>;
-	connectorOpts: {
-		username: string;
-		password: string;
-	};
-}
+const missionStore = useMissionStore();
 
 const props = defineProps<{
 	visualizations: OSHVisualization[];
 }>();
 
-const activeVisualization = computed(() => {
-	if (!props.visualizations.length) return null;
-	const viz = props.visualizations[0];
-	if (Array.isArray(viz.visualizationComponents)) return null;
-	return viz;
-});
-
-const datasources = computed(() => {
-	if (!activeVisualization.value) return [];
-	return (
-		(activeVisualization.value.visualizationComponents as VisualizationComponents).dataSource ??
-		[]
-	);
-});
-
-const controlstreams = computed(() => {
-	if (!activeVisualization.value) return [];
-	return (
-		(activeVisualization.value.visualizationComponents as VisualizationComponents)
-			.controlstream ?? []
-	);
-});
-
-function getControlstreamByRole(role: string) {
-	return controlstreams.value.find((cs: any) => cs.properties && cs.properties[role]);
-}
-
-const isRover = computed(() => !!getControlstreamByRole('roverPlan'));
-
-const missionControlStream = computed<Controlstream | undefined>(
-	() => getControlstreamByRole('roverPlan') ?? getControlstreamByRole('plan')
-);
-
-const noController = computed(() => props.visualizations.length === 0);
-
+const systemStates = reactive(new Map<string, SystemState>());
+const activeSystemId = ref<string | null>(null);
+const planMissionRefs = ref<Map<string, InstanceType<typeof PlanMission>>>(new Map());
 const activeTab = ref<'plan' | 'control'>('plan');
 const minimapViewActive = ref(false);
 
-interface LLAData {
-	lat: number;
-	lon: number;
-	alt: number;
+const noController = computed(() => props.visualizations.length === 0);
+
+const validVisualizations = computed(() =>
+	props.visualizations.filter((viz) => !Array.isArray(viz.visualizationComponents))
+);
+
+const activeVisualization = computed(() =>
+	validVisualizations.value.find((v) => v.id === activeSystemId.value) ?? null
+);
+
+const controlstreams = computed(() => {
+	if (!activeVisualization.value) return [];
+	return (activeVisualization.value.visualizationComponents as VisualizationComponents).controlstream ?? [];
+});
+
+function getControlstreamByRole(role: string, viz?: OSHVisualization) {
+	const cs = viz ? (viz.visualizationComponents as VisualizationComponents).controlstream ?? [] : controlstreams.value;
+	return cs.find((c: any) => c.properties && c.properties[role]);
 }
 
 const minimapViz = computed(() =>
@@ -80,94 +56,224 @@ const minimapViz = computed(() =>
 );
 
 
-const receivedLLA = ref<LLAData>({ lat: 0, lon: 0, alt: 0 });
-const mapStore = useMapStore();
+function detectVehicleType(viz: OSHVisualization): string {
+	const hasGroundControls =
+		!!getControlstreamByRole('driveVelocity', viz) ||
+		!!getControlstreamByRole('driveLocation', viz) ||
+		!!getControlstreamByRole('driveMode', viz);
+	const hasAerialControls =
+		!!getControlstreamByRole('takeoff', viz) ||
+		!!getControlstreamByRole('land', viz) ||
+		!!getControlstreamByRole('offboard', viz);
 
-const droneDatasourceLLA = ref<typeof ConSysApi | null>(null);
-const droneHomeDatasource = ref<typeof ConSysApi | null>(null);
-let dsInstances = ref<(typeof ConSysApi)[]>([]);
+	if (hasGroundControls && !hasAerialControls) return 'Ground Rover';
+	return 'UAV';
+}
+function onSetHome(location: { lat: number; lon: number }, viz: OSHVisualization) {
+	const cs = getControlstreamByRole('homePos', viz);
+	if (!cs) return;
+	const protocol = cs.tls ? 'https' : 'http';
+	sendCommand(
+		`${protocol}://${cs.endpointUrl}`,
+		cs.id,
+		{ parameters: { locationVectorLL: { Latitude: location.lat, Longitude: location.lon } } },
+		`${cs.connectorOpts.username}:${cs.connectorOpts.password}`
+	);
+}
 
-let homeLocation = ref<{ lat: number; lon: number; alt: number }>({ lat: 0, lon: 0, alt: 0 });
+const activeSystemState = computed(() => {
+	if (!activeSystemId.value) return null;
+	return systemStates.get(activeSystemId.value) ?? null;
+});
 
-function onLLAListener(dsInstance: typeof ConSysApi, ds: IConSysApiDataSourceProperties) {
+function createSystemState(): SystemState {
+	return reactive<SystemState>({
+		receivedLLA: { lat: 0, lon: 0, alt: 0 },
+		receivedStatus: '',
+		homeLocation: { lat: 0, lon: 0, alt: 0 },
+		llaDatasource: null,
+		homeDatasource: null,
+		statusDatasource: null,
+		dsInstances: [],
+	});
+}
+
+function onStatusListener(dsInstance: typeof ConSysApi, state: SystemState) {
 	const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
-
 	dataBroadcastChannel.onmessage = (message) => {
 		if (message.data.type === 'data') {
 			const data = message.data.values[0].data;
-			receivedLLA.value = {
-				lat: data[ds.properties.lla.property].lat ?? 0,
-				lon: data[ds.properties.lla.property].lon ?? 0,
-				alt: data[ds.properties.lla.property].alt ?? 0,
+			state.receivedStatus = data.Status;
+		}
+	};
+}
+
+function onLLAListener(dsInstance: typeof ConSysApi, state: SystemState) {
+	const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
+	dataBroadcastChannel.onmessage = (message) => {
+		if (message.data.type === 'data') {
+			const data = message.data.values[0].data;
+			state.receivedLLA = {
+				lat: data.Location.lat ?? 0,
+				lon: data.Location.lon ?? 0,
+				alt: data.Location.alt ?? 0,
 			};
 		}
 	};
 }
 
-function onHomeLocationListener(dsInstance: typeof ConSysApi, ds: IConSysApiDataSourceProperties) {
+function onHomeLocationListener(dsInstance: typeof ConSysApi, state: SystemState) {
 	const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
-
 	dataBroadcastChannel.onmessage = (message) => {
 		if (message.data.type === 'data') {
 			const data = message.data.values[0].data;
-			homeLocation.value = {
-				lat: data[ds.properties.home.property].lat ?? 0,
-				lon: data[ds.properties.home.property].lon ?? 0,
-				alt: data[ds.properties.home.property].alt ?? 0,
+			state.homeLocation = {
+				lat: data.Home.lat ?? 0,
+				lon: data.Home.lon ?? 0,
+				alt: data.Home.alt ?? 0,
 			};
 		}
 	};
 }
 
-function cleanupDatasources() {
-	if (droneDatasourceLLA.value) disconnectDatasources(droneDatasourceLLA);
-	if (droneHomeDatasource.value) disconnectDatasources(droneHomeDatasource);
-	droneDatasourceLLA.value = null;
-	droneHomeDatasource.value = null;
-	dsInstances.value.forEach((ds) => ds.disconnect());
-	dsInstances.value = [];
+function cleanupSystemDatasources(vizId: string) {
+	const state = systemStates.get(vizId);
+	if (!state) return;
+
+	state.dsInstances.forEach((ds) => ds.disconnect());
+	state.llaDatasource = null;
+	state.homeDatasource = null;
+	state.statusDatasource = null;
+	state.dsInstances = [];
+
+	systemStates.delete(vizId);
 }
 
-async function connectDatasources() {
-	for (const ds of datasources.value) {
+async function connectSystemDatasources(viz: OSHVisualization) {
+	const vizId = viz.id;
+	cleanupSystemDatasources(vizId);
+
+	const state = createSystemState();
+	systemStates.set(vizId, state);
+
+	const dsList = (viz.visualizationComponents as VisualizationComponents).dataSource ?? [];
+
+	for (const ds of dsList) {
 		let dsInstance = createDatasource(ds);
 		dsInstance.connect();
 
 		if (ds?.properties?.home) {
-			droneHomeDatasource.value = dsInstance;
+			state.homeDatasource = dsInstance;
 			let homeLLAResults = await getLatestObservation(ds);
-			const homeData = homeLLAResults.result;
-			if (homeData) {
-				homeLocation.value = {
-					lat: homeData[ds.properties.home.property].lat,
-					lon: homeData[ds.properties.home.property].lon,
-					alt: homeData[ds.properties.home.property].alt,
-				};
-			}
-			onHomeLocationListener(dsInstance, ds);
+			state.homeLocation = {
+				lat: homeLLAResults?.result.Home.lat,
+				lon: homeLLAResults?.result.Home.lon,
+				alt: homeLLAResults?.result.Home.alt,
+			};
+			onHomeLocationListener(dsInstance, state);
 		} else if (ds?.properties?.lla) {
-			droneDatasourceLLA.value = dsInstance;
-			onLLAListener(dsInstance, ds);
+			state.llaDatasource = dsInstance;
+			onLLAListener(dsInstance, state);
+		} else if (ds?.properties?.status) {
+			state.statusDatasource = dsInstance;
+			onStatusListener(dsInstance, state);
 		}
 
-		dsInstances.value.push(dsInstance);
+		state.dsInstances.push(dsInstance);
 	}
 }
 
+
+const allDsInstances = computed(() => {
+	const all: (typeof ConSysApi)[] = [];
+	for (const state of systemStates.values()) {
+		all.push(...state.dsInstances);
+	}
+	return all;
+});
+
+useVisualizationCleanup(allDsInstances);
+
 watch(
-	activeVisualization,
-	async () => {
-		cleanupDatasources();
-		if (!activeVisualization.value) return;
-		await connectDatasources();
+	() => props.visualizations,
+	async (newVizs) => {
+		const newIds = new Set(newVizs.map((v) => v.id));
+
+		for (const existingId of [...systemStates.keys()]) {
+			if (!newIds.has(existingId)) {
+				cleanupSystemDatasources(existingId);
+			}
+		}
+
+		for (const viz of newVizs) {
+			if (!Array.isArray(viz.visualizationComponents)) {
+				await connectSystemDatasources(viz);
+			}
+		}
+
+		if (!activeSystemId.value || !newIds.has(activeSystemId.value)) {
+			activeSystemId.value = validVisualizations.value.length > 0
+				? validVisualizations.value[0].id
+				: null;
+		}
 	},
 	{ immediate: true }
 );
 
-onBeforeUnmount(() => {
-	cleanupDatasources();
+
+function setPlanMissionRef(vizId: string, el: any) {
+	if (el) {
+		planMissionRefs.value.set(vizId, el);
+	} else {
+		planMissionRefs.value.delete(vizId);
+	}
+}
+
+const showSendAllSummary = ref(false);
+
+const allMissionSummaries = computed<MissionSummary[]>(() => {
+	const summaries: MissionSummary[] = [];
+	for (const viz of validVisualizations.value) {
+		const planRef = planMissionRefs.value.get(viz.id);
+		if (planRef && planRef.waypoints.length > 0) {
+			summaries.push({
+				name: viz.name,
+				missionSource: 'waypoints',
+				vehicleType: detectVehicleType(viz),
+				waypointCount: planRef.waypoints.length,
+				cruiseSpeed: planRef.cruiseSpeed,
+				waypointAltitude: planRef.waypointAltitude,
+				totalDistance: planRef.totalDistance,
+				estimatedTime: planRef.estimatedTime,
+			});
+		}
+	}
+	return summaries;
 });
-useVisualizationCleanup(dsInstances);
+
+const numPlannedMissions = computed(() => allMissionSummaries.value.length);
+const hasAnyMissions = computed(() => numPlannedMissions.value > 0);
+
+function confirmSendAllMissions() {
+	showSendAllSummary.value = true;
+}
+
+function sendAllMissions() {
+	showSendAllSummary.value = false;
+	for (const viz of validVisualizations.value) {
+		const planRef = planMissionRefs.value.get(viz.id);
+		if (planRef && planRef.waypoints.length > 0) {
+			planRef.sendMission();
+		}
+	}
+}
+
+onBeforeUnmount(() => {
+	for (const vizId of [...systemStates.keys()]) {
+		cleanupSystemDatasources(vizId);
+	}
+	missionStore.clearMissionWaypoints();
+});
 
 const hasCommandPad = computed(
 	() =>
@@ -180,6 +286,8 @@ const hasCommandPad = computed(
 		getControlstreamByRole('driveLocation') ||
 		getControlstreamByRole('arm') ||
 		getControlstreamByRole('reboot') ||
+		getControlstreamByRole('hold') ||
+		getControlstreamByRole('homePos') ||
 		getControlstreamByRole('driveMode')
 );
 </script>
@@ -202,61 +310,86 @@ const hasCommandPad = computed(
 		</v-row>
 		<v-divider v-if="!noController"></v-divider>
 
-		<v-sheet 	v-if="!noController">
-			<v-card v-if="minimapViewActive && minimapViz" class="minimap-card">
-				<div class="d-flex align-center justify-space-between px-2 pt-1">
-					<span class="text-caption font-weight-medium">Mini Map</span>
-				</div>
-				<PanelVisualizationWrapper :viz="minimapViz" />
-			</v-card>
-			<v-card
-				class="telemetry-card"
+		<div
+			v-if="validVisualizations.length > 1"
+      class="d-flex align-center ga-2 my-3"
+    >
+			<v-chip
+				v-for="viz in validVisualizations"
+				:key="viz.id"
+				:color="activeSystemId === viz.id ? 'primary' : undefined"
+				:variant="activeSystemId === viz.id ? 'flat' : 'outlined'"
+				@click="activeSystemId = viz.id"
 			>
-				<div class="d-flex align-center justify-space-between px-4 pt-2">
+				<v-icon
+					start
+					:icon="detectVehicleType(viz) === 'Ground Rover' ? 'mdi-car' : 'mdi-quadcopter'"
+					size="small"
+				/>
+				{{ viz.name }}
+			</v-chip>
+		</div>
 
-					<v-card-text class="pa-0">Live Telemetry</v-card-text>
-					<v-btn
-						:color="minimapViewActive ? 'primary' : 'grey'"
-						variant="text"
-						density="compact"
-						@click="minimapViewActive = !minimapViewActive"
-						:prepend-icon="minimapViewActive ? 'mdi-eye' : 'mdi-eye-outline'"
-					>
-						Mini Map
-						<v-tooltip activator="parent" location="top">
-							{{ minimapViewActive ? 'Hide mini map' : 'Show mini map' }}
-						</v-tooltip>
-					</v-btn>
-				</div>
-				<v-row density="comfortable">
-					<v-col
-						cols="12"
-						md="4"
-					>
-						<v-card-subtitle>Latitude</v-card-subtitle>
-						<v-card-title>{{ receivedLLA.lat.toFixed(6) }}</v-card-title>
-					</v-col>
-					<v-col
-						cols="12"
-						md="4"
-					>
-						<v-card-subtitle>Longitude</v-card-subtitle>
-						<v-card-title>{{ receivedLLA.lon.toFixed(6) }}</v-card-title>
-					</v-col>
-					<v-col
-						v-if="!isRover"
-						cols="12"
-						md="4"
-					>
-						<v-card-subtitle>Altitude</v-card-subtitle>
-						<v-card-title>{{ receivedLLA.alt.toFixed(2) }}</v-card-title>
-					</v-col>
-				</v-row>
-			</v-card>
-		</v-sheet>
+    <v-sheet v-if="!noController && activeSystemState">
+      <v-card v-if="minimapViewActive && minimapViz" class="minimap-card">
+        <div class="d-flex align-center justify-space-between px-2 pt-1">
+          <span class="text-caption font-weight-medium">Mini Map</span>
+        </div>
+        <PanelVisualizationWrapper :key="activeSystemId" :viz="minimapViz" />
+      </v-card>
+		<v-card
+			class="telemetry-card"
+		>
+			<div class="d-flex align-center justify-space-between px-4 pt-2">
+        <v-card-text class="pa-0">Live Telemetry</v-card-text>
+        <v-btn
+          :color="minimapViewActive ? 'primary' : 'grey'"
+          variant="text"
+          density="compact"
+          @click="minimapViewActive = !minimapViewActive"
+          :prepend-icon="minimapViewActive ? 'mdi-eye' : 'mdi-eye-off'"
+        >
+          Mini Map
+          <v-tooltip activator="parent" location="top">
+            {{ minimapViewActive ? 'Hide mini map' : 'Show mini map' }}
+          </v-tooltip>
+        </v-btn>
+      </div>
+			<v-row density="comfortable">
+				<v-col
+					cols="12"
+					md="4"
+				>
+					<v-card-subtitle>Latitude</v-card-subtitle>
+					<v-card-title>{{ activeSystemState.receivedLLA.lat.toFixed(6) }}</v-card-title>
+				</v-col>
+				<v-col
+					cols="12"
+					md="4"
+				>
+					<v-card-subtitle>Longitude</v-card-subtitle>
+					<v-card-title>{{ activeSystemState.receivedLLA.lon.toFixed(6) }}</v-card-title>
+				</v-col>
+				<v-col
+					cols="12"
+					md="4"
+				>
+					<v-card-subtitle>Altitude</v-card-subtitle>
+					<v-card-title>{{ activeSystemState.receivedLLA.alt.toFixed(2) }}</v-card-title>
+				</v-col>
+			</v-row>
+		</v-card>
+
+		<v-card class="status-card">
+			<v-card-text class="d-flex align-center">
+				<span class="text-subtitle-2 font-weight-medium mr-2">Status:</span>
+				<span class="text-title-large">{{ activeSystemState.receivedStatus || 'N/A' }}</span>
+			</v-card-text>
+		</v-card>
+    </v-sheet>
 
 		<v-sheet
-			v-if="!noController"
+			v-if="!noController && activeVisualization"
 			class="pa-0 d-flex flex-column"
 		>
 			<v-tabs
@@ -275,12 +408,22 @@ const hasCommandPad = computed(
 
 			<v-window v-model="activeTab">
 				<v-window-item value="plan">
-					<PlanMission
-						:home-location="homeLocation"
-						:is-rover="isRover"
-						:mission-control-stream="missionControlStream"
-						:no-controller="noController"
-					/>
+					<div
+						v-for="viz in validVisualizations"
+						:key="viz.id"
+						:style="viz.id !== activeSystemId ? 'display: none' : ''"
+					>
+						<PlanMission
+							:ref="(el: any) => setPlanMissionRef(viz.id, el)"
+							:home-location="systemStates.get(viz.id)?.homeLocation ?? { lat: 0, lon: 0, alt: 0 }"
+							:is-active="viz.id === activeSystemId"
+							:mission-control-stream="getControlstreamByRole('roverPlan', viz) ?? getControlstreamByRole('plan', viz)"
+							:no-controller="false"
+							:system-id="viz.id"
+							:vehicle-type="detectVehicleType(viz)"
+              @set-home="(loc) => onSetHome(loc, viz)"
+						/>
+					</div>
 				</v-window-item>
 
 				<v-window-item value="control">
@@ -290,6 +433,24 @@ const hasCommandPad = computed(
 				</v-window-item>
 			</v-window>
 		</v-sheet>
+
+		<v-btn
+			v-if="validVisualizations.length > 1"
+			block
+			class="mt-4"
+			color="primary"
+			variant="tonal"
+			@click="confirmSendAllMissions"
+      :disabled="!hasAnyMissions"
+		>
+			Send All Missions ( {{ numPlannedMissions }} )
+		</v-btn>
+
+		<MissionSummaryDialog
+			v-model="showSendAllSummary"
+			:missions="allMissionSummaries"
+			@send="sendAllMissions"
+		/>
 	</v-container>
 </template>
 

@@ -6,7 +6,7 @@ import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 
 export function createLeafletAdapter(): MapAdapter {
 	let mapView: typeof LeafletView | null;
-	let flightPathPolyline: any = null;
+	let flightPathPolylines: any[] = [];
 
 	/* GeoOverlays */
 	let previewEntity: any = null;
@@ -106,18 +106,19 @@ export function createLeafletAdapter(): MapAdapter {
 	}
 
 	function drawMissionPath(waypoints: MapPoint[]) {
-		clearMissionPath();
 		const latLngs = waypoints.map((wp: MapPoint) => [wp.lat, wp.lon]);
-		flightPathPolyline = L.polyline(latLngs, {
+		const polyline = L.polyline(latLngs, {
 			color: 'red',
 			weight: 5,
 		}).addTo(mapView.map);
+		flightPathPolylines.push(polyline);
 	}
 
 	function clearMissionPath() {
-		if (!flightPathPolyline) return;
-		mapView.map.removeLayer(flightPathPolyline);
-		flightPathPolyline = null;
+		for (const polyline of flightPathPolylines) {
+			mapView.map.removeLayer(polyline);
+		}
+		flightPathPolylines = [];
 	}
 
 	/* Geofence Drawing Tools */
