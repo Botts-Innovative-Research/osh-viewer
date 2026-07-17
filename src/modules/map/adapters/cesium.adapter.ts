@@ -40,6 +40,12 @@ export function createCesiumAdapter(): MapAdapter {
 			layers: [],
 			geocoder: Cesium.IonGeocodeProviderType.GOOGLE,
 		});
+		// osh-js's CesiumView forces depthTestAgainstTerrain = true at
+		// construction, even though the map starts on the smooth ellipsoid (no
+		// real terrain). With it on but nothing to occlude, ground-clamped
+		// entities z-fight against the globe surface and flicker from first load.
+		// Turn it off; flip back on only if entities should hide behind terrain.
+		mapView.viewer.scene.globe.depthTestAgainstTerrain = false;
 		// Wait for Cesium to be fully ready
 		await new Promise(requestAnimationFrame);
 	}
@@ -284,12 +290,19 @@ export function createCesiumAdapter(): MapAdapter {
 			googlePhotorealistic = await Cesium.createGooglePhotorealistic3DTileset();
 			viewer.scene.primitives.add(googlePhotorealistic);
 		}
+		// The photorealistic tileset ships its own textured surface mesh. Leaving
+		// the globe (ellipsoid + imagery + terrain) visible underneath makes the
+		// two coplanar surfaces z-fight — the shimmer/splotchy effect from #365.
+		// Hide the globe while photoreal is on; selections underneath are kept.
+		viewer.scene.globe.show = false;
 	}
 
 	function removeGooglePhotorealistic() {
 		if (googlePhotorealistic && mapView.viewer) {
 			mapView.viewer.scene.primitives.remove(googlePhotorealistic);
 			googlePhotorealistic = null;
+			// Restore the globe (and its preserved terrain/imagery selections).
+			mapView.viewer.scene.globe.show = true;
 		}
 	}
 
