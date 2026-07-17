@@ -24,3 +24,12 @@ h6 {
 	border-radius: 10px;
 	overflow: hidden;
 }
+
+.v-stepper-vertical-item .v-expansion-panel {
+	box-shadow: none !important;
+	border-radius: 0;
+}
+
+.v-stepper-vertical-item .v-expansion-panel__shadow {
+	display: none;
+}

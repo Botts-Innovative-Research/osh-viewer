@@ -5,11 +5,16 @@ import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useMapStore } from '@/stores/mapstore';
 import { useMissionStore } from '@/stores/missionstore';
 import { showToast } from '@/composables/useToast';
-import { fetchCsSchema, mineControlObsPropsFromCS, sendCommand, } from '../../services/controlstream.service';
+import {
+	fetchCsSchema,
+	mineControlObsPropsFromCS,
+	sendCommand,
+} from '../../services/controlstream.service';
 import MissionWaypointBuilder from './MissionWaypointBuilder.vue';
 import SaveMissionDialog from './SaveMissionDialog.vue';
 import DeleteMissionDialog from './DeleteMissionDialog.vue';
 import type { MissionSettings, SavedMission, Waypoint } from './types';
+import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 
 interface Controlstream {
 	id: string;
@@ -30,6 +35,7 @@ const props = defineProps<{
 }>();
 
 const mapStore = useMapStore();
+const mapInteractionStore = useMapInteractionStore();
 const missionStore = useMissionStore();
 
 const missionSource = ref<'waypoints' | 'file' | 'saved'>('waypoints');
@@ -67,14 +73,9 @@ const csAuth = computed(() => {
 });
 
 watch(
-	() => mapStore.selectedWaypoints,
-	(newVal) => {
-		const cs = props.missionControlStream;
-		if (cs && newVal?.controlStreamId === cs.id) {
-			isSelected.value = true;
-		} else {
-			isSelected.value = false;
-		}
+	() => mapInteractionStore.isMissionWaypointSelected,
+	(selected) => {
+		isSelected.value = selected;
 	}
 );
 
@@ -95,7 +96,7 @@ watch(
 watch(
 	waypoints,
 	(newWaypoints) => {
-		mapStore.setFlightPathWaypoints(
+		missionStore.setMissionWaypoints(
 			newWaypoints.map((wp) => ({
 				lat: wp.lat,
 				lon: wp.lon,
@@ -109,13 +110,9 @@ watch(
 function toggle() {
 	const cs = props.missionControlStream;
 	if (isSelected.value) {
-		mapStore.disableWaypointSelection();
+		mapInteractionStore.deselectTool('missionWaypoint');
 	} else if (cs) {
-		mapStore.setSelectedWaypoints(
-			cs.id,
-			commandBaseUrl.value,
-			`${csAuth.value.username}:${csAuth.value.password}`
-		);
+		mapInteractionStore.selectTool('missionWaypoint');
 	}
 }
 
@@ -125,13 +122,11 @@ function confirmSendMission() {
 
 function clearWaypoints() {
 	waypoints.value = [];
-	mapStore.clearMissionWaypoints();
-	mapStore.triggerClearWaypointMarkers();
+	missionStore.clearMissionWaypoints();
 }
 
 function onClearWaypoints() {
-	mapStore.clearMissionWaypoints();
-	mapStore.triggerClearWaypointMarkers();
+	missionStore.clearMissionWaypoints();
 }
 
 function getCurrentSettings(): MissionSettings {
@@ -492,7 +487,7 @@ function generateMissionControlPlan() {
 }
 
 onBeforeUnmount(() => {
-	if (isSelected.value) mapStore.disableWaypointSelection();
+	mapInteractionStore.deselectTool('missionWaypoint');
 	clearWaypoints();
 });
 </script>

@@ -1,12 +1,6 @@
 import { MapLayer } from './cesium.adapter';
-
-export type MapClickHandler = (lat: number, lon: number, alt: number) => void;
-export type CursorMode = 'default' | 'crosshair';
-export type MapPoint = {
-	lat: number;
-	lon: number;
-	alt: number;
-};
+import { CursorMode, MapPoint, MapPointHandler } from '@/modules/map/types';
+import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 
 export interface MapAdapter {
 	init(container: string): Promise<void>;
@@ -15,15 +9,46 @@ export interface MapAdapter {
 	addLayer(layer: any): void;
 	removeLayer(layer: any): Promise<void>;
 
-	onClick(handler: MapClickHandler): () => void;
+	onClick(handler: MapPointHandler): () => void;
+	onMouseMove(handler: MapPointHandler): () => void;
 	setCursor(mode: CursorMode): void;
 	flyToPoint(location: { x: number; y: number; z: number }): void;
 
 	updateMarker(props: any): void;
 
+	/* Map Drawing */
+	drawPoint(point: MapPoint): any;
+	drawCircle(
+		center: MapPoint,
+		radius: number,
+		borderColor: string | null,
+		fillColor: string | null
+	): any;
+	drawPolyline(points: MapPoint[], borderColor: string | null): any;
+	drawPolygon(points: MapPoint[], borderColor: string | null, fillColor: string | null): any;
+
 	/* Mission Builder */
 	drawMissionPath(waypoints: MapPoint[]): void;
 	clearMissionPath(): void;
+
+	/* GeoOverlay */
+	updateCirclePreview(
+		center: MapPoint,
+		radius: number,
+		borderColor: string | null,
+		fillColor: string | null,
+		id?: string
+	): void;
+	updatePolylinePreview(points: MapPoint[], borderColor: string | null, id?: string): void;
+	updatePolygonPreview(
+		points: MapPoint[],
+		borderColor: string | null,
+		fillColor: string | null,
+		id?: string
+	): void;
+	clearPreview(): void;
+	addGeoOverlay(geoOverlay: GeoOverlay): void;
+	removeGeoOverlay(geoOverlay: GeoOverlay): void;
 
 	/* CESIUM ONLY */
 	addTerrain?(): void;

@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { sendCommand } from '../../services/controlstream.service';
 import { useMapStore } from '@/stores/mapstore';
 import LocationPicker from '@/components/ui/LocationPicker.vue';
+import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 
 const props = defineProps({
 	controlstreams: {
@@ -17,12 +18,13 @@ function getControlstreamByRole(role: string) {
 }
 
 const mapStore = useMapStore();
+const mapInteractionStore = useMapInteractionStore();
 
 const driveLocationPickerRef = ref<InstanceType<typeof LocationPicker> | null>(null);
-const isDriveLocationMapSelect = computed(() => mapStore.isDriveLocationSelected);
+const isDriveLocationMapSelect = computed(() => mapInteractionStore.isDriveLocationSelected);
 
 const homeLocationPickerRef = ref<InstanceType<typeof LocationPicker> | null>(null);
-const isHomeLocationMapSelect = computed(() => mapStore.isHomeLocationSelected);
+const isHomeLocationMapSelect = computed(() => mapInteractionStore.isHomeLocationSelected);
 
 watch(
 	() => mapStore.currentLLA,
@@ -37,11 +39,11 @@ watch(
 );
 
 function toggleDriveLocationSelect() {
-	mapStore.setIsDriveLocationSelected(!mapStore.isDriveLocationSelected);
+	mapInteractionStore.toggleTool('driveLocation');
 }
 
 function toggleHomeLocationSelect() {
-	mapStore.setIsHomeLocationSelected(!mapStore.isHomeLocationSelected);
+	mapInteractionStore.toggleTool('homeLocation');
 }
 
 const xVelocity = ref<number>(0.0);
