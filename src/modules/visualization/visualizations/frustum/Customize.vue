@@ -6,8 +6,13 @@ import ColorControl from '../../wizard/customizations/ColorControl.vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 import SliderValueControl from '../../wizard/customizations/SliderValueControl.vue';
 import NumberControl from '../../wizard/customizations/NumberControl.vue';
+import IDColorControl from '@/modules/visualization/wizard/customizations/IDColorControl.vue';
+import { useVizWizStore } from '@/stores/vizwizstore';
 
 const openPanels = ref<string[]>(['general', 'frustum', 'appearance']);
+// Set default border color to #FFFFFF
+if (!useVizWizStore().visualizationCustomizationOptions.borderColor)
+	useVizWizStore().visualizationCustomizationOptions.borderColor = '#FFFFFF';
 
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>();
@@ -95,10 +100,20 @@ useComponentValidation(valid, emit);
 			title="Appearance"
 		>
 			<v-expansion-panel-text>
-				<color-control
-					roleName="color"
-					label="Color"
-				></color-control>
+				<v-row class="justify-space-between pa-4">
+					<v-col cols="auto">
+						<color-control
+							roleName="color"
+							label="Color"
+						></color-control>
+					</v-col>
+					<v-col cols="auto">
+						<color-control
+							roleName="borderColor"
+							label="Border Color"
+						></color-control>
+					</v-col>
+				</v-row>
 				<SliderValueControl
 					roleName="opacity"
 					label="Opacity"

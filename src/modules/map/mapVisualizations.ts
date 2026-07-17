@@ -412,7 +412,6 @@ export function createFrustumLayer(
 
 	// Undefined initially
 	let getOrigin: any;
-	// let getPlatformOrientation: any;
 	let getSensorOrientation: any;
 
 	for (const dsProps of dsArray) {
@@ -435,19 +434,6 @@ export function createFrustumLayer(
 				},
 			};
 		}
-		// Check for orientation property
-		// if (dsProps.properties.platformOrientation) {
-		// 	getPlatformOrientation = {
-		// 		dataSourceIds: [dsInstance.id],
-		// 		handler: (rec: any) => {
-		// 			return {
-		// 				heading: rec[dsProps.properties.platformOrientation.property].heading,
-		// 				pitch: rec[dsProps.properties.platformOrientation.property].pitch,
-		// 				roll: rec[dsProps.properties.platformOrientation.property].roll,
-		// 			};
-		// 		},
-		// 	};
-		// }
 		if (dsProps.properties.sensorOrientation) {
 			getSensorOrientation = {
 				dataSourceIds: [dsInstance.id],
@@ -471,7 +457,6 @@ export function createFrustumLayer(
 		id: viz.id,
 		dataSourceIds: dsInstances.map((ds) => ds.id),
 		...(getOrigin ? { getOrigin } : {}),
-		// ...(getPlatformOrientation ? { getPlatformOrientation } : {}),
 		...(getSensorOrientation
 			? { getSensorOrientation }
 			: {

@@ -56,6 +56,7 @@ export function CreateFrustumVizProps(
 	let frustumLayer: IFrustumLayerProperties = {
 		name: visOptions.name,
 		color: visOptions.color || '#FF0000',
+		borderColor: visOptions.borderColor || '#FFFFFF',
 		opacity: visOptions.opacity,
 		fov: visOptions.fov,
 		range: visOptions.range,
