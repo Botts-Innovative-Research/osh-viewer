@@ -4,10 +4,11 @@ import {computed, ref, watch} from 'vue';
 import {randomUUID} from 'osh-js/source/core/utils/Utils.js';
 import {VueDraggable} from 'vue-draggable-plus';
 import type {Waypoint} from './types';
-import LocationPicker from "@/components/ui/LocationPicker.vue";
+import MapPointEditor from "@/components/ui/MapPointEditor.vue";
 import DeleteButton from "@/components/ui/DeleteButton.vue";
 import {useMapStore} from "@/stores/mapstore";
 import {useMapInteractionStore} from "@/stores/mapinteractionstore";
+import type {MapPoint} from "@/modules/map/types";
 
 const props = defineProps<{
   noController: boolean;
@@ -27,7 +28,7 @@ const waypointAltitude = defineModel<number>('waypointAltitude', { required: tru
 const cruiseSpeed = defineModel<number>('cruiseSpeed', { required: true });
 const hoverSpeed = defineModel<number>('hoverSpeed', { required: true });
 const altitudeMode = defineModel<number>('altitudeMode', { required: true });
-const locationPickerRef = ref<InstanceType<typeof LocationPicker> | null>(null);
+const editorPoint = ref<MapPoint>({ lat: 0, lon: 0, alt: 0 });
 const showClearConfirm = ref(false);
 
 const altitudeModeOptions = [
@@ -38,7 +39,7 @@ const altitudeModeOptions = [
 ];
 const isGroundVehicle = computed(() => props.vehicleType === 'Ground Rover' || props.vehicleType === 'Surface Boat');
 
-function addWaypointFromMap(payload: { lat: number; lon: number; alt: number }) {
+function addWaypointFromMap(payload: MapPoint) {
   const newWaypoint: Waypoint = {
     id: randomUUID(),
     lat: payload.lat,
@@ -59,7 +60,8 @@ function clearAll() {
 }
 
 function setLatLonAlt(lat: number, lon: number, alt: number) {
-	locationPickerRef.value?.setLatLonAltAndSubmit(lat, lon, alt);
+	editorPoint.value = { lat, lon, alt };
+	addWaypointFromMap({ lat, lon, alt });
 }
 
 const mapStore = useMapStore();
@@ -85,14 +87,13 @@ defineExpose({ setLatLonAlt });
 
 <template>
   <div class="d-flex align-center ga-2 mb-4">
-    <LocationPicker
-        ref="locationPickerRef"
-        :default-alt="waypointAltitude"
-        :disabled="noController"
+    <MapPointEditor
+        v-model="editorPoint"
         :hide-alt="isGroundVehicle"
         :is-selected="isSelected"
-        button-icon="mdi-plus"
-        button-label="Add"
+        :is-selector-disabled="noController"
+        submit-icon="mdi-plus"
+        submit-label="Add"
         @submit="addWaypointFromMap"
         @toggle="emit('toggle')"
     />

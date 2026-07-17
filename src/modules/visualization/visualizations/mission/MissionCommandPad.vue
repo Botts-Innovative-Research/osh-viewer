@@ -2,9 +2,10 @@
 import { computed, ref, watch } from 'vue';
 import { sendCommand } from '../../services/controlstream.service';
 import { useMapStore } from '@/stores/mapstore';
-import LocationPicker from '@/components/ui/LocationPicker.vue';
+import MapPointEditor from '@/components/ui/MapPointEditor.vue';
 import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 import type { IConSysApiControlStreamProperties } from '../../types/datasource';
+import type { MapPoint } from '@/modules/map/types';
 import SendButton from "@/components/ui/SendButton.vue";
 
 const props = defineProps<{
@@ -18,14 +19,18 @@ function getControlstreamByRole(role: string) {
 const mapStore = useMapStore();
 const mapInteractionStore = useMapInteractionStore();
 
-const driveLocationPickerRef = ref<InstanceType<typeof LocationPicker> | null>(null);
+const driveLocationPoint = ref<MapPoint>({ lat: 0, lon: 0, alt: 0 });
 const isDriveLocationMapSelect = computed(() => mapInteractionStore.isDriveLocationSelected);
 
 watch(
 	() => mapStore.currentLLA,
 	(newVal) => {
 		if (isDriveLocationMapSelect.value && newVal) {
-			driveLocationPickerRef.value?.setLatLonAlt(newVal.latitude, newVal.longitude, newVal.altitude ?? 0);
+			driveLocationPoint.value = {
+				lat: newVal.latitude,
+				lon: newVal.longitude,
+				alt: newVal.altitude ?? 0,
+			};
 		}
 	}
 );
@@ -132,7 +137,7 @@ function driveMode() {
 }
 
 
-function driveLocationCommand(location: { lat: number; lon: number; alt: number }) {
+function driveLocationCommand(location: MapPoint) {
 	sendCommandToRole('driveLocation', {
 		parameters: { locationVectorLL: { Latitude: location.lat, Longitude: location.lon } },
 	});
@@ -470,11 +475,12 @@ const hasSimpleCommands = computed(() =>
 					Navigate the vehicle to a specific lat/lon coordinate. Use the crosshairs to pick from the map.
 				</v-tooltip>
 			</div>
-				<LocationPicker
-					ref="driveLocationPickerRef"
+				<MapPointEditor
+					v-model="driveLocationPoint"
 					:is-selected="isDriveLocationMapSelect"
-					button-icon="mdi-send"
-					button-label="Send"
+					:is-selector-disabled="false"
+					submit-icon="mdi-send"
+					submit-label="Send"
 					hide-alt
 					@submit="driveLocationCommand"
 					@toggle="toggleDriveLocationSelect"
