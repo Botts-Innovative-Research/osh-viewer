@@ -20,14 +20,14 @@ const emit = defineEmits<{
 		@update:model-value="emit('update:selectedMissionControllers', $event)"
 		v-bind:items="missionVisualizations"
 		item-title="name"
-		:item-value="(item: OSHVisualization) => item"
+		return-object
 		multiple
 		chips
 		hide-details
 		clearable
 	>
-		<template v-slot:item="{ props, item }">
-			<v-list-item v-bind="props">
+		<template v-slot:item="{ item, props: itemProps }">
+			<v-list-item v-bind="itemProps">
 				<template v-slot:prepend="{ isSelected }">
 					<v-checkbox-btn :model-value="isSelected"></v-checkbox-btn>
 				</template>
@@ -37,21 +37,21 @@ const emit = defineEmits<{
 						text="Edit Visualization"
 						location="bottom"
 					>
-						<template v-slot:activator="{ props }">
+						<template v-slot:activator="{ props: tooltipProps }">
 							<IconButton
-								v-bind="props"
+								v-bind="tooltipProps"
 								aria-label="Edit Visualization"
 								size="x-small"
 								variant="plain"
 								icon="mdi-pencil"
-								@click.stop="openEditViz(item.raw.id!)"
+								@click.stop="openEditViz(item.id!)"
 							>
 							</IconButton>
 						</template>
 					</v-tooltip>
 					<DeleteButton
 						label="Remove"
-						@delete="removeMission(item.raw)"
+						@delete="removeMission(item)"
 					></DeleteButton>
 				</template>
 			</v-list-item>

@@ -26,7 +26,7 @@ const model = defineModel<boolean>();
 			<info-tooltip :content="tooltip" />
 		</v-col>
 	</v-row>
-	<v-row>
+	<v-row class="mt-2">
 		<v-col>
 			<v-expand-transition>
 				<div v-if="model">

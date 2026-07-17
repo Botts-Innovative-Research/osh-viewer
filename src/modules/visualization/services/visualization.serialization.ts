@@ -45,7 +45,7 @@ export function rehydrateVisualization(serialized: SerializedVisualization): OSH
 	);
 	viz.visualizationComponents = serialized.visualizationComponents;
 	viz.wizardConfig = serialized.wizardConfig;
-	viz.children = serialized.children.map(rehydrateVisualization);
+	viz.children = (serialized.children ?? []).map(rehydrateVisualization);
 	return viz;
 }
 

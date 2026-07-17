@@ -1,27 +1,62 @@
-<script setup lang="ts">
-import { ref } from 'vue';
+<script lang="ts" setup>
+import { computed, ref, watch } from 'vue';
 import { sendCommand } from '../../services/controlstream.service';
+import { useMapStore } from '@/stores/mapstore';
+import MapPointEditor from '@/components/ui/MapPointEditor.vue';
+import { useMapInteractionStore } from '@/stores/mapinteractionstore';
+import type { IConSysApiControlStreamProperties } from '../../types/datasource';
+import type { MapPoint } from '@/modules/map/types';
+import SendButton from "@/components/ui/SendButton.vue";
 
-const props = defineProps({
-	controlstreams: {
-		type: Array,
-		required: true,
-		default: () => [],
-	},
-});
+const props = defineProps<{
+	controlstreams: IConSysApiControlStreamProperties[];
+}>();
 
 function getControlstreamByRole(role: string) {
-	return props.controlstreams.find((cs: any) => cs.properties && cs.properties[role]);
+	return props.controlstreams.find((cs) => cs.properties && cs.properties[role]);
 }
 
-const xVelocity = ref<number>(0.0);
-const yVelocity = ref<number>(0.0);
-const zVelocity = ref<number>(0.0);
-const yawRate = ref<number>(0.0);
-const takeOffAlt = ref<number>(0.0);
-const offboardForm = ref<any>(null);
+const mapStore = useMapStore();
+const mapInteractionStore = useMapInteractionStore();
 
-function getControlstreamConfig(cs: any) {
+const driveLocationPoint = ref<MapPoint>({ lat: 0, lon: 0, alt: 0 });
+const isDriveLocationMapSelect = computed(() => mapInteractionStore.isDriveLocationSelected);
+
+watch(
+	() => mapStore.currentLLA,
+	(newVal) => {
+		if (isDriveLocationMapSelect.value && newVal) {
+			driveLocationPoint.value = {
+				lat: newVal.latitude,
+				lon: newVal.longitude,
+				alt: newVal.altitude ?? 0,
+			};
+		}
+	}
+);
+
+function toggleDriveLocationSelect() {
+	mapInteractionStore.toggleTool('driveLocation');
+}
+
+const xVelocity = ref(0.0);
+const yVelocity = ref(0.0);
+const zVelocity = ref(0.0);
+const yawRate = ref(0.0);
+const takeOffAlt = ref(0.0);
+const yawRateDrive = ref(0.0);
+const forwardVelocityDrive = ref(0.0);
+const offboardForm = ref<any>(null);
+const isPaused = ref(false);
+const isArmed = ref(false);
+const isHold = ref(false);
+const driveModes = [
+	'MANUAL', 'ACRO', 'STEERING', 'HOLD', 'LOITER',
+	'FOLLOW', 'SIMPLE', 'DOCK', 'AUTO', 'RTL', 'GUIDED',
+];
+const selectedDriveMode = ref('HOLD');
+
+function getControlstreamConfig(cs: IConSysApiControlStreamProperties) {
 	if (!cs) return null;
 	const protocol = cs.tls ? 'https' : 'http';
 	return {
@@ -37,7 +72,6 @@ function sendCommandToRole(role: string, payload: any) {
 		console.warn(`[MissionCommandPad] No controlstream configured for role: ${role}`);
 		return;
 	}
-
 	const config = getControlstreamConfig(cs);
 	if (!config) return;
 
@@ -45,310 +79,429 @@ function sendCommandToRole(role: string, payload: any) {
 	sendCommand(config.baseUrl, config.id, payload, config.auth);
 }
 
-function pauseMission() {
-	// resume = true , pause = false
-	if (isPaused.value) {
-		const payload = {
-			parameters: {
-				Resume: true,
-			},
-		};
+function pause() {
+	isPaused.value = !isPaused.value;
+	sendCommandToRole('pause', { parameters: { Resume: !isPaused.value } });
+}
 
-		sendCommandToRole('pause', payload);
-	} else {
-		const payload = {
-			parameters: {
-				Resume: false,
-			},
-		};
+function arm() {
+	isArmed.value = !isArmed.value;
+	sendCommandToRole('arm', { parameters: { ARM: isArmed.value } });
+}
 
-		sendCommandToRole('pause', payload);
-	}
+function hold() {
+	isHold.value = !isHold.value;
+	sendCommandToRole('hold', { parameters: { engageHold: isHold.value } });
+}
+
+function reboot() {
+	sendCommandToRole('reboot', { parameters: { reboot: true } });
 }
 
 function returnToLaunch() {
-	const payload = {
-		parameters: {
-			rtl: true,
-		},
-	};
-	sendCommandToRole('rtl', payload);
+	sendCommandToRole('rtl', { parameters: { rtl: true } });
 }
 
 function land() {
-	const payload = {
-		parameters: {
-			disarm: true,
-		},
-	};
-	sendCommandToRole('land', payload);
+	sendCommandToRole('land', { parameters: { disarm: true } });
 }
 
 function cancel() {
-	const payload = {
-		parameters: {},
-	};
-	sendCommandToRole('cancel', payload);
+	sendCommandToRole('cancel', { parameters: {} });
 }
 
 async function offboard() {
 	const { valid } = await offboardForm.value.validate();
 	if (!valid) return;
 
-	const payload = {
+	sendCommandToRole('offboard', {
 		parameters: {
-			velocity: {
-				vx: xVelocity.value,
-				vy: yVelocity.value,
-				vz: zVelocity.value,
-			},
+			velocity: { vx: xVelocity.value, vy: yVelocity.value, vz: zVelocity.value },
 			yawRate: yawRate.value,
 		},
-	};
-
-	sendCommandToRole('offboard', payload);
+	});
 }
 
 function takeoffCommand() {
-	const payload = {
-		parameters: {
-			TakeoffAltitudeAGL: takeOffAlt.value,
-		},
-	};
-
-	sendCommandToRole('takeoff', payload);
+	sendCommandToRole('takeoff', { parameters: { TakeoffAltitudeAGL: takeOffAlt.value } });
 }
 
-const isPaused = ref(false);
-
-function toggle() {
-	console.log('[MissionCommandPad] toggle called, isPaused:', isPaused.value);
-	pauseMission();
-	isPaused.value = !isPaused.value;
-	console.log('[MissionCommandPad] isPaused now:', isPaused.value);
+function driveVelocityCommand() {
+	sendCommandToRole('driveVelocity', {
+		parameters: { forwardVelocity: forwardVelocityDrive.value, yawRate: yawRateDrive.value },
+	});
 }
+
+function driveMode() {
+	sendCommandToRole('driveMode', { parameters: { mode: selectedDriveMode.value } });
+}
+
+
+function driveLocationCommand(location: MapPoint) {
+	sendCommandToRole('driveLocation', {
+		parameters: { locationVectorLL: { Latitude: location.lat, Longitude: location.lon } },
+	});
+}
+
+const hasSimpleCommands = computed(() =>
+	['pause', 'rtl', 'land', 'cancel', 'arm', 'hold', 'reboot']
+		.some((role) => getControlstreamByRole(role))
+);
 </script>
 
 <template>
-	<v-sheet class="pa-4 mission-control-card">
-		<!--pause, rtl, land-->
-		<div
-			v-if="
-				getControlstreamByRole('pause') ||
-				getControlstreamByRole('rtl') ||
-				getControlstreamByRole('land') ||
-				getControlstreamByRole('cancel')
-			"
-		>
-			<v-card-title class="text-subtitle-1 pa-0 mb-3"> Commands </v-card-title>
-			<v-row dense>
-				<v-col
-					cols="12"
-					md="3"
-					v-if="getControlstreamByRole('pause')"
+		<div v-if="hasSimpleCommands" class="command-section">
+
+		<v-row class="command-grid pa-2" density="comfortable">
+			<v-col v-if="getControlstreamByRole('arm')" cols="4">
+				<v-btn
+					:color="isArmed ? 'primary' : 'grey'"
+					block
+					class="command-btn"
+					variant="tonal"
+					@click="arm"
 				>
-					<v-btn
-						block
-						variant="tonal"
-						:color="isPaused ? 'primary' : 'grey'"
-						@click="toggle"
-						class="command-btn"
+					<v-icon start>{{ isArmed ? 'mdi-shield-off' : 'mdi-shield-check' }}</v-icon>
+					{{ isArmed ? 'Disarm' : 'Arm' }}
+					<v-tooltip
+						activator="parent"
+						location="top"
 					>
-						<v-icon start>{{
-							isPaused ? 'mdi-play-circle' : 'mdi-pause-circle'
-						}}</v-icon>
-						{{ isPaused ? 'Resume' : 'Pause' }}
-					</v-btn>
-				</v-col>
-				<v-col
-					cols="12"
-					md="3"
-					v-if="getControlstreamByRole('rtl')"
+						Enable motors and prepare for operation. Disarm to disable motors and power
+						down.
+					</v-tooltip>
+				</v-btn>
+			</v-col>
+
+			<v-col
+				v-if="getControlstreamByRole('hold')"
+				cols="4"
+			>
+				<v-btn
+					:color="isHold ? 'primary' : 'grey'"
+					block
+					class="command-btn"
+					variant="tonal"
+					@click="hold"
 				>
-					<v-btn
-						block
-						variant="tonal"
-						color="primary"
-						@click="returnToLaunch"
-						class="command-btn"
+					<v-icon start>{{ isHold ? 'mdi-pause-circle-outline' : 'mdi-hand-back-right' }}</v-icon>
+					{{ isHold ? 'Release' : 'Hold' }}
+					<v-tooltip
+						activator="parent"
+						location="top"
 					>
-						<v-icon start>mdi-home</v-icon>
-						RTL
-					</v-btn>
-				</v-col>
-				<v-col
-					cols="12"
-					md="3"
-					v-if="getControlstreamByRole('cancel')"
+						Hold current position and stop all movement. Release to resume normal
+						control.
+					</v-tooltip>
+				</v-btn>
+			</v-col>
+
+			<v-col
+				v-if="getControlstreamByRole('pause')"
+				cols="4"
+			>
+				<v-btn
+					:color="isPaused ? 'primary' : 'grey'"
+					block
+					class="command-btn"
+					variant="tonal"
+					@click="pause"
 				>
-					<v-btn
-						block
-						variant="tonal"
-						color="error"
-						@click="cancel"
-						class="command-btn"
+					<v-icon start>{{ isPaused ? 'mdi-play-circle' : 'mdi-pause-circle' }}</v-icon>
+					{{ isPaused ? 'Resume' : 'Pause' }}
+					<v-tooltip
+						activator="parent"
+						location="top"
 					>
-						<v-icon start>mdi-cancel</v-icon>
-						Cancel
-					</v-btn>
-				</v-col>
-				<v-col
-					cols="12"
-					md="3"
-					v-if="getControlstreamByRole('land')"
+						Pause the current mission. Resume to continue from where it left off.
+					</v-tooltip>
+				</v-btn>
+			</v-col>
+
+			<v-col
+				v-if="getControlstreamByRole('rtl')"
+				cols="4"
+			>
+				<v-btn
+					block
+					class="command-btn"
+					color="primary"
+					variant="tonal"
+					@click="returnToLaunch"
 				>
-					<v-btn
-						block
-						variant="tonal"
-						color="grey"
-						@click="land"
-						class="command-btn"
+					<v-icon start>mdi-home</v-icon>
+					RTL
+					<v-tooltip
+						activator="parent"
+						location="top"
 					>
-						<v-icon start>mdi-airplane-landing</v-icon>
-						Land
-					</v-btn>
-				</v-col>
-			</v-row>
+						Return to the launch position and land automatically.
+					</v-tooltip>
+				</v-btn>
+			</v-col>
+
+			<v-col
+				v-if="getControlstreamByRole('land')"
+				cols="4"
+			>
+				<v-btn
+					block
+					class="command-btn"
+					color="warning"
+					variant="tonal"
+					@click="land"
+				>
+					<v-icon start>mdi-airplane-landing</v-icon>
+					Land
+					<v-tooltip
+						activator="parent"
+						location="top"
+					>
+						Land at the current position and disarm motors.
+					</v-tooltip>
+				</v-btn>
+			</v-col>
+
+			<v-col
+				v-if="getControlstreamByRole('cancel')"
+				cols="4"
+			>
+				<v-btn
+					block
+					class="command-btn"
+					color="error"
+					variant="tonal"
+					@click="cancel"
+				>
+					<v-icon start>mdi-cancel</v-icon>
+					Cancel
+					<v-tooltip
+						activator="parent"
+						location="top"
+					>
+						Cancel the current mission or command immediately.
+					</v-tooltip>
+				</v-btn>
+			</v-col>
+
+			<v-col
+				v-if="getControlstreamByRole('reboot')"
+				cols="4"
+			>
+				<v-btn
+					block
+					class="command-btn"
+					color="error"
+					variant="tonal"
+					@click="reboot"
+				>
+					<v-icon start>mdi-restart</v-icon>
+					Reboot
+					<v-tooltip
+						activator="parent"
+						location="top"
+					>
+						Restart the flight controller. Vehicle must be disarmed.
+					</v-tooltip>
+				</v-btn>
+			</v-col>
+		</v-row>
 		</div>
 
-		<!--takeoff control-->
-		<div v-if="getControlstreamByRole('takeoff')">
-			<v-divider class="mt-2 mb-4"></v-divider>
-			<v-card-title class="text-subtitle-1 pa-0 mb-3"> Takeoff Control </v-card-title>
-			<v-row dense>
-				<v-col
-					cols="12"
-					md="4"
-				>
-					<v-text-field
-						v-model.number="takeOffAlt"
-						type="number"
-						label="Takeoff Altitude"
-						density="compact"
-						hide-details
-					/>
-				</v-col>
-				<v-col
-					cols="12"
-					md="4"
-				>
-					<v-btn
-						block
-						variant="tonal"
-						color="primary"
-						@click="takeoffCommand"
-						class="command-btn"
-					>
-						<v-icon start>mdi-airplane</v-icon>
-						Take Off
-					</v-btn>
-				</v-col>
-			</v-row>
-		</div>
-
-		<!--offboard control-->
-		<div v-if="getControlstreamByRole('offboard')">
-			<v-divider class="mt-2 mb-4"></v-divider>
-			<v-card-title class="text-subtitle-1 pa-0 mb-3"> Offboard Control </v-card-title>
-			<v-form ref="offboardForm">
+		<!-- Drive mode -->
+		<div v-if="getControlstreamByRole('driveMode')" class="command-section">
+			<div class="section-header">
+				<v-icon size="small" class="mr-2">mdi-car</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">Drive Mode</span>
+				<v-tooltip activator="parent" location="top">
+					Sets the ArduRover flight mode for a ground rover or surface
+				</v-tooltip>
+			</div>
 				<v-row
-					dense
 					align="center"
+					density="comfortable"
 				>
-					<v-col
-						cols="12"
-						md="2"
-					>
-						<v-text-field
-							v-model.number="xVelocity"
-							type="number"
-							label="Vx"
-							density="compact"
-							hide-details
+					<v-col cols="8">
+						<v-select
+							v-model="selectedDriveMode"
+							:items="driveModes"
+							class="mt-2"
+							label="Drive Mode"
 						/>
 					</v-col>
-					<v-col
-						cols="12"
-						md="2"
-					>
-						<v-text-field
-							v-model.number="yVelocity"
-							type="number"
-							label="Vy"
-							density="compact"
-							hide-details
-						/>
-					</v-col>
-					<v-col
-						cols="12"
-						md="2"
-					>
-						<v-text-field
-							v-model.number="zVelocity"
-							type="number"
-							label="Vz"
-							density="compact"
-							hide-details
-						/>
-					</v-col>
-					<v-col
-						cols="12"
-						md="2"
-					>
-						<v-text-field
-							v-model.number="yawRate"
-							type="number"
-							label="Yaw"
-							density="compact"
-							hide-details
-						/>
-					</v-col>
-					<v-col
-						cols="12"
-						md="auto"
-					>
-						<v-btn
-							block
-							variant="tonal"
-							color="primary"
-							@click="offboard"
-							class="command-btn"
-						>
-							<v-icon start>mdi-controller</v-icon>
-							Offboard
-						</v-btn>
+					<v-col cols="4">
+            <SendButton
+                @send="driveMode()"
+            />
 					</v-col>
 				</v-row>
-			</v-form>
 		</div>
-	</v-sheet>
+
+		<!-- Takeoff control -->
+		<div v-if="getControlstreamByRole('takeoff')" class="command-section">
+			<div class="section-header">
+				<v-icon size="small" class="mr-2">mdi-airplane-takeoff</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">Takeoff</span>
+				<v-tooltip activator="parent" location="top">
+					Set altitude (AGL) and launch the vehicle vertically.
+				</v-tooltip>
+			</div>
+				<v-row
+					align="center"
+					density="comfortable"
+				>
+					<v-col cols="4">
+						<v-text-field
+							v-model.number="takeOffAlt"
+							density="compact"
+							hide-details
+							label="Altitude (AGL)"
+							suffix="m"
+							type="number"
+						/>
+					</v-col>
+					<v-col cols="4">
+            <SendButton
+                @send="takeoffCommand()"
+            />
+					</v-col>
+				</v-row>
+		</div>
+
+		<!-- Drive velocity control -->
+		<div v-if="getControlstreamByRole('driveVelocity')" class="command-section">
+			<div class="section-header">
+				<v-icon size="small" class="mr-2">mdi-steering</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">Drive Velocity</span>
+				<v-tooltip activator="parent" location="top">
+					Control forward speed and yaw rate for manual driving.
+				</v-tooltip>
+			</div>
+				<v-row
+					align="center"
+					density="comfortable"
+				>
+					<v-col cols="4">
+						<v-text-field
+							v-model.number="forwardVelocityDrive"
+							density="compact"
+							hide-details
+							label="Forward Velocity"
+							type="number"
+						/>
+					</v-col>
+					<v-col cols="4">
+						<v-text-field
+							v-model.number="yawRateDrive"
+							density="compact"
+							hide-details
+							label="Yaw Rate"
+							type="number"
+						/>
+					</v-col>
+					<v-col cols="4">
+            <SendButton
+                @send="driveVelocityCommand()"
+            />
+					</v-col>
+				</v-row>
+		</div>
+
+		<!-- Offboard control -->
+		<div v-if="getControlstreamByRole('offboard')" class="command-section">
+			<div class="section-header">
+				<v-icon size="small" class="mr-2">mdi-remote</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">Offboard Control</span>
+				<v-tooltip activator="parent" location="top">
+					Send direct velocity commands and yaw rate for manual flight control.
+				</v-tooltip>
+			</div>
+				<v-form ref="offboardForm">
+					<v-row
+						align="center"
+						density="comfortable"
+					>
+						<v-col cols="6">
+							<v-text-field
+								v-model.number="xVelocity"
+								density="compact"
+								hide-details
+								label="Vx"
+								type="number"
+							/>
+						</v-col>
+						<v-col cols="6">
+							<v-text-field
+								v-model.number="yVelocity"
+								density="compact"
+								hide-details
+								label="Vy"
+								type="number"
+							/>
+						</v-col>
+						<v-col cols="6">
+							<v-text-field
+								v-model.number="zVelocity"
+								density="compact"
+								hide-details
+								label="Vz"
+								type="number"
+							/>
+						</v-col>
+						<v-col cols="6">
+							<v-text-field
+								v-model.number="yawRate"
+								density="compact"
+								hide-details
+								label="Yaw"
+								type="number"
+							/>
+						</v-col>
+						<v-col cols="6">
+              <SendButton
+                  @send="offboard()"
+              />
+						</v-col>
+					</v-row>
+				</v-form>
+    </div>
+
+		<!-- Drive to location -->
+		<div v-if="getControlstreamByRole('driveLocation')" class="command-section">
+			<div class="section-header">
+				<v-icon size="small" class="mr-2">mdi-map-marker</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">Drive to Location</span>
+				<v-tooltip activator="parent" location="top">
+					Navigate the vehicle to a specific lat/lon coordinate. Use the crosshairs to pick from the map.
+				</v-tooltip>
+			</div>
+				<MapPointEditor
+					v-model="driveLocationPoint"
+					:is-selected="isDriveLocationMapSelect"
+					:is-selector-disabled="false"
+					submit-icon="mdi-send"
+					submit-label="Send"
+					hide-alt
+					@submit="driveLocationCommand"
+					@toggle="toggleDriveLocationSelect"
+				/>
+		</div>
+
 </template>
 
 <style scoped>
-.mission-control-card {
+.command-section {
+	border: 1px solid rgba(var(--v-border-color), 0.12);
+	border-radius: 8px;
+	padding: 8px 12px 12px;
+	margin-bottom: 8px;
 }
 
-.controls-wrapper {
-	background: rgba(0, 0, 0, 0.2);
-	border-radius: 12px;
-	padding: 16px;
-	border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.control-column {
+.section-header {
 	display: flex;
-	flex-direction: column;
 	align-items: center;
-}
-.command-btn {
-	text-transform: none;
-	font-weight: 500;
-	transition: all 0.2s ease;
+	margin-bottom: 6px;
+	padding-bottom: 4px;
 }
 
-.command-btn:hover {
-	transform: translateY(-1px);
-	filter: brightness(1.2);
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
 </style>

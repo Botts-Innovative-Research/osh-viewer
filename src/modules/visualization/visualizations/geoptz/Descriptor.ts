@@ -38,12 +38,14 @@ export const CustomizeComponent: VisualizationFormComponent = {
 export const GeoPtzDescriptor: VisualizationDescriptor = {
 	label: 'GeoPTZ',
 	id: 'geoPtz',
-	icon: 'mdi-map',
+	icon: 'mdi-crosshairs',
 	viewLocation: 'multi',
 	layers: ['PointMarkerLayer'],
 	description: 'Task supported sensors with LLA coordinates.',
 	formComponents: [ConfigComponent, CustomizeComponent],
 	builder: () => import('@/modules/visualization/visualizations/geoptz/Builder'),
+	supportsDs: false,
+	requireDs: false,
 	supportsCs: true, // This visualization requires a controlstream to function
 	requireCs: true, // This visualization requires a controlstream to function
 	supportedMaps: ['cesium', 'leaflet'],

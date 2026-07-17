@@ -37,11 +37,7 @@ export interface ILineOfBearingLayerProperties extends DataLayerProperties {
 	weight: number;
 	opacity: number;
 	length: number;
-	icon: string | null; // Allow null for optional icon
-	iconColor: string;
-	iconName: string;
-	iconSize: number[];
-	iconOpacity: number;
+	iconName: string; // Used for display in map visualizations list
 	label: string;
 }
 
@@ -54,5 +50,15 @@ export interface IPolylineLayerProperties extends DataLayerProperties {
 	color: any;
 	weight: number;
 	opacity: number;
+	iconName: string; // Used for display in map visualizations list
+}
+
+export interface IFrustumLayerProperties extends DataLayerProperties {
+	color: any;
+	borderColor: any;
+	opacity: number;
+	fov: number;
+	range: number;
+	aspectRatio: number;
 	iconName: string; // Used for display in map visualizations list
 }

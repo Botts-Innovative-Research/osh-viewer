@@ -40,7 +40,9 @@ export const ICON_OPTIONS: IconItem[] = [
 	// Waypoint
 	{ id: 14, label: 'Round Pin', icon: 'round-pin', category: 'waypoint' }, // Not an mdi icon
 	// FOI
-	// { id: 15, label: 'Building', icon: 'domain', category: ['foi'] },
+	{ id: 15, label: 'Building', icon: 'domain', category: 'foi' },
+	// mission builder - home location
+	{ id: 16, label: 'HomeLocation', icon: 'home-map-marker', category: 'waypoint' },
 ];
 
 /**

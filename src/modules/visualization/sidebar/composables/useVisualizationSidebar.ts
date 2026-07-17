@@ -100,6 +100,16 @@ export function useVisualizationSidebar() {
 			handleOpenMissionPanel();
 		}
 	);
+
+	watch(missionVisualizations, (current) => {
+		const selectedIds = new Set(selectedMissionControllers.value.map((v) => v.id));
+
+		const updatedSelected = current.filter((v) => selectedIds.has(v.id));
+		const newVizs = current.filter((v) => !selectedIds.has(v.id));
+
+		selectedMissionControllers.value = [...updatedSelected, ...newVizs];
+	}, { deep: true });
+
 	/* GEOPTZ HELPERS */
 	function removeGeoPTZ(controller: OSHVisualization) {
 		visualizationStore.removeVisualization(controller); // Remove from visualization store
