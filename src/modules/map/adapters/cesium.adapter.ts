@@ -32,7 +32,6 @@ export function createCesiumAdapter(): MapAdapter {
 
 	/* GeoOverlays */
 	let previewEntity: any = null;
-	let geoOverlayEntities: any[] = [];
 
 	async function init(container: string) {
 		mapView = new CesiumView({
@@ -393,128 +392,6 @@ export function createCesiumAdapter(): MapAdapter {
 		invalidate();
 	}
 
-	/* Geofence Drawing Tools */
-	// function handleCirclePreviewClick(center: MapPoint) {
-	// 	// If preview circle already exists, this is second click -> confirm geo-overlay
-	// 	if (previewCircle) {
-	// 		endCirclePreview();
-	// 		return;
-	// 	}
-	// 	// Create new preview circle geo-overlay
-	// 	previewCenter = center; // Save center of circle
-	// 	previewCenterCartesian = Cesium.Cartesian3.fromDegrees(center.lon, center.lat, center.alt);
-	// 	previewCircle = mapView.viewer.entities.add({
-	// 		position: previewCenterCartesian,
-	// 		name: 'Preview circle',
-	// 		ellipse: {
-	// 			semiMajorAxis: new Cesium.ConstantProperty(0),
-	// 			semiMinorAxis: new Cesium.ConstantProperty(0),
-	// 			height: center.alt,
-	// 			material: Cesium.Color.BLUE.withAlpha(0.3),
-	// 			outline: true, // height must be set for outline to display
-	// 		},
-	// 	});
-	// }
-	//
-	// function updateCirclePreview(mouse: MapPoint) {
-	// 	if (!previewCircle || !previewCenterCartesian) return;
-	//
-	// 	const mouseCartesian = Cesium.Cartesian3.fromDegrees(mouse.lon, mouse.lat, mouse.alt);
-	// 	const radius = Cesium.Cartesian3.distance(previewCenterCartesian, mouseCartesian);
-	//
-	// 	previewCircle.ellipse.semiMajorAxis!.setValue(radius);
-	// 	previewCircle.ellipse.semiMinorAxis!.setValue(radius);
-	// }
-	//
-	// function endCirclePreview() {
-	// 	if (!previewCircle || !previewCenter) return;
-	//
-	// 	// Add to geo-overlay list
-	// 	geofenceEntities.push(previewCircle);
-	//
-	// 	// Empty preview circle
-	// 	previewCircle = null;
-	// 	previewCenter = null;
-	// 	previewCenterCartesian = null;
-	//
-	// 	invalidate();
-	// }
-	//
-	// function drawCircleGeoOverlay(center: MapPoint, radius: number) {
-	// 	const newCircle = mapView.viewer.entities.add({
-	// 		position: Cesium.Cartesian3.fromDegrees(center.lon, center.lat),
-	// 		name: 'Preview circle',
-	// 		ellipse: {
-	// 			semiMinorAxis: radius,
-	// 			semiMajorAxis: radius,
-	// 			material: Cesium.Color.BLUE,
-	// 			height: center.alt,
-	// 			outline: true, // height must be set for outline to display
-	// 			classificationType: Cesium.ClassificationType.TERRAIN,
-	// 		},
-	// 	});
-	// 	geofenceEntities.push(newCircle);
-	// 	invalidate();
-	// }
-	//
-	// function addPolylinePointPreview(point: MapPoint) {
-	// 	previewPoints.push(point);
-	// 	if (previewLinePoints) clearPreviews();
-	//
-	// 	// Get cartesian points
-	// 	const positions = previewPoints.map((mp: MapPoint) => {
-	// 		return Cesium.Cartesian3.fromDegrees(mp.lon, mp.lat, mp.alt || 0);
-	// 	});
-	//
-	// 	previewLinePoints = mapView.viewer.entities.add({
-	// 		polyline: {
-	// 			positions: positions,
-	// 			width: 5,
-	// 			material: new Cesium.PolylineOutlineMaterialProperty({
-	// 				color: Cesium.Color.RED,
-	// 				outlineWidth: 2,
-	// 			}),
-	// 			clampToGround: true,
-	// 		},
-	// 	});
-	// 	invalidate();
-	// }
-	//
-	// function addPolygonPointPreview(point: MapPoint) {
-	// 	previewPoints.push(point);
-	// 	if (previewLinePoints) clearPreviews();
-	//
-	// 	// Get cartesian points
-	// 	const positions = previewPoints.map((mp: MapPoint) => {
-	// 		return Cesium.Cartesian3.fromDegrees(mp.lon, mp.lat, mp.alt || 0);
-	// 	});
-	//
-	// 	// If < 3 points, make polyline instead
-	// 	if (previewPoints.length < 3) {
-	// 		previewLinePoints = mapView.viewer.entities.add({
-	// 			polyline: {
-	// 				positions: positions,
-	// 				width: 5,
-	// 				material: new Cesium.PolylineOutlineMaterialProperty({
-	// 					color: Cesium.Color.RED,
-	// 					outlineWidth: 2,
-	// 				}),
-	// 				clampToGround: true,
-	// 			},
-	// 		});
-	// 	} else {
-	// 		previewLinePoints = mapView.viewer.entities.add({
-	// 			polygon: {
-	// 				hierarchy: new Cesium.PolygonHierarchy(positions),
-	// 				material: Cesium.Color.RED.withAlpha(0.3),
-	// 				outline: true,
-	// 				classificationType: Cesium.ClassificationType.TERRAIN,
-	// 			},
-	// 		});
-	// 	}
-	// 	invalidate();
-	// }
-
 	function updateCirclePreview(
 		center: MapPoint,
 		radius: number,
@@ -584,7 +461,6 @@ export function createCesiumAdapter(): MapAdapter {
 				geoOverlay.uuid
 			);
 			mapView.viewer.entities.add(newCircle);
-			geoOverlayEntities.push(newCircle);
 		}
 		// Polyline
 		if (geoOverlay.type === 'LineString') {
@@ -599,7 +475,6 @@ export function createCesiumAdapter(): MapAdapter {
 				geoOverlay.uuid
 			);
 			mapView.viewer.entities.add(newPolyline);
-			geoOverlayEntities.push(newPolyline);
 		}
 		// Polygon
 		if (geoOverlay.type === 'Polygon') {
@@ -615,15 +490,13 @@ export function createCesiumAdapter(): MapAdapter {
 				geoOverlay.uuid
 			);
 			mapView.viewer.entities.add(newPolygon);
-			geoOverlayEntities.push(newPolygon);
 		}
 		invalidate();
 	}
 
 	function removeGeoOverlay(geoOverlay: GeoOverlay) {
-		const findGeoOverlay = geoOverlayEntities.find((item: any) => item.id === geoOverlay.uuid);
+		const findGeoOverlay = mapView.viewer.entities.getById(geoOverlay.uuid);
 		if (findGeoOverlay) mapView.viewer.entities.remove(findGeoOverlay);
-		geoOverlayEntities.filter((item: any) => item.id !== geoOverlay.uuid);
 		invalidate();
 	}
 

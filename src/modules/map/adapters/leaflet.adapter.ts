@@ -10,7 +10,6 @@ export function createLeafletAdapter(): MapAdapter {
 
 	/* GeoOverlays */
 	let previewEntity: any = null;
-	let geoOverlayEntities: any[] = [];
 
 	async function init(container: string) {
 		mapView = new LeafletView({
@@ -181,7 +180,6 @@ export function createLeafletAdapter(): MapAdapter {
 			);
 			newCircle.uuid = geoOverlay.uuid;
 			newCircle.addTo(mapView.map);
-			geoOverlayEntities.push(newCircle);
 		}
 		// Polyline
 		if (geoOverlay.type === 'LineString') {
@@ -196,7 +194,6 @@ export function createLeafletAdapter(): MapAdapter {
 			);
 			newPolyline.uuid = geoOverlay.uuid;
 			newPolyline.addTo(mapView.map);
-			geoOverlayEntities.push(newPolyline);
 		}
 		// Polygon
 		if (geoOverlay.type === 'Polygon') {
@@ -212,16 +209,18 @@ export function createLeafletAdapter(): MapAdapter {
 			);
 			newPolygon.uuid = geoOverlay.uuid;
 			newPolygon.addTo(mapView.map);
-			geoOverlayEntities.push(newPolygon);
 		}
 	}
 
 	function removeGeoOverlay(geoOverlay: GeoOverlay) {
-		const findGeoOverlay = geoOverlayEntities.find(
-			(item: any) => item.uuid === geoOverlay.uuid
-		);
+		let findGeoOverlay = null;
+		mapView.map.eachLayer(function (layer: any) {
+			if (layer.uuid === geoOverlay.uuid) {
+				findGeoOverlay = layer;
+			}
+		});
+
 		if (findGeoOverlay) mapView.map.removeLayer(findGeoOverlay);
-		geoOverlayEntities.filter((item: any) => item.uuid !== geoOverlay.uuid);
 	}
 
 	return {

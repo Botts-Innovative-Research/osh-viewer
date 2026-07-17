@@ -75,6 +75,8 @@ export function useMap() {
 	const waypointLayers = ref<(typeof PointMarkerLayer)[]>([]);
 	// FOI Layers
 	const foiLayers = ref<{ layer: typeof PointMarkerLayer; props: any }[]>([]);
+	// GeoOverlay Layers
+	const geoOverlayLayers = ref<GeoOverlay[]>([]);
 	// Hidden visualization IDs
 	const hiddenLayers = ref<Map<string, SupportedMapLayer>>(new Map());
 
@@ -132,11 +134,16 @@ export function useMap() {
 		connectDatasources();
 
 		// Rebuild all FOIs
-		foiLayers.value.forEach(async (foi) => {
+		for (const foi of foiLayers.value) {
 			foi.props = await setLayerData(foi.layer);
 			mapAdapter.value?.addLayer(foi.layer);
 			mapAdapter.value?.updateMarker(foi.props);
-		});
+		}
+
+		// Rebuild GeoOverlays
+		for (const geoOverlay of geoOverlayLayers.value) {
+			mapAdapter.value?.addGeoOverlay(geoOverlay);
+		}
 
 		// Rebuild all waypoints
 		waypointLayers.value = [];
@@ -452,12 +459,16 @@ export function useMap() {
 			if (removed.length) {
 				removed.map((removedOverlay: GeoOverlay) => {
 					mapAdapter.value?.removeGeoOverlay(removedOverlay);
+					geoOverlayLayers.value = geoOverlayLayers.value.filter(
+						(layer: GeoOverlay) => layer.uuid !== removedOverlay.uuid
+					);
 				});
 			}
 			// Add new geo overlays
 			if (added.length) {
 				added.map((newOverlay: GeoOverlay) => {
 					mapAdapter.value?.addGeoOverlay(newOverlay);
+					geoOverlayLayers.value.push(newOverlay);
 				});
 			}
 		},
