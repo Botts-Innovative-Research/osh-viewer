@@ -295,6 +295,12 @@ export function createCesiumAdapter(): MapAdapter {
 		// two coplanar surfaces z-fight — the shimmer/splotchy effect from #365.
 		// Hide the globe while photoreal is on; selections underneath are kept.
 		viewer.scene.globe.show = false;
+		// The base layer picker only changes imagery/terrain on the now-hidden
+		// globe, so it's inert while photoreal is on — hide it to avoid the
+		// "clicking does nothing" confusion. Selections are preserved underneath.
+		if (viewer.baseLayerPicker?.container) {
+			viewer.baseLayerPicker.container.style.display = 'none';
+		}
 	}
 
 	function removeGooglePhotorealistic() {
@@ -303,6 +309,10 @@ export function createCesiumAdapter(): MapAdapter {
 			googlePhotorealistic = null;
 			// Restore the globe (and its preserved terrain/imagery selections).
 			mapView.viewer.scene.globe.show = true;
+			// Bring back the base layer picker hidden while photoreal was on.
+			if (mapView.viewer.baseLayerPicker?.container) {
+				mapView.viewer.baseLayerPicker.container.style.display = '';
+			}
 		}
 	}
 
