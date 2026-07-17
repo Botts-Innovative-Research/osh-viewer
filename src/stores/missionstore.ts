@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { Ref, ref } from 'vue';
+import {reactive, Ref, ref} from 'vue';
 import type { SavedMission } from '@/modules/visualization/visualizations/mission/types';
 import { MapPoint } from '@/modules/map/types';
 
@@ -7,13 +7,21 @@ export const useMissionStore = defineStore(
 	'mission',
 	() => {
 		// Waypoint planning
-		const missionWaypoints: Ref<MapPoint[]> = ref([]); // List of waypoints for mission planner
-		function setMissionWaypoints(waypoints: MapPoint[]) {
-			missionWaypoints.value = waypoints;
+        const missionWaypoints: Ref<MapPoint[]> = ref([])
+        const missionWaypointsPerSystem = reactive(new Map<string, MapPoint[]>());
+
+		function setMissionWaypoints(waypoints: MapPoint[], systemId: string) {
+			missionWaypointsPerSystem.set(systemId, waypoints);
+            missionWaypoints.value = [...missionWaypointsPerSystem.values()].flat();
 		}
 		function clearMissionWaypoints() {
-			missionWaypoints.value = [];
+            missionWaypointsPerSystem.clear()
+            missionWaypoints.value = [];
 		}
+        function clearSystemWaypoints(systemId: string) {
+           missionWaypointsPerSystem.delete(systemId); //remove systemIds waypoints
+           missionWaypoints.value = [...missionWaypointsPerSystem.values()].flat() //update missionwaypoints
+        }
 
 		// Full mission
 		const savedMissions = ref<SavedMission[]>([]);
@@ -34,8 +42,10 @@ export const useMissionStore = defineStore(
 
 		return {
 			missionWaypoints,
+			missionWaypointsPerSystem,
 			setMissionWaypoints,
 			clearMissionWaypoints,
+			clearSystemWaypoints,
 			savedMissions,
 			saveMission,
 			deleteMission,

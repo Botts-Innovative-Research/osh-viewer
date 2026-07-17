@@ -132,26 +132,16 @@ export function useMap() {
 		await rebuildFoiLayers(); // Rebuild all FOIs
 		rebuildGeoOverlayLayers(); // Rebuild GeoOverlays
 
-		// Rebuild all waypoints
+		// Rebuild all waypoints per system
 		waypointLayers.value = [];
-		await Promise.all(
-			missionStore.missionWaypoints.map(async (waypoint: MapPoint, index: number) => {
-				await addWaypointLayer(waypoint, index);
-			})
-		);
-		drawMissionPath(missionStore.missionWaypoints);
-
-        // 	waypointLayers.value = [];
-        // 		let idx = 0;
-        // 		for (const [, systemWaypoints] of mapStore.missionWaypointsBySystem) {
-        // 			for (const waypoint of systemWaypoints) {
-        // 				await addWaypointLayer(waypoint, idx);
-        //                 idx++;
-        // 			}
-        // 			if (systemWaypoints.length >= 2) {
-        // 				mapAdapter.value?.drawMissionPath(systemWaypoints);
-        // 			}
-        // 		}
+		let idx = 0;
+		for (const [, systemWaypoints] of missionStore.missionWaypointsPerSystem) {
+			for (const waypoint of systemWaypoints) {
+				await addWaypointLayer(waypoint, idx);
+				idx++;
+			}
+			drawMissionPath(systemWaypoints);
+		}
 		if (driveLocationLayer.value && mapStore.currentLLA) {
 			const loc = driveLocationLayer.value.properties.location;
 			driveLocationLayer.value = null;
@@ -680,7 +670,7 @@ export function useMap() {
 			clearMission();
 
 			let idx = 0;
-			for (const [, systemWaypoints] of mapStore.missionWaypointsBySystem) {
+			for (const [, systemWaypoints] of missionStore.missionWaypointsPerSystem) {
 				// Add waypoints
 				for (const waypoint of systemWaypoints) {
 					await addWaypointLayer(waypoint, idx);

@@ -18,7 +18,6 @@ import ExportMissionDialog from './ExportMissionDialog.vue';
 import type { MissionSettings, SavedMission, Waypoint } from './types';
 import type { IConSysApiControlStreamProperties } from '../../types/datasource';
 import DeleteButton from "@/components/ui/DeleteButton.vue";
-import type { MissionSettings, SavedMission, Waypoint } from './types';
 import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 
 
@@ -26,6 +25,7 @@ import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 const props = defineProps<{
 	noController: boolean;
 	homeLocation: { lat: number; lon: number; alt: number };
+	isActive: boolean;
 	missionControlStream?: IConSysApiControlStreamProperties;
 	vehicleType: string;
 	systemId: string;
@@ -36,6 +36,7 @@ const emit = defineEmits<{
 }>();
 
 const mapStore = useMapStore();
+const mapInteractionStore = useMapInteractionStore();
 const missionStore = useMissionStore();
 
 const missionSource = ref<'waypoints' | 'file' | 'saved'>('waypoints');
@@ -93,7 +94,7 @@ watch(
 watch(
 	() => mapStore.currentLLA,
 	(newVal) => {
-		if (isSelected.value && newVal) {
+		if (isSelected.value && props.isActive && newVal) {
 			missionSource.value = 'waypoints';
 			waypointBuilderRef.value?.setLatLonAlt(
 				newVal.latitude,
@@ -106,7 +107,7 @@ watch(
 
 watch(
 	waypoints,
-	() => {
+	(newWaypoints) => {
 		missionStore.setMissionWaypoints(
 			newWaypoints.map((wp) => ({
 				lat: wp.lat,
@@ -160,13 +161,11 @@ function confirmSendMission() {
 
 function clearWaypoints() {
 	waypoints.value = [];
-  mapStore.clearSystemWaypoints(props.systemId);
-	missionStore.clearMissionWaypoints();
+	missionStore.clearSystemWaypoints(props.systemId);
 }
 
 function onClearWaypoints() {
-  mapStore.clearSystemWaypoints(props.systemId);
-	missionStore.clearMissionWaypoints();
+	missionStore.clearSystemWaypoints(props.systemId);
 }
 
 function getCurrentSettings(): MissionSettings {

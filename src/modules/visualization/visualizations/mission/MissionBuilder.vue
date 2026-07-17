@@ -387,6 +387,7 @@ const hasCommandPad = computed(
 						<PlanMission
 							:ref="(el: any) => setPlanMissionRef(viz.id, el)"
 							:home-location="systemStates.get(viz.id)?.homeLocation ?? { lat: 0, lon: 0, alt: 0 }"
+							:is-active="viz.id === activeSystemId"
 							:mission-control-stream="getControlstreamByRole('roverPlan', viz) ?? getControlstreamByRole('plan', viz)"
 							:no-controller="false"
 							:system-id="viz.id"
