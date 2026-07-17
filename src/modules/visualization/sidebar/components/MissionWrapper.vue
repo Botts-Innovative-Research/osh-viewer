@@ -20,7 +20,7 @@ const emit = defineEmits<{
 		@update:model-value="emit('update:selectedMissionControllers', $event)"
 		v-bind:items="missionVisualizations"
 		item-title="name"
-		:item-value="(item: OSHVisualization) => item"
+		return-object
 		multiple
 		chips
 		hide-details

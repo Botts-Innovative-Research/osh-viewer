@@ -4,6 +4,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
+import PanelVisualizationWrapper from '../../sidebar/components/PanelVisualizationWrapper.vue';
 import PlanMission from './PlanMission.vue';
 import {
 	createDatasource,
@@ -13,6 +14,7 @@ import {
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
 import { VisualizationComponents } from '../../types/visualization';
+import { IConSysApiDataSourceProperties } from '@/modules/visualization/types/datasource';
 
 interface Controlstream {
 	id: string;
@@ -65,12 +67,18 @@ const missionControlStream = computed<Controlstream | undefined>(
 const noController = computed(() => props.visualizations.length === 0);
 
 const activeTab = ref<'plan' | 'control'>('plan');
+const minimapViewActive = ref(false);
 
 interface LLAData {
 	lat: number;
 	lon: number;
 	alt: number;
 }
+
+const minimapViz = computed(() =>
+	activeVisualization.value?.children?.find((c: OSHVisualization) => c.type === 'minimap') ?? null
+);
+
 
 const receivedLLA = ref<LLAData>({ lat: 0, lon: 0, alt: 0 });
 const mapStore = useMapStore();
@@ -81,31 +89,31 @@ let dsInstances = ref<(typeof ConSysApi)[]>([]);
 
 let homeLocation = ref<{ lat: number; lon: number; alt: number }>({ lat: 0, lon: 0, alt: 0 });
 
-function onLLAListener(dsInstance: ConSysApi) {
+function onLLAListener(dsInstance: typeof ConSysApi, ds: IConSysApiDataSourceProperties) {
 	const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
 
 	dataBroadcastChannel.onmessage = (message) => {
 		if (message.data.type === 'data') {
 			const data = message.data.values[0].data;
 			receivedLLA.value = {
-				lat: data.Location.lat ?? 0,
-				lon: data.Location.lon ?? 0,
-				alt: data.Location.alt ?? 0,
+				lat: data[ds.properties.lla.property].lat ?? 0,
+				lon: data[ds.properties.lla.property].lon ?? 0,
+				alt: data[ds.properties.lla.property].alt ?? 0,
 			};
 		}
 	};
 }
 
-function onHomeLocationListener(dsInstance: ConSysApi) {
+function onHomeLocationListener(dsInstance: typeof ConSysApi, ds: IConSysApiDataSourceProperties) {
 	const dataBroadcastChannel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
 
 	dataBroadcastChannel.onmessage = (message) => {
 		if (message.data.type === 'data') {
 			const data = message.data.values[0].data;
 			homeLocation.value = {
-				lat: data.Home.lat ?? 0,
-				lon: data.Home.lon ?? 0,
-				alt: data.Home.alt ?? 0,
+				lat: data[ds.properties.home.property].lat ?? 0,
+				lon: data[ds.properties.home.property].lon ?? 0,
+				alt: data[ds.properties.home.property].alt ?? 0,
 			};
 		}
 	};
@@ -128,15 +136,18 @@ async function connectDatasources() {
 		if (ds?.properties?.home) {
 			droneHomeDatasource.value = dsInstance;
 			let homeLLAResults = await getLatestObservation(ds);
-			homeLocation.value = {
-				lat: homeLLAResults.result.Home.lat,
-				lon: homeLLAResults.result.Home.lon,
-				alt: homeLLAResults.result.Home.alt,
-			};
-			onHomeLocationListener(dsInstance);
+			const homeData = homeLLAResults.result;
+			if (homeData) {
+				homeLocation.value = {
+					lat: homeData[ds.properties.home.property].lat,
+					lon: homeData[ds.properties.home.property].lon,
+					alt: homeData[ds.properties.home.property].alt,
+				};
+			}
+			onHomeLocationListener(dsInstance, ds);
 		} else if (ds?.properties?.lla) {
 			droneDatasourceLLA.value = dsInstance;
-			onLLAListener(dsInstance);
+			onLLAListener(dsInstance, ds);
 		}
 
 		dsInstances.value.push(dsInstance);
@@ -191,36 +202,58 @@ const hasCommandPad = computed(
 		</v-row>
 		<v-divider v-if="!noController"></v-divider>
 
-		<v-card
-			v-if="!noController"
-			class="telemetry-card"
-		>
-			<v-card-text>Live Telemetry</v-card-text>
-			<v-row density="comfortable">
-				<v-col
-					cols="12"
-					md="4"
-				>
-					<v-card-subtitle>Latitude</v-card-subtitle>
-					<v-card-title>{{ receivedLLA.lat.toFixed(6) }}</v-card-title>
-				</v-col>
-				<v-col
-					cols="12"
-					md="4"
-				>
-					<v-card-subtitle>Longitude</v-card-subtitle>
-					<v-card-title>{{ receivedLLA.lon.toFixed(6) }}</v-card-title>
-				</v-col>
-				<v-col
-					v-if="!isRover"
-					cols="12"
-					md="4"
-				>
-					<v-card-subtitle>Altitude</v-card-subtitle>
-					<v-card-title>{{ receivedLLA.alt.toFixed(2) }}</v-card-title>
-				</v-col>
-			</v-row>
-		</v-card>
+		<v-sheet 	v-if="!noController">
+			<v-card v-if="minimapViewActive && minimapViz" class="minimap-card">
+				<div class="d-flex align-center justify-space-between px-2 pt-1">
+					<span class="text-caption font-weight-medium">Mini Map</span>
+				</div>
+				<PanelVisualizationWrapper :viz="minimapViz" />
+			</v-card>
+			<v-card
+				class="telemetry-card"
+			>
+				<div class="d-flex align-center justify-space-between px-4 pt-2">
+
+					<v-card-text class="pa-0">Live Telemetry</v-card-text>
+					<v-btn
+						:color="minimapViewActive ? 'primary' : 'grey'"
+						variant="text"
+						density="compact"
+						@click="minimapViewActive = !minimapViewActive"
+						:prepend-icon="minimapViewActive ? 'mdi-eye' : 'mdi-eye-outline'"
+					>
+						Mini Map
+						<v-tooltip activator="parent" location="top">
+							{{ minimapViewActive ? 'Hide mini map' : 'Show mini map' }}
+						</v-tooltip>
+					</v-btn>
+				</div>
+				<v-row density="comfortable">
+					<v-col
+						cols="12"
+						md="4"
+					>
+						<v-card-subtitle>Latitude</v-card-subtitle>
+						<v-card-title>{{ receivedLLA.lat.toFixed(6) }}</v-card-title>
+					</v-col>
+					<v-col
+						cols="12"
+						md="4"
+					>
+						<v-card-subtitle>Longitude</v-card-subtitle>
+						<v-card-title>{{ receivedLLA.lon.toFixed(6) }}</v-card-title>
+					</v-col>
+					<v-col
+						v-if="!isRover"
+						cols="12"
+						md="4"
+					>
+						<v-card-subtitle>Altitude</v-card-subtitle>
+						<v-card-title>{{ receivedLLA.alt.toFixed(2) }}</v-card-title>
+					</v-col>
+				</v-row>
+			</v-card>
+		</v-sheet>
 
 		<v-sheet
 			v-if="!noController"
@@ -260,4 +293,9 @@ const hasCommandPad = computed(
 	</v-container>
 </template>
 
-<style scoped></style>
+<style scoped>
+.minimap-card {
+	height: 425px;
+	overflow: hidden;
+}
+</style>
