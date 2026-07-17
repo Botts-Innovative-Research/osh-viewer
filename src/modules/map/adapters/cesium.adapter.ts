@@ -120,6 +120,7 @@ export function createCesiumAdapter(): MapAdapter {
 	}
 
 	function drawMissionPath(waypoints: MapPoint[]) {
+		clearMissionPath();
 		const positions = waypoints.map((wp: MapPoint) => {
 			return Cesium.Cartesian3.fromDegrees(wp.lon, wp.lat, wp.alt || 0);
 		});

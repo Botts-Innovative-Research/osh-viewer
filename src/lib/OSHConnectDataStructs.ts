@@ -401,7 +401,7 @@ export class OSHVisualization {
 	type: string;
 	viewLocation: ViewLocation; // Defines where the visualization is displayed (e.g., 'panel', 'map', 'multi')
 	parentId?: string; // Optional parent ID for child visualizations
-	datastream: OSHDatastream[] | null; // TODO: null handles "All PMS"
+	datastream?: OSHDatastream[] | null; // TODO: null handles "All PMS"
 	controlstream?: OSHControlStream[]; // Optional control stream
 	visualizationComponents!: VisualizationComponents | VisualizationComponents[];
 	wizardConfig!: WizardConfig | null; // Store state of wizard for editing visualization. Null for child visualizations
@@ -412,7 +412,7 @@ export class OSHVisualization {
 		name: string,
 		type: string,
 		viewLocation: ViewLocation,
-		datastream: OSHDatastream[] | null,
+		datastream?: OSHDatastream[] | null,
 		controlstream?: OSHControlStream[],
 		parentId?: string | undefined
 	) {

@@ -4,6 +4,7 @@ import {
 	VisualizationDescriptor,
 	VisualizationFormComponent,
 } from '../../registry/types';
+import { MiniMapConfigRoles } from '@/modules/visualization/visualizations/minimap/Descriptor';
 
 export const MissionConfigRoles: VisualizationConfigRole[] = [
 	{
@@ -12,7 +13,7 @@ export const MissionConfigRoles: VisualizationConfigRole[] = [
 		description: 'Select the data stream for the vehicle\'s live position.',
 		type: 'ds',
 		required: true,
-		showPropertySelector: false,
+		showPropertySelector: true,
 	},
 	{
 		role: 'home',
@@ -20,14 +21,20 @@ export const MissionConfigRoles: VisualizationConfigRole[] = [
 		description: 'Select the data stream with the home/launch position used as the reference point for the mission.',
 		type: 'ds',
 		required: true,
-		showPropertySelector: false,
+		showPropertySelector: true,
 	},
 	{
 		role: 'plan',
-		label: 'Mission Control Plan',
-		description: 'Select the control stream used to upload and run the mission on the vehicle.',
+		label: 'UAV Mission Plan',
+		description: 'Select the control stream used to upload and run a UAV (aerial) mission. Includes takeoff, landing, and altitude.',
 		type: 'cs',
-		required: true,
+		showPropertySelector: false,
+	},
+	{
+		role: 'roverPlan',
+		label: 'Rover Mission Plan',
+		description: 'Select the control stream used to upload and run a rover (ground vehicle) mission. Ground-based waypoints without takeoff/landing.',
+		type: 'cs',
 		showPropertySelector: false,
 	},
 	{
@@ -65,6 +72,55 @@ export const MissionConfigRoles: VisualizationConfigRole[] = [
 		type: 'cs',
 		showPropertySelector: false,
 	},
+	{
+		role: 'arm',
+		label: 'Arming Control',
+		description: 'Select the control stream used to send',
+		type: 'cs',
+		showPropertySelector: false,
+	},
+	{
+		role: 'driveVelocity',
+		label: 'Drive Velocity Control',
+		description: 'Select the control stream used to send ',
+		type: 'cs',
+		showPropertySelector: false,
+	},
+	{
+		role: 'driveLocation',
+		label: 'Drive to Location Control',
+		description: 'Select the control stream used to send  ',
+		type: 'cs',
+		showPropertySelector: false,
+	},
+	{
+		role: 'reboot',
+		label: 'Reboot Control',
+		description: 'Select the control stream used to send  ',
+		type: 'cs',
+		showPropertySelector: false,
+	},
+	{
+		role: 'hold',
+		label: 'Hold Control',
+		description: 'Select the control stream used to send  ',
+		type: 'cs',
+		showPropertySelector: false,
+	},
+	{
+		role: 'homePos',
+		label: 'Home Position Control',
+		description: 'Select the control stream used to send  ',
+		type: 'cs',
+		showPropertySelector: false,
+	},
+	{
+		role: 'driveMode',
+		label: 'Drive Mode Control',
+		description: 'Select the control stream used to send  ',
+		type: 'cs',
+		showPropertySelector: false,
+	},
 	// {
 	//     role: 'cancel',
 	//     label: 'Cancel Mission',
@@ -77,11 +133,21 @@ export const MissionConfigRoles: VisualizationConfigRole[] = [
 export const ConfigComponent: VisualizationFormComponent = {
 	id: 'mission-config',
 	label: 'Configure Mission Builder Properties',
-	short: 'Configure',
+	short: 'Mission',
 	component: defineAsyncComponent(
 		() => import('@/modules/visualization/visualizations/mission/Config.vue')
 	),
 	roles: MissionConfigRoles,
+};
+
+export const ConfigComponentMiniMap: VisualizationFormComponent = {
+	id: 'mission-config-minimap',
+	label: 'Configure Mission Builder Properties: Mini Map',
+	short: 'MiniMap',
+	component: defineAsyncComponent(
+		() => import('@/modules/visualization/visualizations/minimap/Config.vue')
+	),
+	roles: MiniMapConfigRoles
 };
 
 export const CustomizeComponent: VisualizationFormComponent = {
@@ -99,8 +165,12 @@ export const MissionDescriptor: VisualizationDescriptor = {
 	icon: 'mdi-airplane-plus',
 	viewLocation: 'multi',
 	layers: ['PointMarkerLayer', 'PolylineLayer'],
-	description: 'Create and manage missions for a drone.',
-	formComponents: [ConfigComponent, CustomizeComponent],
+	description: 'Create and manage missions for UAVs and ground vehicles.',
+	formComponents: [
+		ConfigComponent,
+		ConfigComponentMiniMap,
+		CustomizeComponent
+	],
 	builder: () => import('@/modules/visualization/visualizations/mission/Builder'),
 	supportsCs: true, // This visualization requires a controlstream to function
 	requireCs: true, // This visualization requires a controlstream to function
