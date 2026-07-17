@@ -3,9 +3,12 @@ import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 //@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
+// @ts-ignore
+import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { MissionDescriptor } from './Descriptor';
+import { MiniMapDescriptor } from '../minimap/Descriptor';
 import {
 	AggregateControlstreams,
 	AggregateDatastreams,
@@ -18,6 +21,7 @@ import {
 	IConSysApiControlStreamProperties,
 	IConSysApiDataSourceProperties,
 } from '../../types/datasource';
+import { CreateMiniMapVizProps } from '../minimap/Builder';
 
 export default function build() {
 	console.log('Building Mission Visualization...');
@@ -29,11 +33,27 @@ export default function build() {
 
 	const missionResult = CreateMissionVizProps(datastreams, controlstreams);
 
-	const visualizationComponents: VisualizationComponents = {
+	const missionVisualizationComponents: VisualizationComponents = {
 		dataSource: missionResult.vizDatasources,
 		dataLayer: [],
 		controlstream: missionResult.vizControlstreams,
 	};
+
+	const minimapResult = CreateMiniMapVizProps(datastreams);
+	const minimapVisualizationComponents: VisualizationComponents = {
+		dataSource: minimapResult.vizDatasources,
+		dataLayer: [],
+		controlstream: [],
+	};
+	const minimapViz: OSHVisualization = new OSHVisualization(
+		`${vizwizStore.id}-${randomUUID()}`,
+		`${vizwizStore.visualizationCustomizationOptions.name} - Mini Map`,
+		'minimap',
+		MiniMapDescriptor.viewLocation,
+		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
+		[]
+	);
+	minimapViz.setVisualizationComponents(minimapVisualizationComponents);
 
 	const newViz: OSHVisualization = new OSHVisualization(
 		vizwizStore.id,
@@ -43,8 +63,9 @@ export default function build() {
 		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
 		getUsedControlstreams(vizwizStore.controlstreams, vizwizStore.csConfig)
 	);
-	newViz.setVisualizationComponents(visualizationComponents);
-	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization
+	newViz.setVisualizationComponents(missionVisualizationComponents);
+	newViz.setWizardConfig(vizwizStore.getWizardConfig());
+	newViz.addChildVisualization([minimapViz]);
 	visualizationStore.addVisualization(newViz);
 	console.log('Created Mission Visualization:', newViz);
 }
