@@ -17,6 +17,7 @@ export interface MissionSettings {
 export interface SavedMission {
 	id: string;
 	name: string;
+	desc: string;
 	waypoints: Waypoint[];
 	settings: MissionSettings;
 	createdAt: string;
