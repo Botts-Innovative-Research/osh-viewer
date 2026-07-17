@@ -347,7 +347,7 @@ const hasCommandPad = computed(
           variant="text"
           density="compact"
           @click="minimapViewActive = !minimapViewActive"
-          :prepend-icon="minimapViewActive ? 'mdi-eye' : 'mdi-eye-outline'"
+          :prepend-icon="minimapViewActive ? 'mdi-eye' : 'mdi-eye-off'"
         >
           Mini Map
           <v-tooltip activator="parent" location="top">
