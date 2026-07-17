@@ -412,7 +412,7 @@ export function createFrustumLayer(
 
 	// Undefined initially
 	let getOrigin: any;
-	let getPlatformOrientation: any;
+	// let getPlatformOrientation: any;
 	let getSensorOrientation: any;
 
 	for (const dsProps of dsArray) {
@@ -436,18 +436,18 @@ export function createFrustumLayer(
 			};
 		}
 		// Check for orientation property
-		if (dsProps.properties.platformOrientation) {
-			getPlatformOrientation = {
-				dataSourceIds: [dsInstance.id],
-				handler: (rec: any) => {
-					return {
-						heading: rec[dsProps.properties.platformOrientation.property].heading,
-						pitch: rec[dsProps.properties.platformOrientation.property].pitch,
-						roll: rec[dsProps.properties.platformOrientation.property].roll,
-					};
-				},
-			};
-		}
+		// if (dsProps.properties.platformOrientation) {
+		// 	getPlatformOrientation = {
+		// 		dataSourceIds: [dsInstance.id],
+		// 		handler: (rec: any) => {
+		// 			return {
+		// 				heading: rec[dsProps.properties.platformOrientation.property].heading,
+		// 				pitch: rec[dsProps.properties.platformOrientation.property].pitch,
+		// 				roll: rec[dsProps.properties.platformOrientation.property].roll,
+		// 			};
+		// 		},
+		// 	};
+		// }
 		if (dsProps.properties.sensorOrientation) {
 			getSensorOrientation = {
 				dataSourceIds: [dsInstance.id],
@@ -471,7 +471,7 @@ export function createFrustumLayer(
 		id: viz.id,
 		dataSourceIds: dsInstances.map((ds) => ds.id),
 		...(getOrigin ? { getOrigin } : {}),
-		...(getPlatformOrientation ? { getPlatformOrientation } : {}),
+		// ...(getPlatformOrientation ? { getPlatformOrientation } : {}),
 		...(getSensorOrientation
 			? { getSensorOrientation }
 			: {
@@ -530,18 +530,23 @@ export async function createGeoPTZLayer(
 
 	return { layer: geoPtzLayer, props };
 }
-export async function createLocationLayer(location: {
-	lat: number;
-	lon: number;
-	alt: number;
-}, name: string, label: string): Promise<{ layer: typeof PointMarkerLayer; props: any }> {
+export async function createLocationLayer(
+	location: {
+		lat: number;
+		lon: number;
+		alt: number;
+	},
+	name: string,
+	label: string
+): Promise<{ layer: typeof PointMarkerLayer; props: any }> {
 	const vizId = `location-${randomUUID()}`;
 	let icon;
-	if (name.endsWith("homeLocation")) {
-		icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/home-map-marker.png`, '#FFFB00');
-	} else
-		icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, '#00BFFF');
-
+	if (name.endsWith('homeLocation')) {
+		icon = await getColoredIconUrl(
+			`${ICON_BASE}/icons/waypoint/home-map-marker.png`,
+			'#FFFB00'
+		);
+	} else icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, '#00BFFF');
 
 	const locationLayer = new PointMarkerLayer({
 		id: vizId,
@@ -576,7 +581,6 @@ export async function createWaypointLayer(
 	layer: typeof PointMarkerLayer;
 	props: any;
 }> {
-
 	const icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, 'green');
 
 	const waypointLayer = new PointMarkerLayer({
