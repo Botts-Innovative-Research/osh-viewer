@@ -14,9 +14,11 @@ import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
 import { VisualizationComponents } from '../../types/visualization';
 import { useMapStore } from '@/stores/mapstore';
+import { useMissionStore } from '@/stores/missionstore';
 import {SystemState} from "@/modules/visualization/visualizations/mission/types";
 
 const mapStore = useMapStore();
+const missionStore = useMissionStore();
 
 const props = defineProps<{
 	visualizations: OSHVisualization[];
@@ -242,8 +244,7 @@ onBeforeUnmount(() => {
 	for (const vizId of [...systemStates.keys()]) {
 		cleanupSystemDatasources(vizId);
 	}
-	mapStore.clearMissionWaypoints();
-	mapStore.triggerClearWaypointMarkers();
+	missionStore.clearMissionWaypoints();
 });
 const hasCommandPad = computed(
 	() =>

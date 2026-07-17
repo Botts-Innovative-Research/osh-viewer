@@ -34,10 +34,6 @@ function toggleDriveLocationSelect() {
 	mapInteractionStore.toggleTool('driveLocation');
 }
 
-function toggleHomeLocationSelect() {
-	mapInteractionStore.toggleTool('homeLocation');
-}
-
 const xVelocity = ref(0.0);
 const yVelocity = ref(0.0);
 const zVelocity = ref(0.0);

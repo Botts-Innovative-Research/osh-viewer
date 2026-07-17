@@ -7,6 +7,7 @@ import type {Waypoint} from './types';
 import LocationPicker from "@/components/ui/LocationPicker.vue";
 import DeleteButton from "@/components/ui/DeleteButton.vue";
 import {useMapStore} from "@/stores/mapstore";
+import {useMapInteractionStore} from "@/stores/mapinteractionstore";
 
 const props = defineProps<{
   noController: boolean;
@@ -62,21 +63,21 @@ function setLatLonAlt(lat: number, lon: number, alt: number) {
 }
 
 const mapStore = useMapStore();
+const mapInteractionStore = useMapInteractionStore();
 
-const isHomeLocationMapSelect = computed(() => mapStore.isHomeLocationSelected);
+const isHomeLocationMapSelect = computed(() => mapInteractionStore.isHomeLocationSelected);
 
 watch(
     () => mapStore.currentLLA,
     (newVal) => {
       if (isHomeLocationMapSelect.value && newVal) {
         emit('setHome', { lat: newVal.latitude, lon: newVal.longitude });
-        mapStore.setIsHomeLocationSelected(false);
       }
     }
 );
 
 function toggleHomeLocationSelect() {
-  mapStore.setIsHomeLocationSelected(!mapStore.isHomeLocationSelected);
+  mapInteractionStore.toggleTool('homeLocation');
 }
 
 defineExpose({ setLatLonAlt });
