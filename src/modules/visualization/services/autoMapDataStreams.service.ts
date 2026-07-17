@@ -9,6 +9,7 @@ const dsRoleKeywords: Record<string, string[]> = {
 	orientation: ['orientation', 'attitude', 'heading', 'euler'],
 	// mission
 	home: ['home', 'home position', 'home location', 'launch position'],
+	status: ['status', 'statusevent', 'status event'],
 	// vid
 	video: ['video', 'camera', 'image', 'stream'],
 	// chart
