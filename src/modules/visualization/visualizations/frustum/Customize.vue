@@ -8,6 +8,7 @@ import SliderValueControl from '../../wizard/customizations/SliderValueControl.v
 import NumberControl from '../../wizard/customizations/NumberControl.vue';
 import IDColorControl from '@/modules/visualization/wizard/customizations/IDColorControl.vue';
 import { useVizWizStore } from '@/stores/vizwizstore';
+import AspectRatioControl from '@/modules/visualization/wizard/customizations/AspectRatioControl.vue';
 
 const openPanels = ref<string[]>(['general', 'frustum', 'appearance']);
 // Set default border color to #FFFFFF
@@ -92,6 +93,7 @@ useComponentValidation(valid, emit);
 					units="deg"
 					v-model:valid="fovValid"
 				></NumberControl>
+				<AspectRatioControl />
 			</v-expansion-panel-text>
 		</v-expansion-panel>
 		<v-expansion-panel

@@ -49,4 +49,5 @@ export interface IFrustumCustomizationOptions extends CustomizationOptions {
 	opacity: number;
 	fov: number;
 	range: number;
+	aspectRatio: number;
 }
