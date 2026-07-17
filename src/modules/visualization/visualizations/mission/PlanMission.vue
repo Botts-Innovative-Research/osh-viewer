@@ -179,7 +179,7 @@ function getCurrentSettings(): MissionSettings {
 	};
 }
 
-function saveCurrentMission(name: string) {
+function saveCurrentMission(name: string, desc: string) {
 	if (waypoints.value.length === 0) {
 		showToast('No waypoints to save', 'ERROR');
 		return;
@@ -188,6 +188,7 @@ function saveCurrentMission(name: string) {
 	const mission: SavedMission = {
 		id: randomUUID(),
 		name,
+    desc,
 		waypoints: waypoints.value.map((wp) => ({ ...wp })),
 		settings: getCurrentSettings(),
 		createdAt: new Date().toISOString(),
@@ -522,7 +523,7 @@ function generateMissionControlPlan() {
 	};
 }
 
-defineExpose({ sendMission, waypoints });
+defineExpose({ sendMission, waypoints, cruiseSpeed, waypointAltitude, totalDistance, estimatedTime });
 onBeforeUnmount(() => {
 	mapInteractionStore.deselectTool('missionWaypoint');
 	clearWaypoints();
@@ -746,15 +747,17 @@ onBeforeUnmount(() => {
 
 	<MissionSummaryDialog
 		v-model="showMissionSummary"
-		:mission-source="missionSource"
-		:waypoint-count="waypoints.length"
-		:cruise-speed="cruiseSpeed"
-		:vehicle-type="props.vehicleType"
-		:waypoint-altitude="waypointAltitude"
-		:is-rover="isRover"
-		:total-distance="totalDistance"
-		:estimated-time="estimatedTime"
-		:selected-file-name="selectedFile?.name"
+		:missions="[{
+			name: props.systemId,
+			missionSource,
+			vehicleType: props.vehicleType,
+			waypointCount: waypoints.length,
+			cruiseSpeed,
+			waypointAltitude,
+			totalDistance,
+			estimatedTime,
+			selectedFileName: selectedFile?.name,
+		}]"
 		@send="sendMission"
 	/>
 

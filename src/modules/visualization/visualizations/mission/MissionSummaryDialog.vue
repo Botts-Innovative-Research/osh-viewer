@@ -1,21 +1,20 @@
 <script lang="ts" setup>
+
+import {MissionSummary} from "@/modules/visualization/visualizations/mission/types";
+
 const show = defineModel<boolean>({ required: true });
 
 const props = defineProps<{
-  missionSource: 'waypoints' | 'file' | 'saved';
-  waypointCount: number;
-  cruiseSpeed: number;
-  vehicleType: string;
-  waypointAltitude: number;
-  isRover: boolean;
-  totalDistance: number;
-  estimatedTime: number;
-  selectedFileName?: string;
+  missions: MissionSummary[];
 }>();
 
 const emit = defineEmits<{
   send: [];
 }>();
+
+function isRover(vehicleType: string) {
+  return vehicleType === 'Ground Rover' || vehicleType === 'Surface Boat';
+}
 
 function formatDistance(meters: number): string {
   if (meters >= 1000) return (meters / 1000).toFixed(2) + ' km';
@@ -34,53 +33,57 @@ function formatTime(seconds: number): string {
 </script>
 
 <template>
-  <v-dialog
-      v-model="show"
-      max-width="500"
-  >
+  <v-dialog v-model="show" max-width="500">
     <v-card>
       <v-card-title>Mission Summary</v-card-title>
+      <v-card-subtitle v-if="missions.length > 1">{{ missions.length }} missions planned</v-card-subtitle>
       <v-card-text>
-        <v-table density="compact">
+        <template v-for="(mission, i) in missions" :key="i">
+          <div v-if="missions.length > 1" class="d-flex align-center ga-2 mt-2 mb-1">
+            <v-icon size="small" :icon="isRover(mission.vehicleType) ? 'mdi-car' : 'mdi-quadcopter'" />
+            <span class="text-subtitle-2 font-weight-medium">{{ mission.name }}</span>
+          </div>
+         <v-table density="compact">
           <tbody>
             <tr>
               <td class="font-weight-medium">Source</td>
               <td>
-                {{ missionSource === 'waypoints' ? 'Waypoints' : 'Plan File' }}
+                {{ mission.missionSource === 'waypoints' ? 'Waypoints' : 'Plan File' }}
               </td>
             </tr>
-            <tr v-if="missionSource === 'waypoints'">
+            <tr v-if="mission.missionSource === 'waypoints'">
               <td class="font-weight-medium">Waypoints</td>
-              <td>{{ waypointCount }}</td>
+              <td>{{ mission.waypointCount }}</td>
             </tr>
-            <tr v-if="missionSource === 'waypoints'">
+            <tr v-if="mission.missionSource === 'waypoints'">
               <td class="font-weight-medium">
-                {{ isRover ? 'Ground Speed' : 'Speed' }}
+                {{ isRover(mission.vehicleType) ? 'Ground Speed' : 'Speed' }}
               </td>
-              <td>{{ cruiseSpeed }} m/s</td>
+              <td>{{ mission.cruiseSpeed }} m/s</td>
             </tr>
-            <tr v-if="missionSource === 'waypoints'">
+            <tr v-if="mission.missionSource === 'waypoints'">
               <td class="font-weight-medium">Vehicle Type</td>
-              <td>{{ vehicleType }}</td>
+              <td>{{ mission.vehicleType }}</td>
             </tr>
-            <tr v-if="missionSource === 'waypoints' && !isRover">
+            <tr v-if="mission.missionSource === 'waypoints' && !isRover">
               <td class="font-weight-medium">Altitude</td>
-              <td>{{ waypointAltitude }} m</td>
+              <td>{{ mission.waypointAltitude }} m</td>
             </tr>
-            <tr v-if="missionSource === 'waypoints' && waypointCount >= 2">
+            <tr v-if="mission.missionSource === 'waypoints' && mission.waypointCount >= 2">
               <td class="font-weight-medium">Total Distance</td>
-              <td>{{ formatDistance(totalDistance) }}</td>
+              <td>{{ formatDistance(mission.totalDistance) }}</td>
             </tr>
-            <tr v-if="missionSource === 'waypoints' && waypointCount >= 2">
+            <tr v-if="mission.missionSource === 'waypoints' && mission.waypointCount >= 2">
               <td class="font-weight-medium">Est. Time</td>
-              <td>{{ formatTime(estimatedTime) }}</td>
+              <td>{{ formatTime(mission.estimatedTime) }}</td>
             </tr>
-            <tr v-if="missionSource === 'file' && selectedFileName">
+            <tr v-if="mission.missionSource === 'file' && mission.selectedFileName">
               <td class="font-weight-medium">File</td>
-              <td>{{ selectedFileName }}</td>
+              <td>{{ mission.selectedFileName }}</td>
             </tr>
           </tbody>
         </v-table>
+        </template>
       </v-card-text>
       <v-card-actions>
         <v-spacer />

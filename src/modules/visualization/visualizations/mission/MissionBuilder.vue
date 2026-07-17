@@ -5,6 +5,8 @@ import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasou
 import MissionCommandPad from './MissionCommandPad.vue';
 import PanelVisualizationWrapper from '../../sidebar/components/PanelVisualizationWrapper.vue';
 import PlanMission from './PlanMission.vue';
+import MissionSummaryDialog from './MissionSummaryDialog.vue';
+import type { MissionSummary } from './MissionSummaryDialog.vue';
 import {
 	createDatasource,
 	getLatestObservation,
@@ -227,11 +229,38 @@ function setPlanMissionRef(vizId: string, el: any) {
 	}
 }
 
-async function sendAllMissions() {
-	const systems = validVisualizations.value;
-	if (systems.length === 0) return;
+const showSendAllSummary = ref(false);
 
-	for (const viz of systems) {
+const allMissionSummaries = computed<MissionSummary[]>(() => {
+	const summaries: MissionSummary[] = [];
+	for (const viz of validVisualizations.value) {
+		const planRef = planMissionRefs.value.get(viz.id);
+		if (planRef && planRef.waypoints.length > 0) {
+			summaries.push({
+				name: viz.name,
+				missionSource: 'waypoints',
+				vehicleType: detectVehicleType(viz),
+				waypointCount: planRef.waypoints.length,
+				cruiseSpeed: planRef.cruiseSpeed,
+				waypointAltitude: planRef.waypointAltitude,
+				totalDistance: planRef.totalDistance,
+				estimatedTime: planRef.estimatedTime,
+			});
+		}
+	}
+	return summaries;
+});
+
+const numPlannedMissions = computed(() => allMissionSummaries.value.length);
+const hasAnyMissions = computed(() => numPlannedMissions.value > 0);
+
+function confirmSendAllMissions() {
+	showSendAllSummary.value = true;
+}
+
+function sendAllMissions() {
+	showSendAllSummary.value = false;
+	for (const viz of validVisualizations.value) {
 		const planRef = planMissionRefs.value.get(viz.id);
 		if (planRef && planRef.waypoints.length > 0) {
 			planRef.sendMission();
@@ -245,15 +274,6 @@ onBeforeUnmount(() => {
 	}
 	missionStore.clearMissionWaypoints();
 });
-
-const numPlannedMissions = computed(() => {
-	let count = 0;
-	for (const ref of planMissionRefs.value.values()) {
-		if (ref?.waypoints?.length > 0) count++;
-	}
-	return count;
-});
-const hasAnyMissions = computed(() => numPlannedMissions.value > 0);
 
 const hasCommandPad = computed(
 	() =>
@@ -420,11 +440,17 @@ const hasCommandPad = computed(
 			class="mt-4"
 			color="primary"
 			variant="tonal"
-			@click="sendAllMissions"
+			@click="confirmSendAllMissions"
       :disabled="!hasAnyMissions"
 		>
 			Send All Missions ( {{ numPlannedMissions }} )
 		</v-btn>
+
+		<MissionSummaryDialog
+			v-model="showSendAllSummary"
+			:missions="allMissionSummaries"
+			@send="sendAllMissions"
+		/>
 	</v-container>
 </template>
 

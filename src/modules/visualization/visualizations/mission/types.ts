@@ -24,6 +24,18 @@ export interface SavedMission {
 	updatedAt: string;
 }
 
+export interface MissionSummary {
+    name: string;
+    missionSource: 'waypoints' | 'file' | 'saved';
+    vehicleType: string;
+    waypointCount: number;
+    cruiseSpeed: number;
+    waypointAltitude: number;
+    totalDistance: number;
+    estimatedTime: number;
+    selectedFileName?: string;
+}
+
 export interface SystemState {
     receivedLLA: MapPoint;
     receivedStatus: string;
