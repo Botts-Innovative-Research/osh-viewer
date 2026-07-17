@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
-import { computed, ref } from 'vue';
+import { computed, Ref, ref } from 'vue';
 
 export const useGeoOverlayStore = defineStore(
 	'geoOverlays',
 	() => {
 		const geoOverlays = ref<GeoOverlay[]>([]);
+		const hiddenGeoOverlays: Ref<Set<string>> = ref(new Set());
 
 		// Filter only POINT geo overlays
 		const pointGeoOverlays = computed(() => {
@@ -43,8 +44,24 @@ export const useGeoOverlayStore = defineStore(
 			return geoOverlays.value.find((go: GeoOverlay) => go.uuid === id);
 		}
 
+		function toggleGeoOverlayVisibility(id: string) {
+			const next = new Set<string>(hiddenGeoOverlays.value);
+
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+
+			hiddenGeoOverlays.value = next;
+
+			return hiddenGeoOverlays.value.has(id);
+		}
+
+		function isGeoOverlayVisible(id: string) {
+			return !hiddenGeoOverlays.value.has(id);
+		}
+
 		return {
 			geoOverlays,
+			hiddenGeoOverlays,
 			pointGeoOverlays,
 			circleGeoOverlays,
 			polylineGeoOverlays,
@@ -53,6 +70,8 @@ export const useGeoOverlayStore = defineStore(
 			removeGeoOverlay,
 			removeAllGeoOverlays,
 			getGeoOverlayById,
+			toggleGeoOverlayVisibility,
+			isGeoOverlayVisible,
 		};
 	},
 	{ persist: { pick: ['geoOverlays'] } }

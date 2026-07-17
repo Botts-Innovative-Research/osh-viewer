@@ -77,6 +77,12 @@ function getIconColor(overlay: GeoOverlay) {
 							aria-label="Toggle Visibility"
 							size="x-small"
 							variant="plain"
+							:icon="
+								geoOverlayStore.isGeoOverlayVisible(overlay.uuid)
+									? 'mdi-eye'
+									: 'mdi-eye-off'
+							"
+							@click.stop="geoOverlayStore.toggleGeoOverlayVisibility(overlay.uuid)"
 						></IconButton>
 					</template>
 				</v-tooltip>

@@ -55,7 +55,7 @@ export function useMap() {
 		radius: previewRadius,
 		circleCreationStep: previewCircleCreationStep,
 	} = storeToRefs(previewStore);
-	const { geoOverlays } = storeToRefs(geoOverlayStore);
+	const { geoOverlays, hiddenGeoOverlays } = storeToRefs(geoOverlayStore);
 
 	// MAP STATES
 	const mapAdapter = ref<MapAdapter | null>(null);
@@ -439,8 +439,40 @@ export function useMap() {
 	/* GEO OVERLAY */
 	function rebuildGeoOverlayLayers() {
 		for (const geoOverlay of geoOverlays.value) {
-			mapAdapter.value?.addGeoOverlay(geoOverlay);
+			// Only rebuild visible geo overlays
+			if (!hiddenGeoOverlays.value.has(geoOverlay.uuid))
+				mapAdapter.value?.addGeoOverlay(geoOverlay);
 		}
+	}
+	watch(
+		hiddenGeoOverlays,
+		async (newList, oldList) => {
+			console.log(newList, oldList);
+			const removedIds = new Set([...oldList].filter((id) => !newList.has(id)));
+			const addedIds = new Set([...newList].filter((id) => !oldList.has(id)));
+			console.log(removedIds, addedIds);
+			// Removed hidden geo overlays -> SHOW
+			if (removedIds.size > 0) {
+				removedIds.forEach((id: string) => {
+					let overlay = geoOverlayStore.getGeoOverlayById(id);
+					if (overlay) toggleGeoOverlayVisibility(overlay, true);
+				});
+			}
+			// Added hidden geo overlays -> HIDE
+			if (addedIds.size > 0) {
+				addedIds.forEach((id: string) => {
+					let overlay = geoOverlayStore.getGeoOverlayById(id);
+					if (overlay) toggleGeoOverlayVisibility(overlay, false);
+				});
+			}
+		},
+		{ deep: true }
+	);
+	function toggleGeoOverlayVisibility(geoOverlay: GeoOverlay, isVisible: boolean) {
+		// Rebuild hidden -> show
+		if (isVisible) mapAdapter.value?.addGeoOverlay(geoOverlay);
+		// Delete overlay -> hide
+		else mapAdapter.value?.removeGeoOverlay(geoOverlay);
 	}
 	watch(
 		geoOverlays,
