@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { showToast } from '@/composables/useToast';
-import { OSHNode } from '@/lib/OSHConnectDataStructs';
+import { OSHNode, OSHSystem } from '@/lib/OSHConnectDataStructs';
 import { useNodeStore } from '@/stores/nodestore';
 import { useUIStore } from '@/stores/uistore';
 import { useVisualizationStore } from '@/stores/visualizationstore';
@@ -34,9 +34,12 @@ const deleteNode = () => {
 		close();
 		return;
 	}
-
-	// Delete node from store
-	nodeStore.removeNode(props.node);
+	// Get list of system IDs
+	const systemIdList = props.node.systems.map((system: OSHSystem) => system.id);
+	// Delete FOIs associated with this node
+	systemIdList.forEach((id: string) => {
+		visualizationStore.removeFOILayer(id);
+	});
 
 	// Delete visualizations associated with this node
 	listVizToDelete.value.forEach((viz) => {
@@ -55,6 +58,9 @@ const deleteNode = () => {
 			}
 		});
 	});
+
+	// Delete node from store
+	nodeStore.removeNode(props.node);
 
 	showToast('Node deleted', 'SUCCESS');
 	close();
