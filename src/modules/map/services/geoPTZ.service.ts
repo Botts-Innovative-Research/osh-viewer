@@ -3,14 +3,16 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { useMapStore } from '@/stores/mapstore';
 import { IConSysApiControlStreamProperties } from '@/modules/visualization/types/datasource';
 import { sendCommand } from '@/modules/visualization/services/controlstream.service';
+import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 
 export function taskGeoPTZ(lat: number, lon: number, alt: number) {
 	const mapStore = useMapStore();
+	const mapInteractionStore = useMapInteractionStore();
 	mapStore.setCurrentLLA(lat, lon, alt);
 
-	if (!mapStore.isGeoPTZSelected || !mapStore.selectedGeoPTZ) return;
+	if (!mapInteractionStore.isGeoPTZSelected || !mapInteractionStore.selectedGeoPTZ) return;
 
-	sendGeoPTZCommand(mapStore.selectedGeoPTZ, {
+	sendGeoPTZCommand(mapInteractionStore.selectedGeoPTZ, {
 		parameters: {
 			lat,
 			lon,

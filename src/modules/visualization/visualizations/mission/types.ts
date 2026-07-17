@@ -1,6 +1,6 @@
-import { MapPoint } from '@/modules/map/adapters/types';
+import { MapPoint } from '@/modules/map/types';
 
-export interface Waypoint extends MapPoint{
+export interface Waypoint extends MapPoint {
 	id: string;
 }
 

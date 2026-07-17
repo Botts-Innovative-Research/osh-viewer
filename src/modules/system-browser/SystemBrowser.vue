@@ -84,11 +84,11 @@ const addFOILayer = (system: OSHSystem): number => {
 		if (!foi.properties.geometry) return;
 		const geom = new Geometry(
 			foi.properties.id,
-			system.id,
 			foi.properties.geometry.type ?? '',
 			foi.properties.geometry.coordinates,
 			foi.properties,
-			foi.properties.bbox
+			foi.properties.bbox,
+			system.id
 		);
 		const added = visualizationStore.addFOILayer(geom);
 		if (added) count++;

@@ -1,7 +1,10 @@
 import * as Cesium from 'cesium';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
-import { CursorMode, MapAdapter, MapClickHandler, MapPoint } from './types';
+import { MapAdapter } from './types';
 import { Ion } from 'cesium';
+import { CursorMode, MapPoint, MapPointHandler } from '@/modules/map/types';
+import { GeoOverlay } from '@/modules/map/geo-overlay/types';
+import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 
 // Showcase examples token :P
 // Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0NTkzNS02NzI0LTQwNDktODk4Zi0zZDJjOWI2NTdmYTMiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI1ODJ9.IbAajOLYnsoyKy1BOd7fY1p6GH-wwNVMdMduA2IzGjA';
@@ -20,11 +23,15 @@ export interface MapLayer {
 export function createCesiumAdapter(): MapAdapter {
 	let mapView: typeof CesiumView | null;
 	let clickHandler: Cesium.ScreenSpaceEventHandler | null = null;
+	let moveHandler: Cesium.ScreenSpaceEventHandler | null = null;
 	let renderedLayers: Map<string, any> = new Map();
 	let terrainProvider: any = null;
 	let buildingsTileset: any = null;
 	let googlePhotorealistic: any = null;
 	let flightPathPolyline: any = null;
+
+	/* GeoOverlays */
+	let previewEntity: any = null;
 
 	async function init(container: string) {
 		mapView = new CesiumView({
@@ -70,7 +77,7 @@ export function createCesiumAdapter(): MapAdapter {
 		mapView.viewer.canvas.style.cursor = mode;
 	}
 
-	function onClick(handler: MapClickHandler) {
+	function onClick(handler: MapPointHandler) {
 		const viewer = mapView.viewer;
 		// Description box styling
 		viewer.infoBox.frame.onload = function () {
@@ -101,6 +108,30 @@ export function createCesiumAdapter(): MapAdapter {
 		};
 	}
 
+	function onMouseMove(handler: MapPointHandler) {
+		const viewer = mapView.viewer;
+
+		let lat = 0,
+			lon = 0,
+			alt = 0;
+
+		moveHandler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+		moveHandler.setInputAction((movement: any) => {
+			const cartesian = viewer.scene.pickPosition(movement.endPosition);
+			if (!cartesian) return;
+			const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+			lat = Cesium.Math.toDegrees(cartographic.latitude);
+			lon = Cesium.Math.toDegrees(cartographic.longitude);
+			alt = cartographic.height;
+			handler(lat, lon, alt ?? 120);
+		}, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+		return () => {
+			moveHandler?.destroy();
+			moveHandler = null;
+		};
+	}
+
 	function flyToPoint(location: { x: number; y: number; z: number }) {
 		mapView.viewer.camera.flyTo({
 			destination: Cesium.Cartesian3.fromDegrees(
@@ -117,6 +148,69 @@ export function createCesiumAdapter(): MapAdapter {
 
 	function updateMarker(props: any) {
 		mapView.updateMarker(props);
+	}
+
+	function drawPoint(point: MapPoint) {}
+	function drawCircle(
+		center: MapPoint,
+		radius: number,
+		borderColor: string | null,
+		fillColor: string | null,
+		id?: string
+	) {
+		return new Cesium.Entity({
+			id: id ?? randomUUID(),
+			position: Cesium.Cartesian3.fromDegrees(center.lon, center.lat),
+			ellipse: {
+				semiMajorAxis: new Cesium.ConstantProperty(radius),
+				semiMinorAxis: new Cesium.ConstantProperty(radius),
+				height: center.alt,
+				heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+				material: Cesium.Color.fromCssColorString(fillColor ?? '#FF000080'),
+				outline: true, // height must be set for outline to display
+				outlineColor: Cesium.Color.fromCssColorString(borderColor ?? '#FF0000'),
+				outlineWidth: 3,
+			},
+		});
+	}
+	function drawPolyline(points: MapPoint[], borderColor: string | null, id?: string) {
+		return new Cesium.Entity({
+			id: id ?? randomUUID(),
+			polyline: {
+				positions: points.map(({ lat, lon, alt }) => {
+					return Cesium.Cartesian3.fromDegrees(lon, lat);
+				}),
+				width: 3,
+				material: new Cesium.PolylineOutlineMaterialProperty({
+					outlineColor: Cesium.Color.fromCssColorString(borderColor ?? '#FF000080'),
+					outlineWidth: 3,
+				}),
+				clampToGround: true,
+			},
+		});
+	}
+	function drawPolygon(
+		points: MapPoint[],
+		borderColor: string | null,
+		fillColor: string | null,
+		id?: string
+	) {
+		return new Cesium.Entity({
+			id: id ?? randomUUID(),
+			polygon: {
+				hierarchy: Cesium.Cartesian3.fromDegreesArrayHeights(
+					points.flatMap(({ lat, lon, alt }) => {
+						return [lon, lat, alt ?? 0];
+					})
+				),
+				perPositionHeight: true,
+				material: Cesium.Color.fromCssColorString(fillColor ?? '#FF000080'),
+				outline: true,
+				outlineColor: Cesium.Color.fromCssColorString(borderColor ?? '#FF0000'),
+				outlineWidth: 3,
+				classificationType: Cesium.ClassificationType.TERRAIN,
+			},
+		});
 	}
 
 	function drawMissionPath(waypoints: MapPoint[]) {
@@ -298,6 +392,114 @@ export function createCesiumAdapter(): MapAdapter {
 		invalidate();
 	}
 
+	function updateCirclePreview(
+		center: MapPoint,
+		radius: number,
+		borderColor: string | null,
+		fillColor: string | null
+	) {
+		// Remove old layer
+		if (previewEntity) clearPreview();
+		// Build new entity
+		previewEntity = drawCircle(center, radius, borderColor, fillColor);
+		// Add to map
+		mapView.viewer.entities.add(previewEntity);
+		invalidate();
+	}
+
+	function updatePolylinePreview(points: MapPoint[], borderColor: string | null) {
+		// Remove old layer
+		if (previewEntity) clearPreview();
+		// Build new entity
+		previewEntity = drawPolyline(points, borderColor);
+		// Add to map
+		mapView.viewer.entities.add(previewEntity);
+		invalidate();
+	}
+
+	function updatePolygonPreview(
+		points: MapPoint[],
+		borderColor: string | null,
+		fillColor: string | null
+	) {
+		// Remove old layer
+		if (previewEntity) clearPreview();
+		// Build new entity
+		if (points.length < 2) return; // Don't build with no points
+		if (points.length === 2) previewEntity = drawPolyline(points, borderColor);
+		else previewEntity = drawPolygon(points, borderColor, fillColor);
+		// Add to map
+		mapView.viewer.entities.add(previewEntity);
+		invalidate();
+	}
+
+	function clearPreview() {
+		if (previewEntity) mapView.viewer.entities.remove(previewEntity);
+		previewEntity = null;
+		invalidate();
+	}
+
+	function addGeoOverlay(geoOverlay: GeoOverlay) {
+		if (!geoOverlay) return;
+
+		// Clear preview before adding final geoOverlay
+		clearPreview();
+
+		// Circle
+		if (geoOverlay.type === 'Circle') {
+			const [lon, lat, alt] = geoOverlay.geometry.coordinates as [number, number, number];
+			const center: MapPoint = {
+				lat,
+				lon,
+				alt,
+			};
+			const newCircle = drawCircle(
+				center,
+				geoOverlay.geometry.properties.radius,
+				geoOverlay.geometry.properties.borderColor,
+				geoOverlay.geometry.properties.fillColor,
+				geoOverlay.uuid
+			);
+			mapView.viewer.entities.add(newCircle);
+		}
+		// Polyline
+		if (geoOverlay.type === 'LineString') {
+			const coordinates = geoOverlay.geometry.coordinates as number[][];
+			const newPolyline = drawPolyline(
+				coordinates.map(([lon, lat, alt]) => ({
+					lat,
+					lon,
+					alt,
+				})),
+				geoOverlay.geometry.properties.borderColor,
+				geoOverlay.uuid
+			);
+			mapView.viewer.entities.add(newPolyline);
+		}
+		// Polygon
+		if (geoOverlay.type === 'Polygon') {
+			const coordinates = geoOverlay.geometry.coordinates as number[][];
+			const newPolygon = drawPolygon(
+				coordinates.map(([lon, lat, alt]) => ({
+					lat,
+					lon,
+					alt,
+				})),
+				geoOverlay.geometry.properties.borderColor,
+				geoOverlay.geometry.properties.fillColor,
+				geoOverlay.uuid
+			);
+			mapView.viewer.entities.add(newPolygon);
+		}
+		invalidate();
+	}
+
+	function removeGeoOverlay(geoOverlay: GeoOverlay) {
+		const findGeoOverlay = mapView.viewer.entities.getById(geoOverlay.uuid);
+		if (findGeoOverlay) mapView.viewer.entities.remove(findGeoOverlay);
+		invalidate();
+	}
+
 	return {
 		init,
 		destroy,
@@ -305,8 +507,13 @@ export function createCesiumAdapter(): MapAdapter {
 		removeLayer,
 		setCursor,
 		onClick,
+		onMouseMove,
 		flyToPoint,
 		updateMarker,
+		drawPoint,
+		drawCircle,
+		drawPolyline,
+		drawPolygon,
 		drawMissionPath,
 		clearMissionPath,
 		addTerrain,
@@ -319,5 +526,11 @@ export function createCesiumAdapter(): MapAdapter {
 		removeMapLayer,
 		destroyAllLayers,
 		rebuildMapLayers,
+		updateCirclePreview,
+		updatePolylinePreview,
+		updatePolygonPreview,
+		clearPreview,
+		addGeoOverlay,
+		removeGeoOverlay,
 	};
 }

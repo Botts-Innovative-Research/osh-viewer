@@ -4,6 +4,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
 import { sendGeoPTZCommand } from '@/modules/map/services/geoPTZ.service';
 import { GeoPTZCommand } from './Descriptor';
+import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 
 const props = defineProps<{
 	visualizations: OSHVisualization[];
@@ -15,7 +16,8 @@ const lonInput = ref<number>(0.0);
 const altInput = ref<number>(0.0);
 
 const mapStore = useMapStore();
-const isSelected = computed(() => mapStore.isGeoPTZSelected);
+const mapInteractionStore = useMapInteractionStore();
+const isSelected = computed(() => mapInteractionStore.isGeoPTZSelected);
 
 // Watch for changes in currentLLA to update input fields, IF selected
 watch(
@@ -33,24 +35,21 @@ watch(
 watch(
 	() => props.visualizations,
 	(newVal) => {
-		mapStore.setSelectedGeoPTZ(newVal);
+		mapInteractionStore.setSelectedGeoPTZ(newVal);
 	}
 );
 
 // Toggle selection of GeoPTZ in UI store and locally
 function toggle() {
-	if (isSelected.value) {
-		mapStore.setIsGeoPTZSelected(false);
-	} else {
-		mapStore.setIsGeoPTZSelected(true);
-		mapStore.setSelectedGeoPTZ(props.visualizations);
-	}
+	mapInteractionStore.toggleTool('geoptz');
+	if (mapInteractionStore.isGeoPTZSelected)
+		mapInteractionStore.setSelectedGeoPTZ(props.visualizations);
 }
 
 // Send PTZ command based on LLA inputs
 function onSend() {
 	// Ensure newly selected controllers are added
-	mapStore.setSelectedGeoPTZ(props.visualizations);
+	mapInteractionStore.setSelectedGeoPTZ(props.visualizations);
 
 	const command: GeoPTZCommand = {
 		parameters: {
@@ -60,16 +59,17 @@ function onSend() {
 		},
 	};
 
-	if (mapStore.selectedGeoPTZ) {
-		sendGeoPTZCommand(mapStore.selectedGeoPTZ, command);
+	if (mapInteractionStore.selectedGeoPTZ) {
+		sendGeoPTZCommand(mapInteractionStore.selectedGeoPTZ, command);
 	} else {
 		console.warn('[GeoPtzView] No GeoPTZ selected, cannot send command');
 	}
 }
 
 onBeforeUnmount(() => {
-	// Disselect GeoPTZ before unmount
-	if (isSelected.value) mapStore.clearSelectedGeoPTZ();
+	// Deselect GeoPTZ before unmount
+	mapInteractionStore.clearSelectedGeoPTZ();
+	mapInteractionStore.deselectTool('geoptz');
 });
 </script>
 

@@ -6,19 +6,19 @@ import FrustumLayer from 'osh-js/source/core/ui/layer/FrustumLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import EllipseLayer from 'osh-js/source/core/ui/layer/EllipseLayer';
 import PolylineLayer from 'osh-js/source/core/ui/layer/PolylineLayer';
-import { MapPoint } from './adapters/types';
 import { setWaypointData } from './services/missionBuilder.service';
 import { useSettingsStore } from '@/stores/settingsstore';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { getLayerId } from './services/layerId.service';
 import { colorHash, getColoredIconUrl, getColoredSvgUrl } from './services/colorId.service';
 import { SupportedMapLayer } from './supportedMapLayers';
-import { getGroundAltitude } from './services/altitude.service';
+import { getGroundAltitude } from './services/geospatial.service';
 import { IConSysApiDataSourceProperties } from '../visualization/types/datasource';
 import { setLayerData } from './services/foi.service';
 import { ICON_BASE } from '@/lib/icons';
 import { FoiLayer } from '@/stores/visualizationstore';
 import { getMilSymbol } from './services/milIcon.service';
+import { MapPoint } from '@/modules/map/types';
 
 export interface ICreateMapVisualizationResult {
 	vizLayer: SupportedMapLayer;
