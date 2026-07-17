@@ -4,12 +4,10 @@ import { onMounted, onBeforeUnmount, ref, computed, watch, toRaw } from 'vue';
 import * as Cesium from 'cesium';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
-import {
-	createDatasource,
-} from '@/modules/visualization/services/datasource.service';
+import { createDatasource } from '@/modules/visualization/services/datasource.service';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
 import { IConSysApiDataSourceProperties } from '../../types/datasource';
-import { getGroundAltitude } from '@/modules/map/services/altitude.service';
+import { getGroundAltitude } from '@/modules/map/services/geospatial.service';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import { useVisualizationStore } from '@/stores/visualizationstore';
 import { createPointMarkerLayer } from '@/modules/map/mapVisualizations';
@@ -42,7 +40,7 @@ interface OrientationData {
 const receivedLLA = ref<LLAData>({ lat: 0, lon: 0, alt: 0 });
 const receivedOrientation = ref<OrientationData>({ yaw: 0, pitch: 0, roll: 0 });
 
-let dsInstances = ref<typeof ConSysApi[]>([]);
+let dsInstances = ref<(typeof ConSysApi)[]>([]);
 
 let mapView: typeof CesiumView | null = null;
 const minimapContainerId = `minimap-${Date.now()}`;
@@ -100,7 +98,10 @@ function onOrientationListener(dsInstance: typeof ConSysApi, ds: IConSysApiDataS
 		if (message.data.type === 'data') {
 			const data = message.data.values[0].data;
 			receivedOrientation.value = {
-				yaw: data[ds.properties.orientation.property].yaw ?? data[ds.properties.orientation.property].heading ?? 0,
+				yaw:
+					data[ds.properties.orientation.property].yaw ??
+					data[ds.properties.orientation.property].heading ??
+					0,
 				pitch: data[ds.properties.orientation.property].pitch ?? 0,
 				roll: data[ds.properties.orientation.property].roll ?? 0,
 			};
@@ -109,7 +110,6 @@ function onOrientationListener(dsInstance: typeof ConSysApi, ds: IConSysApiDataS
 		}
 	};
 }
-
 
 function setSceneInputEnabled(viewer: any, enabled: boolean) {
 	const controller = viewer.scene.screenSpaceCameraController;
@@ -134,23 +134,13 @@ function updateCamera() {
 
 	const cameraAlt = terrainHeight + alt;
 
-	const position = Cesium.Cartesian3.fromDegrees(
-		lon,
-		lat,
-		cameraAlt
-	);
+	const position = Cesium.Cartesian3.fromDegrees(lon, lat, cameraAlt);
 
-	const heading = Cesium.Math.toRadians(
-		receivedOrientation.value.yaw
-	);
+	const heading = Cesium.Math.toRadians(receivedOrientation.value.yaw);
 
-	const pitch = Cesium.Math.toRadians(
-		receivedOrientation.value.pitch || 0
-	);
+	const pitch = Cesium.Math.toRadians(receivedOrientation.value.pitch || 0);
 
-	const roll = Cesium.Math.toRadians(
-		receivedOrientation.value.roll || 0
-	);
+	const roll = Cesium.Math.toRadians(receivedOrientation.value.roll || 0);
 
 	switch (viewMode.value) {
 		case 'platform': {
@@ -166,33 +156,25 @@ function updateCamera() {
 			break;
 		}
 		case 'follow': {
-			const transform =
-				Cesium.Transforms.headingPitchRollToFixedFrame(
-					position,
-					new Cesium.HeadingPitchRoll(heading, 0, 0)
-				);
-
-			viewer.camera.lookAtTransform(
-				transform,
-				new Cesium.Cartesian3(0, -120, 60)
+			const transform = Cesium.Transforms.headingPitchRollToFixedFrame(
+				position,
+				new Cesium.HeadingPitchRoll(heading, 0, 0)
 			);
+
+			viewer.camera.lookAtTransform(transform, new Cesium.Cartesian3(0, -120, 60));
 			break;
 		}
 		case 'overhead': {
-			const transform =
-				Cesium.Transforms.headingPitchRollToFixedFrame(
-					position,
-					new Cesium.HeadingPitchRoll(heading, 0, 0)
-				);
-
-			viewer.camera.lookAtTransform(
-				transform,
-				new Cesium.Cartesian3(0, 0, 250)
+			const transform = Cesium.Transforms.headingPitchRollToFixedFrame(
+				position,
+				new Cesium.HeadingPitchRoll(heading, 0, 0)
 			);
+
+			viewer.camera.lookAtTransform(transform, new Cesium.Cartesian3(0, 0, 250));
 			break;
 		}
 	}
-  
+
 	viewer.scene.requestRender();
 }
 
@@ -251,9 +233,13 @@ onMounted(async () => {
 	addPointMarkerLayers();
 });
 
-watch([receivedLLA, receivedOrientation], () => {
-	updateCamera();
-}, { deep: true });
+watch(
+	[receivedLLA, receivedOrientation],
+	() => {
+		updateCamera();
+	},
+	{ deep: true }
+);
 
 watch(viewMode, (newMode) => {
 	if (!mapView?.viewer) return;
@@ -362,7 +348,7 @@ useVisualizationCleanup(dsInstances);
 			<div
 				:id="minimapContainerId"
 				class="minimap-viewer"
-      ></div>
+			></div>
 
 			<div class="overlay-toggles">
 				<v-btn
@@ -375,7 +361,11 @@ useVisualizationCleanup(dsInstances);
 				</v-btn>
 			</div>
 
-			<div v-if="showHUD" class="hud-overlay" :style="{ transform: `rotate(${-receivedOrientation.roll}deg)` }">
+			<div
+				v-if="showHUD"
+				class="hud-overlay"
+				:style="{ transform: `rotate(${-receivedOrientation.roll}deg)` }"
+			>
 				<div class="hud-crosshair">
 					<div class="crosshair-h"></div>
 					<div class="crosshair-v"></div>
@@ -383,14 +373,20 @@ useVisualizationCleanup(dsInstances);
 
 				<div class="hud-alt">
 					<div class="hud-data-label">ALT</div>
-					<div class="hud-data-value">{{ receivedLLA.alt.toFixed(1) }}<span class="hud-unit">m</span></div>
+					<div class="hud-data-value">
+						{{ receivedLLA.alt.toFixed(1) }}<span class="hud-unit">m</span>
+					</div>
 				</div>
 
 				<div class="hud-attitude">
 					<div class="hud-data-label">PITCH</div>
-					<div class="hud-data-value">{{ receivedOrientation.pitch.toFixed(1) }}&#176;</div>
+					<div class="hud-data-value">
+						{{ receivedOrientation.pitch.toFixed(1) }}&#176;
+					</div>
 					<div class="hud-data-label">ROLL</div>
-					<div class="hud-data-value">{{ receivedOrientation.roll.toFixed(1) }}&#176;</div>
+					<div class="hud-data-value">
+						{{ receivedOrientation.roll.toFixed(1) }}&#176;
+					</div>
 				</div>
 			</div>
 		</div>
@@ -498,5 +494,4 @@ useVisualizationCleanup(dsInstances);
 	opacity: 0.7;
 	margin-left: 1px;
 }
-
 </style>
