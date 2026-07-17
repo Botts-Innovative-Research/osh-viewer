@@ -153,7 +153,7 @@ export const useVisualizationStore = defineStore(
 			FOIExists,
 		};
 	},
-	{ persist: { pick: ['serializedVisualizations'] } }
+	{ persist: { pick: ['serializedVisualizations', 'foiLayers'] } }
 );
 
 /**

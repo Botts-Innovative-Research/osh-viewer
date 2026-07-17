@@ -33,7 +33,7 @@ import { useGeoOverlayStore } from '@/stores/geooverlaystore';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 
 export function useMap() {
-	// Stores
+	// STORES
 	const mapStore = useMapStore();
 	const mapInteractionStore = useMapInteractionStore();
 	const visualizationStore = useVisualizationStore();
@@ -42,7 +42,7 @@ export function useMap() {
 	const previewStore = useGeoOverlayPreviewStore();
 	const geoOverlayStore = useGeoOverlayStore();
 
-	// Store Refs
+	// STORE REFS
 	const {
 		id: previewId,
 		type: previewType,
@@ -57,28 +57,24 @@ export function useMap() {
 	} = storeToRefs(previewStore);
 	const { geoOverlays } = storeToRefs(geoOverlayStore);
 
-	// Map state
+	// MAP STATES
 	const mapAdapter = ref<MapAdapter | null>(null);
 	const mapType = computed(() => {
 		return settingsStore.focusedMap;
 	});
 
-	// Map of visualization ID to its corresponding visualization layer instance
-	const mapItemLayers = ref<Map<string, SupportedMapLayer>>(new Map());
-	// List of all connected datasource instances created for map visualizations
-	const listDataSourceInstances = ref<(typeof ConSysApi)[]>([]);
-	// Current GeoPTZ layer
+	// VISUALIZATIONS
+	const mapItemLayers = ref<Map<string, SupportedMapLayer>>(new Map()); // Map of visualization ID to its corresponding visualization layer instance
+	const listDataSourceInstances = ref<(typeof ConSysApi)[]>([]); // List of all connected datasource instances created for map visualizations
+	const hiddenLayers = ref<Map<string, SupportedMapLayer>>(new Map()); // Hidden visualization IDs
+	// GEOPTZ
 	const geoPtzLayer = ref<typeof PointMarkerLayer | null>(null);
+	// MISSION BUILDER
 	const driveLocationLayer = ref<typeof PointMarkerLayer | null>(null);
 	const homeLocationLayer = ref<typeof PointMarkerLayer | null>(null);
-	// Array of waypoint Pointmarkers for mission builder
-	const waypointLayers = ref<(typeof PointMarkerLayer)[]>([]);
-	// FOI Layers
+	const waypointLayers = ref<(typeof PointMarkerLayer)[]>([]); // Array of waypoint Pointmarkers for mission builder
+	// FOI
 	const foiLayers = ref<{ layer: typeof PointMarkerLayer; props: any }[]>([]);
-	// GeoOverlay Layers
-	const geoOverlayLayers = ref<GeoOverlay[]>([]);
-	// Hidden visualization IDs
-	const hiddenLayers = ref<Map<string, SupportedMapLayer>>(new Map());
 
 	/* MAP INITIALIZATION/DESTRUCTION/TOGGLE */
 	async function initMap() {
@@ -133,17 +129,8 @@ export function useMap() {
 		// Reconnect datasources
 		connectDatasources();
 
-		// Rebuild all FOIs
-		for (const foi of foiLayers.value) {
-			foi.props = await setLayerData(foi.layer);
-			mapAdapter.value?.addLayer(foi.layer);
-			mapAdapter.value?.updateMarker(foi.props);
-		}
-
-		// Rebuild GeoOverlays
-		for (const geoOverlay of geoOverlayLayers.value) {
-			mapAdapter.value?.addGeoOverlay(geoOverlay);
-		}
+		await rebuildFoiLayers(); // Rebuild all FOIs
+		rebuildGeoOverlayLayers(); // Rebuild GeoOverlays
 
 		// Rebuild all waypoints
 		waypointLayers.value = [];
@@ -291,6 +278,13 @@ export function useMap() {
 		});
 		mapAdapter.value?.removeLayer(remove?.layer);
 		foiLayers.value = foiLayers.value.filter((foiLayer) => foiLayer.layer !== remove?.layer);
+	}
+	async function rebuildFoiLayers() {
+		for (const foi of foiLayers.value) {
+			foi.props = await setLayerData(foi.layer);
+			mapAdapter.value?.addLayer(foi.layer);
+			mapAdapter.value?.updateMarker(foi.props);
+		}
 	}
 
 	/** MAP INTERACTIONS */
@@ -443,6 +437,11 @@ export function useMap() {
 	}
 
 	/* GEO OVERLAY */
+	function rebuildGeoOverlayLayers() {
+		for (const geoOverlay of geoOverlays.value) {
+			mapAdapter.value?.addGeoOverlay(geoOverlay);
+		}
+	}
 	watch(
 		geoOverlays,
 		(newOverlays, oldOverlays) => {
@@ -459,16 +458,12 @@ export function useMap() {
 			if (removed.length) {
 				removed.map((removedOverlay: GeoOverlay) => {
 					mapAdapter.value?.removeGeoOverlay(removedOverlay);
-					geoOverlayLayers.value = geoOverlayLayers.value.filter(
-						(layer: GeoOverlay) => layer.uuid !== removedOverlay.uuid
-					);
 				});
 			}
 			// Add new geo overlays
 			if (added.length) {
 				added.map((newOverlay: GeoOverlay) => {
 					mapAdapter.value?.addGeoOverlay(newOverlay);
-					geoOverlayLayers.value.push(newOverlay);
 				});
 			}
 		},
@@ -738,8 +733,10 @@ export function useMap() {
 		{ deep: true }
 	);
 
-	onMounted(() => {
-		initMap();
+	onMounted(async () => {
+		await initMap();
+		await rebuildFoiLayers();
+		rebuildGeoOverlayLayers();
 	});
 
 	return {

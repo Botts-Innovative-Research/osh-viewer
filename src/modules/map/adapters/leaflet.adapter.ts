@@ -69,9 +69,11 @@ export function createLeafletAdapter(): MapAdapter {
 		center: MapPoint,
 		radius: number,
 		borderColor: string | null,
-		fillColor: string | null
+		fillColor: string | null,
+		id?: string
 	): L.circle {
 		return L.circle([center.lat, center.lon], {
+			id: id,
 			radius,
 			color: borderColor ?? '#FF0000',
 			weight: 2,
@@ -79,20 +81,22 @@ export function createLeafletAdapter(): MapAdapter {
 			fillOpacity: 1,
 		});
 	}
-	function drawPolyline(points: MapPoint[], borderColor: string | null): L.polyline {
+	function drawPolyline(points: MapPoint[], borderColor: string | null, id?: string): L.polyline {
 		return L.polyline(
 			points.map((p) => [p.lat, p.lon]),
-			{ color: borderColor ?? '#FF0000', weight: 5 }
+			{ id: id, color: borderColor ?? '#FF0000', weight: 5 }
 		);
 	}
 	function drawPolygon(
 		points: MapPoint[],
 		borderColor: string | null,
-		fillColor: string | null
+		fillColor: string | null,
+		id?: string
 	): L.polygon {
 		return L.polygon(
 			points.map((p) => [p.lat, p.lon]),
 			{
+				id: id,
 				color: borderColor ?? '#FF0000',
 				fillColor: fillColor ?? '#FF000080',
 				fillOpacity: 1,
@@ -176,9 +180,9 @@ export function createLeafletAdapter(): MapAdapter {
 				center,
 				geoOverlay.geometry.properties.radius,
 				geoOverlay.geometry.properties.borderColor,
-				geoOverlay.geometry.properties.fillColor
+				geoOverlay.geometry.properties.fillColor,
+				geoOverlay.uuid
 			);
-			newCircle.uuid = geoOverlay.uuid;
 			newCircle.addTo(mapView.map);
 		}
 		// Polyline
@@ -190,9 +194,9 @@ export function createLeafletAdapter(): MapAdapter {
 					lon,
 					alt,
 				})),
-				geoOverlay.geometry.properties.borderColor
+				geoOverlay.geometry.properties.borderColor,
+				geoOverlay.uuid
 			);
-			newPolyline.uuid = geoOverlay.uuid;
 			newPolyline.addTo(mapView.map);
 		}
 		// Polygon
@@ -205,9 +209,9 @@ export function createLeafletAdapter(): MapAdapter {
 					alt,
 				})),
 				geoOverlay.geometry.properties.borderColor,
-				geoOverlay.geometry.properties.fillColor
+				geoOverlay.geometry.properties.fillColor,
+				geoOverlay.uuid
 			);
-			newPolygon.uuid = geoOverlay.uuid;
 			newPolygon.addTo(mapView.map);
 		}
 	}
@@ -215,11 +219,10 @@ export function createLeafletAdapter(): MapAdapter {
 	function removeGeoOverlay(geoOverlay: GeoOverlay) {
 		let findGeoOverlay = null;
 		mapView.map.eachLayer(function (layer: any) {
-			if (layer.uuid === geoOverlay.uuid) {
+			if (layer.options && layer.options.id === geoOverlay.uuid) {
 				findGeoOverlay = layer;
 			}
 		});
-
 		if (findGeoOverlay) mapView.map.removeLayer(findGeoOverlay);
 	}
 
