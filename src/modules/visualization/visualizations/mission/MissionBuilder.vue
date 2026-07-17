@@ -13,11 +13,8 @@ import { sendCommand } from '../../services/controlstream.service';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
 import { VisualizationComponents } from '../../types/visualization';
-import type { IConSysApiControlStreamProperties } from '../../types/datasource';
-import { showToast } from '@/composables/useToast';
 import { useMapStore } from '@/stores/mapstore';
 import {SystemState} from "@/modules/visualization/visualizations/mission/types";
-import { IConSysApiDataSourceProperties } from '@/modules/visualization/types/datasource';
 
 const mapStore = useMapStore();
 
@@ -29,6 +26,7 @@ const systemStates = reactive(new Map<string, SystemState>());
 const activeSystemId = ref<string | null>(null);
 const planMissionRefs = ref<Map<string, InstanceType<typeof PlanMission>>>(new Map());
 const activeTab = ref<'plan' | 'control'>('plan');
+const minimapViewActive = ref(false);
 
 const noController = computed(() => props.visualizations.length === 0);
 
@@ -54,8 +52,6 @@ const minimapViz = computed(() =>
 	activeVisualization.value?.children?.find((c: OSHVisualization) => c.type === 'minimap') ?? null
 );
 
-const receivedLLA = ref<LLAData>({ lat: 0, lon: 0, alt: 0 });
-const receivedStatus = ref("");
 
 function detectVehicleType(viz: OSHVisualization): string {
 	const hasGroundControls =
@@ -309,12 +305,26 @@ const hasCommandPad = computed(
         <div class="d-flex align-center justify-space-between px-2 pt-1">
           <span class="text-caption font-weight-medium">Mini Map</span>
         </div>
-        <PanelVisualizationWrapper :viz="minimapViz" />
+        <PanelVisualizationWrapper :key="activeSystemId" :viz="minimapViz" />
       </v-card>
 		<v-card
 			class="telemetry-card"
 		>
-			<v-card-text>Live Telemetry</v-card-text>
+			<div class="d-flex align-center justify-space-between px-4 pt-2">
+        <v-card-text class="pa-0">Live Telemetry</v-card-text>
+        <v-btn
+          :color="minimapViewActive ? 'primary' : 'grey'"
+          variant="text"
+          density="compact"
+          @click="minimapViewActive = !minimapViewActive"
+          :prepend-icon="minimapViewActive ? 'mdi-eye' : 'mdi-eye-outline'"
+        >
+          Mini Map
+          <v-tooltip activator="parent" location="top">
+            {{ minimapViewActive ? 'Hide mini map' : 'Show mini map' }}
+          </v-tooltip>
+        </v-btn>
+      </div>
 			<v-row density="comfortable">
 				<v-col
 					cols="12"
@@ -380,6 +390,7 @@ const hasCommandPad = computed(
 							:no-controller="false"
 							:system-id="viz.id"
 							:vehicle-type="detectVehicleType(viz)"
+              @set-home="(loc) => onSetHome(loc, viz)"
 						/>
 					</div>
 				</v-window-item>
