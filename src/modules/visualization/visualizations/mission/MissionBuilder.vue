@@ -17,7 +17,6 @@ import { useMapStore } from '@/stores/mapstore';
 import { useMissionStore } from '@/stores/missionstore';
 import {SystemState} from "@/modules/visualization/visualizations/mission/types";
 
-const mapStore = useMapStore();
 const missionStore = useMissionStore();
 
 const props = defineProps<{
@@ -234,8 +233,8 @@ async function sendAllMissions() {
 
 	for (const viz of systems) {
 		const planRef = planMissionRefs.value.get(viz.id);
-		if (planRef) {
-      planRef.sendMission();
+		if (planRef && planRef.waypoints.length > 0) {
+			planRef.sendMission();
 		}
 	}
 }
@@ -246,6 +245,16 @@ onBeforeUnmount(() => {
 	}
 	missionStore.clearMissionWaypoints();
 });
+
+const numPlannedMissions = computed(() => {
+	let count = 0;
+	for (const ref of planMissionRefs.value.values()) {
+		if (ref?.waypoints?.length > 0) count++;
+	}
+	return count;
+});
+const hasAnyMissions = computed(() => numPlannedMissions.value > 0);
+
 const hasCommandPad = computed(
 	() =>
 		getControlstreamByRole('land') ||
@@ -412,8 +421,9 @@ const hasCommandPad = computed(
 			color="primary"
 			variant="tonal"
 			@click="sendAllMissions"
+      :disabled="!hasAnyMissions"
 		>
-			Send All Missions
+			Send All Missions ( {{ numPlannedMissions }} )
 		</v-btn>
 	</v-container>
 </template>
