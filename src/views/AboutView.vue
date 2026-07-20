@@ -146,6 +146,34 @@
 					></iframe>
 				</v-expansion-panel-text>
 			</v-expansion-panel>
+      <v-expansion-panel>
+        <v-expansion-panel-title>
+          <h2>Create a Mini Map Visualization</h2>
+        </v-expansion-panel-title>
+        <v-expansion-panel-text>
+          <iframe
+              src="https://scribehow.com/embed/Creating_a_Minimap_Visualization__IBjtXmt9SP62h1nqgI-3tg"
+              width="800"
+              height="679"
+              allow="fullscreen"
+              style="aspect-ratio: 1 / 1; border: 0; min-height: 480px"
+          ></iframe>
+        </v-expansion-panel-text>
+      </v-expansion-panel>
+      <v-expansion-panel>
+        <v-expansion-panel-title>
+          <h2>Create a UAV Mission Builder</h2>
+        </v-expansion-panel-title>
+        <v-expansion-panel-text>
+          <iframe
+              src="https://scribehow.com/embed/How_To_Create_A_UAV_Mission_Visualization__9U_5MOdzRIOyymEetroL5g"
+              width="800"
+              height="679"
+              allow="fullscreen"
+              style="aspect-ratio: 1 / 1; border: 0; min-height: 480px"
+          ></iframe>
+        </v-expansion-panel-text>
+      </v-expansion-panel>
 		</v-expansion-panels>
 	</div>
 </template>
