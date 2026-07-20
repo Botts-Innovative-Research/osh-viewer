@@ -1,25 +1,33 @@
 <script setup lang="ts">
-import { onUnmounted, ref, watch } from 'vue';
+import { computed, onUnmounted, ref, watch } from 'vue';
 import { GeoOverlayType } from '@/modules/map/geo-overlay/types';
 import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
 import PolygonGeoOverlayConfig from '@/modules/map/geo-overlay/components/PolygonGeoOverlayConfig.vue';
 import CircleGeoOverlayConfig from '@/modules/map/geo-overlay/components/CircleGeoOverlayConfig.vue';
 import LineStringGeoOverlayConfig from '@/modules/map/geo-overlay/components/LineStringGeoOverlayConfig.vue';
 import { VueDraggable } from 'vue-draggable-plus';
-import MapVisualizationWrapper from '@/modules/visualization/sidebar/components/MapVisualizationWrapper.vue';
 import GeoOverlayWrapper from '@/modules/map/geo-overlay/components/GeoOverlayWrapper.vue';
 import { useGeoOverlayStore } from '@/stores/geooverlaystore';
+import { MapInteractionMode, useMapInteractionStore } from '@/stores/mapinteractionstore';
 
+const mapInteractionStore = useMapInteractionStore();
 const previewStore = useGeoOverlayPreviewStore();
 const geoOverlayStore = useGeoOverlayStore();
 
-const selectedTool = ref<GeoOverlayType | null>(null);
-
-watch(selectedTool, (newVal) => {
-	if (!newVal) {
-		previewStore.reset();
-		return;
-	}
+const selectedTool = ref<MapInteractionMode | null>(null);
+watch(
+	() => mapInteractionStore.interactionMode,
+	(mode) => {
+		if (mode.startsWith('geoOverlay')) {
+			selectedTool.value = mode;
+			// Handle circle creation step
+			if (mode === 'geoOverlayCircle') previewStore.circleCreationStep = 'center';
+		}
+	},
+	{ immediate: true }
+);
+watch(selectedTool, (tool) => {
+	mapInteractionStore.interactionMode = tool?.startsWith('geoOverlay') ? tool : 'none';
 });
 
 onUnmounted(() => {
@@ -36,6 +44,7 @@ onUnmounted(() => {
 			<v-btn-toggle
 				v-model="selectedTool"
 				class="ga-2"
+				:mandatory="false"
 			>
 				<!--				<v-btn-->
 				<!--					prepend-icon="mdi-map-marker-outline"-->
@@ -55,7 +64,8 @@ onUnmounted(() => {
 					prepend-icon="mdi-vector-circle-variant"
 					variant="tonal"
 					color="primary"
-					value="Circle"
+					value="geoOverlayCircle"
+					:active="selectedTool === 'geoOverlayCircle'"
 				>
 					<v-tooltip
 						text="Draw circle overlay on map"
@@ -69,7 +79,8 @@ onUnmounted(() => {
 					prepend-icon="mdi-vector-polyline"
 					variant="tonal"
 					color="primary"
-					value="LineString"
+					value="geoOverlayLineString"
+					:active="selectedTool === 'geoOverlayLineString'"
 				>
 					<v-tooltip
 						text="Draw polyline overlay on map"
@@ -83,7 +94,8 @@ onUnmounted(() => {
 					prepend-icon="mdi-vector-polygon-variant"
 					variant="tonal"
 					color="primary"
-					value="Polygon"
+					value="geoOverlayPolygon"
+					:active="selectedTool === 'geoOverlayPolygon'"
 				>
 					<v-tooltip
 						text="Draw polygon overlay on map"
@@ -99,18 +111,18 @@ onUnmounted(() => {
 		<v-expand-transition>
 			<!-- Circle -->
 			<CircleGeoOverlayConfig
-				v-if="selectedTool === 'Circle'"
-				@close="selectedTool = null"
+				v-if="selectedTool === 'geoOverlayCircle'"
+				@close="selectedTool = 'none'"
 			/>
 			<!-- LineString -->
 			<LineStringGeoOverlayConfig
-				v-if="selectedTool === 'LineString'"
-				@close="selectedTool = null"
+				v-if="selectedTool === 'geoOverlayLineString'"
+				@close="selectedTool = 'none'"
 			/>
 			<!-- Polygon -->
 			<PolygonGeoOverlayConfig
-				v-if="selectedTool === 'Polygon'"
-				@close="selectedTool = null"
+				v-if="selectedTool === 'geoOverlayPolygon'"
+				@close="selectedTool = 'none'"
 			/>
 		</v-expand-transition>
 		<div class="pt-4 pb-4">
