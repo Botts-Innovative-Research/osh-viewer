@@ -1,4 +1,5 @@
 import * as Cesium from 'cesium';
+import { MapPoint } from '@/modules/map/types';
 
 /**
  * Given lat/lon, use Cesium to calculate ground level altitude.
@@ -30,4 +31,17 @@ export async function getGroundAltitude(lon: number, lat: number) {
 		console.error('Error sampling terrain:', error);
 		return null;
 	}
+}
+
+/**
+ * Given two LLA points, calculate the distance between them in meters
+ * Used for radius of circle GeoOverlay
+ * @param point1
+ * @param point2
+ */
+export function getDistanceBetween(point1: MapPoint, point2: MapPoint) {
+	const cartesian1 = Cesium.Cartesian3.fromDegrees(point1.lon, point1.lat, point1.alt);
+	const cartesian2 = Cesium.Cartesian3.fromDegrees(point2.lon, point2.lat, point2.alt);
+
+	return Cesium.Cartesian3.distance(cartesian1, cartesian2);
 }

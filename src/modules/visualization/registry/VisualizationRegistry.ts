@@ -10,6 +10,8 @@ import { VisualizationDescriptor } from './types';
 import { EllipseDescriptor } from '../visualizations/ellipse/Descriptor';
 import { SigIntDescriptor } from '../visualizations/sigint/Descriptor';
 import { PolylineDescriptor } from '../visualizations/polyline/Descriptor';
+import { FrustumDescriptor } from '../visualizations/frustum/Descriptor';
+import { MiniMapDescriptor } from '../visualizations/minimap/Descriptor';
 
 /**
  * Central registry for all visualizations available in the Visualization Wizard.
@@ -27,6 +29,8 @@ export const VisualizationRegistry: { [key: string]: VisualizationDescriptor } =
 	[SigIntDescriptor.id]: SigIntDescriptor,
 	[PolylineDescriptor.id]: PolylineDescriptor,
 	[AudioDescriptor.id]: AudioDescriptor,
+	[FrustumDescriptor.id]: FrustumDescriptor,
+	[MiniMapDescriptor.id]: MiniMapDescriptor,
 };
 
 export type VisualizationType = keyof typeof VisualizationRegistry;

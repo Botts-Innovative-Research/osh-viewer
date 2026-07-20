@@ -162,7 +162,7 @@ watch(selectedCommand, (newCommand) => {
 });
 
 // Default values for manual input commands
-const singleValue = ref<number | string>(0.0);
+const singleValue = ref<number>(0.0);
 // Values for data record inputs
 const absPan = ref<number>(0.0);
 const absTilt = ref<number>(0.0);
@@ -246,9 +246,9 @@ const constraintTooltip = computed(() => {
 					rounded="xl"
 				></IconButton>
 			</v-container>
-			<v-text-field
+			<v-number-input
 				v-model.number="increment"
-				type="number"
+				variant="outlined"
 				label="Increment"
 			/>
 		</v-sheet>
@@ -262,43 +262,46 @@ const constraintTooltip = computed(() => {
 			<div v-if="isDataRecord">
 				<v-tooltip :text="`min: ${constraints.minPan}, max: ${constraints.maxPan}`">
 					<template #activator="{ props }">
-						<v-text-field
+						<v-number-input
 							v-model.number="absPan"
-							type="number"
+							variant="outlined"
 							label="Pan"
 							placeholder="0.0"
 							class="w-100"
 							:min="constraints.minPan"
 							:max="constraints.maxPan"
 							v-bind="props"
+							:rules="[() => !!absPan || `Pan is required.`]"
 						/>
 					</template>
 				</v-tooltip>
 				<v-tooltip :text="`min: ${constraints.minTilt}, max: ${constraints.maxTilt}`">
 					<template #activator="{ props }">
-						<v-text-field
+						<v-number-input
 							v-model.number="absTilt"
-							type="number"
+							variant="outlined"
 							label="Tilt"
 							placeholder="0.0"
 							class="w-100"
 							:min="constraints.minTilt"
 							:max="constraints.maxTilt"
 							v-bind="props"
+							:rules="[() => !!absTilt || `Tilt is required.`]"
 						/>
 					</template>
 				</v-tooltip>
 				<v-tooltip :text="`min: ${constraints.minZoom}, max: ${constraints.maxZoom}`">
 					<template #activator="{ props }">
-						<v-text-field
+						<v-number-input
 							v-model.number="absZoom"
-							type="number"
+							variant="outlined"
 							label="Zoom"
 							placeholder="0.0"
 							class="w-100"
 							:min="constraints.minZoom"
 							:max="constraints.maxZoom"
 							v-bind="props"
+							:rules="[() => !!absZoom || `Zoom is required.`]"
 						/>
 					</template>
 				</v-tooltip>
@@ -320,9 +323,9 @@ const constraintTooltip = computed(() => {
 					:disabled="!constraintTooltip"
 				>
 					<template #activator="{ props }">
-						<v-text-field
+						<v-number-input
 							v-model="singleValue"
-							type="number"
+							variant="outlined"
 							:label="selectedCommand"
 							placeholder="Enter value"
 							class="w-100"
@@ -341,6 +344,7 @@ const constraintTooltip = computed(() => {
 										: constraints.maxZoom
 							"
 							v-bind="props"
+							:rules="[() => !!singleValue || `${selectedCommand} is required.`]"
 						/>
 					</template>
 				</v-tooltip>

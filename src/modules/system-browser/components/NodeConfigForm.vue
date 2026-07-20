@@ -11,7 +11,7 @@ const uiStore = useUIStore();
 // Form fields
 const nodeName = ref('Test');
 const nodeHost = ref(window.location.hostname);
-const nodePort = ref('8080');
+const nodePort = ref(8080);
 const nodePath = ref('sensorhub/api');
 const nodeUser = ref('admin');
 const nodePassword = ref('admin');
@@ -35,7 +35,7 @@ async function createNode() {
 	const result = await oshconnect.createNode(
 		nodeName.value,
 		nodeHost.value,
-		nodePort.value,
+		nodePort.value.toString(),
 		nodePath.value,
 		nodeUser.value,
 		nodePassword.value,
@@ -86,11 +86,11 @@ function sanitizeAPIRoot(path: any) {
 					:rules="[(v) => !!v || 'Host is required']"
 					required
 				/>
-				<v-text-field
+				<v-number-input
 					label="Node Port"
 					v-model="nodePort"
-					placeholder="8181"
-					type="number"
+					placeholder="8080"
+					variant="outlined"
 					inputmode="numeric"
 					onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault();"
 					:rules="[(v) => !!v || 'Port is required']"

@@ -455,28 +455,42 @@ export class OSHVisualization {
 	}
 }
 
+/**
+ * Follows GeoJSON format, with optional systemId property for OSH FOIs
+ */
 export class Geometry {
 	id: string;
-	systemId: string;
 	type: string;
 	coordinates: number[] | number[][];
 	properties?: any;
 	bbox?: number[] | undefined;
+	systemId?: string | undefined;
 
 	constructor(
 		id: string,
-		systemId: string,
 		type: string,
 		coordinates: number[] | number[][],
 		properties?: any,
-		bbox?: number[]
+		bbox?: number[],
+		systemId?: string
 	) {
 		this.id = id;
-		this.systemId = systemId;
 		this.type = type;
 		this.coordinates = coordinates;
 		this.properties = properties || {};
 		this.bbox = bbox;
+		this.systemId = systemId;
+	}
+
+	// TODO: Handle "Circle" type
+	toGeoJSON() {
+		return {
+			id: this.id,
+			type: this.type,
+			coordinates: this.coordinates,
+			properties: this.properties,
+			bbox: this.bbox,
+		};
 	}
 }
 
@@ -487,7 +501,7 @@ export type OSHLayer =
 	| 'CurveLayer'
 	// | 'DataLayer'
 	| 'EllipseLayer'
-	// | 'FrustumLayer'
+	| 'FrustumLayer'
 	// | 'ImageDrapingLayer'
 	| 'LoB'
 	| 'PointMarkerLayer'
@@ -502,7 +516,7 @@ export const OSHLayerLabels: Array<{ layer: OSHLayer; label: string }> = [
 	{ layer: 'CurveLayer', label: 'Curve' },
 	// { layer: 'DataLayer', label: 'Data' },
 	// { layer: 'EllipseLayer', label: 'Ellipse' },
-	// { layer: 'FrustumLayer', label: 'Frustum' },
+	{ layer: 'FrustumLayer', label: 'Frustum' },
 	// { layer: 'ImageDrapingLayer', label: 'Image Draping' },
 	{ layer: 'LoB', label: 'Line of Bearing' },
 	{ layer: 'PointMarkerLayer', label: 'Point Marker' },
