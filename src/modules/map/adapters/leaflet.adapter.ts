@@ -7,6 +7,7 @@ import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 export function createLeafletAdapter(): MapAdapter {
 	let mapView: typeof LeafletView | null;
 	let flightPathPolylines: any[] = [];
+	let waypointMarkers: any[] = [];
 
 	/* GeoOverlays */
 	let previewEntity: any = null;
@@ -124,11 +125,8 @@ export function createLeafletAdapter(): MapAdapter {
 	}
 
 	function drawMissionPath(waypoints: MapPoint[]) {
-		const latLngs = waypoints.map((wp: MapPoint) => [wp.lat, wp.lon]);
-		const polyline = L.polyline(latLngs, {
-			color: 'red',
-			weight: 5,
-		}).addTo(mapView.map);
+		const polyline = drawPolyline(waypoints, '#FF0000');
+		polyline.addTo(mapView.map);
 		flightPathPolylines.push(polyline);
 	}
 
@@ -137,6 +135,27 @@ export function createLeafletAdapter(): MapAdapter {
 			mapView.map.removeLayer(polyline);
 		}
 		flightPathPolylines = [];
+	}
+
+	function drawMissionWaypoints(waypoints: MapPoint[]) {
+		clearMissionWaypoints();
+		waypoints.forEach((wp, index) => {
+			const marker = drawPoint(wp, {
+				label: `WP ${index + 1}`,
+				iconUrl: '/icons/waypoint/round-pin.png',
+				iconColor: '#00FF00',
+				iconSize: [32, 32],
+			});
+			marker.addTo(mapView.map);
+			waypointMarkers.push(marker);
+		});
+	}
+
+	function clearMissionWaypoints() {
+		for (const marker of waypointMarkers) {
+			mapView.map.removeLayer(marker);
+		}
+		waypointMarkers = [];
 	}
 
 	/* Geofence Drawing Tools */
@@ -259,6 +278,8 @@ export function createLeafletAdapter(): MapAdapter {
 		drawCircle,
 		drawPolyline,
 		drawPolygon,
+		drawMissionWaypoints,
+		clearMissionWaypoints,
 		drawMissionPath,
 		clearMissionPath,
 		updateCirclePreview,

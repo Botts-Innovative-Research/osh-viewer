@@ -34,6 +34,8 @@ export interface MapAdapter {
 	drawPolygon(points: MapPoint[], borderColor: string | null, fillColor: string | null): any;
 
 	/* Mission Builder */
+	drawMissionWaypoints(waypoints: MapPoint[]): void;
+	clearMissionWaypoints(): void;
 	drawMissionPath(waypoints: MapPoint[]): void;
 	clearMissionPath(): void;
 

@@ -29,6 +29,7 @@ export function createCesiumAdapter(): MapAdapter {
 	let buildingsTileset: any = null;
 	let googlePhotorealistic: any = null;
 	let flightPathPolylines: any[] = [];
+	let waypointEntities: any[] = [];
 
 	/* GeoOverlays */
 	let previewEntity: any = null;
@@ -245,23 +246,11 @@ export function createCesiumAdapter(): MapAdapter {
 	}
 
 	function drawMissionPath(waypoints: MapPoint[]) {
-		const positions = waypoints.map((wp: MapPoint) => {
-			return Cesium.Cartesian3.fromDegrees(wp.lon, wp.lat, wp.alt || 0);
-		});
-		const entity = mapView.viewer.entities.add({
-			polyline: {
-				positions: positions,
-				width: 5,
-				material: new Cesium.PolylineOutlineMaterialProperty({
-					color: Cesium.Color.RED,
-					outlineWidth: 2,
-					outlineColor: Cesium.Color.BLACK,
-				}),
-				clampToGround: true,
-			},
-		});
+		const entity = drawPolyline(waypoints, '#FF0000');
+		mapView.viewer.entities.add(entity);
 		flightPathPolylines.push(entity);
 	}
+
 	function clearMissionPath() {
 		if (!mapView) return;
 		for (const entity of flightPathPolylines) {
@@ -270,6 +259,28 @@ export function createCesiumAdapter(): MapAdapter {
 		flightPathPolylines = [];
 	}
 
+	function drawMissionWaypoints(waypoints: MapPoint[]) {
+		clearMissionWaypoints();
+		waypoints.forEach((wp, index) => {
+			const entity = drawPoint(wp, {
+				label: `WP ${index + 1}`,
+				iconUrl: '/icons/waypoint/round-pin.png',
+				iconColor: '#00FF00',
+				iconSize: [32, 32],
+			});
+			mapView.viewer.entities.add(entity);
+			waypointEntities.push(entity);
+		});
+		invalidate();
+	}
+
+	function clearMissionWaypoints() {
+		if (!mapView) return;
+		for (const entity of waypointEntities) {
+			mapView.viewer.entities.remove(entity);
+		}
+		waypointEntities = [];
+	}
 	async function addTerrain() {
 		// Assign terrain provider to map
 		if (!terrainProvider) {
@@ -564,6 +575,8 @@ export function createCesiumAdapter(): MapAdapter {
 		drawCircle,
 		drawPolyline,
 		drawPolygon,
+		drawMissionWaypoints,
+		clearMissionWaypoints,
 		drawMissionPath,
 		clearMissionPath,
 		addTerrain,
