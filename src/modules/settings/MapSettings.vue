@@ -119,9 +119,15 @@ const canAddUrl = computed(() => {
 						</v-list-item>
 						<v-list-item>
 							<v-list-item-title>Enable 3D Buildings</v-list-item-title>
+							<v-list-item-subtitle
+								v-if="!enable3DTerrain && !enableGooglePhotorealistic"
+							>
+								Requires 3D terrain or photorealistic tiles
+							</v-list-item-subtitle>
 							<template #append>
 								<v-switch
 									v-model="enable3DBuildings"
+									:disabled="!enable3DTerrain && !enableGooglePhotorealistic"
 									color="primary"
 									inset="material"
 									hide-details
