@@ -156,7 +156,32 @@ export function createCesiumAdapter(): MapAdapter {
 		mapView.updateMarker(props);
 	}
 
-	function drawPoint(point: MapPoint) {}
+	function drawPoint(
+        point: MapPoint,
+        icon?: string,
+        iconColor?: string,
+        label?: string,
+        id?: string
+    ) {
+		return new Cesium.Entity({
+			id: id ?? randomUUID(),
+			position: Cesium.Cartesian3.fromDegrees(point.lon, point.lat, point.alt || 0),
+			billboard: {
+				image: icon ?? '/icons/waypoint/round-pin.png',
+				width:  32,
+				height:  32,
+				color: Cesium.Color.fromCssColorString(iconColor ?? '#FFFFFF'),
+			},
+            label: {
+                text: label,
+                font: '14pt monospace',
+                style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                outlineWidth: 2,
+                verticalOrigin: Cesium.VerticalOrigin.TOP,
+                pixelOffset: new Cesium.Cartesian2(0, 32),
+            },
+		});
+	}
 	function drawCircle(
 		center: MapPoint,
 		radius: number,
