@@ -7,7 +7,6 @@ import {
 	createGeoPTZLayer,
 	createLocationLayer,
 	createMapVisualizations,
-	createWaypointLayer,
 	rebuildMapVisualizations,
 } from '../mapVisualizations';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
@@ -72,7 +71,6 @@ export function useMap() {
 	// MISSION BUILDER
 	const driveLocationLayer = ref<typeof PointMarkerLayer | null>(null);
 	const homeLocationLayer = ref<typeof PointMarkerLayer | null>(null);
-	const waypointLayers = ref<(typeof PointMarkerLayer)[]>([]); // Array of waypoint Pointmarkers for mission builder
 	// FOI
 	const foiLayers = ref<{ layer: typeof PointMarkerLayer; props: any }[]>([]);
 
@@ -133,13 +131,8 @@ export function useMap() {
 		rebuildGeoOverlayLayers(); // Rebuild GeoOverlays
 
 		// Rebuild all waypoints per system
-		waypointLayers.value = [];
-		let idx = 0;
 		for (const [, systemWaypoints] of missionStore.missionWaypointsPerSystem) {
-			for (const waypoint of systemWaypoints) {
-				await addWaypointLayer(waypoint, idx);
-				idx++;
-			}
+			mapAdapter.value?.drawMissionWaypoints(systemWaypoints);
 			drawMissionPath(systemWaypoints);
 		}
 		if (driveLocationLayer.value && mapStore.currentLLA) {
@@ -663,34 +656,17 @@ export function useMap() {
 	/* MISSION BUILDER */
 	watch(
 		() => missionStore.missionWaypoints,
-		async (waypoints) => {
+		(waypoints) => {
 			if (!mapAdapter.value) return;
 
-			// Remove waypoints
 			clearMission();
 
-			let idx = 0;
 			for (const [, systemWaypoints] of missionStore.missionWaypointsPerSystem) {
-				// Add waypoints
-				for (const waypoint of systemWaypoints) {
-					await addWaypointLayer(waypoint, idx);
-					idx++;
-				}
-                // Draw mission path
-                drawMissionPath(systemWaypoints)
-            }
+				mapAdapter.value.drawMissionWaypoints(systemWaypoints);
+				drawMissionPath(systemWaypoints);
+			}
 		}
 	);
-	async function addWaypointLayer(waypoint: MapPoint, index: number) {
-		if (!mapAdapter.value) return;
-
-		const result = await createWaypointLayer(waypoint, index.toString());
-		if (result) {
-			mapAdapter.value?.addLayer(result.layer);
-			waypointLayers.value.push(result.layer);
-			if (result.props) mapAdapter.value?.updateMarker(result.props);
-		}
-	}
 	function drawMissionPath(waypoints: MapPoint[]) {
 		if (!mapAdapter.value) return;
 
@@ -700,11 +676,7 @@ export function useMap() {
 		}
 	}
 	function clearMission() {
-		for (const layer of waypointLayers.value) {
-			mapAdapter.value?.removeLayer(layer);
-		}
-		waypointLayers.value = [];
-
+		mapAdapter.value?.clearMissionWaypoints();
 		mapAdapter.value?.clearMissionPath();
 	}
 

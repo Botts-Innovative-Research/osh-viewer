@@ -265,7 +265,7 @@ export function createCesiumAdapter(): MapAdapter {
 			const entity = drawPoint(
 				wp,
 				'/icons/waypoint/round-pin.png',
-				'#00FF00',
+				'#4c89e7',
 				`WP ${index + 1}`,
 			);
 			mapView.viewer.entities.add(entity);

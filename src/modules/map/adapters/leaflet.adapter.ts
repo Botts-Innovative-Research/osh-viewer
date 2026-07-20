@@ -143,7 +143,7 @@ export function createLeafletAdapter(): MapAdapter {
 			const marker = drawPoint(
 				wp,
 				'/icons/waypoint/round-pin.png',
-				'#00FF00',
+				'#4c89e7',
 				`WP ${index + 1}`,
 			);
 			marker.addTo(mapView.map);
