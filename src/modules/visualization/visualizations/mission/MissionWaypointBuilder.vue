@@ -2,10 +2,9 @@
 import {computed, ref, watch} from 'vue';
 // @ts-ignore
 import {randomUUID} from 'osh-js/source/core/utils/Utils.js';
-import {VueDraggable} from 'vue-draggable-plus';
 import type {Waypoint} from './types';
 import MapPointEditor from "@/components/ui/MapPointEditor.vue";
-import DeleteButton from "@/components/ui/DeleteButton.vue";
+import MapPointCollectionEditor from "@/components/ui/MapPointCollectionEditor.vue";
 import {useMapStore} from "@/stores/mapstore";
 import {useMapInteractionStore} from "@/stores/mapinteractionstore";
 import type {MapPoint} from "@/modules/map/types";
@@ -29,7 +28,6 @@ const cruiseSpeed = defineModel<number>('cruiseSpeed', { required: true });
 const hoverSpeed = defineModel<number>('hoverSpeed', { required: true });
 const altitudeMode = defineModel<number>('altitudeMode', { required: true });
 const editorPoint = ref<MapPoint>({ lat: 0, lon: 0, alt: 0 });
-const showClearConfirm = ref(false);
 
 const altitudeModeOptions = [
   { title: 'Relative', value: 0},
@@ -49,15 +47,14 @@ function addWaypointFromMap(payload: MapPoint) {
   waypoints.value.push(newWaypoint);
 }
 
-function removeWaypoint(id: string) {
-	waypoints.value = waypoints.value.filter((wp) => wp.id !== id);
-}
-
-function clearAll() {
-	waypoints.value = [];
-	showClearConfirm.value = false;
-	emit('clearWaypoints');
-}
+watch(
+    () => waypoints.value.length,
+    (newLen, oldLen) => {
+      if (newLen === 0 && oldLen > 0) {
+        emit('clearWaypoints');
+      }
+    }
+);
 
 function setLatLonAlt(lat: number, lon: number, alt: number) {
 	editorPoint.value = { lat, lon, alt };
@@ -99,119 +96,11 @@ defineExpose({ setLatLonAlt });
     />
   </div>
 
-  <div class="d-flex justify-space-between align-center mb-2" v-if="waypoints.length > 0">
-    <span class="text-subtitle-2">Waypoints</span>
-    <v-btn
-        :disabled="waypoints.length === 0"
-        color="error"
-        size="small"
-        variant="text"
-        @click="showClearConfirm = true"
-    >
-      Clear current mission
-    </v-btn>
-    <v-dialog
-        v-model="showClearConfirm"
-        max-width="400"
-    >
-      <v-card>
-        <v-card-item>
-          <v-card-title>Clear All Waypoints</v-card-title>
-        </v-card-item>
-        <v-card-text>
-          Are you sure you want to clear all
-          {{ waypoints.length }} waypoints? This action cannot be undone.
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer/>
-          <v-btn
-              variant="text"
-              @click="showClearConfirm = false"
-          >Cancel
-          </v-btn>
-          <v-btn
-              color="error"
-              variant="flat"
-              @click="clearAll"
-          >Clear
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </div>
-  <VueDraggable
-      v-if="waypoints.length > 0"
+  <MapPointCollectionEditor
       v-model="waypoints"
-      :animation="150"
-      class="waypoints-list"
-      handle=".drag-handle"
-  >
-    <v-list-item
-        v-for="(wp, index) in waypoints"
-        :key="wp.id"
-        class="pa-1"
-    >
-      <template v-slot:prepend>
-        <div>
-          <v-icon
-              class="drag-handle mr-1"
-              size="small"
-          >mdi-drag
-          </v-icon>
-          <span class="text-caption w-auto">{{ index + 1 }}.</span>
-        </div>
-      </template>
-      <v-list-item-title class="px-2">
-        <v-row
-            class="align-center"
-            density="compact"
-        >
-          <v-col :cols="isGroundVehicle ? 6 : 4">
-            <v-text-field
-                v-model.number="wp.lat"
-                density="compact"
-                hide-details
-                label="Lat"
-                type="number"
-            />
-          </v-col>
-          <v-col :cols="isGroundVehicle ? 6 : 4">
-            <v-text-field
-                v-model.number="wp.lon"
-                density="compact"
-                hide-details
-                label="Lon"
-                type="number"
-            />
-          </v-col>
-          <v-col
-              v-if="!isGroundVehicle"
-              cols="4"
-          >
-            <v-text-field
-                v-model.number="wp.alt"
-                density="compact"
-                hide-details
-                label="Alt"
-                type="number"
-            />
-          </v-col>
-        </v-row>
-      </v-list-item-title>
-      <template v-slot:append>
-        <DeleteButton
-            label="Remove"
-            @delete="removeWaypoint(wp.id)"
-        ></DeleteButton>
-      </template>
-    </v-list-item>
-  </VueDraggable>
-  <div
-      v-else
-      class="text-caption text-grey text-center pa-4"
-  >
-    No waypoints added. Click on the map or use the form above.
-  </div>
+      title="Waypoints"
+      :hide-alt="isGroundVehicle"
+  />
 
   <v-divider class="mt-4 mb-3" />
 
@@ -267,16 +156,3 @@ defineExpose({ setLatLonAlt });
     </v-col>
   </v-row>
 </template>
-
-<style scoped>
-.waypoints-list {
-	max-height: 175px;
-	overflow-y: auto;
-}
-.drag-handle {
-	cursor: grab;
-}
-.drag-handle:active {
-	cursor: grabbing;
-}
-</style>

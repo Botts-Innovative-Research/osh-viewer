@@ -17,7 +17,15 @@ export interface MapAdapter {
 	updateMarker(props: any): void;
 
 	/* Map Drawing */
-	drawPoint(point: MapPoint): any;
+	addMarker(marker: any): void;
+	removeMarker(marker: any): void;
+	drawPoint(
+        point: MapPoint,
+        icon?: string,
+        iconColor?: string,
+        label?: string,
+        id?: string
+    ): any;
 	drawCircle(
 		center: MapPoint,
 		radius: number,
@@ -28,6 +36,8 @@ export interface MapAdapter {
 	drawPolygon(points: MapPoint[], borderColor: string | null, fillColor: string | null): any;
 
 	/* Mission Builder */
+	drawMissionWaypoints(waypoints: MapPoint[]): void;
+	clearMissionWaypoints(): void;
 	drawMissionPath(waypoints: MapPoint[]): void;
 	clearMissionPath(): void;
 
