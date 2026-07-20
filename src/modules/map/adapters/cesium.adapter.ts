@@ -262,12 +262,12 @@ export function createCesiumAdapter(): MapAdapter {
 	function drawMissionWaypoints(waypoints: MapPoint[]) {
 		clearMissionWaypoints();
 		waypoints.forEach((wp, index) => {
-			const entity = drawPoint(wp, {
-				label: `WP ${index + 1}`,
-				iconUrl: '/icons/waypoint/round-pin.png',
-				iconColor: '#00FF00',
-				iconSize: [32, 32],
-			});
+			const entity = drawPoint(
+				wp,
+				'/icons/waypoint/round-pin.png',
+				'#00FF00',
+				`WP ${index + 1}`,
+			);
 			mapView.viewer.entities.add(entity);
 			waypointEntities.push(entity);
 		});
