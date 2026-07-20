@@ -2,6 +2,7 @@
 import { VueDraggable } from 'vue-draggable-plus';
 import { MapPoint } from '@/modules/map/types';
 import { ref } from 'vue';
+import DeleteButton from "@/components/ui/DeleteButton.vue";
 
 const props = withDefaults(
 	defineProps<{
@@ -127,21 +128,10 @@ function clearPoints() {
 				</v-row>
 			</v-list-item-title>
 			<template v-slot:append>
-				<div class="">
-					<v-btn
-						icon
-						size="x-small"
-						variant="text"
-						@click="removePoint(index)"
-					>
-						<v-icon size="small">mdi-close-circle</v-icon>
-						<v-tooltip
-							activator="parent"
-							location="top"
-							>Remove point</v-tooltip
-						>
-					</v-btn>
-				</div>
+          <DeleteButton
+              label="Remove point"
+              @delete="removePoint(index)"
+          ></DeleteButton>
 			</template>
 		</v-list-item>
 	</VueDraggable>

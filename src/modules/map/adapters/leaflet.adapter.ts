@@ -3,10 +3,13 @@ import L from 'leaflet';
 import { MapAdapter } from './types';
 import { MapPoint, MapPointHandler } from '@/modules/map/types';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
+import {getColoredIconUrl} from "@/modules/map/services/colorId.service";
+import {ICON_BASE} from "@/lib/icons";
 
 export function createLeafletAdapter(): MapAdapter {
 	let mapView: typeof LeafletView | null;
 	let flightPathPolylines: any[] = [];
+	let waypointMarkers: any[] = [];
 
 	/* GeoOverlays */
 	let previewEntity: any = null;
@@ -64,7 +67,36 @@ export function createLeafletAdapter(): MapAdapter {
 		mapView.updateMarker(props);
 	}
 
-	function drawPoint(point: MapPoint): L.point {}
+	function addMarker(marker: any) {
+		marker.addTo(mapView.map);
+	}
+
+	function removeMarker(marker: any) {
+		mapView.map.removeLayer(marker);
+	}
+
+    async function drawPoint(
+        point: MapPoint,
+        icon?: string,
+        iconColor?: string,
+        label?: string,
+        id?: string
+    ) {
+		const coloredIcon = iconColor && icon
+			? await getColoredIconUrl(`${ICON_BASE}${icon}`, iconColor)
+			: icon;
+		const iconOptions: any = {
+			iconUrl: coloredIcon ?? '/icons/waypoint/round-pin.png',
+			iconSize: [32, 32],
+		};
+		const marker = L.marker([point.lat, point.lon], {
+			icon: L.icon(iconOptions),
+		});
+		if (label) {
+			marker.bindTooltip(label);
+		}
+		return marker;
+	}
 	function drawCircle(
 		center: MapPoint,
 		radius: number,
@@ -106,11 +138,8 @@ export function createLeafletAdapter(): MapAdapter {
 	}
 
 	function drawMissionPath(waypoints: MapPoint[]) {
-		const latLngs = waypoints.map((wp: MapPoint) => [wp.lat, wp.lon]);
-		const polyline = L.polyline(latLngs, {
-			color: 'red',
-			weight: 5,
-		}).addTo(mapView.map);
+		const polyline = drawPolyline(waypoints, '#5d6cce');
+		polyline.addTo(mapView.map);
 		flightPathPolylines.push(polyline);
 	}
 
@@ -119,6 +148,27 @@ export function createLeafletAdapter(): MapAdapter {
 			mapView.map.removeLayer(polyline);
 		}
 		flightPathPolylines = [];
+	}
+
+	async function drawMissionWaypoints(waypoints: MapPoint[]) {
+		clearMissionWaypoints();
+		for (let index = 0; index < waypoints.length; index++) {
+			const marker = await drawPoint(
+				waypoints[index],
+				'/icons/waypoint/round-pin.png',
+				'#5d6cce',
+				`WP ${index + 1}`,
+			);
+			marker.addTo(mapView.map);
+			waypointMarkers.push(marker);
+		}
+	}
+
+	function clearMissionWaypoints() {
+		for (const marker of waypointMarkers) {
+			mapView.map.removeLayer(marker);
+		}
+		waypointMarkers = [];
 	}
 
 	/* Geofence Drawing Tools */
@@ -237,10 +287,14 @@ export function createLeafletAdapter(): MapAdapter {
 		onMouseMove,
 		flyToPoint,
 		updateMarker,
+		addMarker,
+		removeMarker,
 		drawPoint,
 		drawCircle,
 		drawPolyline,
 		drawPolygon,
+		drawMissionWaypoints,
+		clearMissionWaypoints,
 		drawMissionPath,
 		clearMissionPath,
 		updateCirclePreview,

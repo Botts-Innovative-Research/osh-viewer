@@ -5,6 +5,8 @@ import { Ion } from 'cesium';
 import { CursorMode, MapPoint, MapPointHandler } from '@/modules/map/types';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+import { getColoredIconUrl } from '@/modules/map/services/colorId.service';
+import { ICON_BASE } from '@/lib/icons';
 
 // Showcase examples token :P
 // Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0NTkzNS02NzI0LTQwNDktODk4Zi0zZDJjOWI2NTdmYTMiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI1ODJ9.IbAajOLYnsoyKy1BOd7fY1p6GH-wwNVMdMduA2IzGjA';
@@ -29,6 +31,7 @@ export function createCesiumAdapter(): MapAdapter {
 	let buildingsTileset: any = null;
 	let googlePhotorealistic: any = null;
 	let flightPathPolylines: any[] = [];
+	let waypointEntities: any[] = [];
 
 	/* GeoOverlays */
 	let previewEntity: any = null;
@@ -156,7 +159,48 @@ export function createCesiumAdapter(): MapAdapter {
 		mapView.updateMarker(props);
 	}
 
-	function drawPoint(point: MapPoint) {}
+	function addMarker(marker: any) {
+		mapView.viewer.entities.add(marker);
+		invalidate();
+	}
+
+	function removeMarker(marker: any) {
+		mapView.viewer.entities.remove(marker);
+		invalidate();
+	}
+
+	async function drawPoint(
+        point: MapPoint,
+        icon?: string,
+        iconColor?: string,
+        label?: string,
+        id?: string
+    ) {
+		const coloredIcon = iconColor && icon
+			? await getColoredIconUrl(`${ICON_BASE}${icon}`, iconColor)
+			: icon;
+		return new Cesium.Entity({
+			id: id ?? randomUUID(),
+			position: Cesium.Cartesian3.fromDegrees(point.lon, point.lat, point.alt || 0),
+			billboard: {
+                image: coloredIcon ?? '/icons/waypoint/round-pin.png',
+				width:  32,
+				height:  32
+			},
+			...(label
+				? {
+						label: {
+							text: label,
+							font: '14pt monospace',
+							style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+							outlineWidth: 2,
+							verticalOrigin: Cesium.VerticalOrigin.TOP,
+							pixelOffset: new Cesium.Cartesian2(0, 32),
+						},
+					}
+				: {}),
+		});
+	}
 	function drawCircle(
 		center: MapPoint,
 		radius: number,
@@ -220,23 +264,11 @@ export function createCesiumAdapter(): MapAdapter {
 	}
 
 	function drawMissionPath(waypoints: MapPoint[]) {
-		const positions = waypoints.map((wp: MapPoint) => {
-			return Cesium.Cartesian3.fromDegrees(wp.lon, wp.lat, wp.alt || 0);
-		});
-		const entity = mapView.viewer.entities.add({
-			polyline: {
-				positions: positions,
-				width: 5,
-				material: new Cesium.PolylineOutlineMaterialProperty({
-					color: Cesium.Color.RED,
-					outlineWidth: 2,
-					outlineColor: Cesium.Color.BLACK,
-				}),
-				clampToGround: true,
-			},
-		});
+		const entity = drawPolyline(waypoints, '#5d6cce');
+		mapView.viewer.entities.add(entity);
 		flightPathPolylines.push(entity);
 	}
+
 	function clearMissionPath() {
 		if (!mapView) return;
 		for (const entity of flightPathPolylines) {
@@ -245,6 +277,28 @@ export function createCesiumAdapter(): MapAdapter {
 		flightPathPolylines = [];
 	}
 
+	async function drawMissionWaypoints(waypoints: MapPoint[]) {
+		clearMissionWaypoints();
+		for (let index = 0; index < waypoints.length; index++) {
+			const entity = await drawPoint(
+				waypoints[index],
+				'/icons/waypoint/round-pin.png',
+				'#5d6cce',
+				`WP ${index + 1}`,
+			);
+			mapView.viewer.entities.add(entity);
+			waypointEntities.push(entity);
+		}
+		invalidate();
+	}
+
+	function clearMissionWaypoints() {
+		if (!mapView) return;
+		for (const entity of waypointEntities) {
+			mapView.viewer.entities.remove(entity);
+		}
+		waypointEntities = [];
+	}
 	async function addTerrain() {
 		// Assign terrain provider to map
 		if (!terrainProvider) {
@@ -535,10 +589,14 @@ export function createCesiumAdapter(): MapAdapter {
 		onMouseMove,
 		flyToPoint,
 		updateMarker,
+		addMarker,
+		removeMarker,
 		drawPoint,
 		drawCircle,
 		drawPolyline,
 		drawPolygon,
+		drawMissionWaypoints,
+		clearMissionWaypoints,
 		drawMissionPath,
 		clearMissionPath,
 		addTerrain,
