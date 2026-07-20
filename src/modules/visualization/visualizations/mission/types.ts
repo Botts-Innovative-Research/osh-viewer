@@ -6,6 +6,7 @@ export interface Waypoint extends MapPoint {
 }
 
 export interface MissionSettings {
+	vehicleType: string;
 	cruiseSpeed: number;
 	hoverSpeed: number;
 	waypointAltitude: number;

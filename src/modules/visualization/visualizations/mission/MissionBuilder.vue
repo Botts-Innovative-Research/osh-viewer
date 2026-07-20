@@ -56,18 +56,9 @@ const minimapViz = computed(() =>
 );
 
 
-function detectVehicleType(viz: OSHVisualization): string {
-	const hasGroundControls =
-		!!getControlstreamByRole('driveVelocity', viz) ||
-		!!getControlstreamByRole('driveLocation', viz) ||
-		!!getControlstreamByRole('driveMode', viz);
-	const hasAerialControls =
-		!!getControlstreamByRole('takeoff', viz) ||
-		!!getControlstreamByRole('land', viz) ||
-		!!getControlstreamByRole('offboard', viz);
-
-	if (hasGroundControls && !hasAerialControls) return 'Ground Rover';
-	return 'UAV';
+function getVehicleTypeForViz(vizId: string): string {
+	const planRef = planMissionRefs.value.get(vizId);
+	return planRef?.vehicleType ?? '';
 }
 function onSetHome(location: { lat: number; lon: number }, viz: OSHVisualization) {
 	const cs = getControlstreamByRole('homePos', viz);
@@ -239,7 +230,7 @@ const allMissionSummaries = computed<MissionSummary[]>(() => {
 			summaries.push({
 				name: viz.name,
 				missionSource: 'waypoints',
-				vehicleType: detectVehicleType(viz),
+				vehicleType: getVehicleTypeForViz(viz.id),
 				waypointCount: planRef.waypoints.length,
 				cruiseSpeed: planRef.cruiseSpeed,
 				waypointAltitude: planRef.waypointAltitude,
@@ -323,7 +314,7 @@ const hasCommandPad = computed(
 			>
 				<v-icon
 					start
-					:icon="detectVehicleType(viz) === 'Ground Rover' ? 'mdi-car' : 'mdi-quadcopter'"
+					:icon="getVehicleTypeForViz(viz.id) === 'Ground Rover' || getVehicleTypeForViz(viz.id) === 'Surface Boat' ? 'mdi-car' : getVehicleTypeForViz(viz.id) === 'Submarine' ? 'mdi-submarine' : getVehicleTypeForViz(viz.id) === 'UAV' ? 'mdi-quadcopter' : 'mdi-robot'"
 					size="small"
 				/>
 				{{ viz.name }}
@@ -420,7 +411,6 @@ const hasCommandPad = computed(
 							:mission-control-stream="getControlstreamByRole('roverPlan', viz) ?? getControlstreamByRole('plan', viz)"
 							:no-controller="false"
 							:system-id="viz.id"
-							:vehicle-type="detectVehicleType(viz)"
               @set-home="(loc) => onSetHome(loc, viz)"
 						/>
 					</div>
