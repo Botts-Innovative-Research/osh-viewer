@@ -9,6 +9,7 @@ import { VueDraggable } from 'vue-draggable-plus';
 import GeoOverlayWrapper from '@/modules/map/geo-overlay/components/GeoOverlayWrapper.vue';
 import { useGeoOverlayStore } from '@/stores/geooverlaystore';
 import { MapInteractionMode, useMapInteractionStore } from '@/stores/mapinteractionstore';
+import PointGeoOverlayConfig from '@/modules/map/geo-overlay/components/PointGeoOverlayConfig.vue';
 
 const mapInteractionStore = useMapInteractionStore();
 const previewStore = useGeoOverlayPreviewStore();
@@ -46,20 +47,21 @@ onUnmounted(() => {
 				class="ga-2"
 				:mandatory="false"
 			>
-				<!--				<v-btn-->
-				<!--					prepend-icon="mdi-map-marker-outline"-->
-				<!--					variant="tonal"-->
-				<!--					color="primary"-->
-				<!--					value="Point"-->
-				<!--				>-->
-				<!--					<v-tooltip-->
-				<!--						text="Draw point overlay on map"-->
-				<!--						location="bottom"-->
-				<!--						activator="parent"-->
-				<!--					>-->
-				<!--					</v-tooltip>-->
-				<!--					Point-->
-				<!--				</v-btn>-->
+				<v-btn
+					prepend-icon="mdi-map-marker-outline"
+					variant="tonal"
+					color="primary"
+					value="geoOverlayPoint"
+					:active="selectedTool === 'geoOverlayPoint'"
+				>
+					<v-tooltip
+						text="Draw point overlay"
+						location="bottom"
+						activator="parent"
+					>
+					</v-tooltip>
+					Point
+				</v-btn>
 				<v-btn
 					prepend-icon="mdi-vector-circle-variant"
 					variant="tonal"
@@ -109,6 +111,11 @@ onUnmounted(() => {
 		</v-sheet>
 		<!-- TOOL CONFIGS -->
 		<v-expand-transition>
+			<!-- Point -->
+			<PointGeoOverlayConfig
+				v-if="selectedTool === 'geoOverlayPoint'"
+				@close="selectedTool = 'none'"
+			/>
 			<!-- Circle -->
 			<CircleGeoOverlayConfig
 				v-if="selectedTool === 'geoOverlayCircle'"

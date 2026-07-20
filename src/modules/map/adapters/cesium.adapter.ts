@@ -170,22 +170,21 @@ export function createCesiumAdapter(): MapAdapter {
 	}
 
 	async function drawPoint(
-        point: MapPoint,
-        icon?: string,
-        iconColor?: string,
-        label?: string,
-        id?: string
-    ) {
-		const coloredIcon = iconColor && icon
-			? await getColoredIconUrl(`${ICON_BASE}${icon}`, iconColor)
-			: icon;
+		point: MapPoint,
+		icon?: string,
+		iconColor?: string,
+		label?: string,
+		id?: string
+	) {
+		const coloredIcon =
+			iconColor && icon ? await getColoredIconUrl(`${ICON_BASE}${icon}`, iconColor) : icon;
 		return new Cesium.Entity({
 			id: id ?? randomUUID(),
 			position: Cesium.Cartesian3.fromDegrees(point.lon, point.lat, point.alt || 0),
 			billboard: {
-                image: coloredIcon ?? '/icons/waypoint/round-pin.png',
-				width:  32,
-				height:  32
+				image: coloredIcon ?? '/icons/map/map-marker.png',
+				width: 32,
+				height: 32,
 			},
 			...(label
 				? {
@@ -284,7 +283,7 @@ export function createCesiumAdapter(): MapAdapter {
 				waypoints[index],
 				'/icons/waypoint/round-pin.png',
 				'#5d6cce',
-				`WP ${index + 1}`,
+				`WP ${index + 1}`
 			);
 			mapView.viewer.entities.add(entity);
 			waypointEntities.push(entity);

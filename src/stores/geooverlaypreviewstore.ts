@@ -13,6 +13,7 @@ import { Geometry } from '@/lib/OSHConnectDataStructs';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useGeoOverlayStore } from '@/stores/geooverlaystore';
 import { showToast } from '@/composables/useToast';
+import { ICON_OPTIONS, IconItem, iconPathBuilder } from '@/lib/icons';
 
 export const useGeoOverlayPreviewStore = defineStore('geoOverlayPreview', () => {
 	// General properties
@@ -23,6 +24,7 @@ export const useGeoOverlayPreviewStore = defineStore('geoOverlayPreview', () => 
 	const geofenceMode = ref<GeofenceMode | undefined>(undefined);
 	const borderColor = ref<string>(GeofenceExcludeDefaults.borderColor);
 	const fillColor = ref<string>(GeofenceExcludeDefaults.fillColor);
+	const icon = ref<string>(iconPathBuilder(ICON_OPTIONS[0].category, ICON_OPTIONS[0].icon));
 
 	// Geometry properties
 	const points = ref<MapPoint[]>([]);
@@ -69,6 +71,7 @@ export const useGeoOverlayPreviewStore = defineStore('geoOverlayPreview', () => 
 		geofenceMode.value = undefined;
 		borderColor.value = GeofenceExcludeDefaults.borderColor;
 		fillColor.value = GeofenceExcludeDefaults.fillColor;
+		icon.value = iconPathBuilder(ICON_OPTIONS[0].category, ICON_OPTIONS[0].icon);
 		points.value = [];
 		radius.value = 0;
 		circleCreationStep.value = null;
@@ -77,9 +80,10 @@ export const useGeoOverlayPreviewStore = defineStore('geoOverlayPreview', () => 
 	function submit() {
 		// Build properties
 		const properties: GeoOverlayProperties = {
-			borderColor: borderColor.value,
 			fillColor: fillColor.value,
+			borderColor: type.value !== 'Point' ? borderColor.value : undefined,
 			radius: type.value === 'Circle' && radius.value ? radius.value : undefined,
+			icon: type.value === 'Point' ? icon.value : undefined,
 		};
 		// Build Geometry object
 		const geometry = new Geometry(
@@ -112,6 +116,7 @@ export const useGeoOverlayPreviewStore = defineStore('geoOverlayPreview', () => 
 		geofenceMode,
 		borderColor,
 		fillColor,
+		icon,
 		points,
 		radius,
 		circleCreationStep,

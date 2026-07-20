@@ -17,8 +17,8 @@ export const GeofenceIncludeDefaults = {
  * Properties for a GeoOverlay Geometry object
  */
 export interface GeoOverlayProperties {
-	borderColor: string;
 	fillColor: string;
+	borderColor?: string; // For all except "Point" type
 	radius?: number; // For "Circle" type, store radius here
 	icon?: string; // For "Point" type, store icon path here
 }
@@ -42,43 +42,5 @@ export class GeoOverlay {
 		this.name = name;
 		this.isGeofence = isGeofence;
 		this.geofenceMode = geofenceMode;
-
-		// Set default properties
-		if (!geometry.properties.borderColor) {
-			this.geometry.properties.borderColor = '#FF0000';
-		}
-		if (!geometry.properties.fillColor) {
-			this.geometry.properties.fillColor = '#FF000000';
-		}
-	}
-
-	setName(name: string) {
-		this.name = name;
-	}
-
-	setBorderColor(color: string) {
-		this.geometry.properties.borderColor = color;
-	}
-
-	setFillColor(color: string) {
-		this.geometry.properties.fillColor = color;
-	}
-
-	setIsGeofence(isGeofence: boolean) {
-		this.isGeofence = isGeofence;
-		// If geofence, set defaults for include
-		if (isGeofence) {
-			this.setGeofenceMode(GeofenceIncludeDefaults.geofenceMode as GeofenceMode);
-			this.setBorderColor(GeofenceIncludeDefaults.borderColor);
-			this.setFillColor(GeofenceIncludeDefaults.fillColor);
-		} else this.setGeofenceMode(undefined);
-	}
-
-	setGeofenceMode(mode: GeofenceMode | undefined) {
-		this.geofenceMode = mode;
-	}
-
-	setIcon(icon: string) {
-		this.geometry.properties.icon = icon;
 	}
 }
