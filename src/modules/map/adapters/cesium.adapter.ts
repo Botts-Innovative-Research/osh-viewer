@@ -5,6 +5,8 @@ import { Ion } from 'cesium';
 import { CursorMode, MapPoint, MapPointHandler } from '@/modules/map/types';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+import { getColoredIconUrl } from '@/modules/map/services/colorId.service';
+import { ICON_BASE } from '@/lib/icons';
 
 // Showcase examples token :P
 // Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0NTkzNS02NzI0LTQwNDktODk4Zi0zZDJjOWI2NTdmYTMiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI1ODJ9.IbAajOLYnsoyKy1BOd7fY1p6GH-wwNVMdMduA2IzGjA';
@@ -157,30 +159,36 @@ export function createCesiumAdapter(): MapAdapter {
 		mapView.updateMarker(props);
 	}
 
-	function drawPoint(
+	async function drawPoint(
         point: MapPoint,
         icon?: string,
         iconColor?: string,
         label?: string,
         id?: string
     ) {
+		const coloredIcon = iconColor && icon
+			? await getColoredIconUrl(`${ICON_BASE}${icon}`, iconColor)
+			: icon;
 		return new Cesium.Entity({
 			id: id ?? randomUUID(),
 			position: Cesium.Cartesian3.fromDegrees(point.lon, point.lat, point.alt || 0),
 			billboard: {
-				image: icon ?? '/icons/waypoint/round-pin.png',
+                image: coloredIcon ?? '/icons/waypoint/round-pin.png',
 				width:  32,
-				height:  32,
-				color: Cesium.Color.fromCssColorString(iconColor ?? '#FFFFFF'),
+				height:  32
 			},
-            label: {
-                text: label,
-                font: '14pt monospace',
-                style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-                outlineWidth: 2,
-                verticalOrigin: Cesium.VerticalOrigin.TOP,
-                pixelOffset: new Cesium.Cartesian2(0, 32),
-            },
+			...(label
+				? {
+						label: {
+							text: label,
+							font: '14pt monospace',
+							style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+							outlineWidth: 2,
+							verticalOrigin: Cesium.VerticalOrigin.TOP,
+							pixelOffset: new Cesium.Cartesian2(0, 32),
+						},
+					}
+				: {}),
 		});
 	}
 	function drawCircle(
@@ -246,7 +254,7 @@ export function createCesiumAdapter(): MapAdapter {
 	}
 
 	function drawMissionPath(waypoints: MapPoint[]) {
-		const entity = drawPolyline(waypoints, '#FF0000');
+		const entity = drawPolyline(waypoints, '#5d6cce');
 		mapView.viewer.entities.add(entity);
 		flightPathPolylines.push(entity);
 	}
@@ -259,18 +267,18 @@ export function createCesiumAdapter(): MapAdapter {
 		flightPathPolylines = [];
 	}
 
-	function drawMissionWaypoints(waypoints: MapPoint[]) {
+	async function drawMissionWaypoints(waypoints: MapPoint[]) {
 		clearMissionWaypoints();
-		waypoints.forEach((wp, index) => {
-			const entity = drawPoint(
-				wp,
+		for (let index = 0; index < waypoints.length; index++) {
+			const entity = await drawPoint(
+				waypoints[index],
 				'/icons/waypoint/round-pin.png',
-				'#4c89e7',
+				'#5d6cce',
 				`WP ${index + 1}`,
 			);
 			mapView.viewer.entities.add(entity);
 			waypointEntities.push(entity);
-		});
+		}
 		invalidate();
 	}
 

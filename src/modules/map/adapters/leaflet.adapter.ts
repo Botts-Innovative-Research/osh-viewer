@@ -3,6 +3,8 @@ import L from 'leaflet';
 import { MapAdapter } from './types';
 import { MapPoint, MapPointHandler } from '@/modules/map/types';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
+import {getColoredIconUrl} from "@/modules/map/services/colorId.service";
+import {ICON_BASE} from "@/lib/icons";
 
 export function createLeafletAdapter(): MapAdapter {
 	let mapView: typeof LeafletView | null;
@@ -65,15 +67,18 @@ export function createLeafletAdapter(): MapAdapter {
 		mapView.updateMarker(props);
 	}
 
-    function drawPoint(
+    async function drawPoint(
         point: MapPoint,
         icon?: string,
         iconColor?: string,
         label?: string,
         id?: string
     ) {
+		const coloredIcon = iconColor && icon
+			? await getColoredIconUrl(`${ICON_BASE}${icon}`, iconColor)
+			: icon;
 		const iconOptions: any = {
-			iconUrl: icon ?? '/icons/waypoint/round-pin.png',
+			iconUrl: coloredIcon ?? '/icons/waypoint/round-pin.png',
 			iconSize: [32, 32],
 		};
 		const marker = L.marker([point.lat, point.lon], {
@@ -125,7 +130,7 @@ export function createLeafletAdapter(): MapAdapter {
 	}
 
 	function drawMissionPath(waypoints: MapPoint[]) {
-		const polyline = drawPolyline(waypoints, '#FF0000');
+		const polyline = drawPolyline(waypoints, '#5d6cce');
 		polyline.addTo(mapView.map);
 		flightPathPolylines.push(polyline);
 	}
@@ -137,18 +142,18 @@ export function createLeafletAdapter(): MapAdapter {
 		flightPathPolylines = [];
 	}
 
-	function drawMissionWaypoints(waypoints: MapPoint[]) {
+	async function drawMissionWaypoints(waypoints: MapPoint[]) {
 		clearMissionWaypoints();
-		waypoints.forEach((wp, index) => {
-			const marker = drawPoint(
-				wp,
+		for (let index = 0; index < waypoints.length; index++) {
+			const marker = await drawPoint(
+				waypoints[index],
 				'/icons/waypoint/round-pin.png',
-				'#4c89e7',
+				'#5d6cce',
 				`WP ${index + 1}`,
 			);
 			marker.addTo(mapView.map);
 			waypointMarkers.push(marker);
-		});
+		}
 	}
 
 	function clearMissionWaypoints() {
