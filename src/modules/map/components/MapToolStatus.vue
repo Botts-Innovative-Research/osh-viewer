@@ -31,13 +31,21 @@ const toolLabel = computed(() => {
 	if (mapInteractionStore.isGeoPTZSelected)
 		parts.push({ label: 'GeoPTZ', icon: 'mdi-crosshairs-gps', color: 'red' });
 	if (mapInteractionStore.isGeoOverlayPointSelected)
-		parts.push({ label: 'Point Overlay', icon: 'mdi-map-marker', color: 'red' });
+		parts.push({ label: 'Point Overlay', icon: 'mdi-map-marker', color: 'primary' });
 	if (mapInteractionStore.isGeoOverlayCircleSelected)
-		parts.push({ label: 'Circle Overlay', icon: 'mdi-vector-circle-variant', color: 'red' });
+		parts.push({
+			label: 'Circle Overlay',
+			icon: 'mdi-vector-circle-variant',
+			color: 'primary',
+		});
 	if (mapInteractionStore.isGeoOverlayLineStringSelected)
-		parts.push({ label: 'Polyline Overlay', icon: 'mdi-vector-polyline', color: 'red' });
+		parts.push({ label: 'Polyline Overlay', icon: 'mdi-vector-polyline', color: 'primary' });
 	if (mapInteractionStore.isGeoOverlayPolygonSelected)
-		parts.push({ label: 'Polygon Overlay', icon: 'mdi-vector-polygon-variant', color: 'red' });
+		parts.push({
+			label: 'Polygon Overlay',
+			icon: 'mdi-vector-polygon-variant',
+			color: 'primary',
+		});
 	return parts;
 });
 </script>

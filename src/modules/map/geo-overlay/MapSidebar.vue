@@ -68,7 +68,7 @@ onUnmounted(() => {
 					:active="selectedTool === 'geoOverlayCircle'"
 				>
 					<v-tooltip
-						text="Draw circle overlay on map"
+						text="Draw circle overlay"
 						location="bottom"
 						activator="parent"
 					>
@@ -83,7 +83,7 @@ onUnmounted(() => {
 					:active="selectedTool === 'geoOverlayLineString'"
 				>
 					<v-tooltip
-						text="Draw polyline overlay on map"
+						text="Draw polyline overlay"
 						location="bottom"
 						activator="parent"
 					>
@@ -98,7 +98,7 @@ onUnmounted(() => {
 					:active="selectedTool === 'geoOverlayPolygon'"
 				>
 					<v-tooltip
-						text="Draw polygon overlay on map"
+						text="Draw polygon overlay"
 						location="bottom"
 						activator="parent"
 					>
