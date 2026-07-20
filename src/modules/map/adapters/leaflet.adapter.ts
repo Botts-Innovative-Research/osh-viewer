@@ -67,6 +67,14 @@ export function createLeafletAdapter(): MapAdapter {
 		mapView.updateMarker(props);
 	}
 
+	function addMarker(marker: any) {
+		marker.addTo(mapView.map);
+	}
+
+	function removeMarker(marker: any) {
+		mapView.map.removeLayer(marker);
+	}
+
     async function drawPoint(
         point: MapPoint,
         icon?: string,
@@ -279,6 +287,8 @@ export function createLeafletAdapter(): MapAdapter {
 		onMouseMove,
 		flyToPoint,
 		updateMarker,
+		addMarker,
+		removeMarker,
 		drawPoint,
 		drawCircle,
 		drawPolyline,

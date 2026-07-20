@@ -159,6 +159,16 @@ export function createCesiumAdapter(): MapAdapter {
 		mapView.updateMarker(props);
 	}
 
+	function addMarker(marker: any) {
+		mapView.viewer.entities.add(marker);
+		invalidate();
+	}
+
+	function removeMarker(marker: any) {
+		mapView.viewer.entities.remove(marker);
+		invalidate();
+	}
+
 	async function drawPoint(
         point: MapPoint,
         icon?: string,
@@ -579,6 +589,8 @@ export function createCesiumAdapter(): MapAdapter {
 		onMouseMove,
 		flyToPoint,
 		updateMarker,
+		addMarker,
+		removeMarker,
 		drawPoint,
 		drawCircle,
 		drawPolyline,

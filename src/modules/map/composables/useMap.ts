@@ -69,8 +69,8 @@ export function useMap() {
 	// GEOPTZ
 	const geoPtzLayer = ref<typeof PointMarkerLayer | null>(null);
 	// MISSION BUILDER
-	const driveLocationLayer = ref<typeof PointMarkerLayer | null>(null);
-	const homeLocationLayer = ref<typeof PointMarkerLayer | null>(null);
+	const driveLocationLayer = ref(null);
+	const homeLocationLayer = ref(null);
 	// FOI
 	const foiLayers = ref<{ layer: typeof PointMarkerLayer; props: any }[]>([]);
 
@@ -604,20 +604,22 @@ export function useMap() {
 
 	/* DRIVE LOCATION */
 	async function addDriveLocationLayer(lon: number, lat: number) {
-		const result = await createLocationLayer(
-			{ lon, lat, alt: 0 },
-			'driveLocation',
-			'Drive to Location'
-		);
-		if (result) {
-			removeDriveLocationLayer();
-			driveLocationLayer.value = result.layer;
-			mapAdapter.value?.addLayer(driveLocationLayer.value);
-			if (result.props) mapAdapter.value?.updateMarker(result.props);
-		}
+        if (!mapAdapter.value) return;
+        removeDriveLocationLayer();
+
+        const marker = await mapAdapter.value.drawPoint(
+            { lon, lat, alt: 0 },
+            "/icons/waypoint/round-pin.png",
+            "#00BFFF",
+            "Drive to Location"
+        )
+
+        mapAdapter.value.addMarker(marker);
+        driveLocationLayer.value = marker;
 	}
+
 	function removeDriveLocationLayer() {
-		if (driveLocationLayer.value) mapAdapter.value?.removeLayer(driveLocationLayer.value);
+		if (driveLocationLayer.value) mapAdapter.value?.removeMarker(driveLocationLayer.value);
 		driveLocationLayer.value = null;
 	}
 	watch(
@@ -630,20 +632,21 @@ export function useMap() {
 	/* HOME LOCATION */
 	async function addHomeLocationLayer(lon: number, lat: number) {
 		if (!mapAdapter.value) return;
-		const result = await createLocationLayer(
-			{ lon, lat, alt: 0 },
-			'homeLocation',
-			'Home Location'
-		);
-		if (result) {
-			removeHomeLocationLayer();
-			homeLocationLayer.value = result.layer;
-			mapAdapter.value?.addLayer(homeLocationLayer.value);
-			if (result.props) mapAdapter.value?.updateMarker(result.props);
-		}
-	}
+
+        removeHomeLocationLayer();
+
+        const marker = await mapAdapter.value.drawPoint(
+            { lon, lat, alt: 0 },
+            "/icons/waypoint/home-map-marker.png",
+            "#bd1616",
+            "Home Location"
+        )
+
+        mapAdapter.value.addMarker(marker);
+        homeLocationLayer.value = marker;
+    }
 	function removeHomeLocationLayer() {
-		if (homeLocationLayer.value) mapAdapter.value?.removeLayer(homeLocationLayer.value);
+		if (homeLocationLayer.value) mapAdapter.value?.removeMarker(homeLocationLayer.value);
 		homeLocationLayer.value = null;
 	}
 	watch(

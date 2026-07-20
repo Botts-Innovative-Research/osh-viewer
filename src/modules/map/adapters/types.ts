@@ -17,6 +17,8 @@ export interface MapAdapter {
 	updateMarker(props: any): void;
 
 	/* Map Drawing */
+	addMarker(marker: any): void;
+	removeMarker(marker: any): void;
 	drawPoint(
         point: MapPoint,
         icon?: string,
