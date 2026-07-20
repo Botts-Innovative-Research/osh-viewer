@@ -140,12 +140,12 @@ export function createLeafletAdapter(): MapAdapter {
 	function drawMissionWaypoints(waypoints: MapPoint[]) {
 		clearMissionWaypoints();
 		waypoints.forEach((wp, index) => {
-			const marker = drawPoint(wp, {
-				label: `WP ${index + 1}`,
-				iconUrl: '/icons/waypoint/round-pin.png',
-				iconColor: '#00FF00',
-				iconSize: [32, 32],
-			});
+			const marker = drawPoint(
+				wp,
+				'/icons/waypoint/round-pin.png',
+				'#00FF00',
+				`WP ${index + 1}`,
+			);
 			marker.addTo(mapView.map);
 			waypointMarkers.push(marker);
 		});
