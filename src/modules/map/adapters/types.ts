@@ -17,7 +17,13 @@ export interface MapAdapter {
 	updateMarker(props: any): void;
 
 	/* Map Drawing */
-	drawPoint(point: MapPoint): any;
+	drawPoint(
+        point: MapPoint,
+        icon?: string,
+        iconColor?: string,
+        label?: string,
+        id?: string
+    ): any;
 	drawCircle(
 		center: MapPoint,
 		radius: number,

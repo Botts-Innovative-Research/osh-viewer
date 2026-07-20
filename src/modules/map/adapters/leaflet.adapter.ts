@@ -64,7 +64,25 @@ export function createLeafletAdapter(): MapAdapter {
 		mapView.updateMarker(props);
 	}
 
-	function drawPoint(point: MapPoint): L.point {}
+    function drawPoint(
+        point: MapPoint,
+        icon?: string,
+        iconColor?: string,
+        label?: string,
+        id?: string
+    ) {
+		const iconOptions: any = {
+			iconUrl: icon ?? '/icons/waypoint/round-pin.png',
+			iconSize: [32, 32],
+		};
+		const marker = L.marker([point.lat, point.lon], {
+			icon: L.icon(iconOptions),
+		});
+		if (label) {
+			marker.bindTooltip(label);
+		}
+		return marker;
+	}
 	function drawCircle(
 		center: MapPoint,
 		radius: number,
