@@ -24,10 +24,17 @@ export interface MapAdapter {
 		center: MapPoint,
 		radius: number,
 		borderColor: string | null,
-		fillColor: string | null
+		fillColor: string | null,
+		id?: string,
+		name?: string
 	): any;
-	drawPolyline(points: MapPoint[], borderColor: string | null): any;
-	drawPolygon(points: MapPoint[], borderColor: string | null, fillColor: string | null): any;
+	drawPolyline(points: MapPoint[], borderColor: string | null, id?: string): any;
+	drawPolygon(
+		points: MapPoint[],
+		borderColor: string | null,
+		fillColor: string | null,
+		id?: string
+	): any;
 
 	/* Mission Builder */
 	drawMissionWaypoints(waypoints: MapPoint[]): void;
@@ -48,6 +55,7 @@ export interface MapAdapter {
 		radius: number,
 		borderColor: string | null,
 		fillColor: string | null,
+		name: string | null,
 		id?: string
 	): void;
 	updatePolylinePreview(points: MapPoint[], borderColor: string | null, id?: string): void;

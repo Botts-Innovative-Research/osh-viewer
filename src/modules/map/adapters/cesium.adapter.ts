@@ -206,7 +206,8 @@ export function createCesiumAdapter(): MapAdapter {
 		radius: number,
 		borderColor: string | null,
 		fillColor: string | null,
-		id?: string
+		id?: string,
+		name?: string
 	) {
 		return new Cesium.Entity({
 			id: id ?? randomUUID(),
@@ -221,6 +222,18 @@ export function createCesiumAdapter(): MapAdapter {
 				outlineColor: Cesium.Color.fromCssColorString(borderColor ?? '#FF0000'),
 				outlineWidth: 3,
 			},
+			...(name
+				? {
+						label: {
+							text: name,
+							font: '14pt monospace',
+							style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+							outlineWidth: 2,
+							verticalOrigin: Cesium.VerticalOrigin.TOP,
+							pixelOffset: new Cesium.Cartesian2(0, 32),
+						},
+					}
+				: {}),
 		});
 	}
 	function drawPolyline(points: MapPoint[], borderColor: string | null, id?: string) {
@@ -497,22 +510,31 @@ export function createCesiumAdapter(): MapAdapter {
 		center: MapPoint,
 		radius: number,
 		borderColor: string | null,
-		fillColor: string | null
+		fillColor: string | null,
+		name: string | null,
+		id?: string
 	) {
 		// Remove old layer
 		if (previewEntity) clearPreview();
 		// Build new entity
-		previewEntity = drawCircle(center, radius, borderColor, fillColor);
+		previewEntity = drawCircle(
+			center,
+			radius,
+			borderColor,
+			fillColor,
+			id ?? undefined,
+			name ?? undefined
+		);
 		// Add to map
 		mapView.viewer.entities.add(previewEntity);
 		invalidate();
 	}
 
-	function updatePolylinePreview(points: MapPoint[], borderColor: string | null) {
+	function updatePolylinePreview(points: MapPoint[], borderColor: string | null, id?: string) {
 		// Remove old layer
 		if (previewEntity) clearPreview();
 		// Build new entity
-		previewEntity = drawPolyline(points, borderColor);
+		previewEntity = drawPolyline(points, borderColor, id ?? undefined);
 		// Add to map
 		mapView.viewer.entities.add(previewEntity);
 		invalidate();
@@ -521,14 +543,15 @@ export function createCesiumAdapter(): MapAdapter {
 	function updatePolygonPreview(
 		points: MapPoint[],
 		borderColor: string | null,
-		fillColor: string | null
+		fillColor: string | null,
+		id?: string
 	) {
 		// Remove old layer
 		if (previewEntity) clearPreview();
 		// Build new entity
 		if (points.length < 2) return; // Don't build with no points
-		if (points.length === 2) previewEntity = drawPolyline(points, borderColor);
-		else previewEntity = drawPolygon(points, borderColor, fillColor);
+		if (points.length === 2) previewEntity = drawPolyline(points, borderColor, id ?? undefined);
+		else previewEntity = drawPolygon(points, borderColor, fillColor, id ?? undefined);
 		// Add to map
 		mapView.viewer.entities.add(previewEntity);
 		invalidate();
@@ -577,7 +600,8 @@ export function createCesiumAdapter(): MapAdapter {
 				geoOverlay.geometry.properties.radius,
 				geoOverlay.geometry.properties.borderColor,
 				geoOverlay.geometry.properties.fillColor,
-				geoOverlay.uuid
+				geoOverlay.uuid,
+				geoOverlay.name
 			);
 			mapView.viewer.entities.add(newCircle);
 		}
@@ -591,7 +615,8 @@ export function createCesiumAdapter(): MapAdapter {
 					alt,
 				})),
 				geoOverlay.geometry.properties.borderColor,
-				geoOverlay.uuid
+				geoOverlay.uuid,
+				geoOverlay.name
 			);
 			mapView.viewer.entities.add(newPolyline);
 		}
@@ -606,7 +631,8 @@ export function createCesiumAdapter(): MapAdapter {
 				})),
 				geoOverlay.geometry.properties.borderColor,
 				geoOverlay.geometry.properties.fillColor,
-				geoOverlay.uuid
+				geoOverlay.uuid,
+				geoOverlay.name
 			);
 			mapView.viewer.entities.add(newPolygon);
 		}

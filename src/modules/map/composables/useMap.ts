@@ -645,6 +645,7 @@ export function useMap() {
 		);
 	});
 	watch(previewName, (newName) => {
+		if (!newName) return;
 		// Point
 		if (previewType.value === 'Point') {
 			mapAdapter.value?.updatePointPreview(
@@ -654,7 +655,35 @@ export function useMap() {
 				newName
 			);
 		}
-		// TODO: Circle, Polyline, Polygon
+		// Circle
+		if (previewType.value === 'Circle') {
+			const center = previewPoints.value[0];
+			if (!center) return;
+			mapAdapter.value?.updateCirclePreview(
+				center,
+				previewRadius.value ?? 0, // Default radius = 0
+				previewBorderColor.value,
+				previewFillColor.value,
+				newName
+			);
+		}
+		// Polyline
+		if (previewType.value === 'LineString') {
+			mapAdapter.value?.updatePolylinePreview(
+				previewPoints.value,
+				previewBorderColor.value,
+				newName
+			);
+		}
+		// Polygon
+		if (previewType.value === 'Polygon') {
+			mapAdapter.value?.updatePolygonPreview(
+				previewPoints.value,
+				previewBorderColor.value,
+				previewFillColor.value,
+				newName
+			);
+		}
 	});
 
 	/* GEOPTZ */
