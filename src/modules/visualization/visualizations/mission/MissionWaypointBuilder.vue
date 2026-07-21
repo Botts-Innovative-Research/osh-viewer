@@ -116,21 +116,37 @@ defineExpose({ setLatLonAlt });
 
   <v-divider class="mt-4 mb-3" />
 
-  <v-row density="comfortable">
-    <v-btn
-        block
-        :color="isHomeLocationMapSelect ? 'primary' : 'grey'"
-        variant="tonal"
-        @click="toggleHomeLocationSelect"
-        prepend-icon="mdi-home-map-marker"
-    >
-      {{ isHomeLocationMapSelect ? 'Click map to set home...' : 'Set Home Waypoint' }}
-      <v-tooltip activator="parent" location="top">
-        Click to select a home position from the map.
-      </v-tooltip>
-    </v-btn>
-  </v-row>
-
+  <v-card class="telemetry-card">
+    <div class="d-flex align-center justify-space-between px-4 pt-2">
+      <v-card-text class="pa-0">Home Location</v-card-text>
+      <v-btn
+          :color="isHomeLocationMapSelect ? 'primary' : 'grey'"
+          variant="text"
+          density="compact"
+          @click="toggleHomeLocationSelect"
+          :prepend-icon="isHomeLocationMapSelect ? 'mdi-crosshairs-gps' : 'mdi-home-map-marker'"
+      >
+        {{ isHomeLocationMapSelect ? 'Click map...' : 'Set Home' }}
+        <v-tooltip activator="parent" location="top">
+          Click to select a home position from the map.
+        </v-tooltip>
+      </v-btn>
+    </div>
+    <v-row density="comfortable">
+      <v-col cols="12" md="4">
+        <v-card-subtitle>Latitude</v-card-subtitle>
+        <v-card-title>{{ homeLocation.lat.toFixed(6) }}</v-card-title>
+      </v-col>
+      <v-col cols="12" md="4">
+        <v-card-subtitle>Longitude</v-card-subtitle>
+        <v-card-title>{{ homeLocation.lon.toFixed(6) }}</v-card-title>
+      </v-col>
+      <v-col cols="12" md="4">
+        <v-card-subtitle>Altitude</v-card-subtitle>
+        <v-card-title>{{ homeLocation.alt.toFixed(2) }}</v-card-title>
+      </v-col>
+    </v-row>
+  </v-card>
   <v-row density="comfortable" class="mt-4">
     <v-col :cols="isGroundVehicle ? 12 : 6">
       <v-text-field
