@@ -75,6 +75,7 @@ export function useMap() {
 	const geoPtzLayer = ref<typeof PointMarkerLayer | null>(null);
 	// MISSION BUILDER
 	const driveLocationLayer = ref(null);
+	const flyToLocationLayer = ref(null);
 	const homeLocationLayer = ref(null);
 	// FOI
 	const foiLayers = ref<{ layer: typeof PointMarkerLayer; props: any }[]>([]);
@@ -140,16 +141,16 @@ export function useMap() {
 			mapAdapter.value?.drawMissionWaypoints(systemWaypoints);
 			drawMissionPath(systemWaypoints);
 		}
-		if (driveLocationLayer.value && mapStore.currentLLA) {
-			const loc = driveLocationLayer.value.properties.location;
-			driveLocationLayer.value = null;
-			await addDriveLocationLayer(loc.x, loc.y);
-		}
-		if (homeLocationLayer.value && mapStore.currentLLA) {
-			const loc = homeLocationLayer.value.properties.location;
-			homeLocationLayer.value = null;
-			await addHomeLocationLayer(loc.x, loc.y);
-		}
+		// if (driveLocationLayer.value && mapStore.currentLLA) {
+		// 	const loc = driveLocationLayer.value.properties.location;
+		// 	driveLocationLayer.value = null;
+		// 	await addDriveLocationLayer(loc.x, loc.y);
+		// }
+		// if (homeLocationLayer.value && mapStore.currentLLA) {
+		// 	const loc = homeLocationLayer.value.properties.location;
+		// 	homeLocationLayer.value = null;
+		// 	await addHomeLocationLayer(loc.x, loc.y);
+		// }
 	}
 	watch(mapType, async () => {
 		await switchMap();
@@ -363,6 +364,7 @@ export function useMap() {
 			// Fly to Location
 			if (mapInteractionStore.isFlyToLocationSelected) {
 				mapStore.setCurrentLLA(lat, lon, 0);
+                await addFlyToLocationLayer(lon, lat);
 			}
 			// Add additional onClick functions
 		});
@@ -722,23 +724,51 @@ export function useMap() {
 			{ lon, lat, alt: 0 },
 			'/icons/waypoint/round-pin.png',
 			'#00BFFF',
-			'Drive to Location'
+			`Drive to ${lat.toFixed(6)} - ${lon.toFixed(6)}`
 		);
 
 		mapAdapter.value.addMarker(marker);
 		driveLocationLayer.value = marker;
 	}
 
-	function removeDriveLocationLayer() {
-		if (driveLocationLayer.value) mapAdapter.value?.removeMarker(driveLocationLayer.value);
-		driveLocationLayer.value = null;
-	}
-	watch(
-		() => mapInteractionStore.isDriveLocationSelected,
-		(selected) => {
-			removeDriveLocationLayer();
-		}
-	);
+    function removeDriveLocationLayer() {
+        if (driveLocationLayer.value) mapAdapter.value?.removeMarker(driveLocationLayer.value);
+        driveLocationLayer.value = null;
+    }
+
+    watch(
+        () => mapInteractionStore.isDriveLocationSelected,
+        (selected) => {
+            removeDriveLocationLayer();
+        }
+    );
+
+    /* FLY TO LOCATION */
+    async function addFlyToLocationLayer(lon: number, lat: number) {
+        if (!mapAdapter.value) return;
+        removeFlyToLocationLayer();
+
+        const marker = await mapAdapter.value.drawPoint(
+            { lon, lat, alt: 0 },
+            '/icons/waypoint/round-pin.png',
+            '#ff00f2',
+            `Fly To ${lat.toFixed(6)} - ${lon.toFixed(6)}`
+        );
+
+        mapAdapter.value.addMarker(marker);
+        flyToLocationLayer.value = marker;
+    }
+    function removeFlyToLocationLayer() {
+        if (flyToLocationLayer.value) mapAdapter.value?.removeMarker(flyToLocationLayer.value);
+        flyToLocationLayer.value = null;
+    }
+
+    watch(
+        () => mapInteractionStore.isFlyToLocationSelected,
+        (selected) => {
+            removeFlyToLocationLayer();
+        }
+    );
 
 	/* HOME LOCATION */
 	async function addHomeLocationLayer(lon: number, lat: number) {
@@ -750,7 +780,7 @@ export function useMap() {
 			{ lon, lat, alt: 0 },
 			'/icons/waypoint/home-map-marker.png',
 			'#bd1616',
-			'Home Location'
+			`${lat.toFixed(6)} - ${lon.toFixed(6)}`
 		);
 
 		mapAdapter.value.addMarker(marker);

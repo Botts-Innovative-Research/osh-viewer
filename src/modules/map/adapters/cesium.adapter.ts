@@ -192,7 +192,7 @@ export function createCesiumAdapter(): MapAdapter {
 				? {
 						label: {
 							text: label,
-							font: '14pt monospace',
+							font: '10pt monospace',
 							style: Cesium.LabelStyle.FILL_AND_OUTLINE,
 							outlineWidth: 2,
 							verticalOrigin: Cesium.VerticalOrigin.TOP,
