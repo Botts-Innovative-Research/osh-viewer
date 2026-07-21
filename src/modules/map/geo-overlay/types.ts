@@ -21,6 +21,7 @@ export interface GeoOverlayProperties {
 	borderColor?: string; // For all except "Point" type
 	radius?: number; // For "Circle" type, store radius here
 	icon?: string; // For "Point" type, store icon path here
+	iconName?: string; // For "Point" type, store name of mdi iccon
 }
 
 /**

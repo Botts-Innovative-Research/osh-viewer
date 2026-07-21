@@ -89,6 +89,7 @@ export function createLeafletAdapter(): MapAdapter {
 			iconSize: [32, 32],
 		};
 		const marker = L.marker([point.lat, point.lon], {
+			id: id,
 			icon: L.icon(iconOptions),
 		});
 		if (label) {

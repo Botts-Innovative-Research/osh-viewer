@@ -9,7 +9,8 @@ import { getColoredIconUrl } from '@/modules/map/services/colorId.service';
 import { ICON_BASE } from '@/lib/icons';
 
 // Showcase examples token :P
-// Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0NTkzNS02NzI0LTQwNDktODk4Zi0zZDJjOWI2NTdmYTMiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI1ODJ9.IbAajOLYnsoyKy1BOd7fY1p6GH-wwNVMdMduA2IzGjA';
+// Ion.defaultAccessToken =
+// 	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0NTkzNS02NzI0LTQwNDktODk4Zi0zZDJjOWI2NTdmYTMiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI1ODJ9.IbAajOLYnsoyKy1BOd7fY1p6GH-wwNVMdMduA2IzGjA';
 // Personal token
 Ion.defaultAccessToken =
 	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkNDIyMzU2OC0wMWI4LTRjNGYtYTdiMy1kYjRmYzAwNGJkYTgiLCJpZCI6MzM1ODkzLCJpYXQiOjE3NTYzMDQ3MjZ9.5-F-lSal7TV6bHASnlpo5JCxamD0ppGPtQT7GUK5Ne4';
@@ -470,6 +471,28 @@ export function createCesiumAdapter(): MapAdapter {
 		invalidate();
 	}
 
+	/* Geofence Drawing Tools */
+	async function updatePointPreview(
+		point: MapPoint,
+		fillColor: string | null,
+		icon: string | null,
+		name: string | null,
+		id?: string
+	) {
+		// Remove old layer
+		if (previewEntity) clearPreview();
+		// Build new entity
+		previewEntity = await drawPoint(
+			point,
+			icon ?? undefined,
+			fillColor ?? undefined,
+			name ?? undefined,
+			id ?? undefined
+		);
+		// Add to map
+		mapView.viewer.entities.add(previewEntity);
+		invalidate();
+	}
 	function updateCirclePreview(
 		center: MapPoint,
 		radius: number,
@@ -517,12 +540,30 @@ export function createCesiumAdapter(): MapAdapter {
 		invalidate();
 	}
 
-	function addGeoOverlay(geoOverlay: GeoOverlay) {
+	async function addGeoOverlay(geoOverlay: GeoOverlay) {
 		if (!geoOverlay) return;
 
 		// Clear preview before adding final geoOverlay
 		clearPreview();
 
+		// Point
+		if (geoOverlay.type === 'Point') {
+			const [lon, lat, alt] = geoOverlay.geometry.coordinates as [number, number, number];
+			const point: MapPoint = {
+				lat,
+				lon,
+				alt,
+			};
+			const newPoint = await drawPoint(
+				point,
+				geoOverlay.geometry.properties.icon,
+				geoOverlay.geometry.properties.fillColor,
+				geoOverlay.name,
+				geoOverlay.uuid
+			);
+			console.log(newPoint);
+			mapView.viewer.entities.add(newPoint);
+		}
 		// Circle
 		if (geoOverlay.type === 'Circle') {
 			const [lon, lat, alt] = geoOverlay.geometry.coordinates as [number, number, number];
@@ -608,6 +649,7 @@ export function createCesiumAdapter(): MapAdapter {
 		removeMapLayer,
 		destroyAllLayers,
 		rebuildMapLayers,
+		updatePointPreview,
 		updateCirclePreview,
 		updatePolylinePreview,
 		updatePolygonPreview,

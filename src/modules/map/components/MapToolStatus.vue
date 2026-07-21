@@ -31,7 +31,7 @@ const toolLabel = computed(() => {
 	if (mapInteractionStore.isGeoPTZSelected)
 		parts.push({ label: 'GeoPTZ', icon: 'mdi-crosshairs-gps', color: 'red' });
 	if (mapInteractionStore.isGeoOverlayPointSelected)
-		parts.push({ label: 'Point Overlay', icon: 'mdi-map-marker', color: 'primary' });
+		parts.push({ label: 'Point Overlay', icon: 'mdi-map-marker-outline', color: 'primary' });
 	if (mapInteractionStore.isGeoOverlayCircleSelected)
 		parts.push({
 			label: 'Circle Overlay',

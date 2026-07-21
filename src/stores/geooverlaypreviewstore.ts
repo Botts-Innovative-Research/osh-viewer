@@ -13,7 +13,7 @@ import { Geometry } from '@/lib/OSHConnectDataStructs';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useGeoOverlayStore } from '@/stores/geooverlaystore';
 import { showToast } from '@/composables/useToast';
-import { ICON_OPTIONS, IconItem, iconPathBuilder } from '@/lib/icons';
+import { ICON_OPTIONS, IconItem, iconPathBuilder, iconPathParser } from '@/lib/icons';
 
 export const useGeoOverlayPreviewStore = defineStore('geoOverlayPreview', () => {
 	// General properties
@@ -84,6 +84,7 @@ export const useGeoOverlayPreviewStore = defineStore('geoOverlayPreview', () => 
 			borderColor: type.value !== 'Point' ? borderColor.value : undefined,
 			radius: type.value === 'Circle' && radius.value ? radius.value : undefined,
 			icon: type.value === 'Point' ? icon.value : undefined,
+			iconName: type.value === 'Point' ? iconPathParser(icon.value)?.icon : undefined,
 		};
 		// Build Geometry object
 		const geometry = new Geometry(

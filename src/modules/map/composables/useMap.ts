@@ -529,8 +529,9 @@ export function useMap() {
 				);
 			}
 			// Polyline
-			if (previewType.value === 'LineString')
+			if (previewType.value === 'LineString') {
 				mapAdapter.value?.updatePolylinePreview(newPoints, previewBorderColor.value);
+			}
 			// Polygon
 			if (previewType.value === 'Polygon') {
 				mapAdapter.value?.updatePolygonPreview(
@@ -545,6 +546,8 @@ export function useMap() {
 	watch(
 		previewRadius,
 		(newRadius) => {
+			// Circle ONLY
+			if (previewType.value !== 'Circle') return;
 			const center = previewPoints.value[0];
 			if (!center) return;
 			mapAdapter.value?.updateCirclePreview(
@@ -571,15 +574,17 @@ export function useMap() {
 				);
 			}
 			// Polyline
-			if (previewType.value === 'LineString')
+			if (previewType.value === 'LineString') {
 				mapAdapter.value?.updatePolylinePreview(previewPoints.value, newColor);
+			}
 			// Polygon
-			if (previewType.value === 'Polygon')
+			if (previewType.value === 'Polygon') {
 				mapAdapter.value?.updatePolygonPreview(
 					previewPoints.value,
 					newColor,
 					previewFillColor.value
 				);
+			}
 		},
 		{ deep: true }
 	);
@@ -587,13 +592,14 @@ export function useMap() {
 		previewFillColor,
 		(newColor) => {
 			// Point
-			if (previewType.value === 'Point')
+			if (previewType.value === 'Point') {
 				mapAdapter.value?.updatePointPreview(
 					previewPoints.value[0],
 					newColor,
 					previewIcon.value,
 					previewName.value
 				);
+			}
 			// Circle
 			if (previewType.value === 'Circle') {
 				const center = previewPoints.value[0];
@@ -606,12 +612,13 @@ export function useMap() {
 				);
 			}
 			// Polygon
-			if (previewType.value === 'Polygon')
+			if (previewType.value === 'Polygon') {
 				mapAdapter.value?.updatePolygonPreview(
 					previewPoints.value,
 					previewBorderColor.value,
 					newColor
 				);
+			}
 		},
 		{ deep: true }
 	);

@@ -18,9 +18,13 @@ function getIcon(overlay: GeoOverlay) {
 	if (overlay.type === 'Circle') return `mdi-vector-circle-variant`;
 	if (overlay.type === 'LineString') return `mdi-vector-polyline`;
 	if (overlay.type === 'Polygon') return `mdi-vector-polygon-variant`;
+	if (overlay.type === 'Point') {
+		return `mdi-${overlay.geometry.properties.iconName ?? 'map-marker'}`;
+	}
 }
 function getIconColor(overlay: GeoOverlay) {
-	return overlay.geometry.properties.borderColor;
+	// Default border color, use fill for point
+	return overlay.geometry.properties.borderColor ?? overlay.geometry.properties.fillColor;
 }
 
 // watch(

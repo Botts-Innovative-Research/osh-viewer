@@ -9,6 +9,11 @@ const mapInteractionStore = useMapInteractionStore();
 
 const tools = [
 	{
+		tool: 'geoOverlayPoint',
+		label: 'Draw point overlay',
+		icon: 'mdi-map-marker-outline',
+	},
+	{
 		tool: 'geoOverlayCircle',
 		label: 'Draw circle overlay',
 		icon: 'mdi-vector-circle-variant',
