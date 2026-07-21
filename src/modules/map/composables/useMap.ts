@@ -5,7 +5,6 @@ import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import {
 	createFOILayer,
 	createGeoPTZLayer,
-	createLocationLayer,
 	createMapVisualizations,
 	rebuildMapVisualizations,
 } from '../mapVisualizations';
@@ -34,6 +33,7 @@ import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
 import { storeToRefs } from 'pinia';
 import { useGeoOverlayStore } from '@/stores/geooverlaystore';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
+import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 
 export function useMap() {
 	// STORES
@@ -70,6 +70,7 @@ export function useMap() {
 	// VISUALIZATIONS
 	const mapItemLayers = ref<Map<string, SupportedMapLayer>>(new Map()); // Map of visualization ID to its corresponding visualization layer instance
 	const listDataSourceInstances = ref<(typeof ConSysApi)[]>([]); // List of all connected datasource instances created for map visualizations
+	const channels = new Map<string, BroadcastChannel>(); // List of broadcast channels on datasources
 	const hiddenLayers = ref<Map<string, SupportedMapLayer>>(new Map()); // Hidden visualization IDs
 	// GEOPTZ
 	const geoPtzLayer = ref<typeof PointMarkerLayer | null>(null);
@@ -155,6 +156,9 @@ export function useMap() {
 			homeLocationLayer.value = null;
 			await addHomeLocationLayer(loc.x, loc.y);
 		}
+
+		// Reset map cursor style
+		mapAdapter.value?.setCursor(mapInteractionStore.mapCursorMode);
 	}
 	watch(mapType, async () => {
 		await switchMap();
@@ -167,6 +171,31 @@ export function useMap() {
 	function disconnectDatasources() {
 		disconnect(listDataSourceInstances);
 	}
+	watch(
+		listDataSourceInstances,
+		(dataSources) => {
+			dataSources.forEach((dsInstance) => {
+				// avoid duplicate listeners
+				if (channels.has(dsInstance.id)) return;
+
+				const channel = new BroadcastChannel(DATASOURCE_DATA_TOPIC + dsInstance.id);
+
+				channel.onmessage = (message) => {
+					if (message.data.type !== 'data') return;
+
+					const data = message.data.values[0].data;
+
+					console.log(`Location update from ${dsInstance.id}:`, data);
+				};
+
+				channels.set(dsInstance.id, channel);
+			});
+		},
+		{
+			immediate: true,
+			deep: true,
+		}
+	);
 
 	/* CREATE/DELETE VISUALIZATIONS */
 	watch(
@@ -729,7 +758,6 @@ export function useMap() {
 		mapAdapter.value.addMarker(marker);
 		driveLocationLayer.value = marker;
 	}
-
 	function removeDriveLocationLayer() {
 		if (driveLocationLayer.value) mapAdapter.value?.removeMarker(driveLocationLayer.value);
 		driveLocationLayer.value = null;

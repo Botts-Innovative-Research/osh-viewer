@@ -2,7 +2,7 @@
 import DeleteButton from '@/components/ui/DeleteButton.vue';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 import { useGeoOverlayStore } from '@/stores/geooverlaystore';
-import { watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
 
 const { overlay } = defineProps<{
@@ -11,11 +11,6 @@ const { overlay } = defineProps<{
 
 const geoOverlayStore = useGeoOverlayStore();
 const mapStore = useMapStore();
-
-// function isSelected(overlay: GeoOverlay) {
-// 	if (!mapStore.selectedMapItem) return false;
-// 	return mapStore.selectedMapItem?.id === overlay.uuid;
-// }
 
 function getIcon(overlay: GeoOverlay) {
 	if (overlay.type === 'Circle') return `mdi-vector-circle-variant`;
@@ -41,6 +36,9 @@ function toggleSelectedMapItem(item: GeoOverlay) {
 		mapStore.setSelectedMapItem(item);
 	}
 }
+
+// Area entities
+const showAreaEntities = ref<boolean>(false);
 </script>
 
 <template>
@@ -73,6 +71,7 @@ function toggleSelectedMapItem(item: GeoOverlay) {
 		<!-- Actions -->
 		<template #append>
 			<div class="overlay-actions">
+				<!-- Toggle visibility -->
 				<v-tooltip
 					text="Toggle Visibility"
 					location="bottom"
@@ -92,6 +91,22 @@ function toggleSelectedMapItem(item: GeoOverlay) {
 						></IconButton>
 					</template>
 				</v-tooltip>
+				<!-- More actions -->
+				<v-tooltip
+					text="Find all entities within area"
+					location="bottom"
+				>
+					<template v-slot:activator="{ props }">
+						<IconButton
+							v-bind="props"
+							aria-label="Find area entities"
+							size="x-small"
+							variant="plain"
+							icon="mdi-map-marker-radius-outline"
+							@click.stop="showAreaEntities = !showAreaEntities"
+						></IconButton>
+					</template>
+				</v-tooltip>
 				<DeleteButton
 					label="Remove"
 					@delete="geoOverlayStore.removeGeoOverlay(overlay)"
@@ -99,6 +114,11 @@ function toggleSelectedMapItem(item: GeoOverlay) {
 			</div>
 		</template>
 	</v-list-item>
+	<v-expand-transition>
+		<div v-show="showAreaEntities">
+			<p>Test</p>
+		</div>
+	</v-expand-transition>
 </template>
 
 <style scoped>
