@@ -724,7 +724,7 @@ export function useMap() {
 			{ lon, lat, alt: 0 },
 			'/icons/waypoint/round-pin.png',
 			'#00BFFF',
-			`Drive to ${lat.toFixed(6)} - ${lon.toFixed(6)}`
+			`Drive to ${lat.toFixed(6)} , ${lon.toFixed(6)}`
 		);
 
 		mapAdapter.value.addMarker(marker);
@@ -752,7 +752,7 @@ export function useMap() {
             { lon, lat, alt: 0 },
             '/icons/waypoint/round-pin.png',
             '#ff00f2',
-            `Fly To ${lat.toFixed(6)} - ${lon.toFixed(6)}`
+            `Fly To ${lat.toFixed(6)} , ${lon.toFixed(6)}`
         );
 
         mapAdapter.value.addMarker(marker);
@@ -780,7 +780,7 @@ export function useMap() {
 			{ lon, lat, alt: 0 },
 			'/icons/waypoint/home-map-marker.png',
 			'#bd1616',
-			`${lat.toFixed(6)} - ${lon.toFixed(6)}`
+			`${lat.toFixed(6)} , ${lon.toFixed(6)}`
 		);
 
 		mapAdapter.value.addMarker(marker);
