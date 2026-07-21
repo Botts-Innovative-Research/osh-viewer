@@ -10,63 +10,54 @@ const spectrogram = ref<boolean>(false);
 const chartTime = ref<boolean>(false);
 const chartFreq = ref<boolean>(false);
 
-watch(spectrogram, (val) => {
-	vwStore.updateVisualizationCustomizationOptions({ spectrogram: val });
-});
 
-watch(chartTime, (val) => {
-	vwStore.updateVisualizationCustomizationOptions({ chartTime: val });
-});
+const visualizerOptions = [
+	{ title: 'Spectrogram', value: 'spectrogram' },
+	{ title: 'Time Chart', value: 'chartTime' },
+	{ title: 'Frequency Chart', value: 'chartFreq' },
+];
 
-watch(chartFreq, (val) => {
-	vwStore.updateVisualizationCustomizationOptions({ chartFreq: val });
+const selectedVisualizer = ref<string>('spectrogram');
+
+function writeSelection(val: string) {
+	vwStore.updateVisualizationCustomizationOptions({
+		spectrogram: val === 'spectrogram',
+		chartTime: val === 'chartTime',
+		chartFreq: val === 'chartFreq',
+	});
+}
+
+watch(selectedVisualizer, (val) => {
+	writeSelection(val);
 });
 
 onMounted(() => {
-	if (vwStore.visualizationCustomizationOptions.spectrogram === undefined) {
-		vwStore.updateVisualizationCustomizationOptions({
-			spectrogram: spectrogram.value,
-		});
+	const opts = vwStore.visualizationCustomizationOptions;
+	if (opts.spectrogram === undefined && opts.chartTime === undefined && opts.chartFreq === undefined) {
+		writeSelection(selectedVisualizer.value);
+	} else if (opts.chartTime) {
+		selectedVisualizer.value = 'chartTime';
+	} else if (opts.chartFreq) {
+		selectedVisualizer.value = 'chartFreq';
 	} else {
-		spectrogram.value = vwStore.visualizationCustomizationOptions.spectrogram;
+		selectedVisualizer.value = 'spectrogram';
 	}
-
-	if (!vwStore.visualizationCustomizationOptions.chartTime === undefined) {
-		vwStore.updateVisualizationCustomizationOptions({
-			chartTime: chartTime.value,
-		});
-	} else {
-		chartTime.value = vwStore.visualizationCustomizationOptions.chartTime;
-	}
-
-	if (!vwStore.visualizationCustomizationOptions.chartFreq === undefined) {
-        vwStore.updateVisualizationCustomizationOptions({
-            chartFreq: chartFreq.value,
-        });
-    } else {
-        chartFreq.value = vwStore.visualizationCustomizationOptions.chartFreq;
-    }
 });
 
 const emit = defineEmits(['update:valid']);
-const valid = computed(() => spectrogram.value || chartTime.value || chartFreq.value);
+const valid = computed(() => !!selectedVisualizer.value);
 useComponentValidation(valid, emit);
 </script>
 
 <template>
-    <v-checkbox
-        v-model="spectrogram"
-        label="Show Spectrogram"
-        hide-details
-    />
-	<v-checkbox
-		v-model="chartTime"
-		label="Show Time Chart"
-		hide-details
-	/>
-	<v-checkbox
-		v-model="chartFreq"
-		label="Show Frequency Chart"
-		hide-details
-	/>
+	<v-autocomplete
+		v-model="selectedVisualizer"
+		:items="visualizerOptions"
+		label="Select audio visualization"
+		persistent-hint
+		item-title="title"
+		item-value="value"
+	></v-autocomplete>
 </template>
+
+<style scoped></style>
