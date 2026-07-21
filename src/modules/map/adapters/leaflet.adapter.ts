@@ -358,6 +358,8 @@ export function createLeafletAdapter(): MapAdapter {
 	}
 
 	return {
+		mapView,
+		previewEntity,
 		init,
 		destroy,
 		addLayer,

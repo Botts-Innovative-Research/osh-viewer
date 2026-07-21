@@ -698,6 +698,8 @@ export function createCesiumAdapter(): MapAdapter {
 	}
 
 	return {
+		mapView,
+		previewEntity,
 		init,
 		destroy,
 		addLayer,

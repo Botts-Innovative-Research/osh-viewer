@@ -15,6 +15,20 @@ import { useGeoOverlayStore } from '@/stores/geooverlaystore';
 import { showToast } from '@/composables/useToast';
 import { ICON_OPTIONS, IconItem, iconPathBuilder, iconPathParser } from '@/lib/icons';
 
+export interface GeoOverlayPreviewConfig {
+	id: string | null;
+	type: GeoOverlayType | null;
+	name: string | null;
+	isGeofence: boolean;
+	geofenceMode: GeofenceMode | undefined;
+	borderColor: string;
+	fillColor: string;
+	icon: string;
+	points: MapPoint[];
+	radius: number | null;
+	circleCreationStep: 'center' | 'radius' | null;
+}
+
 export const useGeoOverlayPreviewStore = defineStore('geoOverlayPreview', () => {
 	// General properties
 	const id = ref<string | null>(null);
@@ -63,6 +77,20 @@ export const useGeoOverlayPreviewStore = defineStore('geoOverlayPreview', () => 
 		}
 	}
 
+	function rehydrate(config: GeoOverlayPreviewConfig) {
+		type.value = config.type;
+		id.value = config.id ?? `geoOverlay-${randomUUID()}`;
+		name.value = config.name;
+		isGeofence.value = config.isGeofence;
+		geofenceMode.value = config.geofenceMode;
+		borderColor.value = config.borderColor;
+		fillColor.value = config.fillColor;
+		icon.value = config.icon;
+		points.value = config.points;
+		radius.value = config.radius;
+		circleCreationStep.value = config.circleCreationStep;
+	}
+
 	function reset() {
 		type.value = null;
 		id.value = `geoOverlay-${randomUUID()}`;
@@ -75,6 +103,28 @@ export const useGeoOverlayPreviewStore = defineStore('geoOverlayPreview', () => 
 		points.value = [];
 		radius.value = 0;
 		circleCreationStep.value = null;
+	}
+
+	// Refresh all values to trigger rebuild on new map type
+	function refresh() {
+		// Save current values
+		const current: GeoOverlayPreviewConfig = {
+			type: type.value,
+			id: id.value,
+			name: name.value,
+			isGeofence: isGeofence.value,
+			geofenceMode: geofenceMode.value,
+			borderColor: borderColor.value,
+			fillColor: fillColor.value,
+			icon: icon.value,
+			points: points.value,
+			radius: radius.value,
+			circleCreationStep: circleCreationStep.value,
+		};
+		// Reset store
+		reset();
+		// Reinitialize with saved values
+		rehydrate(current);
 	}
 
 	function submit() {
@@ -121,7 +171,9 @@ export const useGeoOverlayPreviewStore = defineStore('geoOverlayPreview', () => 
 		points,
 		radius,
 		circleCreationStep,
+		rehydrate,
 		reset,
+		refresh,
 		submit,
 	};
 });

@@ -72,6 +72,11 @@ export const useMapInteractionStore = defineStore(
 			selectedGeoPTZ.value = null;
 		}
 
+		/* GeoOverlays */
+		function deselectGeoOverlayTools() {
+			if (interactionMode.value.includes('geoOverlay')) deselectAllTools();
+		}
+
 		return {
 			interactionMode,
 			mapCursorMode,
@@ -90,6 +95,7 @@ export const useMapInteractionStore = defineStore(
 			selectedGeoPTZ,
 			setSelectedGeoPTZ,
 			clearSelectedGeoPTZ,
+			deselectGeoOverlayTools,
 		};
 	},
 	{}

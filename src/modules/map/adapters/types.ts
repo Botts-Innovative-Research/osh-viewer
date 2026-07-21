@@ -1,8 +1,13 @@
 import { MapLayer } from './cesium.adapter';
 import { CursorMode, MapPoint, MapPointHandler } from '@/modules/map/types';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
+import LeafletView from 'osh-js/source/core/*';
+import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
 
 export interface MapAdapter {
+	mapView: typeof LeafletView | typeof CesiumView | null;
+	previewEntity: any;
+
 	init(container: string): Promise<void>;
 	destroy(): void;
 

@@ -132,8 +132,13 @@ export function useMap() {
 		// Reconnect datasources
 		connectDatasources();
 
-		await rebuildFoiLayers(); // Rebuild all FOIs
-		rebuildGeoOverlayLayers(); // Rebuild GeoOverlays
+		// Rebuild all FOIs
+		await rebuildFoiLayers();
+
+		// GeoOverlays
+		rebuildGeoOverlayLayers(); // Rebuild existing
+		mapAdapter.value?.clearPreview(); // Clear preview
+		previewStore.refresh(); // Refresh to trigger rebuild of preview properly
 
 		// Rebuild all waypoints per system
 		for (const [, systemWaypoints] of missionStore.missionWaypointsPerSystem) {
