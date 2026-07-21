@@ -27,7 +27,6 @@ const props = defineProps<{
 	homeLocation: { lat: number; lon: number; alt: number };
 	isActive: boolean;
 	missionControlStream?: IConSysApiControlStreamProperties;
-	vehicleType: string;
 	systemId: string;
 }>();
 
@@ -45,6 +44,7 @@ const waypointBuilderRef = ref<InstanceType<typeof MissionWaypointBuilder> | nul
 const fileInputRef = ref<any | null>(null);
 const selectedFile = ref<File | null>(null);
 
+const vehicleType = ref<string>('');
 const cruiseSpeed = ref<number>(5);
 const hoverSpeed = ref<number>(2);
 const waypointAltitude = ref<number>(25);
@@ -55,7 +55,7 @@ const geoFenceCircles = ref<[]>([]);
 const geoFencePolygons = ref<[]>([]);
 const rallyPoints = ref<[]>([]);
 
-const isRover = computed(() => props.vehicleType === 'Ground Rover' || props.vehicleType === 'Surface Boat');
+const isRover = computed(() => vehicleType.value === 'Ground Rover' || vehicleType.value === 'Surface Boat');
 
 const qgcVehicleTypeMap: Record<string, number> = {
 	'UAV': 2,
@@ -170,6 +170,7 @@ function onClearWaypoints() {
 
 function getCurrentSettings(): MissionSettings {
 	return {
+		vehicleType: vehicleType.value,
 		cruiseSpeed: cruiseSpeed.value,
 		hoverSpeed: hoverSpeed.value,
 		waypointAltitude: waypointAltitude.value,
@@ -203,6 +204,7 @@ function saveCurrentMission(name: string, desc: string) {
 function loadMission(mission: SavedMission) {
 	clearWaypoints();
 
+	vehicleType.value = mission.settings.vehicleType ?? '';
 	cruiseSpeed.value = mission.settings.cruiseSpeed;
 	hoverSpeed.value = mission.settings.hoverSpeed;
 	waypointAltitude.value = mission.settings.waypointAltitude;
@@ -507,7 +509,7 @@ function generateMissionControlPlan() {
 			hoverSpeed: isRover.value ? 0 : hoverSpeed.value,
 			items: items,
 			plannedHomePosition: plannedHomePosition,
-			vehicleType: qgcVehicleTypeMap[props.vehicleType] ?? 2,
+			vehicleType: qgcVehicleTypeMap[vehicleType.value] ?? 2,
 			version: 2,
 		},
 		geoFence: {
@@ -523,7 +525,7 @@ function generateMissionControlPlan() {
 	};
 }
 
-defineExpose({ sendMission, waypoints, cruiseSpeed, waypointAltitude, totalDistance, estimatedTime });
+defineExpose({ sendMission, waypoints, vehicleType, cruiseSpeed, waypointAltitude, totalDistance, estimatedTime });
 onBeforeUnmount(() => {
 	mapInteractionStore.deselectTool('missionWaypoint');
 	clearWaypoints();
@@ -570,12 +572,12 @@ onBeforeUnmount(() => {
 				v-model:altitudeMode="altitudeMode"
 				v-model:cruiseSpeed="cruiseSpeed"
 				v-model:hoverSpeed="hoverSpeed"
+				v-model:vehicleType="vehicleType"
 				v-model:waypointAltitude="waypointAltitude"
 				v-model:waypoints="waypoints"
 				:home-location="homeLocation"
 				:is-selected="isSelected"
 				:no-controller="noController"
-				:vehicle-type="vehicleType"
 				@toggle="toggle"
 				@clear-waypoints="onClearWaypoints"
 				@set-home="(loc) => emit('setHome', loc)"
@@ -698,6 +700,7 @@ onBeforeUnmount(() => {
 		<v-btn
 			:disabled="
 				noController ||
+				!vehicleType ||
 				(missionSource === 'waypoints' && waypoints.length === 0) ||
 				(missionSource === 'file' && !selectedFile) ||
 				missionSource === 'saved'
@@ -750,7 +753,7 @@ onBeforeUnmount(() => {
 		:missions="[{
 			name: props.systemId,
 			missionSource,
-			vehicleType: props.vehicleType,
+			vehicleType: vehicleType,
 			waypointCount: waypoints.length,
 			cruiseSpeed,
 			waypointAltitude,
