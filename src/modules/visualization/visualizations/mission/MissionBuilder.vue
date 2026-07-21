@@ -67,7 +67,7 @@ function onSetHome(location: { lat: number; lon: number }, viz: OSHVisualization
 	sendCommand(
 		`${protocol}://${cs.endpointUrl}`,
 		cs.id,
-		{ parameters: { locationVectorLL: { Latitude: location.lat, Longitude: location.lon } } },
+		{ parameters: { locationVectorLL: { lat: location.lat, lon: location.lon } } },
 		`${cs.connectorOpts.username}:${cs.connectorOpts.password}`
 	);
 }
