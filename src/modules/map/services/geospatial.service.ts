@@ -1,5 +1,6 @@
 import * as Cesium from 'cesium';
 import { MapPoint } from '@/modules/map/types';
+import { BBox } from '@/lib/OSHConnectDataStructs';
 
 /**
  * Given lat/lon, use Cesium to calculate ground level altitude.
@@ -44,4 +45,20 @@ export function getDistanceBetween(point1: MapPoint, point2: MapPoint) {
 	const cartesian2 = Cesium.Cartesian3.fromDegrees(point2.lon, point2.lat, point2.alt);
 
 	return Cesium.Cartesian3.distance(cartesian1, cartesian2);
+}
+
+/**
+ * Get the center point of a bbox
+ * Used for fly-to for GeoOverlays
+ */
+export async function getBboxCenter(bbox: BBox): Promise<{ x: number; y: number; z: number }> {
+	const [minLon, minLat, maxLon, maxLat] = bbox;
+	const lon = (minLon + maxLon) / 2;
+	const lat = (minLat + maxLat) / 2;
+	const alt = (await getGroundAltitude(lon, lat)) ?? 120;
+	return {
+		x: lon,
+		y: lat,
+		z: alt,
+	};
 }

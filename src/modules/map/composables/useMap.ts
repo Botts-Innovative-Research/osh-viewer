@@ -21,7 +21,11 @@ import {
 	connectDatasources as connect,
 	disconnectDatasources as disconnect,
 } from '@/modules/visualization/services/datasource.service';
-import { getDistanceBetween, getGroundAltitude } from '../services/geospatial.service';
+import {
+	getBboxCenter,
+	getDistanceBetween,
+	getGroundAltitude,
+} from '../services/geospatial.service';
 import { setLayerData } from '../services/foi.service';
 import { MapPoint } from '@/modules/map/types';
 import { useMapInteractionStore } from '@/stores/mapinteractionstore';
@@ -385,17 +389,25 @@ export function useMap() {
 	);
 	watch(
 		() => mapStore.selectedMapItem,
-		(newVal) => {
+		async (newVal: OSHVisualization | GeoOverlay | null) => {
 			if (!newVal) return; // Only fly when a map item is selected
 
-			const layer = mapItemLayers.value.get(newVal.id);
-			if (!layer) return;
+			let location;
 
-			const layerProps = layer.getCurrentProps();
-			const location =
-				layerProps.location ?? layerProps.position ?? layerProps.locations?.[0]; // Handle location for PM/LoB, position for ellipse, locations[0] for polyline
+			// Handle GeoOverlay
+			if ('geometry' in newVal && newVal.geometry.bbox) {
+				location = await getBboxCenter(newVal.geometry.bbox);
+			}
+			// Handle OSHVisualization
+			else if ('visualizationComponents' in newVal) {
+				const layer = mapItemLayers.value.get(newVal.id);
+				if (!layer) return;
+
+				const layerProps = layer.getCurrentProps();
+				location = layerProps.location ?? layerProps.position ?? layerProps.locations?.[0]; // Handle location for PM/LoB, position for ellipse, locations[0] for polyline
+			}
+
 			if (!location) return;
-
 			mapAdapter.value?.flyToPoint(location);
 		}
 	);
