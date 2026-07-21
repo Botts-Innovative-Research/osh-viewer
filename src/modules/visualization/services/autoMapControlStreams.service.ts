@@ -20,6 +20,7 @@ const csRoleKeywords: Record<string, string[]> = {
 	ptz: ['ptz control', 'ptzcontrol', 'ptz', 'pan tilt', 'pan-tilt-zoom', 'camera control'],
 	// geoptz
 	lla: ['location', 'lla', 'gps', 'position', 'platform location'],
+	flyToLocation: ['location'],
 };
 
 export function autoMapControlStreams(

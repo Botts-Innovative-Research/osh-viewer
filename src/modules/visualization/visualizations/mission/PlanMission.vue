@@ -56,6 +56,7 @@ const geoFencePolygons = ref<[]>([]);
 const rallyPoints = ref<[]>([]);
 
 const isRover = computed(() => vehicleType.value === 'Ground Rover' || vehicleType.value === 'Surface Boat');
+const hasHomeLocation = computed(() => props.homeLocation?.lat != null && props.homeLocation?.lon != null);
 
 const qgcVehicleTypeMap: Record<string, number> = {
 	'UAV': 2,
@@ -440,16 +441,21 @@ function generateMissionControlPlan() {
 		return null;
 	}
 
+	if (!hasHomeLocation.value) {
+		showToast('Home location must be set before sending a mission', 'ERROR');
+		return null;
+	}
+
 	const plannedHomePosition = [
-		props.homeLocation?.lat ?? waypoints.value[0].lat,
-		props.homeLocation?.lon ?? waypoints.value[0].lon,
-		props.homeLocation?.alt ?? waypoints.value[0].alt,
+		props.homeLocation.lat,
+		props.homeLocation.lon,
+		props.homeLocation.alt,
 	];
 
 	const items: any[] = [];
 
 	if (!isRover.value) {
-		const takeoffLocation = props.homeLocation ?? waypoints.value[0];
+		const takeoffLocation = props.homeLocation;
 		items.push({
 			AMSLAltAboveTerrain: amslAltAboveTerrain,
 			Altitude: waypointAltitude.value,
@@ -491,8 +497,8 @@ function generateMissionControlPlan() {
 				0,
 				0,
 				null,
-				props.homeLocation?.lat ?? waypoints.value[0].lat,
-				props.homeLocation?.lon ?? waypoints.value[0].lon,
+				props.homeLocation.lat,
+				props.homeLocation.lon,
 				0,
 			],
 			type: 'SimpleItem',

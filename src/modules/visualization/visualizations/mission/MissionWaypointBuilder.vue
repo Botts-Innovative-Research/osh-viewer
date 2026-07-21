@@ -116,22 +116,19 @@ defineExpose({ setLatLonAlt });
 
   <v-divider class="mt-4 mb-3" />
 
-  <v-row density="comfortable">
+  <v-row density="comfortable" class="mt-4">
     <v-btn
         block
         :color="isHomeLocationMapSelect ? 'primary' : 'grey'"
         variant="tonal"
         @click="toggleHomeLocationSelect"
-        prepend-icon="mdi-home-map-marker"
+        :prepend-icon="isHomeLocationMapSelect ? 'mdi-crosshairs-gps' : 'mdi-home-map-marker'"
     >
-      {{ isHomeLocationMapSelect ? 'Click map to set home...' : 'Set Home Waypoint' }}
+      {{ isHomeLocationMapSelect ? 'Click map to set home...' : 'Set Home' }}
       <v-tooltip activator="parent" location="top">
         Click to select a home position from the map.
       </v-tooltip>
     </v-btn>
-  </v-row>
-
-  <v-row density="comfortable" class="mt-4">
     <v-col :cols="isGroundVehicle ? 12 : 6">
       <v-text-field
           v-model.number="cruiseSpeed"

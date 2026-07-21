@@ -90,10 +90,17 @@ export const MissionConfigRoles: VisualizationConfigRole[] = [
 	{
 		role: 'driveLocation',
 		label: 'Drive to Location Control',
-		description: 'Select the control stream used to send  ',
+		description: 'Select the control stream used to send ground vehicles to location',
 		type: 'cs',
 		showPropertySelector: false,
 	},
+    {
+        role: 'flyToLocation',
+        label: 'Fly to Location Control',
+        description: 'Select the control stream used to send UAS to specific location',
+        type: 'cs',
+        showPropertySelector: false,
+    },
 	{
 		role: 'reboot',
 		label: 'Reboot Control',
