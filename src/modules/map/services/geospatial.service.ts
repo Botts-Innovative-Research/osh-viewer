@@ -48,7 +48,7 @@ export function getDistanceBetween(point1: MapPoint, point2: MapPoint) {
 }
 
 /**
- * Get the center point of a bbox
+ * Get the center point of a BBOX
  * Used for fly-to for GeoOverlays
  */
 export async function getBboxCenter(bbox: BBox): Promise<{ x: number; y: number; z: number }> {
@@ -61,4 +61,22 @@ export async function getBboxCenter(bbox: BBox): Promise<{ x: number; y: number;
 		y: lat,
 		z: alt,
 	};
+}
+
+/**
+ * Get center point of a list of MapPoints
+ * Used for centering the label of polygon/polyline in Cesium
+ * @param points
+ */
+export function getCenterPoint(points: MapPoint[]): Cesium.Cartesian3 | undefined {
+	// Initial validation
+	if (!points.length) return undefined;
+	const validPoints = points.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lon));
+	if (!validPoints.length) return undefined;
+
+	const avgLat = validPoints.reduce((sum, p) => sum + p.lat, 0) / validPoints.length;
+	const avgLon = validPoints.reduce((sum, p) => sum + p.lon, 0) / validPoints.length;
+	const avgAlt = validPoints.reduce((sum, p) => sum + (p.alt ?? 0), 0) / validPoints.length;
+
+	return Cesium.Cartesian3.fromDegrees(avgLon, avgLat, avgAlt);
 }

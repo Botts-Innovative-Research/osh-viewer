@@ -458,10 +458,8 @@ export function useMap() {
 	watch(
 		hiddenGeoOverlays,
 		async (newList, oldList) => {
-			console.log(newList, oldList);
 			const removedIds = new Set([...oldList].filter((id) => !newList.has(id)));
 			const addedIds = new Set([...newList].filter((id) => !oldList.has(id)));
-			console.log(removedIds, addedIds);
 			// Removed hidden geo overlays -> SHOW
 			if (removedIds.size > 0) {
 				removedIds.forEach((id: string) => {
@@ -524,8 +522,8 @@ export function useMap() {
 				if (!point) return;
 				mapAdapter.value?.updatePointPreview(
 					point,
-					previewFillColor.value,
 					previewIcon.value,
+					previewFillColor.value,
 					previewName.value
 				);
 			}
@@ -537,19 +535,25 @@ export function useMap() {
 					center,
 					previewRadius.value ?? 0, // Default radius = 0
 					previewBorderColor.value,
-					previewFillColor.value
+					previewFillColor.value,
+					previewName.value
 				);
 			}
 			// Polyline
 			if (previewType.value === 'LineString') {
-				mapAdapter.value?.updatePolylinePreview(newPoints, previewBorderColor.value);
+				mapAdapter.value?.updatePolylinePreview(
+					newPoints,
+					previewBorderColor.value,
+					previewName.value
+				);
 			}
 			// Polygon
 			if (previewType.value === 'Polygon') {
 				mapAdapter.value?.updatePolygonPreview(
 					newPoints,
 					previewBorderColor.value,
-					previewFillColor.value
+					previewFillColor.value,
+					previewName.value
 				);
 			}
 		},
@@ -566,7 +570,8 @@ export function useMap() {
 				center,
 				newRadius ?? 0, // Default radius = 0
 				previewBorderColor.value,
-				previewFillColor.value
+				previewFillColor.value,
+				previewName.value
 			);
 		},
 		{ deep: true }
@@ -582,19 +587,25 @@ export function useMap() {
 					center,
 					previewRadius.value ?? 0, // Default radius = 0
 					newColor,
-					previewFillColor.value
+					previewFillColor.value,
+					previewName.value
 				);
 			}
 			// Polyline
 			if (previewType.value === 'LineString') {
-				mapAdapter.value?.updatePolylinePreview(previewPoints.value, newColor);
+				mapAdapter.value?.updatePolylinePreview(
+					previewPoints.value,
+					newColor,
+					previewName.value
+				);
 			}
 			// Polygon
 			if (previewType.value === 'Polygon') {
 				mapAdapter.value?.updatePolygonPreview(
 					previewPoints.value,
 					newColor,
-					previewFillColor.value
+					previewFillColor.value,
+					previewName.value
 				);
 			}
 		},
@@ -607,8 +618,8 @@ export function useMap() {
 			if (previewType.value === 'Point') {
 				mapAdapter.value?.updatePointPreview(
 					previewPoints.value[0],
-					newColor,
 					previewIcon.value,
+					newColor,
 					previewName.value
 				);
 			}
@@ -620,7 +631,8 @@ export function useMap() {
 					center,
 					previewRadius.value ?? 0, // Default radius = 0
 					previewBorderColor.value,
-					newColor
+					newColor,
+					previewName.value
 				);
 			}
 			// Polygon
@@ -628,7 +640,8 @@ export function useMap() {
 				mapAdapter.value?.updatePolygonPreview(
 					previewPoints.value,
 					previewBorderColor.value,
-					newColor
+					newColor,
+					previewName.value
 				);
 			}
 		},
@@ -639,8 +652,8 @@ export function useMap() {
 		if (previewType.value !== 'Point' || !newIcon) return;
 		mapAdapter.value?.updatePointPreview(
 			previewPoints.value[0],
-			previewFillColor.value,
 			newIcon,
+			previewFillColor.value,
 			previewName.value
 		);
 	});
@@ -650,8 +663,8 @@ export function useMap() {
 		if (previewType.value === 'Point') {
 			mapAdapter.value?.updatePointPreview(
 				previewPoints.value[0],
-				previewFillColor.value,
 				previewIcon.value,
+				previewFillColor.value,
 				newName
 			);
 		}
