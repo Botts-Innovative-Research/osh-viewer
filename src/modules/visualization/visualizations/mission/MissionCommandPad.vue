@@ -159,7 +159,7 @@ function driveLocationCommand(location: MapPoint) {
 
 function flyToLocationCommand(location: MapPoint) {
 	sendCommandToRole('flyToLocation', {
-		parameters: { locationVectorLLA: { Latitude: location.lat, Longitude: location.lon, AltitudeAGL: location.alt } },
+		parameters: { locationVectorLLA: { Latitude: location.lat, Longitude: location.lon, AltitudeAGL: location.alt }, returnToStart: false, hoverSeconds: 5 },
 	});
 }
 
