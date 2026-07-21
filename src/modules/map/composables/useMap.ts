@@ -360,6 +360,10 @@ export function useMap() {
 				mapStore.setCurrentLLA(lat, lon, 0);
 				await addHomeLocationLayer(lon, lat);
 			}
+			// Fly to Location
+			if (mapInteractionStore.isFlyToLocationSelected) {
+				mapStore.setCurrentLLA(lat, lon, 0);
+			}
 			// Add additional onClick functions
 		});
 

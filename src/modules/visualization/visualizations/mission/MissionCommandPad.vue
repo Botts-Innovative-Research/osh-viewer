@@ -22,6 +22,9 @@ const mapInteractionStore = useMapInteractionStore();
 const driveLocationPoint = ref<MapPoint>({ lat: 0, lon: 0, alt: 0 });
 const isDriveLocationMapSelect = computed(() => mapInteractionStore.isDriveLocationSelected);
 
+const flyLocationPoint = ref<MapPoint>({ lat: 0, lon: 0, alt: 25 });
+const isFlyLocationMapSelect = computed(() => mapInteractionStore.isFlyToLocationSelected);
+
 watch(
 	() => mapStore.currentLLA,
 	(newVal) => {
@@ -32,11 +35,22 @@ watch(
 				alt: newVal.altitude ?? 0,
 			};
 		}
+		if (isFlyLocationMapSelect.value && newVal) {
+			flyLocationPoint.value = {
+				lat: newVal.latitude,
+				lon: newVal.longitude,
+				alt: flyLocationPoint.value.alt,
+			};
+		}
 	}
 );
 
 function toggleDriveLocationSelect() {
 	mapInteractionStore.toggleTool('driveLocation');
+}
+
+function toggleFlyLocationSelect() {
+	mapInteractionStore.toggleTool('flyToLocation');
 }
 
 const xVelocity = ref(0.0);
@@ -140,6 +154,12 @@ function driveMode() {
 function driveLocationCommand(location: MapPoint) {
 	sendCommandToRole('driveLocation', {
 		parameters: { locationVectorLL: { Latitude: location.lat, Longitude: location.lon } },
+	});
+}
+
+function flyToLocationCommand(location: MapPoint) {
+	sendCommandToRole('flyToLocation', {
+		parameters: { locationVectorLLA: { Latitude: location.lat, Longitude: location.lon, AltitudeAGL: location.alt } },
 	});
 }
 
@@ -470,7 +490,9 @@ const hasSimpleCommands = computed(() =>
 		<div v-if="getControlstreamByRole('driveLocation')" class="command-section">
 			<div class="section-header">
 				<v-icon size="small" class="mr-2">mdi-map-marker</v-icon>
-				<span class="text-subtitle-2 font-weight-medium">Drive to Location</span>
+				<span class="text-subtitle-2 font-weight-medium">
+          Drive to Location
+        </span>
 				<v-tooltip activator="parent" location="top">
 					Navigate the vehicle to a specific lat/lon coordinate. Use the crosshairs to pick from the map.
 				</v-tooltip>
@@ -484,6 +506,28 @@ const hasSimpleCommands = computed(() =>
 					hide-alt
 					@submit="driveLocationCommand"
 					@toggle="toggleDriveLocationSelect"
+				/>
+		</div>
+
+		<!-- Fly to location -->
+		<div v-if="getControlstreamByRole('flyToLocation')" class="command-section">
+			<div class="section-header">
+				<v-icon size="small" class="mr-2">mdi-airplane</v-icon>
+				<span class="text-subtitle-2 font-weight-medium">
+          Fly to Location
+        </span>
+				<v-tooltip activator="parent" location="top">
+					Fly the vehicle to a specific lat/lon/alt coordinate. Use the crosshairs to pick from the map.
+				</v-tooltip>
+			</div>
+				<MapPointEditor
+					v-model="flyLocationPoint"
+					:is-selected="isFlyLocationMapSelect"
+					:is-selector-disabled="false"
+					submit-icon="mdi-send"
+					submit-label="Send"
+					@submit="flyToLocationCommand"
+					@toggle="toggleFlyLocationSelect"
 				/>
 		</div>
 
