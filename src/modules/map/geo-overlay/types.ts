@@ -1,4 +1,5 @@
-import { Geometry } from '@/lib/OSHConnectDataStructs';
+import { BBox, Geometry } from '@/lib/OSHConnectDataStructs';
+import { MapPoint } from '@/modules/map/types';
 
 // NOTE: Circle is not an existing GeoJSON type
 export type GeoOverlayType = 'Point' | 'LineString' | 'Polygon' | 'Circle';

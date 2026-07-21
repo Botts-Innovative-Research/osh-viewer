@@ -100,11 +100,12 @@ export function createLeafletAdapter(): MapAdapter {
 	function drawCircle(
 		center: MapPoint,
 		radius: number,
-		borderColor: string | null,
-		fillColor: string | null,
+		borderColor?: string,
+		fillColor?: string,
+		name?: string,
 		id?: string
 	): L.circle {
-		return L.circle([center.lat, center.lon], {
+		const circle = L.circle([center.lat, center.lon], {
 			id: id,
 			radius,
 			color: borderColor ?? '#FF0000',
@@ -112,20 +113,30 @@ export function createLeafletAdapter(): MapAdapter {
 			fillColor: fillColor ?? '#FF000080',
 			fillOpacity: 1,
 		});
+		if (name) circle.bindTooltip(name);
+		return circle;
 	}
-	function drawPolyline(points: MapPoint[], borderColor: string | null, id?: string): L.polyline {
-		return L.polyline(
+	function drawPolyline(
+		points: MapPoint[],
+		borderColor?: string,
+		name?: string,
+		id?: string
+	): L.polyline {
+		const polyline = L.polyline(
 			points.map((p) => [p.lat, p.lon]),
 			{ id: id, color: borderColor ?? '#FF0000', weight: 5 }
 		);
+		if (name) polyline.bindTooltip(name);
+		return polyline;
 	}
 	function drawPolygon(
 		points: MapPoint[],
-		borderColor: string | null,
-		fillColor: string | null,
+		borderColor?: string,
+		fillColor?: string,
+		name?: string,
 		id?: string
 	): L.polygon {
-		return L.polygon(
+		const polygon = L.polygon(
 			points.map((p) => [p.lat, p.lon]),
 			{
 				id: id,
@@ -135,6 +146,8 @@ export function createLeafletAdapter(): MapAdapter {
 				weight: 5,
 			}
 		);
+		if (name) polygon.bindTooltip(name);
+		return polygon;
 	}
 
 	function drawMissionPath(waypoints: MapPoint[]) {
@@ -174,9 +187,9 @@ export function createLeafletAdapter(): MapAdapter {
 	/* Geofence Drawing Tools */
 	async function updatePointPreview(
 		point: MapPoint,
-		fillColor: string | null,
-		icon: string | null,
-		name: string | null,
+		icon?: string | null,
+		fillColor?: string | null,
+		name?: string | null,
 		id?: string
 	) {
 		// Remove old layer
@@ -195,35 +208,62 @@ export function createLeafletAdapter(): MapAdapter {
 	function updateCirclePreview(
 		center: MapPoint,
 		radius: number,
-		borderColor: string | null,
-		fillColor: string | null
+		borderColor?: string | null,
+		fillColor?: string | null,
+		name?: string | null,
+		id?: string
 	) {
 		// Remove old layer
 		if (previewEntity) clearPreview();
 		// Build new entity
-		previewEntity = drawCircle(center, radius, borderColor, fillColor);
+		previewEntity = drawCircle(
+			center,
+			radius,
+			borderColor ?? undefined,
+			fillColor ?? undefined,
+			name ?? undefined,
+			id ?? undefined
+		);
 		// Add to map
 		previewEntity.addTo(mapView.map);
 	}
 
-	async function updatePolylinePreview(points: MapPoint[], borderColor: string | null) {
+	async function updatePolylinePreview(
+		points: MapPoint[],
+		borderColor?: string | null,
+		name?: string | null,
+		id?: string
+	) {
 		// Remove old layer
 		if (previewEntity) clearPreview();
 		// Build new entity
-		previewEntity = await drawPolyline(points, borderColor);
+		previewEntity = await drawPolyline(
+			points,
+			borderColor ?? undefined,
+			name ?? undefined,
+			id ?? undefined
+		);
 		// Add to map
 		previewEntity.addTo(mapView.map);
 	}
 
 	function updatePolygonPreview(
 		points: MapPoint[],
-		borderColor: string | null,
-		fillColor: string | null
+		borderColor?: string | null,
+		fillColor?: string | null,
+		name?: string | null,
+		id?: string
 	) {
 		// Remove old layer
 		if (previewEntity) clearPreview();
 		// Build new entity
-		previewEntity = drawPolygon(points, borderColor, fillColor);
+		previewEntity = drawPolygon(
+			points,
+			borderColor ?? undefined,
+			fillColor ?? undefined,
+			name ?? undefined,
+			id ?? undefined
+		);
 		// Add to map
 		previewEntity.addTo(mapView.map);
 	}
@@ -269,6 +309,7 @@ export function createLeafletAdapter(): MapAdapter {
 				geoOverlay.geometry.properties.radius,
 				geoOverlay.geometry.properties.borderColor,
 				geoOverlay.geometry.properties.fillColor,
+				geoOverlay.name,
 				geoOverlay.uuid
 			);
 			newCircle.addTo(mapView.map);
@@ -283,6 +324,7 @@ export function createLeafletAdapter(): MapAdapter {
 					alt,
 				})),
 				geoOverlay.geometry.properties.borderColor,
+				geoOverlay.name,
 				geoOverlay.uuid
 			);
 			newPolyline.addTo(mapView.map);
@@ -298,6 +340,7 @@ export function createLeafletAdapter(): MapAdapter {
 				})),
 				geoOverlay.geometry.properties.borderColor,
 				geoOverlay.geometry.properties.fillColor,
+				geoOverlay.name,
 				geoOverlay.uuid
 			);
 			newPolygon.addTo(mapView.map);

@@ -3,11 +3,13 @@ import { ref, Ref } from 'vue';
 // @ts-ignore
 import { MapLayer } from '@/modules/map/adapters/cesium.adapter';
 import { fetchLayerFromUrl } from '@/modules/map/services/cesiumLayer.service';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 
 export const useMapStore = defineStore(
 	'map',
 	() => {
-		const selectedMapItem: Ref<any | null> = ref(null); // Currently selected map item from list of map visualizations
+		const selectedMapItem: Ref<OSHVisualization | GeoOverlay | null> = ref(null); // Currently selected map item from list of map visualizations
 		const currentLLA: Ref<{ latitude: number; longitude: number; altitude: number } | null> =
 			ref(null); // Currently selected LLA coordinates
 
@@ -15,7 +17,7 @@ export const useMapStore = defineStore(
 		const cesiumMapLayers: Ref<MapLayer[]> = ref([]);
 
 		// Handle selection of map item
-		function setSelectedMapItem(item: any | null) {
+		function setSelectedMapItem(item: OSHVisualization | GeoOverlay | null) {
 			selectedMapItem.value = item;
 		}
 

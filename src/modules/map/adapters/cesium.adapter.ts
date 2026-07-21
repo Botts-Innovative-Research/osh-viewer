@@ -7,6 +7,7 @@ import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { getColoredIconUrl } from '@/modules/map/services/colorId.service';
 import { ICON_BASE } from '@/lib/icons';
+import { getCenterPoint } from '@/modules/map/services/geospatial.service';
 
 // Showcase examples token :P
 // Ion.defaultAccessToken =
@@ -204,8 +205,9 @@ export function createCesiumAdapter(): MapAdapter {
 	function drawCircle(
 		center: MapPoint,
 		radius: number,
-		borderColor: string | null,
-		fillColor: string | null,
+		borderColor?: string,
+		fillColor?: string,
+		name?: string,
 		id?: string
 	) {
 		return new Cesium.Entity({
@@ -221,11 +223,24 @@ export function createCesiumAdapter(): MapAdapter {
 				outlineColor: Cesium.Color.fromCssColorString(borderColor ?? '#FF0000'),
 				outlineWidth: 3,
 			},
+			...(name
+				? {
+						label: {
+							text: name,
+							font: '14pt monospace',
+							style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+							outlineWidth: 2,
+							verticalOrigin: Cesium.VerticalOrigin.TOP,
+							pixelOffset: new Cesium.Cartesian2(0, 32),
+						},
+					}
+				: {}),
 		});
 	}
-	function drawPolyline(points: MapPoint[], borderColor: string | null, id?: string) {
+	function drawPolyline(points: MapPoint[], borderColor?: string, name?: string, id?: string) {
 		return new Cesium.Entity({
 			id: id ?? randomUUID(),
+			position: getCenterPoint(points), // Used for center of label
 			polyline: {
 				positions: points.map(({ lat, lon, alt }) => {
 					return Cesium.Cartesian3.fromDegrees(lon, lat);
@@ -237,16 +252,30 @@ export function createCesiumAdapter(): MapAdapter {
 				}),
 				clampToGround: true,
 			},
+			...(name
+				? {
+						label: {
+							text: name,
+							font: '14pt monospace',
+							style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+							outlineWidth: 2,
+							verticalOrigin: Cesium.VerticalOrigin.TOP,
+							pixelOffset: new Cesium.Cartesian2(0, 32),
+						},
+					}
+				: {}),
 		});
 	}
 	function drawPolygon(
 		points: MapPoint[],
-		borderColor: string | null,
-		fillColor: string | null,
+		borderColor?: string,
+		fillColor?: string,
+		name?: string,
 		id?: string
 	) {
 		return new Cesium.Entity({
 			id: id ?? randomUUID(),
+			// position: getCenterPoint(points), // Used for center of label
 			polygon: {
 				hierarchy: Cesium.Cartesian3.fromDegreesArrayHeights(
 					points.flatMap(({ lat, lon, alt }) => {
@@ -260,6 +289,18 @@ export function createCesiumAdapter(): MapAdapter {
 				outlineWidth: 3,
 				classificationType: Cesium.ClassificationType.TERRAIN,
 			},
+			...(name
+				? {
+						label: {
+							text: name,
+							font: '14pt monospace',
+							style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+							outlineWidth: 2,
+							verticalOrigin: Cesium.VerticalOrigin.TOP,
+							pixelOffset: new Cesium.Cartesian2(0, 32),
+						},
+					}
+				: {}),
 		});
 	}
 
@@ -474,9 +515,9 @@ export function createCesiumAdapter(): MapAdapter {
 	/* Geofence Drawing Tools */
 	async function updatePointPreview(
 		point: MapPoint,
-		fillColor: string | null,
-		icon: string | null,
-		name: string | null,
+		icon?: string | null,
+		fillColor?: string | null,
+		name?: string | null,
 		id?: string
 	) {
 		// Remove old layer
@@ -496,23 +537,42 @@ export function createCesiumAdapter(): MapAdapter {
 	function updateCirclePreview(
 		center: MapPoint,
 		radius: number,
-		borderColor: string | null,
-		fillColor: string | null
+		borderColor?: string | null,
+		fillColor?: string | null,
+		name?: string | null,
+		id?: string
 	) {
 		// Remove old layer
 		if (previewEntity) clearPreview();
 		// Build new entity
-		previewEntity = drawCircle(center, radius, borderColor, fillColor);
+		previewEntity = drawCircle(
+			center,
+			radius,
+			borderColor ?? undefined,
+			fillColor ?? undefined,
+			name ?? undefined,
+			id ?? undefined
+		);
 		// Add to map
 		mapView.viewer.entities.add(previewEntity);
 		invalidate();
 	}
 
-	function updatePolylinePreview(points: MapPoint[], borderColor: string | null) {
+	function updatePolylinePreview(
+		points: MapPoint[],
+		borderColor?: string | null,
+		name?: string | null,
+		id?: string
+	) {
 		// Remove old layer
 		if (previewEntity) clearPreview();
 		// Build new entity
-		previewEntity = drawPolyline(points, borderColor);
+		previewEntity = drawPolyline(
+			points,
+			borderColor ?? undefined,
+			name ?? undefined,
+			id ?? undefined
+		);
 		// Add to map
 		mapView.viewer.entities.add(previewEntity);
 		invalidate();
@@ -521,14 +581,29 @@ export function createCesiumAdapter(): MapAdapter {
 	function updatePolygonPreview(
 		points: MapPoint[],
 		borderColor: string | null,
-		fillColor: string | null
+		fillColor: string | null,
+		name: string | null,
+		id?: string
 	) {
 		// Remove old layer
 		if (previewEntity) clearPreview();
 		// Build new entity
 		if (points.length < 2) return; // Don't build with no points
-		if (points.length === 2) previewEntity = drawPolyline(points, borderColor);
-		else previewEntity = drawPolygon(points, borderColor, fillColor);
+		if (points.length === 2)
+			previewEntity = drawPolyline(
+				points,
+				borderColor ?? undefined,
+				name ?? undefined,
+				id ?? undefined
+			);
+		else
+			previewEntity = drawPolygon(
+				points,
+				borderColor ?? undefined,
+				fillColor ?? undefined,
+				name ?? undefined,
+				id ?? undefined
+			);
 		// Add to map
 		mapView.viewer.entities.add(previewEntity);
 		invalidate();
@@ -577,6 +652,7 @@ export function createCesiumAdapter(): MapAdapter {
 				geoOverlay.geometry.properties.radius,
 				geoOverlay.geometry.properties.borderColor,
 				geoOverlay.geometry.properties.fillColor,
+				geoOverlay.name,
 				geoOverlay.uuid
 			);
 			mapView.viewer.entities.add(newCircle);
@@ -591,6 +667,7 @@ export function createCesiumAdapter(): MapAdapter {
 					alt,
 				})),
 				geoOverlay.geometry.properties.borderColor,
+				geoOverlay.name,
 				geoOverlay.uuid
 			);
 			mapView.viewer.entities.add(newPolyline);
@@ -606,6 +683,7 @@ export function createCesiumAdapter(): MapAdapter {
 				})),
 				geoOverlay.geometry.properties.borderColor,
 				geoOverlay.geometry.properties.fillColor,
+				geoOverlay.name,
 				geoOverlay.uuid
 			);
 			mapView.viewer.entities.add(newPolygon);

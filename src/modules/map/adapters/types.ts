@@ -23,11 +23,19 @@ export interface MapAdapter {
 	drawCircle(
 		center: MapPoint,
 		radius: number,
-		borderColor: string | null,
-		fillColor: string | null
+		borderColor?: string,
+		fillColor?: string,
+		name?: string,
+		id?: string
 	): any;
-	drawPolyline(points: MapPoint[], borderColor: string | null): any;
-	drawPolygon(points: MapPoint[], borderColor: string | null, fillColor: string | null): any;
+	drawPolyline(points: MapPoint[], borderColor?: string, name?: string, id?: string): any;
+	drawPolygon(
+		points: MapPoint[],
+		borderColor?: string,
+		fillColor?: string,
+		name?: string,
+		id?: string
+	): any;
 
 	/* Mission Builder */
 	drawMissionWaypoints(waypoints: MapPoint[]): void;
@@ -38,23 +46,30 @@ export interface MapAdapter {
 	/* GeoOverlay */
 	updatePointPreview(
 		point: MapPoint,
-		fillColor: string | null,
-		icon: string | null,
-		name: string | null,
-		id?: string | undefined
+		icon?: string | null,
+		fillColor?: string | null,
+		name?: string | null,
+		id?: string
 	): void;
 	updateCirclePreview(
 		center: MapPoint,
 		radius: number,
-		borderColor: string | null,
-		fillColor: string | null,
+		borderColor?: string | null,
+		fillColor?: string | null,
+		name?: string | null,
 		id?: string
 	): void;
-	updatePolylinePreview(points: MapPoint[], borderColor: string | null, id?: string): void;
+	updatePolylinePreview(
+		points: MapPoint[],
+		borderColor?: string | null,
+		name?: string | null,
+		id?: string
+	): void;
 	updatePolygonPreview(
 		points: MapPoint[],
-		borderColor: string | null,
-		fillColor: string | null,
+		borderColor?: string | null,
+		fillColor?: string | null,
+		name?: string | null,
 		id?: string
 	): void;
 	clearPreview(): void;

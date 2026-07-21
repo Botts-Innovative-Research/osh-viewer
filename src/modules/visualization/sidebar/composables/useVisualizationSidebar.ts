@@ -26,7 +26,9 @@ export function useVisualizationSidebar() {
 			visualizations.value.filter(
 				(viz) =>
 					viz.viewLocation === 'panel' ||
-					(viz.viewLocation === 'multi' && viz.type !== 'geoPtz' && viz.type !== 'mission')
+					(viz.viewLocation === 'multi' &&
+						viz.type !== 'geoPtz' &&
+						viz.type !== 'mission')
 			),
 
 		set: (newOrder) => {
@@ -34,7 +36,11 @@ export function useVisualizationSidebar() {
 			const others = visualizations.value.filter(
 				(viz) =>
 					viz.viewLocation !== 'panel' &&
-					!(viz.viewLocation === 'multi' && viz.type !== 'geoPtz' && viz.type !== 'mission')
+					!(
+						viz.viewLocation === 'multi' &&
+						viz.type !== 'geoPtz' &&
+						viz.type !== 'mission'
+					)
 			);
 
 			visualizations.value = [...others, ...newOrder];
@@ -101,14 +107,18 @@ export function useVisualizationSidebar() {
 		}
 	);
 
-	watch(missionVisualizations, (current) => {
-		const selectedIds = new Set(selectedMissionControllers.value.map((v) => v.id));
+	watch(
+		missionVisualizations,
+		(current) => {
+			const selectedIds = new Set(selectedMissionControllers.value.map((v) => v.id));
 
-		const updatedSelected = current.filter((v) => selectedIds.has(v.id));
-		const newVizs = current.filter((v) => !selectedIds.has(v.id));
+			const updatedSelected = current.filter((v) => selectedIds.has(v.id));
+			const newVizs = current.filter((v) => !selectedIds.has(v.id));
 
-		selectedMissionControllers.value = [...updatedSelected, ...newVizs];
-	}, { deep: true });
+			selectedMissionControllers.value = [...updatedSelected, ...newVizs];
+		},
+		{ deep: true }
+	);
 
 	/* GEOPTZ HELPERS */
 	function removeGeoPTZ(controller: OSHVisualization) {
@@ -138,7 +148,11 @@ export function useVisualizationSidebar() {
 		visualizationStore.toggleMapLayerVisibility(item.id);
 	}
 	function toggleSelectedMapItem(item: any) {
-		if (mapStore.selectedMapItem && mapStore.selectedMapItem.id === item.id) {
+		if (
+			mapStore.selectedMapItem &&
+			'visualizationComponents' in mapStore.selectedMapItem &&
+			mapStore.selectedMapItem.id === item.id
+		) {
 			mapStore.setSelectedMapItem(null);
 		} else {
 			mapStore.setSelectedMapItem(item);
