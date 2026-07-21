@@ -81,7 +81,7 @@ export function createLeafletAdapter(): MapAdapter {
 		iconColor?: string,
 		label?: string,
 		id?: string
-	) {
+	): Promise<L.Marker> {
 		const coloredIcon =
 			iconColor && icon ? await getColoredIconUrl(`${ICON_BASE}${icon}`, iconColor) : icon;
 		const iconOptions: any = {
@@ -171,6 +171,26 @@ export function createLeafletAdapter(): MapAdapter {
 	}
 
 	/* Geofence Drawing Tools */
+	async function updatePointPreview(
+		point: MapPoint,
+		fillColor: string | null,
+		icon: string | null,
+		name: string | null,
+		id?: string
+	) {
+		// Remove old layer
+		if (previewEntity) clearPreview();
+		// Build new entity
+		previewEntity = await drawPoint(
+			point,
+			icon ?? undefined,
+			fillColor ?? undefined,
+			name ?? undefined,
+			id ?? undefined
+		);
+		// Add to map
+		previewEntity.addTo(mapView.map);
+	}
 	function updateCirclePreview(
 		center: MapPoint,
 		radius: number,
@@ -185,11 +205,11 @@ export function createLeafletAdapter(): MapAdapter {
 		previewEntity.addTo(mapView.map);
 	}
 
-	function updatePolylinePreview(points: MapPoint[], borderColor: string | null) {
+	async function updatePolylinePreview(points: MapPoint[], borderColor: string | null) {
 		// Remove old layer
 		if (previewEntity) clearPreview();
 		// Build new entity
-		previewEntity = drawPolyline(points, borderColor);
+		previewEntity = await drawPolyline(points, borderColor);
 		// Add to map
 		previewEntity.addTo(mapView.map);
 	}
@@ -212,12 +232,29 @@ export function createLeafletAdapter(): MapAdapter {
 		previewEntity = null;
 	}
 
-	function addGeoOverlay(geoOverlay: GeoOverlay) {
+	async function addGeoOverlay(geoOverlay: GeoOverlay) {
 		if (!geoOverlay) return;
 
 		// Clear preview before adding final geoOverlay
 		clearPreview();
 
+		// Point
+		if (geoOverlay.type === 'Point') {
+			const [lon, lat, alt] = geoOverlay.geometry.coordinates as [number, number, number];
+			const point: MapPoint = {
+				lat,
+				lon,
+				alt,
+			};
+			const newPoint = await drawPoint(
+				point,
+				geoOverlay.geometry.properties.icon,
+				geoOverlay.geometry.properties.fillColor,
+				geoOverlay.name,
+				geoOverlay.uuid
+			);
+			newPoint.addTo(mapView.map);
+		}
 		// Circle
 		if (geoOverlay.type === 'Circle') {
 			const [lon, lat, alt] = geoOverlay.geometry.coordinates as [number, number, number];
@@ -296,6 +333,7 @@ export function createLeafletAdapter(): MapAdapter {
 		clearMissionWaypoints,
 		drawMissionPath,
 		clearMissionPath,
+		updatePointPreview,
 		updateCirclePreview,
 		updatePolylinePreview,
 		updatePolygonPreview,

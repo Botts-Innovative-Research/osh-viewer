@@ -19,13 +19,7 @@ export interface MapAdapter {
 	/* Map Drawing */
 	addMarker(marker: any): void;
 	removeMarker(marker: any): void;
-	drawPoint(
-        point: MapPoint,
-        icon?: string,
-        iconColor?: string,
-        label?: string,
-        id?: string
-    ): any;
+	drawPoint(point: MapPoint, icon?: string, iconColor?: string, label?: string, id?: string): any;
 	drawCircle(
 		center: MapPoint,
 		radius: number,
@@ -42,6 +36,13 @@ export interface MapAdapter {
 	clearMissionPath(): void;
 
 	/* GeoOverlay */
+	updatePointPreview(
+		point: MapPoint,
+		fillColor: string | null,
+		icon: string | null,
+		name: string | null,
+		id?: string | undefined
+	): void;
 	updateCirclePreview(
 		center: MapPoint,
 		radius: number,

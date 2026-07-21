@@ -35,7 +35,10 @@ onMounted(() => {
 					<IconPicker
 						v-model="previewStore.icon"
 						:icon-options="
-							ICON_OPTIONS.filter((option) => option.category === 'geoptz')
+							ICON_OPTIONS.filter(
+								(option) =>
+									option.category !== 'geoptz' && option.category !== 'waypoint'
+							)
 						"
 					></IconPicker>
 				</template>
@@ -47,7 +50,7 @@ onMounted(() => {
 					<ColorPicker v-model="previewStore.borderColor" />
 				</template>
 			</v-list-item>
-			<v-list-item v-show="props.type === 'Circle' || props.type === 'Polygon'">
+			<v-list-item v-show="props.type !== 'LineString'">
 				<v-list-item-title
 					>{{ props.type === 'Point' ? '' : 'Fill ' }}Color</v-list-item-title
 				>

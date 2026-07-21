@@ -50,6 +50,7 @@ export function useMap() {
 		geofenceMode: previewGeofenceMode,
 		borderColor: previewBorderColor,
 		fillColor: previewFillColor,
+		icon: previewIcon,
 		points: previewPoints,
 		radius: previewRadius,
 		circleCreationStep: previewCircleCreationStep,
@@ -287,6 +288,10 @@ export function useMap() {
 
 		/* MOUSE CLICK */
 		mapAdapter.value.onClick(async (lat, lon, alt) => {
+			// Point GeoOverlay
+			if (mapInteractionStore.isGeoOverlayPointSelected) {
+				previewPoints.value = [{ lat, lon, alt }];
+			}
 			// Circle GeoOverlay
 			if (mapInteractionStore.isGeoOverlayCircleSelected) {
 				// Handle second click FIRST - radius
@@ -501,6 +506,17 @@ export function useMap() {
 	watch(
 		previewPoints,
 		(newPoints) => {
+			// Point
+			if (previewType.value === 'Point') {
+				const point = newPoints[0];
+				if (!point) return;
+				mapAdapter.value?.updatePointPreview(
+					point,
+					previewFillColor.value,
+					previewIcon.value,
+					previewName.value
+				);
+			}
 			// Circle
 			if (previewType.value === 'Circle') {
 				const center = newPoints[0];
@@ -570,6 +586,14 @@ export function useMap() {
 	watch(
 		previewFillColor,
 		(newColor) => {
+			// Point
+			if (previewType.value === 'Point')
+				mapAdapter.value?.updatePointPreview(
+					previewPoints.value[0],
+					newColor,
+					previewIcon.value,
+					previewName.value
+				);
 			// Circle
 			if (previewType.value === 'Circle') {
 				const center = previewPoints.value[0];
@@ -591,6 +615,28 @@ export function useMap() {
 		},
 		{ deep: true }
 	);
+	watch(previewIcon, (newIcon) => {
+		// ONLY for Point
+		if (previewType.value !== 'Point' || !newIcon) return;
+		mapAdapter.value?.updatePointPreview(
+			previewPoints.value[0],
+			previewFillColor.value,
+			newIcon,
+			previewName.value
+		);
+	});
+	watch(previewName, (newName) => {
+		// Point
+		if (previewType.value === 'Point') {
+			mapAdapter.value?.updatePointPreview(
+				previewPoints.value[0],
+				previewFillColor.value,
+				previewIcon.value,
+				newName
+			);
+		}
+		// TODO: Circle, Polyline, Polygon
+	});
 
 	/* GEOPTZ */
 	watch(
@@ -604,18 +650,18 @@ export function useMap() {
 
 	/* DRIVE LOCATION */
 	async function addDriveLocationLayer(lon: number, lat: number) {
-        if (!mapAdapter.value) return;
-        removeDriveLocationLayer();
+		if (!mapAdapter.value) return;
+		removeDriveLocationLayer();
 
-        const marker = await mapAdapter.value.drawPoint(
-            { lon, lat, alt: 0 },
-            "/icons/waypoint/round-pin.png",
-            "#00BFFF",
-            "Drive to Location"
-        )
+		const marker = await mapAdapter.value.drawPoint(
+			{ lon, lat, alt: 0 },
+			'/icons/waypoint/round-pin.png',
+			'#00BFFF',
+			'Drive to Location'
+		);
 
-        mapAdapter.value.addMarker(marker);
-        driveLocationLayer.value = marker;
+		mapAdapter.value.addMarker(marker);
+		driveLocationLayer.value = marker;
 	}
 
 	function removeDriveLocationLayer() {
@@ -633,18 +679,18 @@ export function useMap() {
 	async function addHomeLocationLayer(lon: number, lat: number) {
 		if (!mapAdapter.value) return;
 
-        removeHomeLocationLayer();
+		removeHomeLocationLayer();
 
-        const marker = await mapAdapter.value.drawPoint(
-            { lon, lat, alt: 0 },
-            "/icons/waypoint/home-map-marker.png",
-            "#bd1616",
-            "Home Location"
-        )
+		const marker = await mapAdapter.value.drawPoint(
+			{ lon, lat, alt: 0 },
+			'/icons/waypoint/home-map-marker.png',
+			'#bd1616',
+			'Home Location'
+		);
 
-        mapAdapter.value.addMarker(marker);
-        homeLocationLayer.value = marker;
-    }
+		mapAdapter.value.addMarker(marker);
+		homeLocationLayer.value = marker;
+	}
 	function removeHomeLocationLayer() {
 		if (homeLocationLayer.value) mapAdapter.value?.removeMarker(homeLocationLayer.value);
 		homeLocationLayer.value = null;
