@@ -67,8 +67,6 @@ export function useVisualizationSidebar() {
 	const openPanelVisualizations = ref<string[]>([]); // Tracks panel visualizations only
 	function handleOpenMapPanels(oldLen = 0) {
 		if (mapVisualizations.value.length) {
-			// Only auto-expand when the section goes from empty -> has items;
-			// otherwise respect a manual minimize even as items are added/removed.
 			if (oldLen === 0 && !openPanels.value.includes('map')) openPanels.value.push('map');
 		} else {
 			openPanels.value = openPanels.value.filter((id: string) => id !== 'map');
@@ -90,9 +88,6 @@ export function useVisualizationSidebar() {
 		}
 	}
 	function handleOpenPanel(oldIds: string[] = []) {
-		// Diff against the *previous* id list (not the currently-open list) so a
-		// manually minimized viz (removed from openPanelVisualizations by the
-		// v-expansion-panels v-model) doesn't get treated as "new" and reopened.
 		const currentIds = panelVisualizations.value.map((v) => v.id);
 		const newIds = currentIds.filter((id) => !oldIds.includes(id));
 		openPanelVisualizations.value.push(...newIds);
