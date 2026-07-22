@@ -90,7 +90,7 @@ function sendCommandToRole(role: string, payload: any) {
 	if (!config) return;
 
 	console.log(`[MissionCommandPad] Sending command to ${role}:`, payload);
-	sendCommand(config.baseUrl, config.id, payload, config.auth);
+	sendCommand(config.baseUrl, config.id, payload, config.auth, role.toUpperCase());
 }
 
 function pause() {
