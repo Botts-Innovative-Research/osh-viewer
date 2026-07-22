@@ -3,7 +3,7 @@ import L from 'leaflet';
 import { MapAdapter } from './types';
 import { MapPoint, MapPointHandler } from '@/modules/map/types';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
-import { getColoredIconUrl } from '@/modules/map/services/colorId.service';
+import {colorHash, getColoredIconUrl} from '@/modules/map/services/colorId.service';
 import { ICON_BASE } from '@/lib/icons';
 
 export function createLeafletAdapter(): MapAdapter {
@@ -150,8 +150,9 @@ export function createLeafletAdapter(): MapAdapter {
 		return polygon;
 	}
 
-	function drawMissionPath(waypoints: MapPoint[]) {
-		const polyline = drawPolyline(waypoints, '#5d6cce');
+	function drawMissionPath(waypoints: MapPoint[], systemId: string) {
+        const color = colorHash(systemId).hex;
+		const polyline = drawPolyline(waypoints, color);
 		polyline.addTo(mapView.map);
 		flightPathPolylines.push(polyline);
 	}
@@ -163,13 +164,15 @@ export function createLeafletAdapter(): MapAdapter {
 		flightPathPolylines = [];
 	}
 
-	async function drawMissionWaypoints(waypoints: MapPoint[]) {
-		clearMissionWaypoints();
+	async function drawMissionWaypoints(waypoints: MapPoint[], systemId: string) {
+        const color = colorHash(systemId).hex;
+
+        clearMissionWaypoints();
 		for (let index = 0; index < waypoints.length; index++) {
 			const marker = await drawPoint(
 				waypoints[index],
 				'/icons/waypoint/round-pin.png',
-				'#5d6cce',
+				color,
 				`WP ${index + 1}`
 			);
 			marker.addTo(mapView.map);

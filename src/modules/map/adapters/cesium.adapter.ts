@@ -5,7 +5,7 @@ import { Ion } from 'cesium';
 import { CursorMode, MapPoint, MapPointHandler } from '@/modules/map/types';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import { getColoredIconUrl } from '@/modules/map/services/colorId.service';
+import {colorHash, getColoredIconUrl} from '@/modules/map/services/colorId.service';
 import { ICON_BASE } from '@/lib/icons';
 import { getCenterPoint } from '@/modules/map/services/geospatial.service';
 
@@ -304,8 +304,9 @@ export function createCesiumAdapter(): MapAdapter {
 		});
 	}
 
-	function drawMissionPath(waypoints: MapPoint[]) {
-		const entity = drawPolyline(waypoints, '#5d6cce');
+	function drawMissionPath(waypoints: MapPoint[], systemId: string) {
+        const color = colorHash(systemId).hex;
+        const entity = drawPolyline(waypoints, color);
 		mapView.viewer.entities.add(entity);
 		flightPathPolylines.push(entity);
 	}
@@ -318,13 +319,14 @@ export function createCesiumAdapter(): MapAdapter {
 		flightPathPolylines = [];
 	}
 
-	async function drawMissionWaypoints(waypoints: MapPoint[]) {
-		clearMissionWaypoints();
+	async function drawMissionWaypoints(waypoints: MapPoint[], systemId: string) {
+        const color = colorHash(systemId).hex;
+        clearMissionWaypoints();
 		for (let index = 0; index < waypoints.length; index++) {
 			const entity = await drawPoint(
 				waypoints[index],
 				'/icons/waypoint/round-pin.png',
-				'#5d6cce',
+				color,
 				`WP ${index + 1}`
 			);
 			mapView.viewer.entities.add(entity);

@@ -137,9 +137,9 @@ export function useMap() {
 		rebuildGeoOverlayLayers(); // Rebuild GeoOverlays
 
 		// Rebuild all waypoints per system
-		for (const [, systemWaypoints] of missionStore.missionWaypointsPerSystem) {
-			mapAdapter.value?.drawMissionWaypoints(systemWaypoints);
-			drawMissionPath(systemWaypoints);
+		for (const [systemId, systemWaypoints] of missionStore.missionWaypointsPerSystem) {
+			mapAdapter.value?.drawMissionWaypoints(systemWaypoints, systemId);
+			drawMissionPath(systemWaypoints, systemId);
 		}
 		// if (driveLocationLayer.value && mapStore.currentLLA) {
 		// 	const loc = driveLocationLayer.value.properties.location;
@@ -805,18 +805,18 @@ export function useMap() {
 
 			clearMission();
 
-			for (const [, systemWaypoints] of missionStore.missionWaypointsPerSystem) {
-				mapAdapter.value.drawMissionWaypoints(systemWaypoints);
-				drawMissionPath(systemWaypoints);
+			for (const [systemId, systemWaypoints] of missionStore.missionWaypointsPerSystem) {
+				mapAdapter.value.drawMissionWaypoints(systemWaypoints, systemId);
+				drawMissionPath(systemWaypoints, systemId);
 			}
 		}
 	);
-	function drawMissionPath(waypoints: MapPoint[]) {
+	function drawMissionPath(waypoints: MapPoint[], systemId: string) {
 		if (!mapAdapter.value) return;
 
 		// Handle polyline if waypoints >= 2
 		if (waypoints.length >= 2) {
-			mapAdapter.value.drawMissionPath(waypoints);
+			mapAdapter.value.drawMissionPath(waypoints, systemId);
 		}
 	}
 	function clearMission() {
