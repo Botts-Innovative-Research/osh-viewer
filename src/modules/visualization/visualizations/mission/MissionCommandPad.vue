@@ -7,6 +7,7 @@ import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 import type { IConSysApiControlStreamProperties } from '../../types/datasource';
 import type { MapPoint } from '@/modules/map/types';
 import SendButton from "@/components/ui/SendButton.vue";
+import LongPressButton from "@/components/ui/LongPressButton.vue";
 
 const props = defineProps<{
 	controlstreams: IConSysApiControlStreamProperties[];
@@ -238,92 +239,44 @@ const hasSimpleCommands = computed(() =>
 				</v-btn>
 			</v-col>
 
-			<v-col
-				v-if="getControlstreamByRole('rtl')"
-				cols="4"
-			>
-				<v-btn
-					block
-					class="command-btn"
+			<v-col v-if="getControlstreamByRole('rtl')" cols="4">
+				<LongPressButton
+					icon="mdi-home"
+					label="RTL"
 					color="primary"
-					variant="tonal"
-					@click="returnToLaunch"
-				>
-					<v-icon start>mdi-home</v-icon>
-					RTL
-					<v-tooltip
-						activator="parent"
-						location="top"
-					>
-						Return to the launch position and land automatically.
-					</v-tooltip>
-				</v-btn>
+					tooltip="Return to the launch position and land automatically."
+					@confirm="returnToLaunch"
+				/>
 			</v-col>
 
-			<v-col
-				v-if="getControlstreamByRole('land')"
-				cols="4"
-			>
-				<v-btn
-					block
-					class="command-btn"
+			<v-col v-if="getControlstreamByRole('land')" cols="4">
+				<LongPressButton
+					icon="mdi-airplane-landing"
+					label="Land"
 					color="warning"
-					variant="tonal"
-					@click="land"
-				>
-					<v-icon start>mdi-airplane-landing</v-icon>
-					Land
-					<v-tooltip
-						activator="parent"
-						location="top"
-					>
-						Land at the current position and disarm motors.
-					</v-tooltip>
-				</v-btn>
+					tooltip="Land at the current position and disarm motors."
+					@confirm="land"
+				/>
 			</v-col>
 
-			<v-col
-				v-if="getControlstreamByRole('cancel')"
-				cols="4"
-			>
-				<v-btn
-					block
-					class="command-btn"
+			<v-col v-if="getControlstreamByRole('cancel')" cols="4">
+				<LongPressButton
+					icon="mdi-cancel"
+					label="Cancel"
 					color="error"
-					variant="tonal"
-					@click="cancel"
-				>
-					<v-icon start>mdi-cancel</v-icon>
-					Cancel
-					<v-tooltip
-						activator="parent"
-						location="top"
-					>
-						Cancel the current mission or command immediately.
-					</v-tooltip>
-				</v-btn>
+					tooltip="Cancel the current mission or command immediately."
+					@confirm="cancel"
+				/>
 			</v-col>
 
-			<v-col
-				v-if="getControlstreamByRole('reboot')"
-				cols="4"
-			>
-				<v-btn
-					block
-					class="command-btn"
+			<v-col v-if="getControlstreamByRole('reboot')" cols="4">
+				<LongPressButton
+					icon="mdi-restart"
+					label="Reboot"
 					color="error"
-					variant="tonal"
-					@click="reboot"
-				>
-					<v-icon start>mdi-restart</v-icon>
-					Reboot
-					<v-tooltip
-						activator="parent"
-						location="top"
-					>
-						Restart the flight controller. Vehicle must be disarmed.
-					</v-tooltip>
-				</v-btn>
+					tooltip="Restart the flight controller. Vehicle must be disarmed."
+					@confirm="reboot"
+				/>
 			</v-col>
 		</v-row>
 		</div>
