@@ -47,11 +47,8 @@ export function useMap() {
 
 	// STORE REFS
 	const {
-		id: previewId,
 		type: previewType,
 		name: previewName,
-		isGeofence: previewIsGeofence,
-		geofenceMode: previewGeofenceMode,
 		borderColor: previewBorderColor,
 		fillColor: previewFillColor,
 		icon: previewIcon,
@@ -135,14 +132,8 @@ export function useMap() {
 
 		await rebuildFoiLayers(); // Rebuild all FOIs
 		rebuildGeoOverlayLayers(); // Rebuild GeoOverlays
+		rebuildMissionWaypoints(); // Rebuild all waypoints per system
 
-		// Rebuild all waypoints per system
-		for (const [systemId, systemWaypoints] of Object.entries(
-			missionStore.missionWaypointsPerSystem
-		)) {
-			mapAdapter.value?.drawMissionWaypoints(systemWaypoints);
-			drawMissionPath(systemWaypoints);
-		}
 		// if (driveLocationLayer.value && mapStore.currentLLA) {
 		// 	const loc = driveLocationLayer.value.properties.location;
 		// 	driveLocationLayer.value = null;
@@ -828,6 +819,14 @@ export function useMap() {
 		mapAdapter.value?.clearMissionWaypoints();
 		mapAdapter.value?.clearMissionPath();
 	}
+	function rebuildMissionWaypoints() {
+		for (const [systemId, systemWaypoints] of Object.entries(
+			missionStore.missionWaypointsPerSystem
+		)) {
+			mapAdapter.value?.drawMissionWaypoints(systemWaypoints);
+			drawMissionPath(systemWaypoints);
+		}
+	}
 
 	/* CESIUM-ONLY FEATURES */
 	watch(
@@ -895,6 +894,7 @@ export function useMap() {
 		await initMap();
 		await rebuildFoiLayers();
 		rebuildGeoOverlayLayers();
+		rebuildMissionWaypoints();
 	});
 
 	return {
