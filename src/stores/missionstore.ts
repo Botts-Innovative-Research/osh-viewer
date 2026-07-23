@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { Ref, ref } from 'vue';
 import type { SavedMission } from '@/modules/visualization/visualizations/mission/types';
 import { MapPoint } from '@/modules/map/types';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 
 export const useMissionStore = defineStore(
 	'mission',
@@ -9,6 +10,7 @@ export const useMissionStore = defineStore(
 		// Waypoint planning
 		const missionWaypoints: Ref<MapPoint[]> = ref([]);
 		const missionWaypointsPerSystem = ref<Record<string, MapPoint[]>>({});
+		const selectedMissionControllers = ref<string[]>([]);
 
 		function setMissionWaypoints(waypoints: MapPoint[], systemId: string) {
 			missionWaypointsPerSystem.value[systemId] = waypoints;
@@ -24,6 +26,12 @@ export const useMissionStore = defineStore(
 		function clearSystemWaypoints(systemId: string) {
 			delete missionWaypointsPerSystem.value[systemId]; //remove systemIds waypoints
 			missionWaypoints.value = Object.values(missionWaypointsPerSystem.value).flat(); //update mission waypoints
+		}
+		function setSelectedMissionControllers(systemIds: string[]) {
+			selectedMissionControllers.value = [...selectedMissionControllers.value, ...systemIds];
+		}
+		function clearSelectedMissionControllers() {
+			selectedMissionControllers.value = [];
 		}
 
 		// Full mission
@@ -54,6 +62,9 @@ export const useMissionStore = defineStore(
 			saveMission,
 			deleteMission,
 			getMissionById,
+			selectedMissionControllers,
+			setSelectedMissionControllers,
+			clearSelectedMissionControllers,
 		};
 	},
 	{ persist: { pick: ['missionWaypoints', 'missionWaypointsPerSystem', 'savedMissions'] } }

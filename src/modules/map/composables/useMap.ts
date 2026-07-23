@@ -795,15 +795,8 @@ export function useMap() {
 		() => missionStore.missionWaypoints,
 		(waypoints) => {
 			if (!mapAdapter.value) return;
-
 			clearMission();
-
-			for (const [systemId, systemWaypoints] of Object.entries(
-				missionStore.missionWaypointsPerSystem
-			)) {
-				mapAdapter.value.drawMissionWaypoints(systemWaypoints, systemId);
-				drawMissionPath(systemWaypoints, systemId);
-			}
+			rebuildMissionWaypoints();
 		}
 	);
 	function drawMissionPath(waypoints: MapPoint[], systemId: string) {
@@ -822,6 +815,9 @@ export function useMap() {
 		for (const [systemId, systemWaypoints] of Object.entries(
 			missionStore.missionWaypointsPerSystem
 		)) {
+			// Skip unselected controllers
+			if (!missionStore.selectedMissionControllers.some((c: string) => c === systemId))
+				continue;
 			mapAdapter.value?.drawMissionWaypoints(systemWaypoints, systemId);
 			drawMissionPath(systemWaypoints, systemId);
 		}
@@ -893,7 +889,6 @@ export function useMap() {
 		await initMap();
 		await rebuildFoiLayers();
 		rebuildGeoOverlayLayers();
-		rebuildMissionWaypoints();
 	});
 
 	return {
