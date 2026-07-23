@@ -9,11 +9,13 @@ const props = withDefaults(
       label?: string;
       icon?: string;
       disabled?: boolean;
+      color?: string;
     }>(),
     {
       label: 'Send',
       icon: 'mdi-send',
-      disabled: false
+      disabled: false,
+      color: 'primary'
     }
 );
 
@@ -26,7 +28,7 @@ const emit = defineEmits<{
 <template>
   <v-btn
       block
-      color="primary"
+      :color="props.color"
       variant="tonal"
       @click="emit('submit')"
       :prepend-icon="props.icon"
