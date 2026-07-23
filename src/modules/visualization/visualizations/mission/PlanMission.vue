@@ -599,6 +599,7 @@ onBeforeUnmount(() => {
 				v-model:vehicleType="vehicleType"
 				v-model:waypointAltitude="waypointAltitude"
 				v-model:waypoints="waypoints"
+				:systemId="props.systemId"
 				:home-location="homeLocation"
 				:is-selected="isSelected"
 				:no-controller="noController"

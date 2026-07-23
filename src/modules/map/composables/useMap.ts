@@ -791,12 +791,13 @@ export function useMap() {
 	);
 
 	/* MISSION BUILDER */
-	watch(() => missionStore.missionWaypoints, rebuildMissionWaypoints);
 	watch(
-		() => missionStore.selectedMissionControllers,
-		(selected) => {
-			rebuildMissionWaypoints();
-		}
+		[
+			() => missionStore.missionWaypoints,
+			() => missionStore.selectedMissionControllers,
+			() => missionStore.hiddenMissionWaypoints,
+		],
+		rebuildMissionWaypoints
 	);
 	function drawMissionPath(waypoints: MapPoint[], systemId: string) {
 		if (!mapAdapter.value) return;
@@ -817,8 +818,11 @@ export function useMap() {
 		for (const [systemId, systemWaypoints] of Object.entries(
 			missionStore.missionWaypointsPerSystem
 		)) {
-			// Skip unselected controllers
-			if (!missionStore.selectedMissionControllers.some((c: string) => c === systemId))
+			// Skip if unselected controllers or hidden
+			if (
+				!missionStore.selectedMissionControllers.includes(systemId) ||
+				missionStore.hiddenMissionWaypoints.includes(systemId)
+			)
 				continue;
 			else {
 				mapAdapter.value?.drawMissionWaypoints(systemWaypoints, systemId);

@@ -10,7 +10,8 @@ export const useMissionStore = defineStore(
 		// Waypoint planning
 		const missionWaypoints: Ref<MapPoint[]> = ref([]);
 		const missionWaypointsPerSystem = ref<Record<string, MapPoint[]>>({});
-		const selectedMissionControllers = ref<string[]>([]);
+		const selectedMissionControllers = ref<string[]>([]); // Selected controllers in the panel
+		const hiddenMissionWaypoints = ref<string[]>([]); // Hidden missions
 
 		function setMissionWaypoints(waypoints: MapPoint[], systemId: string) {
 			missionWaypointsPerSystem.value[systemId] = waypoints;
@@ -32,6 +33,16 @@ export const useMissionStore = defineStore(
 		}
 		function clearSelectedMissionControllers() {
 			selectedMissionControllers.value = [];
+		}
+		function hideMissionWaypoints(systemId: string) {
+			hiddenMissionWaypoints.value = [
+				...new Set([...hiddenMissionWaypoints.value, systemId]),
+			];
+		}
+		function showMissionWaypoints(systemId: string) {
+			hiddenMissionWaypoints.value = hiddenMissionWaypoints.value.filter(
+				(id: string) => id !== systemId
+			);
 		}
 
 		// Full mission
@@ -65,6 +76,9 @@ export const useMissionStore = defineStore(
 			selectedMissionControllers,
 			setSelectedMissionControllers,
 			clearSelectedMissionControllers,
+			hiddenMissionWaypoints,
+			hideMissionWaypoints,
+			showMissionWaypoints,
 		};
 	},
 	{ persist: { pick: ['missionWaypoints', 'missionWaypointsPerSystem', 'savedMissions'] } }
