@@ -801,18 +801,17 @@ export function useMap() {
 			for (const [systemId, systemWaypoints] of Object.entries(
 				missionStore.missionWaypointsPerSystem
 			)) {
-				mapAdapter.value.drawMissionWaypoints(systemWaypoints);
-				drawMissionPath(systemWaypoints);
+				mapAdapter.value.drawMissionWaypoints(systemWaypoints, systemId);
+				drawMissionPath(systemWaypoints, systemId);
 			}
-		},
-		{ deep: true }
+		}
 	);
-	function drawMissionPath(waypoints: MapPoint[]) {
+	function drawMissionPath(waypoints: MapPoint[], systemId: string) {
 		if (!mapAdapter.value) return;
 
 		// Handle polyline if waypoints >= 2
 		if (waypoints.length >= 2) {
-			mapAdapter.value.drawMissionPath(waypoints);
+			mapAdapter.value.drawMissionPath(waypoints, systemId);
 		}
 	}
 	function clearMission() {
@@ -823,8 +822,8 @@ export function useMap() {
 		for (const [systemId, systemWaypoints] of Object.entries(
 			missionStore.missionWaypointsPerSystem
 		)) {
-			mapAdapter.value?.drawMissionWaypoints(systemWaypoints);
-			drawMissionPath(systemWaypoints);
+			mapAdapter.value?.drawMissionWaypoints(systemWaypoints, systemId);
+			drawMissionPath(systemWaypoints, systemId);
 		}
 	}
 

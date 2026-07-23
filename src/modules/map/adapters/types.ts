@@ -38,9 +38,9 @@ export interface MapAdapter {
 	): any;
 
 	/* Mission Builder */
-	drawMissionWaypoints(waypoints: MapPoint[]): void;
+	drawMissionWaypoints(waypoints: MapPoint[], systemId: string): void;
 	clearMissionWaypoints(): void;
-	drawMissionPath(waypoints: MapPoint[]): void;
+	drawMissionPath(waypoints: MapPoint[], systemId: string): void;
 	clearMissionPath(): void;
 
 	/* GeoOverlay */
