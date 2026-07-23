@@ -3,6 +3,7 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
+import LongPressButton from '@/components/ui/LongPressButton.vue';
 import PanelVisualizationWrapper from '../../sidebar/components/PanelVisualizationWrapper.vue';
 import PlanMission from './PlanMission.vue';
 import MissionSummaryDialog from './MissionSummaryDialog.vue';
@@ -266,6 +267,25 @@ onBeforeUnmount(() => {
 	missionStore.clearMissionWaypoints();
 });
 
+const hasAnyRtl = computed(() =>
+	validVisualizations.value.some((viz) => getControlstreamByRole('rtl', viz))
+);
+
+function returnAllHome() {
+  for (const viz of validVisualizations.value) {
+    const cs = getControlstreamByRole('rtl', viz);
+    if (!cs) continue;
+    const protocol = cs.tls ? 'https' : 'http';
+    sendCommand(
+        `${protocol}://${cs.endpointUrl}`,
+        cs.id,
+        { parameters: { rtl: true } },
+        `${cs.connectorOpts.username}:${cs.connectorOpts.password}`,
+        "All systems RTL"
+		);
+	}
+}
+
 const hasCommandPad = computed(
 	() =>
 		getControlstreamByRole('land') ||
@@ -321,6 +341,16 @@ const hasCommandPad = computed(
 			</v-chip>
 		</div>
 
+    <LongPressButton
+        v-if="hasAnyRtl"
+        class="mt-4"
+        icon="mdi-home"
+        label="Return All Home"
+        color="warning"
+        tooltip="Send RTL command to all systems."
+        :duration="1200"
+        @confirm="returnAllHome"
+    />
     <v-sheet v-if="!noController && activeSystemState">
       <v-card v-if="minimapViewActive && minimapViz" class="minimap-card">
         <div class="d-flex align-center justify-space-between px-2 pt-1">

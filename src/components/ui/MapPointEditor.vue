@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { MapPoint } from '@/modules/map/types';
+import ActionButton from "@/components/ui/ActionButton.vue";
 
 const props = withDefaults(
 	defineProps<{
@@ -151,16 +152,12 @@ function defaultToZero(key: keyof MapPoint) {
 				v-if="props.hasSubmit"
 				class="field-floating-details"
 			>
-				<v-btn
-					block
-					color="primary"
-					variant="tonal"
-					@click="onSubmit"
-					:prepend-icon="props.submitIcon"
-					:disabled="!valid"
-				>
-					{{ props.submitLabel }}
-				</v-btn>
+        <ActionButton
+            :label="props.submitLabel"
+            :icon="props.submitIcon"
+            :disabled="!valid"
+            @submit="onSubmit"
+        />
 			</v-col>
 		</v-row>
 	</v-form>
