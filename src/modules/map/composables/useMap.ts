@@ -47,11 +47,8 @@ export function useMap() {
 
 	// STORE REFS
 	const {
-		id: previewId,
 		type: previewType,
 		name: previewName,
-		isGeofence: previewIsGeofence,
-		geofenceMode: previewGeofenceMode,
 		borderColor: previewBorderColor,
 		fillColor: previewFillColor,
 		icon: previewIcon,
@@ -135,12 +132,8 @@ export function useMap() {
 
 		await rebuildFoiLayers(); // Rebuild all FOIs
 		rebuildGeoOverlayLayers(); // Rebuild GeoOverlays
+		rebuildMissionWaypoints(); // Rebuild all waypoints per system
 
-		// Rebuild all waypoints per system
-		for (const [systemId, systemWaypoints] of missionStore.missionWaypointsPerSystem) {
-			mapAdapter.value?.drawMissionWaypoints(systemWaypoints, systemId);
-			drawMissionPath(systemWaypoints, systemId);
-		}
 		// if (driveLocationLayer.value && mapStore.currentLLA) {
 		// 	const loc = driveLocationLayer.value.properties.location;
 		// 	driveLocationLayer.value = null;
@@ -364,7 +357,7 @@ export function useMap() {
 			// Fly to Location
 			if (mapInteractionStore.isFlyToLocationSelected) {
 				mapStore.setCurrentLLA(lat, lon, 0);
-                await addFlyToLocationLayer(lon, lat);
+				await addFlyToLocationLayer(lon, lat);
 			}
 			// Add additional onClick functions
 		});
@@ -731,44 +724,44 @@ export function useMap() {
 		driveLocationLayer.value = marker;
 	}
 
-    function removeDriveLocationLayer() {
-        if (driveLocationLayer.value) mapAdapter.value?.removeMarker(driveLocationLayer.value);
-        driveLocationLayer.value = null;
-    }
+	function removeDriveLocationLayer() {
+		if (driveLocationLayer.value) mapAdapter.value?.removeMarker(driveLocationLayer.value);
+		driveLocationLayer.value = null;
+	}
 
-    watch(
-        () => mapInteractionStore.isDriveLocationSelected,
-        (selected) => {
-            removeDriveLocationLayer();
-        }
-    );
+	watch(
+		() => mapInteractionStore.isDriveLocationSelected,
+		(selected) => {
+			removeDriveLocationLayer();
+		}
+	);
 
-    /* FLY TO LOCATION */
-    async function addFlyToLocationLayer(lon: number, lat: number) {
-        if (!mapAdapter.value) return;
-        removeFlyToLocationLayer();
+	/* FLY TO LOCATION */
+	async function addFlyToLocationLayer(lon: number, lat: number) {
+		if (!mapAdapter.value) return;
+		removeFlyToLocationLayer();
 
-        const marker = await mapAdapter.value.drawPoint(
-            { lon, lat, alt: 0 },
-            '/icons/waypoint/round-pin.png',
-            '#ff00f2',
-            `Fly To ${lat.toFixed(6)} , ${lon.toFixed(6)}`
-        );
+		const marker = await mapAdapter.value.drawPoint(
+			{ lon, lat, alt: 0 },
+			'/icons/waypoint/round-pin.png',
+			'#ff00f2',
+			`Fly To ${lat.toFixed(6)} , ${lon.toFixed(6)}`
+		);
 
-        mapAdapter.value.addMarker(marker);
-        flyToLocationLayer.value = marker;
-    }
-    function removeFlyToLocationLayer() {
-        if (flyToLocationLayer.value) mapAdapter.value?.removeMarker(flyToLocationLayer.value);
-        flyToLocationLayer.value = null;
-    }
+		mapAdapter.value.addMarker(marker);
+		flyToLocationLayer.value = marker;
+	}
+	function removeFlyToLocationLayer() {
+		if (flyToLocationLayer.value) mapAdapter.value?.removeMarker(flyToLocationLayer.value);
+		flyToLocationLayer.value = null;
+	}
 
-    watch(
-        () => mapInteractionStore.isFlyToLocationSelected,
-        (selected) => {
-            removeFlyToLocationLayer();
-        }
-    );
+	watch(
+		() => mapInteractionStore.isFlyToLocationSelected,
+		(selected) => {
+			removeFlyToLocationLayer();
+		}
+	);
 
 	/* HOME LOCATION */
 	async function addHomeLocationLayer(lon: number, lat: number) {
@@ -799,17 +792,12 @@ export function useMap() {
 
 	/* MISSION BUILDER */
 	watch(
-		() => missionStore.missionWaypoints,
-		(waypoints) => {
-			if (!mapAdapter.value) return;
-
-			clearMission();
-
-			for (const [systemId, systemWaypoints] of missionStore.missionWaypointsPerSystem) {
-				mapAdapter.value.drawMissionWaypoints(systemWaypoints, systemId);
-				drawMissionPath(systemWaypoints, systemId);
-			}
-		}
+		[
+			() => missionStore.missionWaypoints,
+			() => missionStore.selectedMissionControllers,
+			() => missionStore.hiddenMissionWaypoints,
+		],
+		rebuildMissionWaypoints
 	);
 	function drawMissionPath(waypoints: MapPoint[], systemId: string) {
 		if (!mapAdapter.value) return;
@@ -822,6 +810,25 @@ export function useMap() {
 	function clearMission() {
 		mapAdapter.value?.clearMissionWaypoints();
 		mapAdapter.value?.clearMissionPath();
+	}
+	function rebuildMissionWaypoints() {
+		if (!mapAdapter.value) return;
+		clearMission();
+
+		for (const [systemId, systemWaypoints] of Object.entries(
+			missionStore.missionWaypointsPerSystem
+		)) {
+			// Skip if unselected controllers or hidden
+			if (
+				!missionStore.selectedMissionControllers.includes(systemId) ||
+				missionStore.hiddenMissionWaypoints.includes(systemId)
+			)
+				continue;
+			else {
+				mapAdapter.value?.drawMissionWaypoints(systemWaypoints, systemId);
+				drawMissionPath(systemWaypoints, systemId);
+			}
+		}
 	}
 
 	/* CESIUM-ONLY FEATURES */

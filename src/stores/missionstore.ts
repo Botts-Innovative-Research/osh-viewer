@@ -1,27 +1,49 @@
 import { defineStore } from 'pinia';
-import {reactive, Ref, ref} from 'vue';
+import { Ref, ref } from 'vue';
 import type { SavedMission } from '@/modules/visualization/visualizations/mission/types';
 import { MapPoint } from '@/modules/map/types';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 
 export const useMissionStore = defineStore(
 	'mission',
 	() => {
 		// Waypoint planning
-        const missionWaypoints: Ref<MapPoint[]> = ref([])
-        const missionWaypointsPerSystem = reactive(new Map<string, MapPoint[]>());
+		const missionWaypoints: Ref<MapPoint[]> = ref([]);
+		const missionWaypointsPerSystem = ref<Record<string, MapPoint[]>>({});
+		const selectedMissionControllers = ref<string[]>([]); // Selected controllers in the panel
+		const hiddenMissionWaypoints = ref<string[]>([]); // Hidden missions
 
 		function setMissionWaypoints(waypoints: MapPoint[], systemId: string) {
-			missionWaypointsPerSystem.set(systemId, waypoints);
-            missionWaypoints.value = [...missionWaypointsPerSystem.values()].flat();
+			missionWaypointsPerSystem.value[systemId] = waypoints;
+			missionWaypoints.value = Object.values(missionWaypointsPerSystem.value).flat();
+		}
+		function getMissionWaypointsPerSystem(systemId: string) {
+			return missionWaypointsPerSystem.value[systemId] ?? [];
 		}
 		function clearMissionWaypoints() {
-            missionWaypointsPerSystem.clear()
-            missionWaypoints.value = [];
+			missionWaypointsPerSystem.value = {};
+			missionWaypoints.value = [];
 		}
-        function clearSystemWaypoints(systemId: string) {
-           missionWaypointsPerSystem.delete(systemId); //remove systemIds waypoints
-           missionWaypoints.value = [...missionWaypointsPerSystem.values()].flat() //update missionwaypoints
-        }
+		function clearSystemWaypoints(systemId: string) {
+			delete missionWaypointsPerSystem.value[systemId]; //remove systemIds waypoints
+			missionWaypoints.value = Object.values(missionWaypointsPerSystem.value).flat(); //update mission waypoints
+		}
+		function setSelectedMissionControllers(systemIds: string[]) {
+			selectedMissionControllers.value = systemIds;
+		}
+		function clearSelectedMissionControllers() {
+			selectedMissionControllers.value = [];
+		}
+		function hideMissionWaypoints(systemId: string) {
+			hiddenMissionWaypoints.value = [
+				...new Set([...hiddenMissionWaypoints.value, systemId]),
+			];
+		}
+		function showMissionWaypoints(systemId: string) {
+			hiddenMissionWaypoints.value = hiddenMissionWaypoints.value.filter(
+				(id: string) => id !== systemId
+			);
+		}
 
 		// Full mission
 		const savedMissions = ref<SavedMission[]>([]);
@@ -44,13 +66,20 @@ export const useMissionStore = defineStore(
 			missionWaypoints,
 			missionWaypointsPerSystem,
 			setMissionWaypoints,
+			getMissionWaypointsPerSystem,
 			clearMissionWaypoints,
 			clearSystemWaypoints,
 			savedMissions,
 			saveMission,
 			deleteMission,
 			getMissionById,
+			selectedMissionControllers,
+			setSelectedMissionControllers,
+			clearSelectedMissionControllers,
+			hiddenMissionWaypoints,
+			hideMissionWaypoints,
+			showMissionWaypoints,
 		};
 	},
-	{ persist: { pick: ['savedMissions'] } }
+	{ persist: { pick: ['missionWaypoints', 'missionWaypointsPerSystem', 'savedMissions'] } }
 );
