@@ -6,7 +6,7 @@ import MapPointEditor from '@/components/ui/MapPointEditor.vue';
 import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 import type { IConSysApiControlStreamProperties } from '../../types/datasource';
 import type { MapPoint } from '@/modules/map/types';
-import SendButton from "@/components/ui/SendButton.vue";
+import ActionButton from "@/components/ui/ActionButton.vue";
 import LongPressButton from "@/components/ui/LongPressButton.vue";
 
 const props = defineProps<{
@@ -280,7 +280,7 @@ const hasSimpleCommands = computed(() =>
 						/>
 					</v-col>
 					<v-col cols="12" sm="4">
-						<SendButton @send="driveMode()" />
+						<ActionButton @submit="driveMode()" />
 					</v-col>
 				</v-row>
 		</div>
@@ -306,7 +306,7 @@ const hasSimpleCommands = computed(() =>
 						/>
 					</v-col>
 					<v-col cols="12" sm="6">
-						<SendButton @send="takeoffCommand()" />
+						<ActionButton @submit="takeoffCommand()" />
 					</v-col>
 				</v-row>
 		</div>
@@ -340,7 +340,7 @@ const hasSimpleCommands = computed(() =>
 						/>
 					</v-col>
 					<v-col cols="12" sm="4">
-						<SendButton @send="driveVelocityCommand()" />
+						<ActionButton @submit="driveVelocityCommand()" />
 					</v-col>
 				</v-row>
 		</div>
@@ -393,7 +393,7 @@ const hasSimpleCommands = computed(() =>
 							/>
 						</v-col>
 						<v-col cols="12" sm="6">
-							<SendButton @send="offboard()" />
+							<ActionButton @submit="offboard()" />
 						</v-col>
 					</v-row>
 				</v-form>
