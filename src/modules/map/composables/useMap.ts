@@ -791,11 +791,10 @@ export function useMap() {
 	);
 
 	/* MISSION BUILDER */
+	watch(() => missionStore.missionWaypoints, rebuildMissionWaypoints);
 	watch(
-		() => missionStore.missionWaypoints,
-		(waypoints) => {
-			if (!mapAdapter.value) return;
-			clearMission();
+		() => missionStore.selectedMissionControllers,
+		(selected) => {
 			rebuildMissionWaypoints();
 		}
 	);
@@ -812,14 +811,19 @@ export function useMap() {
 		mapAdapter.value?.clearMissionPath();
 	}
 	function rebuildMissionWaypoints() {
+		if (!mapAdapter.value) return;
+		clearMission();
+
 		for (const [systemId, systemWaypoints] of Object.entries(
 			missionStore.missionWaypointsPerSystem
 		)) {
 			// Skip unselected controllers
 			if (!missionStore.selectedMissionControllers.some((c: string) => c === systemId))
 				continue;
-			mapAdapter.value?.drawMissionWaypoints(systemWaypoints, systemId);
-			drawMissionPath(systemWaypoints, systemId);
+			else {
+				mapAdapter.value?.drawMissionWaypoints(systemWaypoints, systemId);
+				drawMissionPath(systemWaypoints, systemId);
+			}
 		}
 	}
 

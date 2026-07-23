@@ -28,7 +28,7 @@ export const useMissionStore = defineStore(
 			missionWaypoints.value = Object.values(missionWaypointsPerSystem.value).flat(); //update mission waypoints
 		}
 		function setSelectedMissionControllers(systemIds: string[]) {
-			selectedMissionControllers.value = [...selectedMissionControllers.value, ...systemIds];
+			selectedMissionControllers.value = systemIds;
 		}
 		function clearSelectedMissionControllers() {
 			selectedMissionControllers.value = [];

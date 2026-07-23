@@ -552,7 +552,7 @@ defineExpose({
 });
 onBeforeUnmount(() => {
 	mapInteractionStore.deselectTool('missionWaypoint');
-	clearWaypoints();
+	// clearWaypoints();
 });
 </script>
 
