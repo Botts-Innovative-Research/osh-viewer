@@ -137,7 +137,9 @@ export function useMap() {
 		rebuildGeoOverlayLayers(); // Rebuild GeoOverlays
 
 		// Rebuild all waypoints per system
-		for (const [, systemWaypoints] of missionStore.missionWaypointsPerSystem) {
+		for (const [systemId, systemWaypoints] of Object.entries(
+			missionStore.missionWaypointsPerSystem
+		)) {
 			mapAdapter.value?.drawMissionWaypoints(systemWaypoints);
 			drawMissionPath(systemWaypoints);
 		}
@@ -364,7 +366,7 @@ export function useMap() {
 			// Fly to Location
 			if (mapInteractionStore.isFlyToLocationSelected) {
 				mapStore.setCurrentLLA(lat, lon, 0);
-                await addFlyToLocationLayer(lon, lat);
+				await addFlyToLocationLayer(lon, lat);
 			}
 			// Add additional onClick functions
 		});
@@ -731,44 +733,44 @@ export function useMap() {
 		driveLocationLayer.value = marker;
 	}
 
-    function removeDriveLocationLayer() {
-        if (driveLocationLayer.value) mapAdapter.value?.removeMarker(driveLocationLayer.value);
-        driveLocationLayer.value = null;
-    }
+	function removeDriveLocationLayer() {
+		if (driveLocationLayer.value) mapAdapter.value?.removeMarker(driveLocationLayer.value);
+		driveLocationLayer.value = null;
+	}
 
-    watch(
-        () => mapInteractionStore.isDriveLocationSelected,
-        (selected) => {
-            removeDriveLocationLayer();
-        }
-    );
+	watch(
+		() => mapInteractionStore.isDriveLocationSelected,
+		(selected) => {
+			removeDriveLocationLayer();
+		}
+	);
 
-    /* FLY TO LOCATION */
-    async function addFlyToLocationLayer(lon: number, lat: number) {
-        if (!mapAdapter.value) return;
-        removeFlyToLocationLayer();
+	/* FLY TO LOCATION */
+	async function addFlyToLocationLayer(lon: number, lat: number) {
+		if (!mapAdapter.value) return;
+		removeFlyToLocationLayer();
 
-        const marker = await mapAdapter.value.drawPoint(
-            { lon, lat, alt: 0 },
-            '/icons/waypoint/round-pin.png',
-            '#ff00f2',
-            `Fly To ${lat.toFixed(6)} , ${lon.toFixed(6)}`
-        );
+		const marker = await mapAdapter.value.drawPoint(
+			{ lon, lat, alt: 0 },
+			'/icons/waypoint/round-pin.png',
+			'#ff00f2',
+			`Fly To ${lat.toFixed(6)} , ${lon.toFixed(6)}`
+		);
 
-        mapAdapter.value.addMarker(marker);
-        flyToLocationLayer.value = marker;
-    }
-    function removeFlyToLocationLayer() {
-        if (flyToLocationLayer.value) mapAdapter.value?.removeMarker(flyToLocationLayer.value);
-        flyToLocationLayer.value = null;
-    }
+		mapAdapter.value.addMarker(marker);
+		flyToLocationLayer.value = marker;
+	}
+	function removeFlyToLocationLayer() {
+		if (flyToLocationLayer.value) mapAdapter.value?.removeMarker(flyToLocationLayer.value);
+		flyToLocationLayer.value = null;
+	}
 
-    watch(
-        () => mapInteractionStore.isFlyToLocationSelected,
-        (selected) => {
-            removeFlyToLocationLayer();
-        }
-    );
+	watch(
+		() => mapInteractionStore.isFlyToLocationSelected,
+		(selected) => {
+			removeFlyToLocationLayer();
+		}
+	);
 
 	/* HOME LOCATION */
 	async function addHomeLocationLayer(lon: number, lat: number) {
@@ -805,11 +807,14 @@ export function useMap() {
 
 			clearMission();
 
-			for (const [, systemWaypoints] of missionStore.missionWaypointsPerSystem) {
+			for (const [systemId, systemWaypoints] of Object.entries(
+				missionStore.missionWaypointsPerSystem
+			)) {
 				mapAdapter.value.drawMissionWaypoints(systemWaypoints);
 				drawMissionPath(systemWaypoints);
 			}
-		}
+		},
+		{ deep: true }
 	);
 	function drawMissionPath(waypoints: MapPoint[]) {
 		if (!mapAdapter.value) return;

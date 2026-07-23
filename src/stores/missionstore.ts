@@ -1,27 +1,32 @@
 import { defineStore } from 'pinia';
-import {reactive, Ref, ref} from 'vue';
+import { reactive, Ref, ref } from 'vue';
 import type { SavedMission } from '@/modules/visualization/visualizations/mission/types';
 import { MapPoint } from '@/modules/map/types';
+import { useDataStreamStore } from '@/stores/datastreamstore';
+import { rehydrateVisualization } from '@/modules/visualization/services/visualization.serialization';
 
 export const useMissionStore = defineStore(
 	'mission',
 	() => {
 		// Waypoint planning
-        const missionWaypoints: Ref<MapPoint[]> = ref([])
-        const missionWaypointsPerSystem = reactive(new Map<string, MapPoint[]>());
+		const missionWaypoints: Ref<MapPoint[]> = ref([]);
+		const missionWaypointsPerSystem = ref<Record<string, MapPoint[]>>({});
 
 		function setMissionWaypoints(waypoints: MapPoint[], systemId: string) {
-			missionWaypointsPerSystem.set(systemId, waypoints);
-            missionWaypoints.value = [...missionWaypointsPerSystem.values()].flat();
+			missionWaypointsPerSystem.value[systemId] = waypoints;
+			missionWaypoints.value = Object.values(missionWaypointsPerSystem.value).flat();
+		}
+		function getMissionWaypointsPerSystem(systemId: string) {
+			return missionWaypointsPerSystem.value[systemId] ?? [];
 		}
 		function clearMissionWaypoints() {
-            missionWaypointsPerSystem.clear()
-            missionWaypoints.value = [];
+			missionWaypointsPerSystem.value = {};
+			missionWaypoints.value = [];
 		}
-        function clearSystemWaypoints(systemId: string) {
-           missionWaypointsPerSystem.delete(systemId); //remove systemIds waypoints
-           missionWaypoints.value = [...missionWaypointsPerSystem.values()].flat() //update missionwaypoints
-        }
+		function clearSystemWaypoints(systemId: string) {
+			delete missionWaypointsPerSystem.value[systemId]; //remove systemIds waypoints
+			missionWaypoints.value = Object.values(missionWaypointsPerSystem.value).flat(); //update mission waypoints
+		}
 
 		// Full mission
 		const savedMissions = ref<SavedMission[]>([]);
@@ -44,6 +49,7 @@ export const useMissionStore = defineStore(
 			missionWaypoints,
 			missionWaypointsPerSystem,
 			setMissionWaypoints,
+			getMissionWaypointsPerSystem,
 			clearMissionWaypoints,
 			clearSystemWaypoints,
 			savedMissions,
@@ -52,5 +58,5 @@ export const useMissionStore = defineStore(
 			getMissionById,
 		};
 	},
-	{ persist: { pick: ['savedMissions'] } }
+	{ persist: { pick: ['missionWaypoints', 'missionWaypointsPerSystem', 'savedMissions'] } }
 );
