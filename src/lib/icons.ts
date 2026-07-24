@@ -1,6 +1,6 @@
 // prettier-ignore
 // @ts-ignore
-export const ICON_BASE = import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.meta.env.VITE_VIEWER_ENDPOINT : '';
+export const ICON_BASE = (import.meta.env.VITE_VIEWER_ENDPOINT !== undefined ? import.meta.env.VITE_VIEWER_ENDPOINT : '').replace(/\/+$/, '');
 
 type IconCategory = 'map' | 'geoptz' | 'foi' | 'waypoint';
 
