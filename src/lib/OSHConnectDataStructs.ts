@@ -65,12 +65,11 @@ export class OSHConnect {
 
 	async checkNodeReachable(node: OSHNode): Promise<Result> {
 		const endpoint = `${node.tls ? 'https' : 'http'}://${node.getEndpointUrl()}`;
-		const encoded = btoa(`${node.username}:${node.password}`);
 		const options: RequestInit = {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
-				Authorization: `Basic ${encoded}`,
+				Authorization: node.authHeader(),
 			},
 			mode: 'cors',
 		};
@@ -153,6 +152,7 @@ export class OSHNode {
 	port: string | number = '';
 	username: string = '';
 	password: string = '';
+	token: string = '';
 	apiRoot: string = '';
 	systems: OSHSystem[] = [];
 	oshConnect: OSHConnect;
@@ -166,7 +166,8 @@ export class OSHNode {
 		username: string,
 		password: string,
 		tls: boolean,
-		oshConnect: OSHConnect
+		oshConnect: OSHConnect,
+		token: string = ''
 	) {
 		this.uuid = randomUUID();
 		this.name = name;
@@ -175,9 +176,22 @@ export class OSHNode {
 		this.apiRoot = apiRoot;
 		this.username = username;
 		this.password = password;
+		this.token = token;
 		this.tls = tls;
 		this.systems = [];
 		this.oshConnect = oshConnect;
+	}
+
+	authHeader(): string {
+		return this.token
+			? `Bearer ${this.token}`
+			: `Basic ${btoa(`${this.username}:${this.password}`)}`;
+	}
+
+	connectorOpts(): Record<string, string> {
+		return this.token
+			? { Authorization: `Bearer ${this.token}` }
+			: { username: this.username, password: this.password };
 	}
 
 	async collectAndStoreSystems(): Promise<OSHSystem[]> {
@@ -185,7 +199,7 @@ export class OSHNode {
 		const systems: any = new Systems({
 			endpointUrl: this.getEndpointUrl(),
 			tls: this.tls,
-			connectorOpts: { username: this.username, password: this.password },
+			connectorOpts: this.connectorOpts(),
 		});
 		let retrievedSystems: any[] = [];
 		const results: typeof System = await systems.searchSystems(new SystemFilter(), 100);

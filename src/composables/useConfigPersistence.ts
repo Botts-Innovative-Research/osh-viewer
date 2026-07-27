@@ -32,7 +32,7 @@ export function useConfigPersistence() {
 	const oshConnectStore = useOSHConnectStore();
 
 	function getAuthHeader(node: OSHNode): string {
-		return `Basic ${btoa(`${node.username}:${node.password}`)}`;
+		return node.authHeader();
 	}
 
 	function getBaseUrl(node: OSHNode): string {

@@ -26,6 +26,11 @@ export const useNodeStore = defineStore(
 			showToast('Node created successfully', 'SUCCESS');
 		};
 
+		const addEphemeralNode = (node: OSHNode): void => {
+			if (checkIfNodeNameExists(node.name)) return;
+			nodes.value.push(node);
+		};
+
 		const removeNode = (node: OSHNode): void => {
 			nodes.value = nodes.value.filter((n) => n !== node);
 			serializedNodes.value = serializedNodes.value.filter((n) => n.name !== node.name);
@@ -66,6 +71,7 @@ export const useNodeStore = defineStore(
 			defaultNodeId,
 			serializedNodes,
 			addNode,
+			addEphemeralNode,
 			removeNode,
 			getNodeByName,
 			checkIfNodeNameExists,
