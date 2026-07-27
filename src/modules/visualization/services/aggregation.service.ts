@@ -1,4 +1,4 @@
-import { OSHControlStream, OSHDatastream } from '@/lib/OSHConnectDataStructs';
+import type { OSHControlStream, OSHDatastream } from '@/lib/OSHConnectDataStructs';
 
 /**
  * Aggregates datastreams from vizwizStore.dsConfig based on selected roles.
@@ -17,7 +17,7 @@ import { OSHControlStream, OSHDatastream } from '@/lib/OSHConnectDataStructs';
 export function AggregateDatastreams(dsConfig: any) {
 	const result: any = {};
 
-	for (const [role, entry] of Object.entries(dsConfig)) {
+	for (const [role, entry] of Object.entries(dsConfig) as [string, any][]) {
 		if (!entry['selected']) {
 			continue; // Skip unselected roles
 		}
@@ -44,7 +44,7 @@ export function AggregateDatastreams(dsConfig: any) {
 export function AggregateControlstreams(csConfig: any) {
 	const result: any = {};
 
-	for (const [role, entry] of Object.entries(csConfig)) {
+	for (const [role, entry] of Object.entries(csConfig) as [string, any][]) {
 		if (!entry['selected']) {
 			continue; // Skip unselected roles
 		}
@@ -79,17 +79,15 @@ export function BuildRoleProperty(entry: any[]) {
 			const role = Object.keys(roleObj)[0];
 			const roleEntry = roleObj[role];
 
-			// Return [role, property string]
-			if (roleEntry.compression)
-				return [
-					role,
-					{
-						property: roleEntry.property,
-						outputName: roleEntry.outputName,
-						compression: roleEntry.compression,
-					},
-				];
-			return [role, { property: roleEntry.property, outputName: roleEntry.outputName }];
+			const propertyConfig: Record<string, any> = {
+				property: roleEntry.property,
+				outputName: roleEntry.outputName,
+			};
+			if (roleEntry.label !== undefined) propertyConfig.label = roleEntry.label;
+			if (roleEntry.uom !== undefined) propertyConfig.uom = roleEntry.uom;
+			if (roleEntry.compression) propertyConfig.compression = roleEntry.compression;
+
+			return [role, propertyConfig];
 		})
 	);
 }

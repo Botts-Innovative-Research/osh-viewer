@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { useVizWizStore } from '@/stores/vizwizstore';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
 import { useComponentValidation } from '../composables/useComponentValidation';
 import { fetchDsSchema, mineDatasourceObsPropsFromDS } from '../../services/datasource.service';
+import { getPropertyTitle, mapPropertySelection } from './propertySelection';
 
 const props = withDefaults(
 	defineProps<{
 		role: string; // Property role to be used as key in vizwiz store
 		multiple?: boolean; // Whether multiple properties can be selected
 		showPropertySelector?: boolean;
+		fixedDatastreamId?: string;
 	}>(),
 	{
 		showPropertySelector: true,
@@ -24,7 +26,7 @@ const listDatastreams = computed(() => {
 
 // Update selected datastream for this role in vizwiz store
 const selectedDatastream = computed({
-	get: () => vizwizStore.dsConfig[props.role]?.dsId,
+	get: () => props.fixedDatastreamId ?? vizwizStore.dsConfig[props.role]?.dsId,
 	set: (val: string) => {
 		vizwizStore.updateDsConfig(props.role, {
 			dsId: val,
@@ -36,33 +38,12 @@ const selectedDatastream = computed({
 });
 
 const selectedProperty = computed({
-	get: () => vizwizStore.dsConfig[props.role]?.label ?? (props.multiple ? [] : ''),
+	get: () => vizwizStore.dsConfig[props.role]?.property ?? (props.multiple ? [] : ''),
 	set: (val) => {
 		const fields = dsSchema.value?.recordSchema?.fields ?? [];
-
-		// Helper to get the display value (label or name)
-		const display = (f: any) => f.label ?? f.name;
-
-		if (Array.isArray(val)) {
-			// Multi-select: match by label OR name
-			const selected = fields.filter((f: any) => val.includes(display(f)));
-
-			vizwizStore.updateDsConfig(props.role, {
-				property: selected.map((f: any) => f.name),
-				label: selected.map(display),
-				uom: selected.map((f: any) => f.uom?.code ?? ''),
-			});
-		} else if (val) {
-			// Single-select: match by label OR name
-			const field = fields.find((f: any) => display(f) === val);
-			if (!field) return;
-
-			vizwizStore.updateDsConfig(props.role, {
-				property: field.name,
-				label: display(field),
-				uom: field.uom?.code ?? '',
-			});
-		}
+		if (val === null || val === undefined || val === '') return;
+		const selection = mapPropertySelection(fields, val);
+		if (selection) vizwizStore.updateDsConfig(props.role, selection);
 	},
 });
 
@@ -83,17 +64,22 @@ async function fetchProps() {
 }
 
 // Watch for changes in selected datastream to update properties
-watch(selectedDatastream, async (newVal) => {
-	if (!newVal) return;
-	await fetchProps();
-});
-
-// If already selected datastream on mount (edit viz), fetch props
-onMounted(async () => {
-	if (selectedDatastream.value) {
+watch(
+	selectedDatastream,
+	async (newVal) => {
+		if (!newVal) return;
+		if (vizwizStore.dsConfig[props.role]?.dsId !== newVal) {
+			vizwizStore.updateDsConfig(props.role, {
+				dsId: newVal,
+				property: null,
+				label: null,
+				uom: null,
+			});
+		}
 		await fetchProps();
-	}
-});
+	},
+	{ immediate: true }
+);
 
 // Validation: must have a datastream selected, and if property selector is shown, must have property(ies) selected
 const emit = defineEmits<VisualizationComponentEmits>();
@@ -120,6 +106,7 @@ useComponentValidation(valid, emit);
 		persistent-hint
 		item-title="name"
 		item-value="id"
+		:disabled="!!props.fixedDatastreamId"
 	></v-autocomplete>
 
 	<!-- Select for property -->
@@ -129,10 +116,10 @@ useComponentValidation(valid, emit);
 			v-model="selectedProperty"
 			:items="dsSchema.recordSchema.fields"
 			label="Select property"
-			:item-title="(item: any) => item.label ?? item.name"
+			:item-title="(item: any) => getPropertyTitle(item, dsSchema.recordSchema.fields)"
 			persistent-hint
 			:chips="props.multiple"
-			:item-value="(item: any) => item.label ?? item.name"
+			item-value="name"
 			:multiple="props.multiple"
 		></v-autocomplete>
 	</v-expand-transition>

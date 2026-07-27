@@ -8,6 +8,8 @@ import RoleCheckbox from '../../wizard/components/RoleCheckbox.vue';
 import DataSourcePicker from '../../wizard/components/DataSourcePicker.vue';
 import ControlStreamPicker from '../../wizard/components/ControlStreamPicker.vue';
 import { computed } from 'vue';
+import { useVizWizStore } from '@/stores/vizwizstore';
+import { getPointMarkerIdentityDatastreamId } from './pointMarkerConfig';
 
 const props = withDefaults(
 	defineProps<{ configRoles: VisualizationConfigRole[]; optional?: boolean }>(),
@@ -17,7 +19,14 @@ const props = withDefaults(
 	}
 );
 
-const { checkedRoles, validRoles, valid, include, autoMap } = useConfig(props.configRoles, !props.optional);
+const { checkedRoles, validRoles, valid, include, autoMap } = useConfig(
+	props.configRoles,
+	!props.optional
+);
+const vizwizStore = useVizWizStore();
+const detailsDatastreamId = computed(() =>
+	getPointMarkerIdentityDatastreamId(vizwizStore.dsConfig)
+);
 
 // Validation
 const emit = defineEmits<VisualizationComponentEmits>();
@@ -61,6 +70,9 @@ useComponentValidation(effectiveValid, emit);
 						v-if="checkedRoles[config.role] && config.type === 'ds'"
 						:role="config.role"
 						:multiple="config.multiple"
+						:fixed-datastream-id="
+							config.role === 'pmDetails' ? detailsDatastreamId : undefined
+						"
 						v-model:valid="validRoles[config.role]"
 						:show-property-selector="config.showPropertySelector ?? true"
 					/>

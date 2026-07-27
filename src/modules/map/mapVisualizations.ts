@@ -19,6 +19,7 @@ import { ICON_BASE } from '@/lib/icons';
 import { FoiLayer } from '@/stores/visualizationstore';
 import { getMilSymbol } from './services/milIcon.service';
 import { MapPoint } from '@/modules/map/types';
+import { buildPointMarkerDescription } from '../visualization/visualizations/pointmarker/pointMarkerDetails';
 
 export interface ICreateMapVisualizationResult {
 	vizLayer: SupportedMapLayer;
@@ -58,6 +59,7 @@ export async function createPointMarkerLayer(
 	let getIconColor: any;
 	let getLabel: any;
 	let getIcon: any;
+	let getDescription: any;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);
@@ -122,6 +124,15 @@ export async function createPointMarkerLayer(
 				},
 			};
 		}
+		// Check for clicked-marker detail properties
+		if (dsProps.properties.pmDetails) {
+			getDescription = {
+				dataSourceIds: [dsInstance.id],
+				handler: (rec: any) => {
+					return buildPointMarkerDescription(rec, dsProps.properties.pmDetails);
+				},
+			};
+		}
 		// Check for milsymbol property
 		if (dsProps.properties.milSymbol) {
 			getIcon = {
@@ -157,6 +168,7 @@ export async function createPointMarkerLayer(
 		...(getMarkerId ? { getMarkerId } : {}),
 		...(getIconColor ? { getIconColor } : {}),
 		...(getLabel ? { getLabel } : {}),
+		...(getDescription ? { getDescription } : {}),
 		...(getIcon ? { getIcon } : {}),
 	});
 

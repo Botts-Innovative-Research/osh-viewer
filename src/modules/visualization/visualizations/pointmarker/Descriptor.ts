@@ -45,6 +45,13 @@ export const PointMarkerConfigRoles: VisualizationConfigRole[] = [
 		description: 'Select a property to appear as the point marker label.',
 		type: 'ds',
 	},
+	{
+		role: 'pmDetails',
+		label: 'Detail Properties',
+		description: 'Select properties to display when the point marker is clicked.',
+		type: 'ds',
+		multiple: true,
+	},
 ];
 
 export const ConfigComponent: VisualizationFormComponent = {

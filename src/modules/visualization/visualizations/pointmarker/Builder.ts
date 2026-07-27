@@ -14,11 +14,14 @@ import { VisualizationComponents } from '../../types/visualization';
 import { IPointMarkerCustomizationOptions } from '../../types/customization';
 import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { IPointMarkerLayerProperties } from '../../types/layers';
+import { validatePointMarkerDetailsDatastream } from './pointMarkerConfig';
 
 export default async function build() {
 	console.log('Building Point Marker Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
+
+	validatePointMarkerDetailsDatastream(vizwizStore.dsConfig);
 
 	// Aggregate datastreams from vizwizStore
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
