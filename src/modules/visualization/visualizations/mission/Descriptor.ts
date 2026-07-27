@@ -7,22 +7,6 @@ import {
 import { MiniMapConfigRoles } from '@/modules/visualization/visualizations/minimap/Descriptor';
 
 export const MissionConfigRoles: VisualizationConfigRole[] = [
-	{
-		role: 'lla',
-		label: 'Location',
-		description: 'Select the data stream for the vehicle\'s live position.',
-		type: 'ds',
-		required: true,
-		showPropertySelector: true,
-	},
-	{
-		role: 'home',
-		label: 'Home Location',
-		description: 'Select the data stream with the home/launch position used as the reference point for the mission.',
-		type: 'ds',
-		required: true,
-		showPropertySelector: true,
-	},
     {
         role: 'status',
         label: 'Status',
@@ -138,6 +122,48 @@ export const MissionConfigRoles: VisualizationConfigRole[] = [
 	// },
 ];
 
+export const HomePointMarkerConfigRoles: VisualizationConfigRole[] = [
+    {
+        role: 'homeLocation',
+        label: 'Home Location',
+        description: 'The geographical location of the point marker.',
+        type: 'ds',
+        required: true,
+    },
+    {
+        role: 'orientation',
+        label: 'Orientation',
+        description: 'The heading direction of the point marker.',
+        type: 'ds',
+    },
+    {
+        role: 'markerId',
+        label: 'Marker ID',
+        description: 'Select the properties to distinguish multiple point markers.',
+        type: 'ds',
+        multiple: true,
+    },
+    {
+        role: 'milSymbol',
+        label: 'Military Symbology Icon',
+        description: 'Select a property to apply a milsymbol icon for the point marker.',
+        type: 'ds',
+    },
+    {
+        role: 'pmIconColor',
+        label: 'Icon Color',
+        description: 'Icon color will be generated dynamically based on the selected properties.',
+        type: 'ds',
+        multiple: true,
+    },
+    {
+        role: 'pmLabel',
+        label: 'Icon Label',
+        description: 'Select a property to appear as the point marker label.',
+        type: 'ds',
+    },
+];
+
 export const ConfigComponent: VisualizationFormComponent = {
 	id: 'mission-config',
 	label: 'Configure Mission Builder Properties',
@@ -158,6 +184,26 @@ export const ConfigComponentMiniMap: VisualizationFormComponent = {
 	roles: MiniMapConfigRoles
 };
 
+export const ConfigComponentPointMarkerHome: VisualizationFormComponent = {
+    id: 'mission-config-pointmarker-home',
+    label: 'Configure Home Point Marker',
+    short: 'Home Marker',
+    component: defineAsyncComponent(
+        () => import('@/modules/visualization/visualizations/pointmarker/Config.vue')
+    ),
+    roles: HomePointMarkerConfigRoles
+};
+
+export const ConfigComponentPointMarker: VisualizationFormComponent = {
+    id: 'mission-config-pointmarker',
+    label: 'Configure Vehicle Point Marker',
+    short: 'Vehicle Marker',
+    component: defineAsyncComponent(
+        () => import('@/modules/visualization/visualizations/pointmarker/Config.vue')
+    ),
+};
+
+
 export const CustomizeComponent: VisualizationFormComponent = {
 	id: 'mission-customize',
 	label: 'Customize Mission Builder',
@@ -176,6 +222,8 @@ export const MissionDescriptor: VisualizationDescriptor = {
 	description: 'Create and manage missions for UAVs and ground vehicles.',
 	formComponents: [
 		ConfigComponent,
+        ConfigComponentPointMarkerHome,
+        ConfigComponentPointMarker,
 		ConfigComponentMiniMap,
 		CustomizeComponent
 	],

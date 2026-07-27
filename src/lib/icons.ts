@@ -42,7 +42,7 @@ export const ICON_OPTIONS: IconItem[] = [
 	// FOI
 	{ id: 15, label: 'Building', icon: 'domain', category: 'foi' },
 	// mission builder - home location
-	{ id: 16, label: 'HomeLocation', icon: 'home-map-marker', category: 'waypoint' },
+	{ id: 16, label: 'Home', icon: 'home-map-marker', category: 'map' },
 ];
 
 /**
