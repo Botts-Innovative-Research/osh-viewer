@@ -699,6 +699,22 @@ export function createCesiumAdapter(): MapAdapter {
 		invalidate();
 	}
 
+    function enableClustering() {
+        const viewer = mapView.viewer;
+        const defaultDataSource = viewer.dataSourceDisplay.defaultDataSource;
+        defaultDataSource.clustering.enabled = true;
+        defaultDataSource.clustering.pixelRange = 45;
+        defaultDataSource.clustering.minimumClusterSize = 2;
+        invalidate();
+    }
+
+    function disableClustering() {
+        const viewer = mapView.viewer;
+        const defaultDataSource = viewer.dataSourceDisplay.defaultDataSource;
+        defaultDataSource.clustering.enabled = false;
+        invalidate();
+    }
+
 	return {
 		init,
 		destroy,
@@ -736,5 +752,7 @@ export function createCesiumAdapter(): MapAdapter {
 		clearPreview,
 		addGeoOverlay,
 		removeGeoOverlay,
+        enableClustering,
+        disableClustering
 	};
 }

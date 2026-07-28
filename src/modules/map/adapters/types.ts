@@ -87,4 +87,6 @@ export interface MapAdapter {
 	removeMapLayer?(id: string): void;
 	destroyAllLayers?(): void;
 	rebuildMapLayers?(layers: MapLayer[]): void;
+    enableClustering?(): void;
+    disableClustering?(): void;
 }
