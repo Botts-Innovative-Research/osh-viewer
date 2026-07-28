@@ -10,6 +10,7 @@ const persistedMapKeys = {
 		'enable3DTerrain',
 		'enable3DBuildings',
 		'enableGooglePhotorealistic',
+        'enableEntityClustering'
 	],
 };
 
