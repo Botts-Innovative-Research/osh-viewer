@@ -67,38 +67,43 @@ export function useVisualizationSidebar() {
 	/* Panel state */
 	const openPanels = ref<string[]>([]); // Tracks map visualizations and geoptz only
 	const openPanelVisualizations = ref<string[]>([]); // Tracks panel visualizations only
-	function handleOpenMapPanels() {
+	function handleOpenMapPanels(oldLen = 0) {
 		if (mapVisualizations.value.length) {
-			if (!openPanels.value.includes('map')) openPanels.value.push('map');
+			if (oldLen === 0 && !openPanels.value.includes('map')) openPanels.value.push('map');
 		} else {
 			openPanels.value = openPanels.value.filter((id: string) => id !== 'map');
 		}
 	}
-	function handleOpenGeoPTZPanel() {
+	function handleOpenGeoPTZPanel(oldLen = 0) {
 		if (geoPtzVisualizations.value.length) {
-			if (!openPanels.value.includes('geoptz')) openPanels.value.push('geoptz');
+			if (oldLen === 0 && !openPanels.value.includes('geoptz')) openPanels.value.push('geoptz');
 		} else {
 			openPanels.value = openPanels.value.filter((id: string) => id !== 'geoptz');
 		}
 	}
 
-	function handleOpenMissionPanel() {
+	function handleOpenMissionPanel(oldLen = 0) {
 		if (missionVisualizations.value.length) {
-			if (!openPanels.value.includes('mission')) openPanels.value.push('mission');
+			if (oldLen === 0 && !openPanels.value.includes('mission')) openPanels.value.push('mission');
 		} else {
 			openPanels.value = openPanels.value.filter((id: string) => id !== 'mission');
 		}
 	}
+	function handleOpenPanel(oldIds: string[] = []) {
+		const currentIds = panelVisualizations.value.map((v) => v.id);
+		const newIds = currentIds.filter((id) => !oldIds.includes(id));
+		openPanelVisualizations.value.push(...newIds);
+	}
 	watch(
 		() => mapVisualizations.value.length,
-		() => {
-			handleOpenMapPanels();
+		(_newLen, oldLen) => {
+			handleOpenMapPanels(oldLen);
 		}
 	);
 	watch(
 		() => geoPtzVisualizations.value.length,
-		() => {
-			handleOpenGeoPTZPanel();
+		(_newLen, oldLen) => {
+			handleOpenGeoPTZPanel(oldLen);
 		}
 	);
 
@@ -123,8 +128,8 @@ export function useVisualizationSidebar() {
 	);
 	watch(
 		() => missionVisualizations.value.length,
-		() => {
-			handleOpenMissionPanel();
+		(_newLen, oldLen) => {
+			handleOpenMissionPanel(oldLen);
 		}
 	);
 	watch(
@@ -139,6 +144,14 @@ export function useVisualizationSidebar() {
 		},
 		{ deep: true }
 	);
+
+	watch(
+		() => panelVisualizations.value.map((v) => v.id),
+		(_newIds, oldIds) => {
+			handleOpenPanel(oldIds);
+		}
+	);
+
 
 	/* GEOPTZ HELPERS */
 	function removeGeoPTZ(controller: OSHVisualization) {
