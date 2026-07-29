@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useMapStore } from '@/stores/mapstore';
@@ -17,10 +17,9 @@ import DeleteMissionDialog from './DeleteMissionDialog.vue';
 import ExportMissionDialog from './ExportMissionDialog.vue';
 import type { MissionSettings, SavedMission, Waypoint } from './types';
 import type { IConSysApiControlStreamProperties } from '../../types/datasource';
-import DeleteButton from "@/components/ui/DeleteButton.vue";
+import DeleteButton from '@/components/ui/DeleteButton.vue';
 import { useMapInteractionStore } from '@/stores/mapinteractionstore';
-
-
+import { MapPoint } from '@/modules/map/types';
 
 const props = defineProps<{
 	noController: boolean;
@@ -31,7 +30,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  setHome: [location: { lat: number; lon: number }];
+	setHome: [location: { lat: number; lon: number }];
 }>();
 
 const mapStore = useMapStore();
@@ -55,14 +54,18 @@ const geoFenceCircles = ref<[]>([]);
 const geoFencePolygons = ref<[]>([]);
 const rallyPoints = ref<[]>([]);
 
-const isRover = computed(() => vehicleType.value === 'Ground Rover' || vehicleType.value === 'Surface Boat');
-const hasHomeLocation = computed(() => props.homeLocation?.lat != null && props.homeLocation?.lon != null);
+const isRover = computed(
+	() => vehicleType.value === 'Ground Rover' || vehicleType.value === 'Surface Boat'
+);
+const hasHomeLocation = computed(
+	() => props.homeLocation?.lat != null && props.homeLocation?.lon != null
+);
 
 const qgcVehicleTypeMap: Record<string, number> = {
-	'UAV': 2,
+	UAV: 2,
 	'Ground Rover': 10,
 	'Surface Boat': 11,
-	'Submarine': 12,
+	Submarine: 12,
 };
 
 const isSelected = ref<boolean>(false);
@@ -115,7 +118,7 @@ watch(
 				lon: wp.lon,
 				alt: wp.alt,
 			})),
-        props.systemId
+			props.systemId
 		);
 	},
 	{ deep: true }
@@ -135,14 +138,17 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 	const toRad = (deg: number) => (deg * Math.PI) / 180;
 	const dLat = toRad(lat2 - lat1);
 	const dLon = toRad(lon2 - lon1);
-	const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+	const a =
+		Math.sin(dLat / 2) ** 2 +
+		Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
 	return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 const totalDistance = computed(() => {
 	let total = 0;
 	for (let i = 0; i < waypoints.value.length - 1; i++) {
-		const a = waypoints.value[i], b = waypoints.value[i + 1];
+		const a = waypoints.value[i],
+			b = waypoints.value[i + 1];
 		const ground = haversineDistance(a.lat, a.lon, b.lat, b.lon);
 		const altDiff = (b.alt || 0) - (a.alt || 0);
 		total += Math.sqrt(ground ** 2 + altDiff ** 2);
@@ -154,7 +160,6 @@ const estimatedTime = computed(() => {
 	if (cruiseSpeed.value <= 0) return 0;
 	return totalDistance.value / cruiseSpeed.value;
 });
-
 
 function confirmSendMission() {
 	showMissionSummary.value = true;
@@ -190,7 +195,7 @@ function saveCurrentMission(name: string, desc: string) {
 	const mission: SavedMission = {
 		id: randomUUID(),
 		name,
-    desc,
+		desc,
 		waypoints: waypoints.value.map((wp) => ({ ...wp })),
 		settings: getCurrentSettings(),
 		createdAt: new Date().toISOString(),
@@ -492,15 +497,7 @@ function generateMissionControlPlan() {
 			command: 21,
 			doJumpId: items.length + 1,
 			frame: 3,
-			params: [
-				0,
-				0,
-				0,
-				null,
-				props.homeLocation.lat,
-				props.homeLocation.lon,
-				0,
-			],
+			params: [0, 0, 0, null, props.homeLocation.lat, props.homeLocation.lon, 0],
 			type: 'SimpleItem',
 		});
 	}
@@ -531,10 +528,31 @@ function generateMissionControlPlan() {
 	};
 }
 
-defineExpose({ sendMission, waypoints, vehicleType, cruiseSpeed, waypointAltitude, totalDistance, estimatedTime });
+onMounted(() => {
+	// Repopulate waypoints with persisted system waypoints
+	waypoints.value = missionStore
+		.getMissionWaypointsPerSystem(props.systemId)
+		.map((point: MapPoint) => {
+			return {
+				id: randomUUID(),
+				lat: point.lat,
+				lon: point.lon,
+				alt: point.alt,
+			};
+		});
+});
+defineExpose({
+	sendMission,
+	waypoints,
+	vehicleType,
+	cruiseSpeed,
+	waypointAltitude,
+	totalDistance,
+	estimatedTime,
+});
 onBeforeUnmount(() => {
 	mapInteractionStore.deselectTool('missionWaypoint');
-	clearWaypoints();
+	// clearWaypoints();
 });
 </script>
 
@@ -563,7 +581,7 @@ onBeforeUnmount(() => {
 			prepend-icon="mdi-content-save-all"
 			value="saved"
 		>
-      <span class="d-none d-sm-inline">Mission Library</span>
+			<span class="d-none d-sm-inline">Mission Library</span>
 			<span class="d-sm-none">Mission Library</span>
 		</v-tab>
 	</v-tabs>
@@ -581,6 +599,7 @@ onBeforeUnmount(() => {
 				v-model:vehicleType="vehicleType"
 				v-model:waypointAltitude="waypointAltitude"
 				v-model:waypoints="waypoints"
+				:systemId="props.systemId"
 				:home-location="homeLocation"
 				:is-selected="isSelected"
 				:no-controller="noController"
@@ -678,26 +697,21 @@ onBeforeUnmount(() => {
 							>
 						</v-btn>
 
-
-            <DeleteButton
-                label="Remove"
-                @delete="confirmDeleteMission(mission.id)"
-            ></DeleteButton>
+						<DeleteButton
+							label="Remove"
+							@delete="confirmDeleteMission(mission.id)"
+						></DeleteButton>
 					</template>
 				</v-list-item>
 			</v-list>
 			<div
 				v-else
-        class="text-center"
+				class="text-center"
 			>
-
-        <v-card-text>
-          No Missions Saved
-        </v-card-text>
-        <v-card-subtitle>
-          Plan a mission and use “Save current mission” to add it to your library.
-
-        </v-card-subtitle>
+				<v-card-text> No Missions Saved </v-card-text>
+				<v-card-subtitle>
+					Plan a mission and use “Save current mission” to add it to your library.
+				</v-card-subtitle>
 			</div>
 		</v-window-item>
 	</v-window>
@@ -756,17 +770,19 @@ onBeforeUnmount(() => {
 
 	<MissionSummaryDialog
 		v-model="showMissionSummary"
-		:missions="[{
-			name: props.systemId,
-			missionSource,
-			vehicleType: vehicleType,
-			waypointCount: waypoints.length,
-			cruiseSpeed,
-			waypointAltitude,
-			totalDistance,
-			estimatedTime,
-			selectedFileName: selectedFile?.name,
-		}]"
+		:missions="[
+			{
+				name: props.systemId,
+				missionSource,
+				vehicleType: vehicleType,
+				waypointCount: waypoints.length,
+				cruiseSpeed,
+				waypointAltitude,
+				totalDistance,
+				estimatedTime,
+				selectedFileName: selectedFile?.name,
+			},
+		]"
 		@send="sendMission"
 	/>
 

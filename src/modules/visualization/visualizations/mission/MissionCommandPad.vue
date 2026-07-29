@@ -6,7 +6,8 @@ import MapPointEditor from '@/components/ui/MapPointEditor.vue';
 import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 import type { IConSysApiControlStreamProperties } from '../../types/datasource';
 import type { MapPoint } from '@/modules/map/types';
-import SendButton from "@/components/ui/SendButton.vue";
+import ActionButton from "@/components/ui/ActionButton.vue";
+import LongPressButton from "@/components/ui/LongPressButton.vue";
 
 const props = defineProps<{
 	controlstreams: IConSysApiControlStreamProperties[];
@@ -90,7 +91,7 @@ function sendCommandToRole(role: string, payload: any) {
 	if (!config) return;
 
 	console.log(`[MissionCommandPad] Sending command to ${role}:`, payload);
-	sendCommand(config.baseUrl, config.id, payload, config.auth);
+	sendCommand(config.baseUrl, config.id, payload, config.auth, role.toUpperCase());
 }
 
 function pause() {
@@ -172,158 +173,90 @@ const hasSimpleCommands = computed(() =>
 <template>
 		<div v-if="hasSimpleCommands" class="command-section">
 
-		<v-row class="command-grid pa-2" density="comfortable">
-			<v-col v-if="getControlstreamByRole('arm')" cols="4">
+		<v-row dense class="pa-2">
+			<v-col v-if="getControlstreamByRole('arm')" cols="6" sm="4">
 				<v-btn
 					:color="isArmed ? 'primary' : 'grey'"
 					block
-					class="command-btn"
 					variant="tonal"
 					@click="arm"
 				>
 					<v-icon start>{{ isArmed ? 'mdi-shield-off' : 'mdi-shield-check' }}</v-icon>
 					{{ isArmed ? 'Disarm' : 'Arm' }}
-					<v-tooltip
-						activator="parent"
-						location="top"
-					>
-						Enable motors and prepare for operation. Disarm to disable motors and power
-						down.
+					<v-tooltip activator="parent" location="top">
+						Enable motors and prepare for operation. Disarm to disable motors and power down.
 					</v-tooltip>
 				</v-btn>
 			</v-col>
 
-			<v-col
-				v-if="getControlstreamByRole('hold')"
-				cols="4"
-			>
+			<v-col v-if="getControlstreamByRole('hold')" cols="6" sm="4">
 				<v-btn
 					:color="isHold ? 'primary' : 'grey'"
 					block
-					class="command-btn"
 					variant="tonal"
 					@click="hold"
 				>
 					<v-icon start>{{ isHold ? 'mdi-pause-circle-outline' : 'mdi-hand-back-right' }}</v-icon>
 					{{ isHold ? 'Release' : 'Hold' }}
-					<v-tooltip
-						activator="parent"
-						location="top"
-					>
-						Hold current position and stop all movement. Release to resume normal
-						control.
+					<v-tooltip activator="parent" location="top">
+						Hold current position and stop all movement. Release to resume normal control.
 					</v-tooltip>
 				</v-btn>
 			</v-col>
 
-			<v-col
-				v-if="getControlstreamByRole('pause')"
-				cols="4"
-			>
+			<v-col v-if="getControlstreamByRole('pause')" cols="6" sm="4">
 				<v-btn
 					:color="isPaused ? 'primary' : 'grey'"
 					block
-					class="command-btn"
 					variant="tonal"
 					@click="pause"
 				>
 					<v-icon start>{{ isPaused ? 'mdi-play-circle' : 'mdi-pause-circle' }}</v-icon>
 					{{ isPaused ? 'Resume' : 'Pause' }}
-					<v-tooltip
-						activator="parent"
-						location="top"
-					>
+					<v-tooltip activator="parent" location="top">
 						Pause the current mission. Resume to continue from where it left off.
 					</v-tooltip>
 				</v-btn>
 			</v-col>
 
-			<v-col
-				v-if="getControlstreamByRole('rtl')"
-				cols="4"
-			>
-				<v-btn
-					block
-					class="command-btn"
+			<v-col v-if="getControlstreamByRole('rtl')" cols="6" sm="4">
+				<LongPressButton
+					icon="mdi-home"
+					label="RTL"
 					color="primary"
-					variant="tonal"
-					@click="returnToLaunch"
-				>
-					<v-icon start>mdi-home</v-icon>
-					RTL
-					<v-tooltip
-						activator="parent"
-						location="top"
-					>
-						Return to the launch position and land automatically.
-					</v-tooltip>
-				</v-btn>
+					tooltip="Return to the launch position and land automatically."
+					@confirm="returnToLaunch"
+				/>
 			</v-col>
 
-			<v-col
-				v-if="getControlstreamByRole('land')"
-				cols="4"
-			>
-				<v-btn
-					block
-					class="command-btn"
+			<v-col v-if="getControlstreamByRole('land')" cols="6" sm="4">
+				<LongPressButton
+					icon="mdi-airplane-landing"
+					label="Land"
 					color="warning"
-					variant="tonal"
-					@click="land"
-				>
-					<v-icon start>mdi-airplane-landing</v-icon>
-					Land
-					<v-tooltip
-						activator="parent"
-						location="top"
-					>
-						Land at the current position and disarm motors.
-					</v-tooltip>
-				</v-btn>
+					tooltip="Land at the current position and disarm motors."
+					@confirm="land"
+				/>
 			</v-col>
 
-			<v-col
-				v-if="getControlstreamByRole('cancel')"
-				cols="4"
-			>
-				<v-btn
-					block
-					class="command-btn"
+			<v-col v-if="getControlstreamByRole('cancel')" cols="6" sm="4">
+				<LongPressButton
+					icon="mdi-cancel"
+					label="Cancel"
 					color="error"
-					variant="tonal"
-					@click="cancel"
-				>
-					<v-icon start>mdi-cancel</v-icon>
-					Cancel
-					<v-tooltip
-						activator="parent"
-						location="top"
-					>
-						Cancel the current mission or command immediately.
-					</v-tooltip>
-				</v-btn>
+					tooltip="Cancel the current mission or command immediately."
+					@confirm="cancel"
+				/>
 			</v-col>
 
-			<v-col
-				v-if="getControlstreamByRole('reboot')"
-				cols="4"
-			>
-				<v-btn
-					block
-					class="command-btn"
+			<v-col v-if="getControlstreamByRole('reboot')" cols="6" sm="4">
+				<LongPressButton
+					icon="mdi-restart"
+					label="Reboot"
 					color="error"
-					variant="tonal"
-					@click="reboot"
-				>
-					<v-icon start>mdi-restart</v-icon>
-					Reboot
-					<v-tooltip
-						activator="parent"
-						location="top"
-					>
-						Restart the flight controller. Vehicle must be disarmed.
-					</v-tooltip>
-				</v-btn>
+					tooltip="Restart the flight controller. Vehicle must be disarmed."
+					@confirm="reboot"
+				/>
 			</v-col>
 		</v-row>
 		</div>
@@ -337,11 +270,8 @@ const hasSimpleCommands = computed(() =>
 					Sets the ArduRover flight mode for a ground rover or surface
 				</v-tooltip>
 			</div>
-				<v-row
-					align="center"
-					density="comfortable"
-				>
-					<v-col cols="8">
+				<v-row dense align="center">
+					<v-col cols="12" sm="8">
 						<v-select
 							v-model="selectedDriveMode"
 							:items="driveModes"
@@ -349,10 +279,8 @@ const hasSimpleCommands = computed(() =>
 							label="Drive Mode"
 						/>
 					</v-col>
-					<v-col cols="4">
-            <SendButton
-                @send="driveMode()"
-            />
+					<v-col cols="12" sm="4">
+						<ActionButton @submit="driveMode()" />
 					</v-col>
 				</v-row>
 		</div>
@@ -366,11 +294,8 @@ const hasSimpleCommands = computed(() =>
 					Set altitude (AGL) and launch the vehicle vertically.
 				</v-tooltip>
 			</div>
-				<v-row
-					align="center"
-					density="comfortable"
-				>
-					<v-col cols="4">
+				<v-row dense align="center">
+					<v-col cols="12" sm="6">
 						<v-text-field
 							v-model.number="takeOffAlt"
 							density="compact"
@@ -380,10 +305,8 @@ const hasSimpleCommands = computed(() =>
 							type="number"
 						/>
 					</v-col>
-					<v-col cols="4">
-            <SendButton
-                @send="takeoffCommand()"
-            />
+					<v-col cols="12" sm="6">
+						<ActionButton @submit="takeoffCommand()" />
 					</v-col>
 				</v-row>
 		</div>
@@ -397,11 +320,8 @@ const hasSimpleCommands = computed(() =>
 					Control forward speed and yaw rate for manual driving.
 				</v-tooltip>
 			</div>
-				<v-row
-					align="center"
-					density="comfortable"
-				>
-					<v-col cols="4">
+				<v-row dense align="center">
+					<v-col cols="12" sm="4">
 						<v-text-field
 							v-model.number="forwardVelocityDrive"
 							density="compact"
@@ -410,7 +330,7 @@ const hasSimpleCommands = computed(() =>
 							type="number"
 						/>
 					</v-col>
-					<v-col cols="4">
+					<v-col cols="12" sm="4">
 						<v-text-field
 							v-model.number="yawRateDrive"
 							density="compact"
@@ -419,10 +339,8 @@ const hasSimpleCommands = computed(() =>
 							type="number"
 						/>
 					</v-col>
-					<v-col cols="4">
-            <SendButton
-                @send="driveVelocityCommand()"
-            />
+					<v-col cols="12" sm="4">
+						<ActionButton @submit="driveVelocityCommand()" />
 					</v-col>
 				</v-row>
 		</div>
@@ -437,11 +355,8 @@ const hasSimpleCommands = computed(() =>
 				</v-tooltip>
 			</div>
 				<v-form ref="offboardForm">
-					<v-row
-						align="center"
-						density="comfortable"
-					>
-						<v-col cols="6">
+					<v-row dense align="center">
+						<v-col cols="6" sm="6">
 							<v-text-field
 								v-model.number="xVelocity"
 								density="compact"
@@ -450,7 +365,7 @@ const hasSimpleCommands = computed(() =>
 								type="number"
 							/>
 						</v-col>
-						<v-col cols="6">
+						<v-col cols="6" sm="6">
 							<v-text-field
 								v-model.number="yVelocity"
 								density="compact"
@@ -459,7 +374,7 @@ const hasSimpleCommands = computed(() =>
 								type="number"
 							/>
 						</v-col>
-						<v-col cols="6">
+						<v-col cols="6" sm="6">
 							<v-text-field
 								v-model.number="zVelocity"
 								density="compact"
@@ -468,7 +383,7 @@ const hasSimpleCommands = computed(() =>
 								type="number"
 							/>
 						</v-col>
-						<v-col cols="6">
+						<v-col cols="6" sm="6">
 							<v-text-field
 								v-model.number="yawRate"
 								density="compact"
@@ -477,10 +392,8 @@ const hasSimpleCommands = computed(() =>
 								type="number"
 							/>
 						</v-col>
-						<v-col cols="6">
-              <SendButton
-                  @send="offboard()"
-              />
+						<v-col cols="12" sm="6">
+							<ActionButton @submit="offboard()" />
 						</v-col>
 					</v-row>
 				</v-form>

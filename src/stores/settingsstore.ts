@@ -10,6 +10,7 @@ const persistedMapKeys = {
 		'enable3DTerrain',
 		'enable3DBuildings',
 		'enableGooglePhotorealistic',
+        'enableEntityClustering'
 	],
 };
 
@@ -32,6 +33,7 @@ export const useSettingsStore = defineStore(
 		const enable3DTerrain: Ref<boolean> = ref(true); // Whether to enable 3D terrain in Cesium
 		const enable3DBuildings: Ref<boolean> = ref(false); // Whether to show 3D buildings layer in Cesium
 		const enableGooglePhotorealistic: Ref<boolean> = ref(true); // Whether to show 3D Google Photorealistic tileset layer in Cesium
+		const enableEntityClustering: Ref<boolean> = ref(true); // Whether to cluster entities
 
 		function setTheme(newTheme: 'dark' | 'light') {
 			theme.value = newTheme;
@@ -80,6 +82,10 @@ export const useSettingsStore = defineStore(
 			if (value) enable3DTerrain.value = false;
 			syncBuildingsToSurface();
 		}
+        function setEntityClustering(value: boolean | null) {
+            if (value === null) return;
+            enableEntityClustering.value = value;
+        }
 
 		return {
 			theme,
@@ -89,6 +95,7 @@ export const useSettingsStore = defineStore(
 			enable3DTerrain,
 			enable3DBuildings,
 			enableGooglePhotorealistic,
+            enableEntityClustering,
 			setTheme,
 			setFocusedMap,
 			setGeoPtzIcon,
@@ -96,6 +103,7 @@ export const useSettingsStore = defineStore(
 			set3DTerrain,
 			set3DBuildings,
 			setGooglePhotorealistic,
+            setEntityClustering
 		};
 	},
 	{ persist: { pick: ['theme', ...persistedMapKeys.map] } }

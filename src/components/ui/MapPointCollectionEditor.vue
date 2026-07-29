@@ -2,7 +2,7 @@
 import { VueDraggable } from 'vue-draggable-plus';
 import { MapPoint } from '@/modules/map/types';
 import { ref } from 'vue';
-import DeleteButton from "@/components/ui/DeleteButton.vue";
+import DeleteButton from '@/components/ui/DeleteButton.vue';
 
 const props = withDefaults(
 	defineProps<{
@@ -28,7 +28,10 @@ function clearPoints() {
 </script>
 <template>
 	<div class="d-flex justify-space-between align-center mb-4">
-		<span class="text-subtitle-2">{{ props.title }} ({{ points.length }})</span>
+		<div class="d-flex align-center ga-2">
+			<span class="text-subtitle-2">{{ props.title }} ({{ points.length }})</span>
+			<slot name="visibilityToggle" />
+		</div>
 		<v-btn
 			:disabled="points.length === 0"
 			color="error"
@@ -128,10 +131,10 @@ function clearPoints() {
 				</v-row>
 			</v-list-item-title>
 			<template v-slot:append>
-          <DeleteButton
-              label="Remove point"
-              @delete="removePoint(index)"
-          ></DeleteButton>
+				<DeleteButton
+					label="Remove point"
+					@delete="removePoint(index)"
+				></DeleteButton>
 			</template>
 		</v-list-item>
 	</VueDraggable>

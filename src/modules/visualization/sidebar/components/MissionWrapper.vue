@@ -2,12 +2,13 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
 
-const { selectedMissionControllers, missionVisualizations, openEditViz, removeMission } = defineProps<{
-	selectedMissionControllers: OSHVisualization[];
-	missionVisualizations: OSHVisualization[];
-	openEditViz: (viz: string | OSHVisualization) => void;
-	removeMission: (viz: OSHVisualization) => void;
-}>();
+const { selectedMissionControllers, missionVisualizations, openEditViz, removeMission } =
+	defineProps<{
+		selectedMissionControllers: OSHVisualization[];
+		missionVisualizations: OSHVisualization[];
+		openEditViz: (viz: string | OSHVisualization) => void;
+		removeMission: (viz: OSHVisualization) => void;
+	}>();
 
 const emit = defineEmits<{
 	(e: 'update:selectedMissionControllers', value: OSHVisualization[]): void;

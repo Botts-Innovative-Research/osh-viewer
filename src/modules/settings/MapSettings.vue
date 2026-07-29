@@ -38,6 +38,10 @@ const enableGooglePhotorealistic = computed({
 	get: () => settingsStore.enableGooglePhotorealistic,
 	set: (val) => settingsStore.setGooglePhotorealistic(val),
 });
+const enableEntityClustering = computed({
+  get: () => settingsStore.enableEntityClustering,
+  set: (val) => settingsStore.setEntityClustering(val),
+})
 async function addIonAssetUrl() {
 	if (focusedMap.value === 'cesium' && url.value) {
 		// Check if layer already exists with the same URL
@@ -147,6 +151,17 @@ const canAddUrl = computed(() => {
 								></v-switch>
 							</template>
 						</v-list-item>
+            <v-list-item>
+              <v-list-item-title>Enable Entity Clustering</v-list-item-title>
+              <template #append>
+                <v-switch
+                    v-model="enableEntityClustering"
+                    color="primary"
+                    inset="material"
+                    hide-details
+                ></v-switch>
+              </template>
+            </v-list-item>
 						<v-list-item>
 							<v-list-item-title>Map Layers</v-list-item-title>
 							<v-list-item-subtitle>

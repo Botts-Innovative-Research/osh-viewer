@@ -38,10 +38,10 @@ export interface MapAdapter {
 	): any;
 
 	/* Mission Builder */
-	drawMissionWaypoints(waypoints: MapPoint[]): void;
-	clearMissionWaypoints(): void;
-	drawMissionPath(waypoints: MapPoint[]): void;
-	clearMissionPath(): void;
+	drawMissionWaypoints(waypoints: MapPoint[], systemId: string): void;
+	clearMissionWaypoints(): void; // Clear all missions
+	drawMissionPath(waypoints: MapPoint[], systemId: string): void;
+	clearMissionPath(): void; // Clear all missions
 
 	/* GeoOverlay */
 	updatePointPreview(
@@ -87,4 +87,6 @@ export interface MapAdapter {
 	removeMapLayer?(id: string): void;
 	destroyAllLayers?(): void;
 	rebuildMapLayers?(layers: MapLayer[]): void;
+    enableClustering?(): void;
+    disableClustering?(): void;
 }

@@ -7,11 +7,13 @@ import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref, watch } from 'vue';
 import { VisualizationLayerProperties } from '../../types/visualization';
 import { SupportedMapLayer } from '@/modules/map/supportedMapLayers';
+import { useMissionStore } from '@/stores/missionstore';
 
 export function useVisualizationSidebar() {
 	// Stores
 	const uiStore = useUIStore();
 	const mapStore = useMapStore();
+	const missionStore = useMissionStore();
 	const visualizationStore = useVisualizationStore();
 	const { visualizations } = storeToRefs(visualizationStore);
 
@@ -105,13 +107,31 @@ export function useVisualizationSidebar() {
 		}
 	);
 
+	/* MISSION HELPERS */
+	function removeMission(controller: OSHVisualization) {
+		visualizationStore.removeVisualization(controller); // Remove from visualization store
+		// Remove from selected list
+		selectedMissionControllers.value = selectedMissionControllers.value.filter(
+			(item: OSHVisualization) => item.id !== controller.id
+		);
+		// Remove stored waypoints
+		missionStore.clearSystemWaypoints(controller.id);
+	}
+	watch(
+		() => selectedMissionControllers.value,
+		(newVal) => {
+			if (!newVal || newVal.length === 0) missionStore.clearSelectedMissionControllers();
+			missionStore.setSelectedMissionControllers(
+				newVal.flatMap((v: OSHVisualization) => v.id)
+			);
+		}
+	);
 	watch(
 		() => missionVisualizations.value.length,
 		(_newLen, oldLen) => {
 			handleOpenMissionPanel(oldLen);
 		}
 	);
-
 	watch(
 		missionVisualizations,
 		(current) => {
@@ -137,13 +157,6 @@ export function useVisualizationSidebar() {
 	function removeGeoPTZ(controller: OSHVisualization) {
 		visualizationStore.removeVisualization(controller); // Remove from visualization store
 		selectedGeoPTZControllers.value = selectedGeoPTZControllers.value.filter(
-			(item: OSHVisualization) => item.id !== controller.id
-		); // Remove from selected list
-	}
-
-	function removeMission(controller: OSHVisualization) {
-		visualizationStore.removeVisualization(controller); // Remove from visualization store
-		selectedMissionControllers.value = selectedMissionControllers.value.filter(
 			(item: OSHVisualization) => item.id !== controller.id
 		); // Remove from selected list
 	}

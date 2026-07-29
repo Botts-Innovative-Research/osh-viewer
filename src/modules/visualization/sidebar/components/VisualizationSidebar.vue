@@ -124,7 +124,7 @@ const uiStore = useUIStore();
 							</v-sheet>
 						</v-expansion-panel-text>
 					</v-expansion-panel>
-					<!--				Mission Builder Visualizations-->
+					<!-- Mission Builder Visualizations-->
 					<v-expansion-panel
 						:disabled="missionVisualizations.length == 0"
 						value="mission"
