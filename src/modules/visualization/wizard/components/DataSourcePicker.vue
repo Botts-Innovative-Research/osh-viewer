@@ -10,9 +10,11 @@ const props = withDefaults(
 		role: string; // Property role to be used as key in vizwiz store
 		multiple?: boolean; // Whether multiple properties can be selected
 		showPropertySelector?: boolean;
+		flatLocation?: boolean; // Use separate lat/lon/alt field selectors instead of a single Location object
 	}>(),
 	{
 		showPropertySelector: true,
+		flatLocation: false,
 	}
 );
 
@@ -66,6 +68,54 @@ const selectedProperty = computed({
 	},
 });
 
+const selectedLatProperty = computed({
+	get: () => {
+		const prop = vizwizStore.dsConfig[props.role]?.property;
+		return typeof prop === 'object' && prop?.lat ? prop.lat : '';
+	},
+	set: (val: string) => {
+		const currentProp = vizwizStore.dsConfig[props.role]?.property;
+		const base = typeof currentProp === 'object' ? currentProp : {};
+		vizwizStore.updateDsConfig(props.role, {
+			property: { ...base, lat: val },
+			locationFormat: 'flat',
+			label: 'Lat/Lon/Alt',
+		});
+	},
+});
+
+const selectedLonProperty = computed({
+	get: () => {
+		const prop = vizwizStore.dsConfig[props.role]?.property;
+		return typeof prop === 'object' && prop?.lon ? prop.lon : '';
+	},
+	set: (val: string) => {
+		const currentProp = vizwizStore.dsConfig[props.role]?.property;
+		const base = typeof currentProp === 'object' ? currentProp : {};
+		vizwizStore.updateDsConfig(props.role, {
+			property: { ...base, lon: val },
+			locationFormat: 'flat',
+			label: 'Lat/Lon/Alt',
+		});
+	},
+});
+
+const selectedAltProperty = computed({
+	get: () => {
+		const prop = vizwizStore.dsConfig[props.role]?.property;
+		return typeof prop === 'object' && prop?.alt ? prop.alt : '';
+	},
+	set: (val: string) => {
+		const currentProp = vizwizStore.dsConfig[props.role]?.property;
+		const base = typeof currentProp === 'object' ? currentProp : {};
+		vizwizStore.updateDsConfig(props.role, {
+			property: { ...base, alt: val || null },
+			locationFormat: 'flat',
+			label: 'Lat/Lon/Alt',
+		});
+	},
+});
+
 // Properties schema for selected datastream
 const dsSchema = ref<any>(null);
 
@@ -100,6 +150,9 @@ const emit = defineEmits<VisualizationComponentEmits>();
 const valid = computed(() => {
 	// Check that a datastream is selected
 	if (!selectedDatastream.value) return false;
+	if (props.flatLocation) {
+		return !!selectedLatProperty.value && !!selectedLonProperty.value;
+	}
 	// If property selector is shown, check that a property is selected
 	if (props.showPropertySelector) {
 		return props.multiple // Check if multiple properties are allowed
@@ -125,7 +178,7 @@ useComponentValidation(valid, emit);
 	<!-- Select for property -->
 	<v-expand-transition>
 		<v-autocomplete
-			v-if="showPropertySelector && dsSchema && dsSchema.recordSchema"
+			v-if="!props.flatLocation && showPropertySelector && dsSchema && dsSchema.recordSchema"
 			v-model="selectedProperty"
 			:items="dsSchema.recordSchema.fields"
 			label="Select property"
@@ -135,6 +188,36 @@ useComponentValidation(valid, emit);
 			:item-value="(item: any) => item.label ?? item.name"
 			:multiple="props.multiple"
 		></v-autocomplete>
+	</v-expand-transition>
+
+	<v-expand-transition>
+		<div v-if="props.flatLocation && dsSchema && dsSchema.recordSchema">
+			<v-autocomplete
+				v-model="selectedLatProperty"
+				:items="dsSchema.recordSchema.fields"
+				label="Latitude property"
+				:item-title="(item: any) => item.label ?? item.name"
+				:item-value="(item: any) => item.name"
+				persistent-hint
+			/>
+			<v-autocomplete
+				v-model="selectedLonProperty"
+				:items="dsSchema.recordSchema.fields"
+				label="Longitude property"
+				:item-title="(item: any) => item.label ?? item.name"
+				:item-value="(item: any) => item.name"
+				persistent-hint
+			/>
+			<v-autocomplete
+				v-model="selectedAltProperty"
+				:items="dsSchema.recordSchema.fields"
+				label="Altitude property (optional)"
+				:item-title="(item: any) => item.label ?? item.name"
+				:item-value="(item: any) => item.name"
+				persistent-hint
+				clearable
+			/>
+		</div>
 	</v-expand-transition>
 </template>
 
