@@ -250,21 +250,83 @@ const allMissionSummaries = computed<MissionSummary[]>(() => {
 const numPlannedMissions = computed(() => allMissionSummaries.value.length);
 const hasAnyMissions = computed(() => numPlannedMissions.value > 0);
 
+const delayBetweenMissions = ref<number>(0);
+const isSendingAll = ref(false);
+const sendAllCountdown = ref(0);
+const sendAllCurrentIndex = ref(0);
+const sendAllTotal = ref(0);
+let sendAllTimer: ReturnType<typeof setInterval> | null = null;
+
+function cancelSendAll() {
+	if (sendAllTimer) {
+		clearInterval(sendAllTimer);
+		sendAllTimer = null;
+	}
+	isSendingAll.value = false;
+	sendAllCountdown.value = 0;
+	sendAllCurrentIndex.value = 0;
+	sendAllTotal.value = 0;
+}
+
 function confirmSendAllMissions() {
 	showSendAllSummary.value = true;
 }
 
 function sendAllMissions() {
 	showSendAllSummary.value = false;
-	for (const viz of validVisualizations.value) {
+
+	const missionsToSend = validVisualizations.value.filter((viz) => {
 		const planRef = planMissionRefs.value.get(viz.id);
-		if (planRef && planRef.waypoints.length > 0) {
-			planRef.sendMission();
+		return planRef && planRef.waypoints.length > 0;
+	});
+
+	if (missionsToSend.length === 0) return;
+
+	const delay = delayBetweenMissions.value;
+
+	if (delay <= 0) {
+		for (const viz of missionsToSend) {
+			planMissionRefs.value.get(viz.id)!.executeMission();
+		}
+		return;
+	}
+
+	isSendingAll.value = true;
+	sendAllTotal.value = missionsToSend.length;
+	sendAllCurrentIndex.value = 0;
+
+	function sendNext() {
+		if (sendAllCurrentIndex.value >= missionsToSend.length) {
+			cancelSendAll();
+			return;
+		}
+
+		const viz = missionsToSend[sendAllCurrentIndex.value];
+		planMissionRefs.value.get(viz.id)!.executeMission();
+		sendAllCurrentIndex.value++;
+
+		if (sendAllCurrentIndex.value < missionsToSend.length) {
+			sendAllCountdown.value = delay;
+			sendAllTimer = setInterval(() => {
+				sendAllCountdown.value--;
+				if (sendAllCountdown.value <= 0) {
+					if (sendAllTimer) {
+						clearInterval(sendAllTimer);
+						sendAllTimer = null;
+					}
+					sendNext();
+				}
+			}, 1000);
+		} else {
+			cancelSendAll();
 		}
 	}
+
+	sendNext();
 }
 
 onBeforeUnmount(() => {
+	cancelSendAll();
 	for (const vizId of [...systemStates.keys()]) {
 		cleanupSystemDatasources(vizId);
 	}
@@ -480,17 +542,49 @@ const hasCommandPad = computed(
 			</v-window>
 		</v-sheet>
 
-		<v-btn
-			v-if="validVisualizations.length > 1"
-			block
-			class="mt-4"
-			color="primary"
-			variant="tonal"
-			@click="confirmSendAllMissions"
-			:disabled="!hasAnyMissions"
-		>
-			Send All Missions ( {{ numPlannedMissions }} )
-		</v-btn>
+		<div v-if="validVisualizations.length > 1" class="mt-4">
+			<v-text-field
+				v-model.number="delayBetweenMissions"
+				class="mb-2"
+				density="compact"
+				hide-details
+				label="Delay Between Missions (seconds)"
+				min="0"
+				type="number"
+			/>
+
+      <v-alert
+          v-if="isSendingAll"
+          class="mb-2"
+          color="warning"
+          density="compact"
+          variant="tonal"
+			>
+        <div class="d-flex align-center justify-space-between">
+          <span>Sent {{ sendAllCurrentIndex }}/{{ sendAllTotal }} — next in {{ sendAllCountdown }}s</span>
+          <v-btn
+						color="error"
+						density="compact"
+						size="small"
+						variant="text"
+						@click="cancelSendAll"
+					>
+						Cancel
+					</v-btn>
+				</div>
+			</v-alert>
+
+			<v-btn
+				block
+        class="mt-4"
+        color="primary"
+				variant="tonal"
+				:disabled="!hasAnyMissions || isSendingAll"
+				@click="confirmSendAllMissions"
+			>
+				Send All Missions ( {{ numPlannedMissions }} )
+			</v-btn>
+		</div>
 
 		<MissionSummaryDialog
 			v-model="showSendAllSummary"

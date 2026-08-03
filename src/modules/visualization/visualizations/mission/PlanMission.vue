@@ -50,6 +50,7 @@ const waypointAltitude = ref<number>(25);
 const altitudeMode = ref<number>(0);
 const autoContinue = true;
 const amslAltAboveTerrain = null;
+const sendDelay = ref<number>(0);
 const geoFenceCircles = ref<[]>([]);
 const geoFencePolygons = ref<[]>([]);
 const rallyPoints = ref<[]>([]);
@@ -336,8 +337,39 @@ async function isLegacyPlanSchema(): Promise<boolean> {
 	}
 }
 
+const isSendingDelayed = ref(false);
+const delayCountdown = ref(0);
+let delayTimer: ReturnType<typeof setInterval> | null = null;
+
+function cancelDelayedSend() {
+  if (delayTimer) {
+    clearInterval(delayTimer);
+    delayTimer = null;
+  }
+  isSendingDelayed.value = false;
+  delayCountdown.value = 0;
+
+}
+
 function sendMission() {
 	showMissionSummary.value = false;
+  const delay = sendDelay.value;
+  if (delay > 0) {
+    isSendingDelayed.value = true;
+    delayCountdown.value = delay;
+    delayTimer = setInterval(() => {
+      delayCountdown.value--;
+      if (delayCountdown.value <= 0) {
+        cancelDelayedSend();
+        executeMission();
+      }
+    }, 1000);
+  } else {
+    executeMission();
+  }
+}
+
+function executeMission() {
 	if (missionSource.value === 'waypoints') sendWaypoints();
 	if (missionSource.value === 'file') sendQGCPlanFileUpload();
 }
@@ -543,15 +575,19 @@ onMounted(() => {
 });
 defineExpose({
 	sendMission,
+	executeMission,
 	waypoints,
 	vehicleType,
 	cruiseSpeed,
 	waypointAltitude,
 	totalDistance,
 	estimatedTime,
+	sendDelay,
+	cancelDelayedSend,
 });
 onBeforeUnmount(() => {
 	mapInteractionStore.deselectTool('missionWaypoint');
+	cancelDelayedSend();
 	// clearWaypoints();
 });
 </script>
@@ -716,9 +752,41 @@ onBeforeUnmount(() => {
 		</v-window-item>
 	</v-window>
 
+	<v-text-field
+		v-model.number="sendDelay"
+		class="mb-2"
+		density="compact"
+		hide-details
+		label="Send Delay (seconds)"
+		min="0"
+		type="number"
+	/>
+
+	<v-alert
+      v-if="isSendingDelayed"
+      class="mb-2"
+      color="warning"
+      density="compact"
+      variant="tonal"
+	>
+		<div class="d-flex align-center justify-space-between">
+			<span>Sending in {{ delayCountdown }}s...</span>
+			<v-btn
+				color="error"
+				density="compact"
+				size="small"
+				variant="text"
+				@click="cancelDelayedSend"
+			>
+				Cancel
+			</v-btn>
+		</div>
+	</v-alert>
+
 	<div class="d-flex ga-2">
 		<v-btn
 			:disabled="
+				isSendingDelayed ||
 				noController ||
 				!vehicleType ||
 				(missionSource === 'waypoints' && waypoints.length === 0) ||
