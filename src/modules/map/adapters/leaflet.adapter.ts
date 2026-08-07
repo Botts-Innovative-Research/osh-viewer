@@ -3,7 +3,7 @@ import L from 'leaflet';
 import { MapAdapter } from './types';
 import { MapPoint, MapPointHandler } from '@/modules/map/types';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
-import {colorHash, getColoredIconUrl} from '@/modules/map/services/colorId.service';
+import { colorHash, getColoredIconUrl } from '@/modules/map/services/colorId.service';
 import { ICON_BASE } from '@/lib/icons';
 
 export function createLeafletAdapter(): MapAdapter {
@@ -15,10 +15,56 @@ export function createLeafletAdapter(): MapAdapter {
 	let previewEntity: any = null;
 
 	async function init(container: string) {
+		// mapView = new LeafletView({
+		// 	container,
+		// 	layers: [],
+		// 	autoZoomOnFirstMarker: true,
+		// });
+		//
+		// const offlineLayer = L.tileLayer('http://localhost:8080/maps/alabama/{z}/{x}/{y}.png', {
+		// 	minZoom: 8,
+		// 	maxZoom: 12,
+		// });
+		//
+		// offlineLayer.addTo(mapView.map);
+
+		let offlineLayer;
+		// TEST: ALABAMA
+		// offlineLayer = L.tileLayer('http://localhost:8080/maps/alabama/{z}/{x}/{y}.png', {
+		// 	minZoom: 8,
+		// 	maxZoom: 12,
+		// });
+		// TEST: RC FIELD
+		offlineLayer = L.tileLayer('http://localhost:8080/maps/rcfield/{z}/{x}/{y}.png', {
+			minZoom: 12,
+			maxZoom: 20,
+		});
+
 		mapView = new LeafletView({
 			container,
 			layers: [],
 			autoZoomOnFirstMarker: true,
+
+			baseLayers: offlineLayer
+				? {
+						'Alabama Offline': offlineLayer,
+					}
+				: undefined,
+
+			defaultLayer: offlineLayer,
+
+			// TEST: ALABAMA
+			// initialView: {
+			// 	lat: 32.8,
+			// 	lon: -86.8,
+			// 	zoom: 8,
+			// },
+			// TEST: RC FIELD
+			initialView: {
+				lat: 34.6856466,
+				lon: -86.5968429,
+				zoom: 12,
+			},
 		});
 	}
 	function destroy() {
@@ -151,7 +197,7 @@ export function createLeafletAdapter(): MapAdapter {
 	}
 
 	function drawMissionPath(waypoints: MapPoint[], systemId: string) {
-        const color = colorHash(systemId).hex;
+		const color = colorHash(systemId).hex;
 		const polyline = drawPolyline(waypoints, color);
 		polyline.addTo(mapView.map);
 		flightPathPolylines.push(polyline);
@@ -165,9 +211,9 @@ export function createLeafletAdapter(): MapAdapter {
 	}
 
 	async function drawMissionWaypoints(waypoints: MapPoint[], systemId: string) {
-        const color = colorHash(systemId).hex;
+		const color = colorHash(systemId).hex;
 
-        clearMissionWaypoints();
+		clearMissionWaypoints();
 		for (let index = 0; index < waypoints.length; index++) {
 			const marker = await drawPoint(
 				waypoints[index],
