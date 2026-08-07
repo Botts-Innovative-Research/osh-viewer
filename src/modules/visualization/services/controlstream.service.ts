@@ -119,6 +119,7 @@ export async function fetchControlStreamSchema(controlstream: any, networkProper
 	const control = new ControlStream(props, networkProperties);
 
 	let filter = new ControlStreamFilter();
+    console.log('control', control.getSchema().then(console.log('bop')))
 	return control
 		.getSchema(filter)
 		.then((schema: any) => {
@@ -128,6 +129,8 @@ export async function fetchControlStreamSchema(controlstream: any, networkProper
 					? schema.parametersSchema.items
 					: schema.parametersSchema;
 				const prettySchema = getCommandType(schemaItems, controlstream.id);
+                console.log('schemaItems', schemaItems)
+                console.log('prettySchema', prettySchema)
 				return prettySchema;
 			}
 		})
@@ -229,6 +232,24 @@ export function getCommandType(schema: any, id: string) {
 		commandSchema.lat = { type: 'number' };
 		commandSchema.lon = { type: 'number' };
 		commandSchema.alt = { type: 'number' };
+	}
+	else if (schema.type === 'DataRecord' && Array.isArray(schema.fields)) {
+		commandType = {
+			type: 'DataRecord',
+			details: {
+				label: schema.label,
+				definition: schema.definition,
+			},
+		};
+		for (const field of schema.fields) {
+			commandSchema[field.name] = {
+				type: field.type,
+				label: field.label,
+				definition: field.definition,
+				...(field.constraint && { constraint: field.constraint }),
+				...(field.fields && { fields: field.fields }),
+			};
+		}
 	}
 
 	// Add to store

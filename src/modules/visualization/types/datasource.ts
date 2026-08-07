@@ -19,4 +19,8 @@ export interface IConSysApiDataSourceProperties extends DataSourceProperties {
 	resource: string;
 }
 
-export interface IConSysApiControlStreamProperties extends DataSourceProperties {}
+export interface IConSysApiControlStreamProperties extends DataSourceProperties {
+	name?: string;
+	inputName?: string;
+	controlledProperties?: { label: string; definition?: string }[];
+}
