@@ -248,6 +248,8 @@ export function getCommandType(schema: any, id: string) {
 				definition: field.definition,
 				...(field.constraint && { constraint: field.constraint }),
 				...(field.fields && { fields: field.fields }),
+				...(field.coordinates && { coordinates: field.coordinates }),
+				...(field.referenceFrame && { referenceFrame: field.referenceFrame }),
 			};
 		}
 	}
