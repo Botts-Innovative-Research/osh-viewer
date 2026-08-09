@@ -15,55 +15,41 @@ export function createLeafletAdapter(): MapAdapter {
 	let previewEntity: any = null;
 
 	async function init(container: string) {
-		// mapView = new LeafletView({
-		// 	container,
-		// 	layers: [],
-		// 	autoZoomOnFirstMarker: true,
-		// });
-		//
-		// const offlineLayer = L.tileLayer('http://localhost:8080/maps/alabama/{z}/{x}/{y}.png', {
-		// 	minZoom: 8,
-		// 	maxZoom: 12,
-		// });
-		//
-		// offlineLayer.addTo(mapView.map);
-
-		let offlineLayer;
-		// TEST: ALABAMA
-		// offlineLayer = L.tileLayer('http://localhost:8080/maps/alabama/{z}/{x}/{y}.png', {
-		// 	minZoom: 8,
-		// 	maxZoom: 12,
-		// });
-		// TEST: RC FIELD
-		offlineLayer = L.tileLayer('http://localhost:8080/maps/rcfield/{z}/{x}/{y}.png', {
-			minZoom: 12,
-			maxZoom: 20,
+		const onlineLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			maxZoom: 19,
+			attribution: '© OpenStreetMap contributors',
 		});
+
+		let offlineLayer: L.TileLayer | undefined;
+
+		if (import.meta.env.VITE_OFFLINE_MAP_ENABLED === 'true') {
+			offlineLayer = L.tileLayer(`${import.meta.env.VITE_OFFLINE_MAP_PATH}/{z}/{x}/{y}.png`, {
+				minZoom: Number(import.meta.env.VITE_OFFLINE_MAP_MIN_ZOOM),
+				maxZoom: Number(import.meta.env.VITE_OFFLINE_MAP_MAX_ZOOM),
+			});
+		}
 
 		mapView = new LeafletView({
 			container,
 			layers: [],
 			autoZoomOnFirstMarker: true,
 
-			baseLayers: offlineLayer
-				? {
-						'Alabama Offline': offlineLayer,
-					}
-				: undefined,
+			baseLayers: {
+				'Online OSM': onlineLayer,
 
-			defaultLayer: offlineLayer,
+				...(offlineLayer
+					? {
+							[import.meta.env.VITE_OFFLINE_MAP_NAME]: offlineLayer,
+						}
+					: {}),
+			},
 
-			// TEST: ALABAMA
-			// initialView: {
-			// 	lat: 32.8,
-			// 	lon: -86.8,
-			// 	zoom: 8,
-			// },
-			// TEST: RC FIELD
+			defaultLayer: onlineLayer,
+
 			initialView: {
-				lat: 34.6856466,
-				lon: -86.5968429,
-				zoom: 12,
+				lat: Number(import.meta.env.VITE_OFFLINE_MAP_LAT),
+				lon: Number(import.meta.env.VITE_OFFLINE_MAP_LON),
+				zoom: Number(import.meta.env.VITE_OFFLINE_MAP_ZOOM),
 			},
 		});
 	}
