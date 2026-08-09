@@ -27,6 +27,27 @@ export const FrustumConfigRoles: VisualizationConfigRole[] = [
 		type: 'ds',
 		required: true,
 	},
+	{
+		role: 'range',
+		label: 'Range',
+		description: 'Dynamic range (distance) of the frustum from datastream.',
+		type: 'ds',
+		required: false,
+	},
+	{
+		role: 'horizontalFOV',
+		label: 'Horizontal FOV',
+		description: 'Dynamic horizontal field of view from datastream.',
+		type: 'ds',
+		required: false,
+	},
+	// {
+	// 	role: 'verticalFOV',
+	// 	label: 'Vertical FOV',
+	// 	description: 'Dynamic vertical field of view from datastream (3D frustum only).',
+	// 	type: 'ds',
+	// 	required: false,
+	// },
 ];
 
 export const ConfigComponent: VisualizationFormComponent = {

@@ -14,7 +14,8 @@ const isActive = computed(() => {
 		mapInteractionStore.isGeoOverlayPointSelected ||
 		mapInteractionStore.isGeoOverlayCircleSelected ||
 		mapInteractionStore.isGeoOverlayLineStringSelected ||
-		mapInteractionStore.isGeoOverlayPolygonSelected
+		mapInteractionStore.isGeoOverlayPolygonSelected ||
+		mapInteractionStore.isTaskingLocationSelected
 	);
 });
 
@@ -24,6 +25,8 @@ const toolLabel = computed(() => {
 	const parts: { label: string; icon: string; color: string }[] = [];
 	if (mapInteractionStore.isDriveLocationSelected)
 		parts.push({ label: 'Drive Location', icon: 'mdi-steering', color: 'blue' });
+  if (mapInteractionStore.isTaskingLocationSelected)
+    parts.push({ label: 'Tasking', icon: 'mdi-controller', color: 'orange' });
 	if (mapInteractionStore.isHomeLocationSelected)
 		parts.push({ label: 'Home Location', icon: 'mdi-home-map-marker', color: 'yellow' });
 	if (mapInteractionStore.isMissionWaypointSelected)

@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { IConSysApiControlStreamProperties } from '../../types/datasource';
-import { computed } from 'vue';
 import { fetchControlStreamSchema, sendCommand } from '@/modules/visualization/services/controlstream.service';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
+import { useMapStore } from '@/stores/mapstore';
+import { useMapInteractionStore } from '@/stores/mapinteractionstore';
+import MapPointEditor from '@/components/ui/MapPointEditor.vue';
+import type { MapPoint } from '@/modules/map/types';
 
 const props = defineProps<{
 	visualization: OSHVisualization;
@@ -12,10 +15,15 @@ const props = defineProps<{
 }>();
 
 const controlStreamStore = useControlStreamStore();
+const mapStore = useMapStore();
+const mapInteractionStore = useMapInteractionStore();
+
 const selectedCommand = ref<IConSysApiControlStreamProperties | null>(null);
 const fetchedSchema = ref<Record<string, any> | null>(null);
 const formValues = ref<Record<string, any>>({});
 const loading = ref(false);
+const locationPoint = ref<MapPoint>({ lat: 0, lon: 0, alt: 0 });
+const isLocationMapSelect = computed(() => mapInteractionStore.isTaskingLocationSelected);
 
 const formatedItems = computed(() => {
   return props.controlstreams.map((arr) => ({
@@ -24,19 +32,62 @@ const formatedItems = computed(() => {
   }))
 })
 
+const locationFieldKeys = computed(() => {
+  if (!fetchedSchema.value) return null;
+  let latKey: string | null = null;
+  let lonKey: string | null = null;
+  let altKey: string | null = null;
+
+  for (const [name, field] of Object.entries(fetchedSchema.value) as [string, any][]) {
+    if (field.definition?.toLowerCase().includes("latitude")) latKey = name;
+    else if (field.definition?.toLowerCase().includes("longitude")) lonKey = name;
+    else if (field.definition?.toLowerCase().includes("altitude")) altKey = name;
+  }
+
+  if (latKey && lonKey) {
+    return { latKey, lonKey, altKey };
+  }
+  return null;
+})
+
 const schemaFields = computed(() => {
   if (!fetchedSchema.value) return [];
-  return Object.entries(fetchedSchema.value).map(([name, field]: [string, any]) => ({
-    name,
-    type: field.type,
-    label: field.label || name,
-    definition: field.definition,
-    constraint: field.constraint,
-    fields: field.fields,
-    coordinates: field.coordinates,
-    referenceFrame: field.referenceFrame,
-  }));
+  const locationKeys = locationFieldKeys.value;
+  return Object.entries(fetchedSchema.value)
+    .filter(([name]) => {
+      if (locationKeys) {
+        if (name === locationKeys.latKey || name === locationKeys.lonKey || name === locationKeys.altKey) {
+          return false;
+        }
+      }
+      return true;
+    })
+    .map(([name, field]: [string, any]) => ({
+      name,
+      type: field.type,
+      label: field.label || name,
+      definition: field.definition,
+      constraint: field.constraint,
+      coordinates: field.coordinates,
+    }));
 })
+
+watch(
+  () => mapStore.currentLLA,
+  (newVal) => {
+    if (isLocationMapSelect.value && newVal) {
+      locationPoint.value = {
+        lat: newVal.latitude,
+        lon: newVal.longitude,
+        alt: newVal.altitude ?? 0,
+      };
+    }
+  }
+);
+
+function toggleLocationSelect() {
+  mapInteractionStore.toggleTool('taskingLocation');
+}
 
 watch(selectedCommand, async (selected) => {
   if (!selected) return;
@@ -48,7 +99,7 @@ watch(selectedCommand, async (selected) => {
 
   const cs = controlStreamStore.getControlStreamsById([selected.id])[0];
   if (!cs) {
-    console.warn('OSHControlStream not found for id:', selected.id);
+    console.warn('Control stream not found for id:', selected.id);
     loading.value = false;
     return;
   }
@@ -82,6 +133,16 @@ function handleSend() {
   if (!selectedCommand.value) return;
 
   const command: Record<string, any> = {};
+
+  const locationKeys = locationFieldKeys.value;
+  if (locationKeys) {
+    command[locationKeys.latKey] = locationPoint.value.lat;
+    command[locationKeys.lonKey] = locationPoint.value.lon;
+    if (locationKeys.altKey) {
+      command[locationKeys.altKey] = locationPoint.value.alt ?? 0;
+    }
+  }
+
   for (const field of schemaFields.value) {
     const val = formValues.value[field.name];
     if (val !== '' && val !== null && val !== undefined) {
@@ -95,8 +156,7 @@ function handleSend() {
   const commandParam = {
     parameters: command,
   };
-  console.log('Sending command:', command);
-  console.log('Sending command param:', commandParam);
+  console.log('Sending command:', commandParam);
   sendCommand(baseUrl, selectedCommand.value.id, commandParam, auth, selectedCommand.value.name);
 }
 </script>
@@ -123,7 +183,20 @@ function handleSend() {
 
       <v-progress-linear v-if="loading" indeterminate class="mb-4" />
 
-      <template v-if="fetchedSchema && schemaFields.length > 0">
+      <template v-if="fetchedSchema && (schemaFields.length > 0 || locationFieldKeys)">
+
+        <div v-if="locationFieldKeys" class="mb-3">
+          <div class="text-subtitle-2 mb-1">Location</div>
+          <MapPointEditor
+              v-model="locationPoint"
+              :is-selected="isLocationMapSelect"
+              :is-selector-disabled="false"
+              :hide-alt="!locationFieldKeys.altKey"
+              :has-submit="false"
+              @toggle="toggleLocationSelect"
+          />
+        </div>
+
         <div v-for="field in schemaFields" :key="field.name" class="mb-3">
 
           <v-text-field
@@ -147,18 +220,6 @@ function handleSend() {
               :hint="field.definition"
               persistent-hint
           />
-
-<!--          <v-btn-->
-<!--              v-else-if="field.type === 'Boolean'"-->
-<!--              block-->
-<!--              color="primary"-->
-<!--              variant="tonal"-->
-<!--              v-model="formValues[field.name]"-->
-<!--              :hint="field.definition"-->
-<!--              persistent-hint-->
-<!--          >-->
-<!--            {{ field.label }}-->
-<!--          </v-btn>-->
 
           <v-select
               v-else-if="field.type === 'Category' && field.constraint?.values"

@@ -431,38 +431,111 @@ export function createFrustumLayer(
 	// Undefined initially
 	let getOrigin: any;
 	let getSensorOrientation: any;
+	let getRange: any;
+	let getFov: any;
+	let getAspectRatio: any;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);
 
-		// Check for location property
-		if (dsProps.properties.origin) {
-			getOrigin = {
+		if (dsProps.properties.range) {
+			getRange = {
 				dataSourceIds: [dsInstance.id],
-				handler: async (rec: any) => {
-					const lon = rec[dsProps.properties.origin.property].lon;
-					const lat = rec[dsProps.properties.origin.property].lat;
-					return {
-						x: lon,
-						y: lat,
-						z:
-							rec[dsProps.properties.origin.property].alt ||
-							(await getGroundAltitude(lon, lat)),
-					};
+				handler: (rec: any) => {
+					return rec[dsProps.properties.range.property];
 				},
 			};
 		}
-		if (dsProps.properties.sensorOrientation) {
-			getSensorOrientation = {
+		if (dsProps.properties.horizontalFOV) {
+			getFov = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
-					return {
-						yaw: rec[dsProps.properties.sensorOrientation.property].heading,
-						pitch: rec[dsProps.properties.sensorOrientation.property].pitch,
-						roll: rec[dsProps.properties.sensorOrientation.property].roll,
-					};
+					return rec[dsProps.properties.horizontalFOV.property];
 				},
 			};
+		}
+
+		// if (dsProps.properties.verticalFOV) {
+		// 	getAspectRatio = {
+		// 		dataSourceIds: [dsInstance.id],
+		// 		handler: (rec: any) => {
+		// 			const vExtent = rec[dsProps.properties.verticalFOV.property];
+		// 			if (!vExtent || vExtent === 0) return 1;
+        //
+		// 			if (dsProps.properties.horizontalFOV) {
+		// 				const hExtent = rec[dsProps.properties.horizontalFOV.property];
+		// 				if (hExtent && hExtent > 0) return hExtent / vExtent;
+		// 			}
+		// 			return 1;
+		// 		},
+		// 	};
+		// }
+
+		// Check for origin property
+		if (dsProps.properties.origin) {
+			const originConfig = dsProps.properties.origin;
+
+			if (originConfig.locationFormat === 'flat') {
+				getOrigin = {
+					dataSourceIds: [dsInstance.id],
+					handler: async (rec: any) => {
+						const lon = rec[originConfig.property.lon];
+						const lat = rec[originConfig.property.lat];
+						const alt = originConfig.property.alt ? rec[originConfig.property.alt] : null;
+						return {
+							x: lon,
+							y: lat,
+							z: alt || (await getGroundAltitude(lon, lat)),
+						};
+					},
+				};
+			} else {
+				getOrigin = {
+					dataSourceIds: [dsInstance.id],
+					handler: async (rec: any) => {
+						const lon = rec[originConfig.property].lon;
+						const lat = rec[originConfig.property].lat;
+						return {
+							x: lon,
+							y: lat,
+							z:
+								rec[originConfig.property].alt ||
+								(await getGroundAltitude(lon, lat)),
+						};
+					},
+				};
+			}
+		}
+
+        if (dsProps.properties.sensorOrientation) {
+			const orientationConfig = dsProps.properties.sensorOrientation;
+
+			if (orientationConfig.orientationFormat === 'flat') {
+				getSensorOrientation = {
+					dataSourceIds: [dsInstance.id],
+					handler: (rec: any) => {
+						const heading = rec[orientationConfig.property.heading];
+						const pitch = rec[orientationConfig.property.pitch];
+						const roll = orientationConfig.property.roll ? rec[orientationConfig.property.roll] : 0;
+						return {
+							yaw: heading,
+							pitch: pitch,
+							roll: roll,
+						};
+					},
+				};
+			} else {
+				getSensorOrientation = {
+					dataSourceIds: [dsInstance.id],
+					handler: (rec: any) => {
+						return {
+							yaw: rec[orientationConfig.property].heading,
+							pitch: rec[orientationConfig.property].pitch,
+							roll: rec[orientationConfig.property].roll,
+						};
+					},
+				};
+			}
 		}
 
 		dsInstance.connect();

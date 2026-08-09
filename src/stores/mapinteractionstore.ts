@@ -13,7 +13,8 @@ export type MapInteractionMode =
 	| 'geoOverlayPoint'
 	| 'geoOverlayLineString'
 	| 'geoOverlayPolygon'
-	| 'geoOverlayCircle';
+	| 'geoOverlayCircle'
+	| 'taskingLocation';
 
 export const useMapInteractionStore = defineStore(
 	'mapInteraction',
@@ -63,6 +64,9 @@ export const useMapInteractionStore = defineStore(
 		const isGeoOverlayCircleSelected = computed(
 			() => interactionMode.value === 'geoOverlayCircle'
 		);
+		const isTaskingLocationSelected = computed(
+			() => interactionMode.value === 'taskingLocation'
+		);
 
 		/* GeoPTZ */
 		const selectedGeoPTZ: Ref<OSHVisualization[] | null> = ref(null); // Currently selected GeoPTZ Visualization(s) or null if none selected
@@ -90,6 +94,7 @@ export const useMapInteractionStore = defineStore(
 			isGeoOverlayLineStringSelected,
 			isGeoOverlayPolygonSelected,
 			isGeoOverlayCircleSelected,
+			isTaskingLocationSelected,
 			selectedGeoPTZ,
 			setSelectedGeoPTZ,
 			clearSelectedGeoPTZ,

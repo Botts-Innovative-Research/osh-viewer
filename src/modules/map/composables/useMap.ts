@@ -74,6 +74,7 @@ export function useMap() {
 	const driveLocationLayer = ref(null);
 	const flyToLocationLayer = ref(null);
 	const homeLocationLayer = ref(null);
+	const taskingLocationLayer = ref(null);
 	// FOI
 	const foiLayers = ref<{ layer: typeof PointMarkerLayer; props: any }[]>([]);
 
@@ -361,6 +362,11 @@ export function useMap() {
 			if (mapInteractionStore.isFlyToLocationSelected) {
 				mapStore.setCurrentLLA(lat, lon, 0);
 				await addFlyToLocationLayer(lon, lat);
+			}
+			// Tasking Location
+			if (mapInteractionStore.isTaskingLocationSelected) {
+				mapStore.setCurrentLLA(lat, lon, 0);
+				await addTaskingLocationLayer(lon, lat);
 			}
 			// Add additional onClick functions
 		});
@@ -790,6 +796,32 @@ export function useMap() {
 		() => mapInteractionStore.isHomeLocationSelected,
 		(selected) => {
 			removeHomeLocationLayer();
+		}
+	);
+
+	/* TASKING LOCATION */
+	async function addTaskingLocationLayer(lon: number, lat: number) {
+		if (!mapAdapter.value) return;
+		removeTaskingLocationLayer();
+
+		const marker = await mapAdapter.value.drawPoint(
+			{ lon, lat, alt: 0 },
+			'/icons/waypoint/round-pin.png',
+			'#FF9800',
+			`Task ${lat.toFixed(6)} , ${lon.toFixed(6)}`
+		);
+
+		mapAdapter.value.addMarker(marker);
+		taskingLocationLayer.value = marker;
+	}
+	function removeTaskingLocationLayer() {
+		if (taskingLocationLayer.value) mapAdapter.value?.removeMarker(taskingLocationLayer.value);
+		taskingLocationLayer.value = null;
+	}
+	watch(
+		() => mapInteractionStore.isTaskingLocationSelected,
+		(selected) => {
+			removeTaskingLocationLayer();
 		}
 	);
 

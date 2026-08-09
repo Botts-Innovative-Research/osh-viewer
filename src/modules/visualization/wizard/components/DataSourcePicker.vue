@@ -11,10 +11,12 @@ const props = withDefaults(
 		multiple?: boolean; // Whether multiple properties can be selected
 		showPropertySelector?: boolean;
 		flatLocation?: boolean; // Use separate lat/lon/alt field selectors instead of a single Location object
+		flatOrientation?: boolean; // Use separate heading/pitch/roll field selectors instead of a single Orientation object
 	}>(),
 	{
 		showPropertySelector: true,
 		flatLocation: false,
+    flatOrientation: false,
 	}
 );
 
@@ -116,6 +118,55 @@ const selectedAltProperty = computed({
 	},
 });
 
+
+const selectedHeadingProperty = computed({
+  get: () => {
+    const prop = vizwizStore.dsConfig[props.role]?.property;
+    return typeof prop === 'object' && prop?.heading ? prop.heading : '';
+  },
+  set: (val: string) => {
+    const currentProp = vizwizStore.dsConfig[props.role]?.property;
+    const base = typeof currentProp === 'object' ? currentProp : {};
+    vizwizStore.updateDsConfig(props.role, {
+      property: { ...base, heading: val },
+      orientationFormat: 'flat',
+      label: 'Heading/Pitch/Roll',
+    });
+  },
+});
+
+const selectedPitchProperty = computed({
+  get: () => {
+    const prop = vizwizStore.dsConfig[props.role]?.property;
+    return typeof prop === 'object' && prop?.pitch ? prop.pitch : '';
+  },
+  set: (val: string) => {
+    const currentProp = vizwizStore.dsConfig[props.role]?.property;
+    const base = typeof currentProp === 'object' ? currentProp : {};
+    vizwizStore.updateDsConfig(props.role, {
+      property: { ...base, pitch: val },
+      orientationFormat: 'flat',
+      label: 'Heading/Pitch/Roll',
+    });
+  },
+});
+
+const selectedRollProperty = computed({
+  get: () => {
+    const prop = vizwizStore.dsConfig[props.role]?.property;
+    return typeof prop === 'object' && prop?.roll ? prop.roll : '';
+  },
+  set: (val: string) => {
+    const currentProp = vizwizStore.dsConfig[props.role]?.property;
+    const base = typeof currentProp === 'object' ? currentProp : {};
+    vizwizStore.updateDsConfig(props.role, {
+      property: { ...base, roll: val || null },
+      orientationFormat: 'flat',
+      label: 'Heading/Pitch/Roll',
+    });
+  },
+});
+
 // Properties schema for selected datastream
 const dsSchema = ref<any>(null);
 
@@ -153,6 +204,9 @@ const valid = computed(() => {
 	if (props.flatLocation) {
 		return !!selectedLatProperty.value && !!selectedLonProperty.value;
 	}
+	if (props.flatOrientation) {
+		return !!selectedHeadingProperty.value;
+	}
 	// If property selector is shown, check that a property is selected
 	if (props.showPropertySelector) {
 		return props.multiple // Check if multiple properties are allowed
@@ -178,7 +232,7 @@ useComponentValidation(valid, emit);
 	<!-- Select for property -->
 	<v-expand-transition>
 		<v-autocomplete
-			v-if="!props.flatLocation && showPropertySelector && dsSchema && dsSchema.recordSchema"
+			v-if="!props.flatLocation && !props.flatOrientation && showPropertySelector && dsSchema && dsSchema.recordSchema"
 			v-model="selectedProperty"
 			:items="dsSchema.recordSchema.fields"
 			label="Select property"
@@ -212,6 +266,37 @@ useComponentValidation(valid, emit);
 				v-model="selectedAltProperty"
 				:items="dsSchema.recordSchema.fields"
 				label="Altitude property (optional)"
+				:item-title="(item: any) => item.label ?? item.name"
+				:item-value="(item: any) => item.name"
+				persistent-hint
+				clearable
+			/>
+		</div>
+	</v-expand-transition>
+
+	<v-expand-transition>
+		<div v-if="props.flatOrientation && dsSchema && dsSchema.recordSchema">
+			<v-autocomplete
+				v-model="selectedHeadingProperty"
+				:items="dsSchema.recordSchema.fields"
+				label="Heading property"
+				:item-title="(item: any) => item.label ?? item.name"
+				:item-value="(item: any) => item.name"
+				persistent-hint
+			/>
+			<v-autocomplete
+				v-model="selectedPitchProperty"
+				:items="dsSchema.recordSchema.fields"
+				label="Pitch property (optional)"
+				:item-title="(item: any) => item.label ?? item.name"
+				:item-value="(item: any) => item.name"
+				persistent-hint
+        clearable
+			/>
+			<v-autocomplete
+				v-model="selectedRollProperty"
+				:items="dsSchema.recordSchema.fields"
+				label="Roll property (optional)"
 				:item-title="(item: any) => item.label ?? item.name"
 				:item-value="(item: any) => item.name"
 				persistent-hint

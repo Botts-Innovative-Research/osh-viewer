@@ -83,6 +83,7 @@ export function BuildRoleProperty(entry: any[]) {
 			const result: any = { property: roleEntry.property, outputName: roleEntry.outputName };
 			if (roleEntry.compression) result.compression = roleEntry.compression;
 			if (roleEntry.locationFormat) result.locationFormat = roleEntry.locationFormat;
+			if (roleEntry.orientationFormat) result.orientationFormat = roleEntry.orientationFormat;
 			return [role, result];
 		})
 	);

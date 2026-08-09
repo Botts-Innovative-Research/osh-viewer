@@ -24,13 +24,22 @@ const { checkedRoles, validRoles, valid, include, autoMap } = useConfig(
 );
 
 const vizwizStore = useVizWizStore();
-const useFlatLocation = ref(vizwizStore.dsConfig.location?.locationFormat === 'flat');
+const useFlatLocation = ref(vizwizStore.dsConfig.origin?.locationFormat === 'flat');
+const useFlatOrientation = ref(vizwizStore.dsConfig.sensorOrientation?.orientationFormat === 'flat');
 
 watch(useFlatLocation, (isFlat) => {
   vizwizStore.updateDsConfig('origin', {
     property: null,
     label: null,
     locationFormat: isFlat ? 'flat' : undefined,
+  });
+});
+
+watch(useFlatOrientation, (isFlat) => {
+  vizwizStore.updateDsConfig('sensorOrientation', {
+    property: null,
+    label: null,
+    orientationFormat: isFlat ? 'flat' : undefined,
   });
 });
 
@@ -81,6 +90,15 @@ useComponentValidation(effectiveValid, emit);
               hide-details
               class="mb-2 ml-3"
           />
+          <v-switch
+              v-if="config.role === 'sensorOrientation' && checkedRoles[config.role]"
+              v-model="useFlatOrientation"
+              label="Use separate Heading / Pitch / Roll fields"
+              color="primary"
+              density="compact"
+              hide-details
+              class="mb-2 ml-3"
+          />
           <DataSourcePicker
               v-if="checkedRoles[config.role] && config.type === 'ds'"
               :role="config.role"
@@ -88,6 +106,7 @@ useComponentValidation(effectiveValid, emit);
               v-model:valid="validRoles[config.role]"
               :show-property-selector="config.showPropertySelector ?? true"
               :flat-location="config.role === 'origin' && useFlatLocation"
+              :flat-orientation="config.role === 'sensorOrientation' && useFlatOrientation"
           />
 					<ControlStreamPicker
 						v-if="checkedRoles[config.role] && config.type === 'cs'"
