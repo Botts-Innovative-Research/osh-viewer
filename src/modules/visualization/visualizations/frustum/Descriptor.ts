@@ -80,5 +80,5 @@ export const FrustumDescriptor: VisualizationDescriptor = {
 	builder: () => import('@/modules/visualization/visualizations/frustum/Builder'),
 	supportsCs: false,
 	requireCs: false,
-	supportedMaps: ['cesium'],
+	supportedMaps: ['cesium', 'leaflet'],
 };
