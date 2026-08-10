@@ -529,8 +529,8 @@ export function createFrustumLayer(
 				getSensorOrientation = {
 					dataSourceIds: [dsInstance.id],
 					handler: (rec: any) => {
-						const heading = rec[orientationConfig.property.heading];
-						const pitch = rec[orientationConfig.property.pitch];
+						const heading = rec[orientationConfig.property.heading] ?? 0;
+						const pitch = rec[orientationConfig.property.pitch] ?? 0;
 						const roll = orientationConfig.property.roll ? rec[orientationConfig.property.roll] : 0;
 						return {
 							yaw: heading,
@@ -544,9 +544,9 @@ export function createFrustumLayer(
 					dataSourceIds: [dsInstance.id],
 					handler: (rec: any) => {
 						return {
-							yaw: rec[orientationConfig.property].heading,
-							pitch: rec[orientationConfig.property].pitch,
-							roll: rec[orientationConfig.property].roll,
+							yaw: rec[orientationConfig.property].heading ?? 0,
+							pitch: rec[orientationConfig.property].pitch ?? 0,
+							roll: rec[orientationConfig.property].roll ?? 0,
 						};
 					},
 				};
@@ -562,7 +562,7 @@ export function createFrustumLayer(
 		name: viz.name,
 		id: viz.id,
 		dataSourceIds: dsInstances.map((ds) => ds.id),
-		...(is2D ? { aspectRatio: 4/3 } : {}),
+		aspectRatio: 4/3,
 		...(getRange ? { getRange } : {}),
 		...(getFov ? { getFov } : {}),
 		// ...(getAspectRatio && !is2D ? { getAspectRatio } : {}),
