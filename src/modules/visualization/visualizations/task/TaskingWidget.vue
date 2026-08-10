@@ -1,17 +1,17 @@
-<script setup lang="ts">
-import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
-import { ref, watch, computed } from 'vue';
-import { IConSysApiControlStreamProperties } from '../../types/datasource';
-import { fetchControlStreamSchema, sendCommand } from '@/modules/visualization/services/controlstream.service';
-import { useControlStreamStore } from '@/stores/controlstreamstore';
-import { useMapStore } from '@/stores/mapstore';
-import { useMapInteractionStore } from '@/stores/mapinteractionstore';
+<script lang="ts" setup>
+import {OSHVisualization} from '@/lib/OSHConnectDataStructs';
+import {computed, ref, watch} from 'vue';
+import {IConSysApiControlStreamProperties} from '../../types/datasource';
+import {fetchControlStreamSchema, sendCommand} from '@/modules/visualization/services/controlstream.service';
+import {useControlStreamStore} from '@/stores/controlstreamstore';
+import {useMapStore} from '@/stores/mapstore';
+import {useMapInteractionStore} from '@/stores/mapinteractionstore';
 import MapPointEditor from '@/components/ui/MapPointEditor.vue';
-import type { MapPoint } from '@/modules/map/types';
+import type {MapPoint} from '@/modules/map/types';
 
 const props = defineProps<{
-	visualization: OSHVisualization;
-	controlstreams: IConSysApiControlStreamProperties[];
+  visualization: OSHVisualization;
+  controlstreams: IConSysApiControlStreamProperties[];
 }>();
 
 const controlStreamStore = useControlStreamStore();
@@ -22,76 +22,99 @@ const selectedCommand = ref<IConSysApiControlStreamProperties | null>(null);
 const fetchedSchema = ref<Record<string, any> | null>(null);
 const formValues = ref<Record<string, any>>({});
 const loading = ref(false);
-const locationPoint = ref<MapPoint>({ lat: 0, lon: 0, alt: 0 });
+const locationPoint = ref<MapPoint>({lat: 0, lon: 0, alt: 0});
 const isLocationMapSelect = computed(() => mapInteractionStore.isTaskingLocationSelected);
 
-const formatedItems = computed(() => {
-  return props.controlstreams.map((arr) => ({
-    title: arr.name,
-    value: arr
-  }))
-})
+const formatedItems = computed(() =>
+    props.controlstreams.map((cs) => ({title: cs.name, value: cs}))
+);
+
+
+function findLocationCoord(definition: string | undefined): 'lat' | 'lon' | 'alt' | null {
+  const def = definition?.toLowerCase() ?? '';
+  if (def.includes('latitude')) return 'lat';
+  if (def.includes('longitude')) return 'lon';
+  if (def.includes('altitude')) return 'alt';
+  return null;
+}
 
 const locationFieldKeys = computed(() => {
   if (!fetchedSchema.value) return null;
-  let latKey: string | null = null;
-  let lonKey: string | null = null;
-  let altKey: string | null = null;
+  const keys: Record<string, string> = {};
+  let vectorName: string | null = null;
 
   for (const [name, field] of Object.entries(fetchedSchema.value) as [string, any][]) {
-    if (field.definition?.toLowerCase().includes("latitude")) latKey = name;
-    else if (field.definition?.toLowerCase().includes("longitude")) lonKey = name;
-    else if (field.definition?.toLowerCase().includes("altitude")) altKey = name;
+    const role = findLocationCoord(field.definition);
+    if (role) {
+      keys[role] = name;
+    } else if (field.type === 'Vector' && Array.isArray(field.coordinates)) {
+      for (const coord of field.coordinates) {
+        const coordRole = findLocationCoord(coord.definition);
+        if (coordRole) keys[coordRole] = coord.name;
+      }
+      if (keys.lat && keys.lon) vectorName = name;
+    }
   }
 
-  if (latKey && lonKey) {
-    return { latKey, lonKey, altKey };
-  }
-  return null;
-})
+  return keys.lat && keys.lon
+      ? {latKey: keys.lat, lonKey: keys.lon, altKey: keys.alt ?? null, vectorName}
+      : null;
+});
+
 
 const schemaFields = computed(() => {
   if (!fetchedSchema.value) return [];
-  const locationKeys = locationFieldKeys.value;
+  const loc = locationFieldKeys.value;
+  const excludedNames = new Set<string>();
+  if (loc) {
+    if (loc.vectorName) excludedNames.add(loc.vectorName);
+    excludedNames.add(loc.latKey);
+    excludedNames.add(loc.lonKey);
+    if (loc.altKey) excludedNames.add(loc.altKey);
+  }
+
   return Object.entries(fetchedSchema.value)
-    .filter(([name]) => {
-      if (locationKeys) {
-        if (name === locationKeys.latKey || name === locationKeys.lonKey || name === locationKeys.altKey) {
-          return false;
-        }
-      }
-      return true;
-    })
-    .map(([name, field]: [string, any]) => ({
-      name,
-      type: field.type,
-      label: field.label || name,
-      definition: field.definition,
-      constraint: field.constraint,
-      coordinates: field.coordinates,
-    }));
-})
+      .filter(([name]) => !excludedNames.has(name))
+      .map(([name, field]: [string, any]) => ({
+        name,
+        type: field.type,
+        label: field.label || name,
+        definition: field.definition,
+        constraint: field.constraint,
+        coordinates: field.coordinates,
+      }));
+});
 
 watch(
-  () => mapStore.currentLLA,
-  (newVal) => {
-    if (isLocationMapSelect.value && newVal) {
-      locationPoint.value = {
-        lat: newVal.latitude,
-        lon: newVal.longitude,
-        alt: newVal.altitude ?? 0,
-      };
+    () => mapStore.currentLLA,
+    (newVal) => {
+      if (isLocationMapSelect.value && newVal) {
+        locationPoint.value = {
+          lat: newVal.latitude,
+          lon: newVal.longitude,
+          alt: newVal.altitude ?? 0,
+        };
+      }
     }
-  }
 );
 
 function toggleLocationSelect() {
   mapInteractionStore.toggleTool('taskingLocation');
 }
 
+function getDefaultValue(field: any): any {
+  if (field.type === 'Vector' && Array.isArray(field.coordinates)) {
+    return Object.fromEntries(field.coordinates.map((c: any) => [c.name, 0]));
+  }
+  if (field.type === 'Quantity' || field.type === 'Count') {
+    return field.constraint?.intervals?.[0]?.[0] ?? 0;
+  }
+  if (field.type === 'Boolean') return false;
+  return '';
+}
+
 watch(selectedCommand, async (selected) => {
   if (!selected) return;
-  console.log('Selected control stream:', selected);
 
   fetchedSchema.value = null;
   formValues.value = {};
@@ -110,60 +133,41 @@ watch(selectedCommand, async (selected) => {
 
   if (schema) {
     for (const [name, field] of Object.entries(schema) as [string, any][]) {
-      if (field.type === 'Vector' && Array.isArray(field.coordinates)) {
-        const coordValues: Record<string, number> = {};
-        for (const coord of field.coordinates) {
-          coordValues[coord.name] = 0;
-        }
-        formValues.value[name] = coordValues;
-      } else if (field.type === 'Quantity' || field.type === 'Count') {
-        formValues.value[name] = field.constraint?.intervals?.[0]?.[0] ?? 0;
-      } else if (field.type === 'Boolean') {
-        formValues.value[name] = false;
-      } else {
-        formValues.value[name] = '';
-      }
+      formValues.value[name] = getDefaultValue(field);
     }
   }
+});
 
-  console.log('Fetched schema:', schema);
-})
 
 function handleSend() {
   if (!selectedCommand.value) return;
-
+  const cs = selectedCommand.value;
   const command: Record<string, any> = {};
 
-  const locationKeys = locationFieldKeys.value;
-  if (locationKeys) {
-    command[locationKeys.latKey] = locationPoint.value.lat;
-    command[locationKeys.lonKey] = locationPoint.value.lon;
-    if (locationKeys.altKey) {
-      command[locationKeys.altKey] = locationPoint.value.alt ?? 0;
-    }
+  const loc = locationFieldKeys.value;
+  if (loc) {
+    const coords: Record<string, number> = {
+      [loc.latKey]: locationPoint.value.lat,
+      [loc.lonKey]: locationPoint.value.lon,
+      ...(loc.altKey ? {[loc.altKey]: locationPoint.value.alt ?? 0} : {}),
+    };
+    if (loc.vectorName) command[loc.vectorName] = coords;
+    else Object.assign(command, coords);
   }
 
   for (const field of schemaFields.value) {
-    const val = formValues.value[field.name];
-    if (val !== '' && val !== null && val !== undefined) {
-      command[field.name] = val;
-    }
+    command[field.name] = formValues.value[field.name] ?? getDefaultValue(field);
   }
 
-  const baseUrl = `${selectedCommand.value.tls ? 'https' : 'http'}://${selectedCommand.value.endpointUrl}`;
-  const auth = `${selectedCommand.value.connectorOpts.username}:${selectedCommand.value.connectorOpts.password}`;
-
-  const commandParam = {
-    parameters: command,
-  };
-  console.log('Sending command:', commandParam);
-  sendCommand(baseUrl, selectedCommand.value.id, commandParam, auth, selectedCommand.value.name);
+  const baseUrl = `${cs.tls ? 'https' : 'http'}://${cs.endpointUrl}`;
+  const auth = `${cs.connectorOpts.username}:${cs.connectorOpts.password}`;
+  sendCommand(baseUrl, cs.id, {parameters: command}, auth, cs.name);
 }
 </script>
 
 <template>
-	<v-sheet>
-		<v-container>
+  <v-sheet>
+    <v-container>
       <v-select
           v-model="selectedCommand"
           :items="formatedItems"
@@ -171,45 +175,42 @@ function handleSend() {
           item-value="value"
           label="Control Stream"
       >
-        <template v-slot:item="{item, props: itemProps }">
+        <template v-slot:item="{ item, props: itemProps }">
           <v-list-item v-bind="itemProps">
             <template v-slot:prepend="{ isSelected }">
-              <v-checkbox-btn :model-value="isSelected"></v-checkbox-btn>
+              <v-checkbox-btn :model-value="isSelected"/>
             </template>
           </v-list-item>
         </template>
       </v-select>
 
-
-      <v-progress-linear v-if="loading" indeterminate class="mb-4" />
+      <v-progress-linear v-if="loading" class="mb-4" indeterminate/>
 
       <template v-if="fetchedSchema && (schemaFields.length > 0 || locationFieldKeys)">
-
+        <!-- Location (auto-detected from schema) -->
         <div v-if="locationFieldKeys" class="mb-3">
           <div class="text-subtitle-2 mb-1">Location</div>
           <MapPointEditor
               v-model="locationPoint"
+              :has-submit="false"
+              :hide-alt="!locationFieldKeys.altKey"
               :is-selected="isLocationMapSelect"
               :is-selector-disabled="false"
-              :hide-alt="!locationFieldKeys.altKey"
-              :has-submit="false"
               @toggle="toggleLocationSelect"
           />
         </div>
 
         <div v-for="field in schemaFields" :key="field.name" class="mb-3">
-
           <v-text-field
               v-if="field.type === 'Quantity' || field.type === 'Count'"
               v-model.number="formValues[field.name]"
               :label="field.label"
-              type="number"
-              :min="field.constraint?.intervals?.[0]?.[0]"
               :max="field.constraint?.intervals?.[0]?.[1]"
-              variant="outlined"
+              :min="field.constraint?.intervals?.[0]?.[0]"
               density="compact"
-              :hint="field.definition"
               persistent-hint
+              type="number"
+              variant="outlined"
           />
 
           <v-switch
@@ -217,7 +218,6 @@ function handleSend() {
               v-model="formValues[field.name]"
               :label="field.label"
               color="primary"
-              :hint="field.definition"
               persistent-hint
           />
 
@@ -226,10 +226,9 @@ function handleSend() {
               v-model="formValues[field.name]"
               :items="field.constraint.values"
               :label="field.label"
-              variant="outlined"
               density="compact"
-              :hint="field.definition"
               persistent-hint
+              variant="outlined"
           />
 
           <div v-else-if="field.type === 'Vector' && field.coordinates">
@@ -239,12 +238,10 @@ function handleSend() {
                 :key="coord.name"
                 v-model.number="formValues[field.name][coord.name]"
                 :label="coord.label || coord.name"
+                class="mb-2"
+                density="compact"
                 type="number"
                 variant="outlined"
-                density="compact"
-                :hint="`${coord.definition ?? ''}${coord.uom?.code ? ' (' + coord.uom.code + ')' : ''}`"
-                persistent-hint
-                class="mb-2"
             />
           </div>
 
@@ -252,23 +249,22 @@ function handleSend() {
               v-else
               v-model="formValues[field.name]"
               :label="field.label"
-              variant="outlined"
               density="compact"
-              :hint="field.definition"
               persistent-hint
+              variant="outlined"
           />
         </div>
 
         <v-btn
+            :disabled="!selectedCommand"
+            class="mt-2"
             color="primary"
             variant="tonal"
             @click="handleSend"
-            :disabled="!selectedCommand"
-            class="mt-2"
         >
           Send Command
         </v-btn>
       </template>
-		</v-container>
-	</v-sheet>
+    </v-container>
+  </v-sheet>
 </template>
