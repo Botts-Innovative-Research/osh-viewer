@@ -6,6 +6,7 @@ import FrustumLayer from 'osh-js/source/core/ui/layer/FrustumLayer';
 import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
 import EllipseLayer from 'osh-js/source/core/ui/layer/EllipseLayer';
 import PolylineLayer from 'osh-js/source/core/ui/layer/PolylineLayer';
+import PolygonLayer from 'osh-js/source/core/ui/layer/PolygonLayer';
 import { setWaypointData } from './services/missionBuilder.service';
 import { useSettingsStore } from '@/stores/settingsstore';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
@@ -37,6 +38,10 @@ export async function createMapVisualizations(
 	} else if (viz.type === 'polyline') {
 		return createPolylineLayer(viz, viz.visualizationComponents.dataSource);
 	} else if (viz.type === 'frustum') {
+		const settingsStore = useSettingsStore();
+		if (settingsStore.focusedMap === 'leaflet') {
+			return createFrustum2DLayer(viz, viz.visualizationComponents.dataSource);
+		}
 		return createFrustumLayer(viz, viz.visualizationComponents.dataSource);
 	} else {
 		console.warn(`Visualization type ${viz.type} not supported for map view`);
@@ -557,6 +562,24 @@ export function createFrustumLayer(
 		dsInstances.push(dsInstance);
 	}
 
+	const is2D = viz.visualizationComponents.dataLayer.is2D ?? false;
+
+	let _2dOrientation = getSensorOrientation;
+	if (is2D && getSensorOrientation) {
+		const original = getSensorOrientation;
+        _2dOrientation = {
+			dataSourceIds: original.dataSourceIds,
+			handler: async (rec: any) => {
+				const result = await original.handler(rec);
+				return {
+					yaw: result.azimuth ?? result.yaw ?? result.heading,
+					pitch: 0,
+					roll: 0,
+				};
+			},
+		};
+	}
+
 	const pmLayer = new FrustumLayer({
 		...viz.visualizationComponents?.dataLayer,
 		name: viz.name,
@@ -567,8 +590,8 @@ export function createFrustumLayer(
 		...(getFov ? { getFov } : {}),
 		// ...(getAspectRatio && !is2D ? { getAspectRatio } : {}),
 		...(getOrigin ? { getOrigin } : {}),
-		...(getSensorOrientation
-			? { getSensorOrientation }
+		...(_2dOrientation
+			? { getSensorOrientation: _2dOrientation }
 			: {
 					sensorOrientation: {
 						yaw: 0.0,
@@ -581,6 +604,151 @@ export function createFrustumLayer(
 	console.log('[Frustum] layer dataSourcesToFn:', pmLayer.dataSourcesToFn);
 	return { vizLayer: pmLayer, dsInstances };
 }
+
+function getFrustumVertices(
+	originLat: number,
+	originLon: number,
+	yaw: number,
+	fov: number,
+	range: number
+): number[] {
+	const toRad = Math.PI / 180;
+	const toDeg = 180 / Math.PI;
+	const d = range / 6371000; // angular distance on earth
+	const lat1 = originLat * toRad;
+	const lon1 = originLon * toRad;
+
+	const vertices: number[] = [originLon, originLat];
+	const arcPoints = 32;
+	const startBearing = yaw - fov / 2;
+
+	for (let i = 0; i <= arcPoints; i++) {
+		const brng = (startBearing + (fov * i) / arcPoints) * toRad;
+		const lat2 = Math.asin(
+			Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(brng)
+		);
+		const lon2 = lon1 + Math.atan2(
+			Math.sin(brng) * Math.sin(d) * Math.cos(lat1),
+			Math.cos(d) - Math.sin(lat1) * Math.sin(lat2)
+		);
+		vertices.push(lon2 * toDeg, lat2 * toDeg);
+	}
+
+	return vertices;
+}
+
+export function createFrustum2DLayer(
+	viz: OSHVisualization,
+	dsArray: IConSysApiDataSourceProperties[]
+): ICreateMapVisualizationResult {
+	let dsInstances: (typeof ConSysApi)[] = [];
+
+	const layerProps = viz.visualizationComponents.dataLayer;
+
+	const state = {
+		origin: null as { x: number; y: number } | null,
+		yaw: 0,
+		fov: layerProps.fov ?? 60,
+		range: layerProps.range ?? 100,
+	};
+
+	const dsHandlers: { dsId: string; fns: ((rec: any) => void)[] }[] = [];
+
+	for (const dsProps of dsArray) {
+		const dsInstance = createDatasource(dsProps);
+		const fns: ((rec: any) => void)[] = [];
+
+		// origin
+		if (dsProps.properties.origin) {
+			const originConfig = dsProps.properties.origin;
+			if (originConfig.locationFormat === 'flat') {
+				fns.push((rec: any) => {
+					state.origin = {
+						x: rec[originConfig.property.lon],
+						y: rec[originConfig.property.lat],
+					};
+				});
+			} else {
+				fns.push((rec: any) => {
+					state.origin = {
+						x: rec[originConfig.property].lon,
+						y: rec[originConfig.property].lat,
+					};
+				});
+			}
+		}
+
+		// sensor orientation
+		if (dsProps.properties.sensorOrientation) {
+			const orientConfig = dsProps.properties.sensorOrientation;
+			if (orientConfig.orientationFormat === 'flat') {
+				fns.push((rec: any) => {
+					state.yaw = rec[orientConfig.property.heading] ?? 0;
+				});
+			} else {
+				fns.push((rec: any) => {
+					state.yaw = rec[orientConfig.property].heading ?? 0;
+				});
+			}
+		}
+
+		// range
+		if (dsProps.properties.range) {
+			fns.push((rec: any) => {
+				const val = rec[dsProps.properties.range.property];
+				if (val != null && val > 0)
+                    state.range = val;
+			});
+		}
+
+		// horo FOV
+		if (dsProps.properties.horizontalFOV) {
+			fns.push((rec: any) => {
+				const val = rec[dsProps.properties.horizontalFOV.property];
+				if (val != null && val > 0)
+                    state.fov = val;
+			});
+		}
+
+		if (fns.length > 0) {
+			dsHandlers.push({ dsId: dsInstance.id, fns });
+		}
+
+		dsInstance.connect();
+		dsInstances.push(dsInstance);
+	}
+
+	const polygonLayer = new PolygonLayer({
+		name: viz.name,
+		id: viz.id,
+		color: layerProps.color ?? '#FF0000',
+		outlineColor: layerProps.borderColor ?? '#FFFFFF',
+		outlineWidth: 2,
+		opacity: layerProps.opacity ?? 0.5,
+		dataSourceIds: dsInstances.map((ds: any) => ds.id),
+		vertices: [],
+	});
+
+	for (const { dsId, fns } of dsHandlers) {
+		polygonLayer.addFn([dsId], async (rec: any) => {
+			for (const fn of fns) fn(rec);
+			if (state.origin) {
+				const vertices = getFrustumVertices(
+					state.origin.y,
+					state.origin.x,
+					state.yaw,
+					state.fov,
+					state.range
+				);
+				polygonLayer.updateProperty('vertices', vertices);
+			}
+		});
+	}
+
+	console.log('[Frustum2D] Created 2D frustum polygon layer:', polygonLayer);
+	return { vizLayer: polygonLayer, dsInstances };
+}
+
 export async function createGeoPTZLayer(
 	location: { lat: number; lon: number; alt: number },
 	selectedGeoPTZ: OSHVisualization[]
@@ -744,6 +912,12 @@ export function rebuildMapVisualizations(
 				...layer.properties,
 			});
 			newLayers.set(layer.properties.id, polylineLayer);
+		}
+		else if (layer instanceof PolygonLayer) {
+			const polygonLayer = new PolygonLayer({
+				...layer.properties,
+			});
+			newLayers.set(layer.properties.id, polygonLayer);
 		}
 	});
 
