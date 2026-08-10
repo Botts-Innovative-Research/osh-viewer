@@ -19,7 +19,10 @@ const dsRoleKeywords: Record<string, string[]> = {
 	// lob
 	bearing: ['bearing', 'azimuth', 'angle', 'line of bearing'],
 	// text
-	stream: [], //tbd
+	stream: [''],
+	// ellipse
+	semiMajorAxis: [''],
+	semiMinorAxis: [''],
 };
 
 export function autoMapDataStreams(
