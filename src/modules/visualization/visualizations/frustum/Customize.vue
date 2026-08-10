@@ -10,17 +10,30 @@ import IDColorControl from '@/modules/visualization/wizard/customizations/IDColo
 import { useVizWizStore } from '@/stores/vizwizstore';
 import AspectRatioControl from '@/modules/visualization/wizard/customizations/AspectRatioControl.vue';
 
+const vizwizStore = useVizWizStore();
 const openPanels = ref<string[]>(['general', 'frustum', 'appearance']);
 // Set default border color to #FFFFFF
-if (!useVizWizStore().visualizationCustomizationOptions.borderColor)
-	useVizWizStore().visualizationCustomizationOptions.borderColor = '#FFFFFF';
+if (!vizwizStore.visualizationCustomizationOptions.borderColor)
+	vizwizStore.visualizationCustomizationOptions.borderColor = '#FFFFFF';
+if (vizwizStore.visualizationCustomizationOptions.is2D === undefined)
+	vizwizStore.visualizationCustomizationOptions.is2D = false;
+
+const is2D = computed({
+	get: () => vizwizStore.visualizationCustomizationOptions.is2D ?? false,
+	set: (val: boolean) => {
+		vizwizStore.visualizationCustomizationOptions.is2D = val;
+	},
+});
+
+const hasDynamicRange = computed(() => !!vizwizStore.dsConfig.range?.selected);
+const hasDynamicFov = computed(() => !!vizwizStore.dsConfig.horizontalFOV?.selected);
 
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>();
 const nameValid = ref<boolean>(false);
 const fovValid = ref<boolean>(false);
 const valid = computed(() => {
-	return nameValid.value && fovValid.value;
+	return nameValid.value && (hasDynamicFov.value || fovValid.value);
 });
 useComponentValidation(valid, emit);
 </script>
@@ -74,7 +87,16 @@ useComponentValidation(valid, emit);
 				</template>
 			</v-expansion-panel-title>
 			<v-expansion-panel-text>
+				<v-switch
+					v-model="is2D"
+					label="2D Frustum"
+					color="primary"
+					density="compact"
+					hide-details
+					class="mb-2"
+				/>
 				<SliderValueControl
+					v-if="!hasDynamicRange"
 					roleName="range"
 					label="Range"
 					:min="0"
@@ -83,7 +105,12 @@ useComponentValidation(valid, emit);
 					:defaultValue="100"
 					units="m"
 				></SliderValueControl>
+				<v-chip v-else color="primary" variant="tonal" class="mb-2">
+					<v-icon start>mdi-database</v-icon>
+					Range from datastream
+				</v-chip>
 				<NumberControl
+					v-if="!hasDynamicFov"
 					roleName="fov"
 					label="FOV"
 					:min="1"
@@ -93,7 +120,11 @@ useComponentValidation(valid, emit);
 					units="deg"
 					v-model:valid="fovValid"
 				></NumberControl>
-				<AspectRatioControl />
+				<v-chip v-else color="primary" variant="tonal" class="mb-2">
+					<v-icon start>mdi-database</v-icon>
+					FOV from datastream
+				</v-chip>
+				<AspectRatioControl v-if="!is2D" />
 			</v-expansion-panel-text>
 		</v-expansion-panel>
 		<v-expansion-panel

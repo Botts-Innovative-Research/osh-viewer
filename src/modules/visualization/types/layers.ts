@@ -60,5 +60,6 @@ export interface IFrustumLayerProperties extends DataLayerProperties {
 	fov: number;
 	range: number;
 	aspectRatio: number;
+	is2D: boolean;
 	iconName: string; // Used for display in map visualizations list
 }

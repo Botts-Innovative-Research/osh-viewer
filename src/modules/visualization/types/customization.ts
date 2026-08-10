@@ -50,4 +50,5 @@ export interface IFrustumCustomizationOptions extends CustomizationOptions {
 	fov: number;
 	range: number;
 	aspectRatio: number;
+	is2D: boolean;
 }

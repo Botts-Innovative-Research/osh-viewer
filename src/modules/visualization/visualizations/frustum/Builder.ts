@@ -61,6 +61,7 @@ export function CreateFrustumVizProps(
 		fov: visOptions.fov,
 		range: visOptions.range,
 		aspectRatio: visOptions.aspectRatio,
+		is2D: visOptions.is2D ?? false,
 		iconName: 'pyramid',
 	};
 
