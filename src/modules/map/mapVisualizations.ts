@@ -58,6 +58,7 @@ export async function createPointMarkerLayer(
 	let getIconColor: any;
 	let getLabel: any;
 	let getIcon: any;
+    let getDescription: any;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);
@@ -150,6 +151,19 @@ export async function createPointMarkerLayer(
 			};
 		}
 
+        // Check for description property
+        if (dsProps.properties.description) {
+            getDescription = {
+                dataSourceIds: [dsInstance.id],
+                handler: (rec: any, dataSourceId: string) => {
+                    return `
+              <div>
+              </div>
+          `;
+                },
+            };
+        }
+
 		dsInstance.connect();
 		dsInstances.push(dsInstance);
 	}
@@ -176,6 +190,7 @@ export async function createPointMarkerLayer(
 		...(getIconColor ? { getIconColor } : {}),
 		...(getLabel ? { getLabel } : {}),
 		...(getIcon ? { getIcon } : {}),
+        ...(getDescription ? { getDescription } : {})
 	});
 
 	const props = setLayerData(pmLayer);
@@ -433,7 +448,7 @@ export function createFrustumLayer(
 	let getSensorOrientation: any;
 	let getRange: any;
 	let getFov: any;
-	let getAspectRatio: any;
+	// let getAspectRatio: any;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);
@@ -543,10 +558,14 @@ export function createFrustumLayer(
 	}
 
 	const pmLayer = new FrustumLayer({
-		...viz.visualizationComponents.dataLayer,
+		...viz.visualizationComponents?.dataLayer,
 		name: viz.name,
 		id: viz.id,
 		dataSourceIds: dsInstances.map((ds) => ds.id),
+		...(is2D ? { aspectRatio: 4/3 } : {}),
+		...(getRange ? { getRange } : {}),
+		...(getFov ? { getFov } : {}),
+		// ...(getAspectRatio && !is2D ? { getAspectRatio } : {}),
 		...(getOrigin ? { getOrigin } : {}),
 		...(getSensorOrientation
 			? { getSensorOrientation }
@@ -558,6 +577,8 @@ export function createFrustumLayer(
 					},
 				}),
 	});
+
+	console.log('[Frustum] layer dataSourcesToFn:', pmLayer.dataSourcesToFn);
 	return { vizLayer: pmLayer, dsInstances };
 }
 export async function createGeoPTZLayer(
