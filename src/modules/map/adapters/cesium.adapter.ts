@@ -5,7 +5,7 @@ import { Ion } from 'cesium';
 import { CursorMode, MapPoint, MapPointHandler } from '@/modules/map/types';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import {colorHash, getColoredIconUrl} from '@/modules/map/services/colorId.service';
+import { colorHash, getColoredIconUrl } from '@/modules/map/services/colorId.service';
 import { ICON_BASE } from '@/lib/icons';
 import { getCenterPoint } from '@/modules/map/services/geospatial.service';
 
@@ -45,11 +45,42 @@ export function createCesiumAdapter(): MapAdapter {
 			layers: [],
 			geocoder: Cesium.IonGeocodeProviderType.GOOGLE,
 		});
-		// osh-js's CesiumView forces depthTestAgainstTerrain = true at
-		// construction, even though the map starts on the smooth ellipsoid (no
-		// real terrain). With it on but nothing to occlude, ground-clamped
-		// entities z-fight against the globe surface and flicker from first load.
-		// Turn it off; flip back on only if entities should hide behind terrain.
+
+		// OFFLINE MAP
+		const offlineEnabled = import.meta.env.VITE_OFFLINE_MAP_ENABLED === 'true';
+
+		if (offlineEnabled) {
+			const offlineMapPath = import.meta.env.VITE_OFFLINE_MAP_PATH;
+			const offlineMapMaxZoom = Number(import.meta.env.VITE_OFFLINE_MAP_MAX_ZOOM);
+			const offlineMapLat = Number(import.meta.env.VITE_OFFLINE_MAP_LAT);
+			const offlineMapLon = Number(import.meta.env.VITE_OFFLINE_MAP_LON);
+
+			console.log('Offline map enabled');
+			console.log('Offline map URL:', `${offlineMapPath}/{z}/{x}/{y}.png`);
+
+			// Remove Cesium's default imagery
+			mapView.viewer.imageryLayers.removeAll();
+
+			// Create local XYZ imagery provider
+			const offlineProvider = new Cesium.UrlTemplateImageryProvider({
+				url: `${offlineMapPath}/{z}/{x}/{y}.png`,
+				tilingScheme: new Cesium.WebMercatorTilingScheme(),
+				maximumLevel: offlineMapMaxZoom,
+				credit: 'Offline Map',
+			});
+
+			mapView.viewer.imageryLayers.addImageryProvider(offlineProvider);
+			mapView.viewer.scene.globe.show = true;
+
+			// Move camera over the offline map
+			mapView.viewer.camera.flyTo({
+				destination: Cesium.Cartesian3.fromDegrees(offlineMapLon, offlineMapLat, 3000),
+				duration: 0,
+			});
+		}
+
+		// CESIUM TERRAIN / DEPTH
+
 		mapView.viewer.scene.globe.depthTestAgainstTerrain = false;
 		// Wait for Cesium to be fully ready
 		await new Promise(requestAnimationFrame);
@@ -305,8 +336,8 @@ export function createCesiumAdapter(): MapAdapter {
 	}
 
 	function drawMissionPath(waypoints: MapPoint[], systemId: string) {
-        const color = colorHash(systemId).hex;
-        const entity = drawPolyline(waypoints, color);
+		const color = colorHash(systemId).hex;
+		const entity = drawPolyline(waypoints, color);
 		mapView.viewer.entities.add(entity);
 		flightPathPolylines.push(entity);
 	}
@@ -320,8 +351,8 @@ export function createCesiumAdapter(): MapAdapter {
 	}
 
 	async function drawMissionWaypoints(waypoints: MapPoint[], systemId: string) {
-        const color = colorHash(systemId).hex;
-        clearMissionWaypoints();
+		const color = colorHash(systemId).hex;
+		clearMissionWaypoints();
 		for (let index = 0; index < waypoints.length; index++) {
 			const entity = await drawPoint(
 				waypoints[index],
@@ -699,21 +730,21 @@ export function createCesiumAdapter(): MapAdapter {
 		invalidate();
 	}
 
-    function enableClustering() {
-        const viewer = mapView.viewer;
-        const defaultDataSource = viewer.dataSourceDisplay.defaultDataSource;
-        defaultDataSource.clustering.enabled = true;
-        defaultDataSource.clustering.pixelRange = 45;
-        defaultDataSource.clustering.minimumClusterSize = 2;
-        invalidate();
-    }
+	function enableClustering() {
+		const viewer = mapView.viewer;
+		const defaultDataSource = viewer.dataSourceDisplay.defaultDataSource;
+		defaultDataSource.clustering.enabled = true;
+		defaultDataSource.clustering.pixelRange = 45;
+		defaultDataSource.clustering.minimumClusterSize = 2;
+		invalidate();
+	}
 
-    function disableClustering() {
-        const viewer = mapView.viewer;
-        const defaultDataSource = viewer.dataSourceDisplay.defaultDataSource;
-        defaultDataSource.clustering.enabled = false;
-        invalidate();
-    }
+	function disableClustering() {
+		const viewer = mapView.viewer;
+		const defaultDataSource = viewer.dataSourceDisplay.defaultDataSource;
+		defaultDataSource.clustering.enabled = false;
+		invalidate();
+	}
 
 	return {
 		init,
@@ -752,7 +783,7 @@ export function createCesiumAdapter(): MapAdapter {
 		clearPreview,
 		addGeoOverlay,
 		removeGeoOverlay,
-        enableClustering,
-        disableClustering
+		enableClustering,
+		disableClustering,
 	};
 }
