@@ -80,6 +80,7 @@ export interface MapAdapter {
 	addTerrain?(): void;
 	removeTerrain?(): void;
 	addBuildings?(): void;
+	addOfflineBuildings?(): void;
 	removeBuildings?(): void;
 	addGooglePhotorealistic?(): void;
 	removeGooglePhotorealistic?(): void;
@@ -87,6 +88,6 @@ export interface MapAdapter {
 	removeMapLayer?(id: string): void;
 	destroyAllLayers?(): void;
 	rebuildMapLayers?(layers: MapLayer[]): void;
-    enableClustering?(): void;
-    disableClustering?(): void;
+	enableClustering?(): void;
+	disableClustering?(): void;
 }

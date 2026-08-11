@@ -98,9 +98,11 @@ export function useMap() {
 			if (settingsStore.enableGooglePhotorealistic) {
 				await mapAdapter.value?.addGooglePhotorealistic?.();
 			}
-            if (settingsStore.enableEntityClustering) {
-                await mapAdapter.value?.enableClustering?.();
-            }
+			if (settingsStore.enableEntityClustering) {
+				await mapAdapter.value?.enableClustering?.();
+			}
+
+			await mapAdapter.value?.addOfflineBuildings?.();
 		} else if (mapType.value === 'leaflet') {
 			mapAdapter.value = createLeafletAdapter();
 			await mapAdapter.value?.init?.('mapContainer');
@@ -871,18 +873,18 @@ export function useMap() {
 			}
 		}
 	);
-    watch(
-        () => settingsStore.enableEntityClustering,
-        async (enabled) => {
-            if (!mapAdapter.value) return;
+	watch(
+		() => settingsStore.enableEntityClustering,
+		async (enabled) => {
+			if (!mapAdapter.value) return;
 
-            if (enabled) {
-                await mapAdapter.value.enableClustering?.();
-            } else {
-                mapAdapter.value.disableClustering?.();
-            }
-        }
-    );
+			if (enabled) {
+				await mapAdapter.value.enableClustering?.();
+			} else {
+				mapAdapter.value.disableClustering?.();
+			}
+		}
+	);
 	watch(
 		() => mapStore.cesiumMapLayers.map((l) => l.id),
 		(newIds, oldIds = []) => {

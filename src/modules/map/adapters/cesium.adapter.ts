@@ -399,6 +399,46 @@ export function createCesiumAdapter(): MapAdapter {
 		}
 	}
 
+	async function addOfflineBuildings() {
+		const viewer = mapView.viewer;
+		if (!viewer) return;
+
+		const dataSource = await Cesium.GeoJsonDataSource.load('/maps/office/buildings.geojson');
+
+		viewer.dataSources.add(dataSource);
+
+		console.log('Building entities:', dataSource.entities.values.length);
+
+		for (const entity of dataSource.entities.values.slice(0, 3)) {
+			console.log('Entity:', entity);
+			console.log('Polygon:', entity.polygon);
+			console.log('Properties:', entity.properties);
+		}
+
+		for (const entity of dataSource.entities.values) {
+			if (!entity.polygon) continue;
+
+			const height =
+				Number(entity.properties?.height_m?.getValue(Cesium.JulianDate.now())) || 5;
+
+			entity.polygon.height = new Cesium.ConstantProperty(0);
+
+			entity.polygon.extrudedHeight = new Cesium.ConstantProperty(height);
+
+			entity.polygon.material = new Cesium.ColorMaterialProperty(
+				Cesium.Color.GRAY.withAlpha(1.0)
+			);
+
+			entity.polygon.outline = new Cesium.ConstantProperty(true);
+
+			entity.polygon.outlineColor = new Cesium.ConstantProperty(Cesium.Color.BLACK);
+		}
+
+		await viewer.flyTo(dataSource);
+
+		invalidate();
+	}
+
 	function removeBuildings() {
 		if (buildingsTileset && mapView.viewer) {
 			mapView.viewer.scene.primitives.remove(buildingsTileset);
@@ -769,6 +809,7 @@ export function createCesiumAdapter(): MapAdapter {
 		addTerrain,
 		removeTerrain,
 		addBuildings,
+		addOfflineBuildings,
 		removeBuildings,
 		addGooglePhotorealistic,
 		removeGooglePhotorealistic,
