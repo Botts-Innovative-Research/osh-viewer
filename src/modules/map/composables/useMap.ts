@@ -98,9 +98,9 @@ export function useMap() {
 			if (settingsStore.enableGooglePhotorealistic) {
 				await mapAdapter.value?.addGooglePhotorealistic?.();
 			}
-            if (settingsStore.enableEntityClustering) {
-                await mapAdapter.value?.enableClustering?.();
-            }
+			if (settingsStore.enableEntityClustering) {
+				await mapAdapter.value?.enableClustering?.();
+			}
 		} else if (mapType.value === 'leaflet') {
 			mapAdapter.value = createLeafletAdapter();
 			await mapAdapter.value?.init?.('mapContainer');
@@ -802,6 +802,15 @@ export function useMap() {
 		],
 		rebuildMissionWaypoints
 	);
+	watch(
+		() => missionStore.homeLocation,
+		async (newValue) => {
+			if (mapInteractionStore.isHomeLocationSelected && newValue) {
+				mapStore.setCurrentLLA(newValue.lat, newValue.lon, 0);
+				await addHomeLocationLayer(newValue.lon, newValue.lat);
+			}
+		}
+	);
 	function drawMissionPath(waypoints: MapPoint[], systemId: string) {
 		if (!mapAdapter.value) return;
 
@@ -871,18 +880,18 @@ export function useMap() {
 			}
 		}
 	);
-    watch(
-        () => settingsStore.enableEntityClustering,
-        async (enabled) => {
-            if (!mapAdapter.value) return;
+	watch(
+		() => settingsStore.enableEntityClustering,
+		async (enabled) => {
+			if (!mapAdapter.value) return;
 
-            if (enabled) {
-                await mapAdapter.value.enableClustering?.();
-            } else {
-                mapAdapter.value.disableClustering?.();
-            }
-        }
-    );
+			if (enabled) {
+				await mapAdapter.value.enableClustering?.();
+			} else {
+				mapAdapter.value.disableClustering?.();
+			}
+		}
+	);
 	watch(
 		() => mapStore.cesiumMapLayers.map((l) => l.id),
 		(newIds, oldIds = []) => {
