@@ -9,6 +9,7 @@ import MapToolStatus from '@/modules/map/components/MapToolStatus.vue';
 import MapSidebar from '@/modules/map/geo-overlay/MapSidebar.vue';
 import MapSpeedDial from '@/modules/map/components/MapSpeedDial.vue';
 import { useMapInteractionStore } from '@/stores/mapinteractionstore.ts';
+import LLATooltip from '@/modules/map/components/LLATooltip.vue';
 
 const paneSize1 = ref(localStorage.paneSize1 ?? 30); // System browser AND Visualization pane
 const paneSize2 = ref(localStorage.paneSize2 ?? 70); // Map view pane
@@ -71,6 +72,7 @@ watch(
 		>
 			<MapToolStatus />
 			<MapSpeedDial />
+			<LLATooltip />
 			<MapView class="fill-height" />
 		</pane>
 	</splitpanes>

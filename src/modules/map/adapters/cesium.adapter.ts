@@ -150,6 +150,37 @@ export function createCesiumAdapter(): MapAdapter {
 		};
 	}
 
+	function onRightClick(handler: MapPointHandler) {
+		const viewer = mapView.viewer;
+		// Description box styling
+		viewer.infoBox.frame.onload = function () {
+			const doc = viewer.infoBox.frame.contentDocument;
+			doc.body.style.backgroundColor = '#242424';
+			doc.body.style.color = '#ffffff';
+		};
+
+		let lat = 0,
+			lon = 0,
+			alt = 0;
+
+		clickHandler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+		clickHandler.setInputAction((click: any) => {
+			// Updated to pickPosition to handle 3D terrain/tiles
+			const cartesian = viewer.scene.pickPosition(click.position);
+			if (!cartesian) return;
+			const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+			lat = Cesium.Math.toDegrees(cartographic.latitude);
+			lon = Cesium.Math.toDegrees(cartographic.longitude);
+			alt = cartographic.height;
+			handler(lat, lon, alt ?? 120);
+		}, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+
+		return () => {
+			clickHandler?.destroy();
+			clickHandler = null;
+		};
+	}
+
 	function onMouseMove(handler: MapPointHandler) {
 		const viewer = mapView.viewer;
 
@@ -753,6 +784,7 @@ export function createCesiumAdapter(): MapAdapter {
 		removeLayer,
 		setCursor,
 		onClick,
+		onRightClick,
 		onMouseMove,
 		flyToPoint,
 		updateMarker,

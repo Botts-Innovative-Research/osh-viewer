@@ -287,8 +287,11 @@ export function useMap() {
 	function bindMapInteractions() {
 		if (!mapAdapter.value) return;
 
-		/* MOUSE CLICK */
+		/* MOUSE CLICK (LEFT-CLICK) */
 		mapAdapter.value.onClick(async (lat, lon, alt) => {
+			// CLOSE LLA POPUP
+			mapStore.clearTempLLA();
+
 			// Point GeoOverlay
 			if (mapInteractionStore.isGeoOverlayPointSelected) {
 				previewPoints.value = [{ lat, lon, alt }];
@@ -363,6 +366,11 @@ export function useMap() {
 				await addFlyToLocationLayer(lon, lat);
 			}
 			// Add additional onClick functions
+		});
+
+		/* MOUSE RIGHT-CLICK */
+		mapAdapter.value.onRightClick(async (lat, lon, alt) => {
+			mapStore.setTempLLA({ lat, lon, alt });
 		});
 
 		/* MOUSE MOVE */
