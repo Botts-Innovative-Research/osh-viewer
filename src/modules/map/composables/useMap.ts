@@ -810,6 +810,15 @@ export function useMap() {
 		],
 		rebuildMissionWaypoints
 	);
+	watch(
+		() => missionStore.homeLocation,
+		async (newValue) => {
+			if (mapInteractionStore.isHomeLocationSelected && newValue) {
+				mapStore.setCurrentLLA(newValue.lat, newValue.lon, 0);
+				await addHomeLocationLayer(newValue.lon, newValue.lat);
+			}
+		}
+	);
 	function drawMissionPath(waypoints: MapPoint[], systemId: string) {
 		if (!mapAdapter.value) return;
 
