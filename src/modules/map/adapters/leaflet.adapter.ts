@@ -80,6 +80,19 @@ export function createLeafletAdapter(): MapAdapter {
 			mapView.map.off('click', clickFn);
 		};
 	}
+	function onRightClick(handler: MapPointHandler) {
+		const map = mapView.map;
+
+		const handleRightClick = (event: L.LeafletMouseEvent) => {
+			handler(event.latlng.lat, event.latlng.lng, 0);
+		};
+
+		map.on('contextmenu', handleRightClick);
+
+		return () => {
+			map.off('contextmenu', handleRightClick);
+		};
+	}
 	function onMouseMove(handler: MapPointHandler) {
 		const moveFn = (e: any) => {
 			handler(e.latlng.lat, e.latlng.lng, 120);
@@ -399,6 +412,7 @@ export function createLeafletAdapter(): MapAdapter {
 		removeLayer,
 		setCursor,
 		onClick,
+		onRightClick,
 		onMouseMove,
 		flyToPoint,
 		updateMarker,

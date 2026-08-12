@@ -82,6 +82,6 @@ function handleTool(tool: MapInteractionMode) {
 	margin-bottom: 1%;
 	margin-left: 1%;
 	transform: translateY(-50%);
-	z-index: 2100;
+	z-index: 2000;
 }
 </style>

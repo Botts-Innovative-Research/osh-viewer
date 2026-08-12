@@ -84,6 +84,11 @@ watch(
 	(newVal) => {
 		if (isHomeLocationMapSelect.value && newVal) {
 			emit('setHome', { lat: newVal.latitude, lon: newVal.longitude });
+			homeEditorPoint.value = {
+				lat: newVal.latitude,
+				lon: newVal.longitude,
+				alt: newVal.altitude,
+			};
 		}
 	}
 );
@@ -93,6 +98,35 @@ function toggleHomeLocationSelect() {
 }
 
 defineExpose({ setLatLonAlt });
+
+const homeEditorPoint = ref<MapPoint>({
+	lat: props.homeLocation.lat,
+	lon: props.homeLocation.lon,
+	alt: props.homeLocation.alt,
+});
+function setHomeFromEditor(point: MapPoint) {
+	emit('setHome', {
+		lat: point.lat,
+		lon: point.lon,
+	});
+	// Set mission store location to rebuild pm on map
+	missionStore.homeLocation = {
+		lat: point.lat,
+		lon: point.lon,
+		alt: point.alt,
+	};
+}
+watch(
+	() => props.homeLocation,
+	(newVal) => {
+		homeEditorPoint.value = {
+			lat: newVal.lat,
+			lon: newVal.lon,
+			alt: newVal.alt,
+		};
+	},
+	{ deep: true }
+);
 </script>
 
 <template>
@@ -164,6 +198,21 @@ defineExpose({ setLatLonAlt });
 				Click to select a home position from the map.
 			</v-tooltip>
 		</v-btn>
+		<v-expand-transition>
+			<v-col
+				cols="12"
+				v-show="isHomeLocationMapSelect"
+			>
+				<MapPointEditor
+					v-model="homeEditorPoint"
+					:hasSelector="false"
+					:hasSubmit="true"
+					:hideAlt="true"
+					submitLabel="Set Home"
+					@submit="setHomeFromEditor"
+				/>
+			</v-col>
+		</v-expand-transition>
 		<v-col :cols="isGroundVehicle ? 12 : 6">
 			<v-text-field
 				v-model.number="cruiseSpeed"

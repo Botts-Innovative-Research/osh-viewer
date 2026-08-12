@@ -9,7 +9,8 @@ export interface MapAdapter {
 	addLayer(layer: any): void;
 	removeLayer(layer: any): Promise<void>;
 
-	onClick(handler: MapPointHandler): () => void;
+	onClick(handler: MapPointHandler): () => void; // Left click - DEFAULT
+	onRightClick(handler: MapPointHandler): () => void; // Right click
 	onMouseMove(handler: MapPointHandler): () => void;
 	setCursor(mode: CursorMode): void;
 	flyToPoint(location: { x: number; y: number; z: number }): void;

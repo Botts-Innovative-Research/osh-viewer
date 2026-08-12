@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { MapPoint } from '@/modules/map/types';
-import ActionButton from "@/components/ui/ActionButton.vue";
+import ActionButton from '@/components/ui/ActionButton.vue';
 
 const props = withDefaults(
 	defineProps<{
@@ -41,7 +41,6 @@ const emit = defineEmits<{
 const form = ref<any>(null);
 const valid = ref(false);
 async function onSubmit() {
-	console.log('Test');
 	const { valid } = await form.value.validate();
 	if (!valid) return;
 
@@ -152,12 +151,12 @@ function defaultToZero(key: keyof MapPoint) {
 				v-if="props.hasSubmit"
 				class="field-floating-details"
 			>
-        <ActionButton
-            :label="props.submitLabel"
-            :icon="props.submitIcon"
-            :disabled="!valid"
-            @submit="onSubmit"
-        />
+				<ActionButton
+					:label="props.submitLabel"
+					:icon="props.submitIcon"
+					:disabled="!valid"
+					@submit="onSubmit"
+				/>
 			</v-col>
 		</v-row>
 	</v-form>
