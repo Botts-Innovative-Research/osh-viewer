@@ -39,15 +39,19 @@ export function createCesiumAdapter(): MapAdapter {
 	let previewEntity: any = null;
 
 	async function init(container: string) {
+		// OFFLINE MAP
+		const offlineEnabled = import.meta.env.VITE_OFFLINE_MAP_ENABLED === 'true';
+
 		mapView = new CesiumView({
 			container,
 			autoZoomOnFirstMarker: true,
 			layers: [],
-			geocoder: Cesium.IonGeocodeProviderType.GOOGLE,
+			...(offlineEnabled
+				? {}
+				: {
+						geocoder: Cesium.IonGeocodeProviderType.GOOGLE,
+					}),
 		});
-
-		// OFFLINE MAP
-		const offlineEnabled = import.meta.env.VITE_OFFLINE_MAP_ENABLED === 'true';
 
 		if (offlineEnabled) {
 			const offlineMapPath = import.meta.env.VITE_OFFLINE_MAP_PATH;
@@ -80,7 +84,6 @@ export function createCesiumAdapter(): MapAdapter {
 		}
 
 		// CESIUM TERRAIN / DEPTH
-
 		mapView.viewer.scene.globe.depthTestAgainstTerrain = false;
 		// Wait for Cesium to be fully ready
 		await new Promise(requestAnimationFrame);
@@ -428,6 +431,35 @@ export function createCesiumAdapter(): MapAdapter {
 			buildingsTileset = await Cesium.Cesium3DTileset.fromIonAssetId(96188);
 			viewer.scene.primitives.add(buildingsTileset);
 		}
+	}
+
+	async function addOfflineBuildings() {
+		const viewer = mapView.viewer;
+		if (!viewer) return;
+
+		const dataSource = await Cesium.GeoJsonDataSource.load(
+			import.meta.env.VITE_OFFLINE_BUILDINGS_PATH
+		);
+
+		viewer.dataSources.add(dataSource);
+
+		for (const entity of dataSource.entities.values) {
+			if (!entity.polygon) continue;
+
+			const height =
+				Number(entity.properties?.height_m?.getValue(Cesium.JulianDate.now())) || 5;
+			entity.polygon.height = new Cesium.ConstantProperty(0);
+			entity.polygon.extrudedHeight = new Cesium.ConstantProperty(height);
+			entity.polygon.material = new Cesium.ColorMaterialProperty(
+				Cesium.Color.GRAY.withAlpha(1.0)
+			);
+			entity.polygon.outline = new Cesium.ConstantProperty(true);
+			entity.polygon.outlineColor = new Cesium.ConstantProperty(Cesium.Color.BLACK);
+		}
+
+		await viewer.flyTo(dataSource);
+
+		invalidate();
 	}
 
 	function removeBuildings() {
@@ -801,6 +833,7 @@ export function createCesiumAdapter(): MapAdapter {
 		addTerrain,
 		removeTerrain,
 		addBuildings,
+		addOfflineBuildings,
 		removeBuildings,
 		addGooglePhotorealistic,
 		removeGooglePhotorealistic,
