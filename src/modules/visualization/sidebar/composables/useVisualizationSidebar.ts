@@ -49,7 +49,15 @@ export function useVisualizationSidebar() {
 		},
 	});
 	const mapVisualizations = computed({
-		get: () => visualizations.value.filter((viz) => viz.viewLocation === 'map'),
+		get: () =>
+			// Only allow map view location UNLESS parent viz is mission (mission pm)
+			visualizations.value.filter(
+				(viz) =>
+					viz.viewLocation === 'map' &&
+					(viz.isChildVisualization() && viz.parentId
+						? visualizationStore.getVisualizationById(viz.parentId)?.type !== 'mission'
+						: true)
+			),
 		set: (newOrder) => {
 			// Replace only the map visualizations in the source array
 			const others = visualizations.value.filter((viz) => viz.viewLocation !== 'map');
@@ -76,7 +84,8 @@ export function useVisualizationSidebar() {
 	}
 	function handleOpenGeoPTZPanel(oldLen = 0) {
 		if (geoPtzVisualizations.value.length) {
-			if (oldLen === 0 && !openPanels.value.includes('geoptz')) openPanels.value.push('geoptz');
+			if (oldLen === 0 && !openPanels.value.includes('geoptz'))
+				openPanels.value.push('geoptz');
 		} else {
 			openPanels.value = openPanels.value.filter((id: string) => id !== 'geoptz');
 		}
@@ -84,7 +93,8 @@ export function useVisualizationSidebar() {
 
 	function handleOpenMissionPanel(oldLen = 0) {
 		if (missionVisualizations.value.length) {
-			if (oldLen === 0 && !openPanels.value.includes('mission')) openPanels.value.push('mission');
+			if (oldLen === 0 && !openPanels.value.includes('mission'))
+				openPanels.value.push('mission');
 		} else {
 			openPanels.value = openPanels.value.filter((id: string) => id !== 'mission');
 		}
@@ -151,7 +161,6 @@ export function useVisualizationSidebar() {
 			handleOpenPanel(oldIds);
 		}
 	);
-
 
 	/* GEOPTZ HELPERS */
 	function removeGeoPTZ(controller: OSHVisualization) {
