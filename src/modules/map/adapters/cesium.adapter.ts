@@ -39,15 +39,19 @@ export function createCesiumAdapter(): MapAdapter {
 	let previewEntity: any = null;
 
 	async function init(container: string) {
+		// OFFLINE MAP
+		const offlineEnabled = import.meta.env.VITE_OFFLINE_MAP_ENABLED === 'true';
+
 		mapView = new CesiumView({
 			container,
 			autoZoomOnFirstMarker: true,
 			layers: [],
-			geocoder: Cesium.IonGeocodeProviderType.GOOGLE,
+			...(offlineEnabled
+				? {}
+				: {
+						geocoder: Cesium.IonGeocodeProviderType.GOOGLE,
+					}),
 		});
-
-		// OFFLINE MAP
-		const offlineEnabled = import.meta.env.VITE_OFFLINE_MAP_ENABLED === 'true';
 
 		if (offlineEnabled) {
 			const offlineMapPath = import.meta.env.VITE_OFFLINE_MAP_PATH;
@@ -80,7 +84,6 @@ export function createCesiumAdapter(): MapAdapter {
 		}
 
 		// CESIUM TERRAIN / DEPTH
-
 		mapView.viewer.scene.globe.depthTestAgainstTerrain = false;
 		// Wait for Cesium to be fully ready
 		await new Promise(requestAnimationFrame);
@@ -434,34 +437,23 @@ export function createCesiumAdapter(): MapAdapter {
 		const viewer = mapView.viewer;
 		if (!viewer) return;
 
-		const dataSource = await Cesium.GeoJsonDataSource.load('/maps/office/buildings.geojson');
+		const dataSource = await Cesium.GeoJsonDataSource.load(
+			import.meta.env.VITE_OFFLINE_BUILDINGS_PATH
+		);
 
 		viewer.dataSources.add(dataSource);
-
-		console.log('Building entities:', dataSource.entities.values.length);
-
-		for (const entity of dataSource.entities.values.slice(0, 3)) {
-			console.log('Entity:', entity);
-			console.log('Polygon:', entity.polygon);
-			console.log('Properties:', entity.properties);
-		}
 
 		for (const entity of dataSource.entities.values) {
 			if (!entity.polygon) continue;
 
 			const height =
 				Number(entity.properties?.height_m?.getValue(Cesium.JulianDate.now())) || 5;
-
 			entity.polygon.height = new Cesium.ConstantProperty(0);
-
 			entity.polygon.extrudedHeight = new Cesium.ConstantProperty(height);
-
 			entity.polygon.material = new Cesium.ColorMaterialProperty(
 				Cesium.Color.GRAY.withAlpha(1.0)
 			);
-
 			entity.polygon.outline = new Cesium.ConstantProperty(true);
-
 			entity.polygon.outlineColor = new Cesium.ConstantProperty(Cesium.Color.BLACK);
 		}
 

@@ -79,6 +79,9 @@ export function useMap() {
 
 	/* MAP INITIALIZATION/DESTRUCTION/TOGGLE */
 	async function initMap() {
+		// OFFLINE MAP
+		const offlineEnabled = import.meta.env.VITE_OFFLINE_MAP_ENABLED === 'true';
+
 		if (mapType.value === 'cesium') {
 			mapAdapter.value = createCesiumAdapter();
 			await mapAdapter.value?.init?.('mapContainer');
@@ -88,21 +91,23 @@ export function useMap() {
 				await mapAdapter.value.rebuildMapLayers?.(mapStore.cesiumMapLayers);
 			}
 
-			// Apply current settings
-			if (settingsStore.enable3DTerrain) {
-				await mapAdapter.value?.addTerrain?.();
-			}
-			if (settingsStore.enable3DBuildings) {
-				await mapAdapter.value?.addBuildings?.();
-			}
-			if (settingsStore.enableGooglePhotorealistic) {
-				await mapAdapter.value?.addGooglePhotorealistic?.();
+			// Only apply these settings when ONLINE
+			if (!offlineEnabled) {
+				if (settingsStore.enable3DTerrain) {
+					await mapAdapter.value?.addTerrain?.();
+				}
+				if (settingsStore.enable3DBuildings) {
+					await mapAdapter.value?.addBuildings?.();
+				}
+				if (settingsStore.enableGooglePhotorealistic) {
+					await mapAdapter.value?.addGooglePhotorealistic?.();
+				}
+			} else {
+				await mapAdapter.value?.addOfflineBuildings?.();
 			}
 			if (settingsStore.enableEntityClustering) {
 				await mapAdapter.value?.enableClustering?.();
 			}
-
-			await mapAdapter.value?.addOfflineBuildings?.();
 		} else if (mapType.value === 'leaflet') {
 			mapAdapter.value = createLeafletAdapter();
 			await mapAdapter.value?.init?.('mapContainer');
