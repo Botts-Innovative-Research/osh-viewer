@@ -558,39 +558,6 @@ export async function createLocationLayer(
 
 	return { layer: locationLayer, props };
 }
-
-export async function createWaypointLayer(
-	waypoint: MapPoint,
-	index: string
-): Promise<{
-	layer: typeof PointMarkerLayer;
-	props: any;
-}> {
-	const icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, 'green');
-
-	const waypointLayer = new PointMarkerLayer({
-		id: `waypoint-${index}`,
-		name: `Waypoint ${index + 1}`,
-		location: {
-			x: waypoint.lon,
-			y: waypoint.lat,
-			z: waypoint.alt || (await getGroundAltitude(waypoint.lon, waypoint.lat)),
-		},
-		icon,
-		iconSize: [32, 32],
-		iconAnchor: [16, 32],
-		label: `WP ${index + 1}`,
-		labelColor: '#FFFFFF',
-		labelOutlineColor: '#000000',
-		labelSize: 14,
-		labelOffset: [0, -36],
-		defaultToTerrainElevation: true,
-	});
-
-	const props = await setWaypointData(waypointLayer);
-
-	return { layer: waypointLayer, props };
-}
 export async function createFOILayer(foiLayer: FoiLayer) {
 	const lon = Array.isArray(foiLayer.geometry.coordinates[0])
 		? foiLayer.geometry.coordinates[0][0]

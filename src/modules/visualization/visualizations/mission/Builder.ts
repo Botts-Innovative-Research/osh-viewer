@@ -9,6 +9,7 @@ import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { MissionDescriptor } from './Descriptor';
 import { MiniMapDescriptor } from '../minimap/Descriptor';
+import { PointMarkerDescriptor } from '../pointmarker/Descriptor';
 import {
 	AggregateControlstreams,
 	AggregateDatastreams,
@@ -22,13 +23,19 @@ import {
 	IConSysApiDataSourceProperties,
 } from '../../types/datasource';
 import { CreateMiniMapVizProps } from '../minimap/Builder';
+import { CreatePointMarkerVizProps } from '../pointmarker/Builder';
+import { iconPathBuilder } from '@/lib/icons';
 
-export default function build() {
+export default async function build() {
 	console.log('Building Mission Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
 
-	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
+    const vizName = vizwizStore.visualizationCustomizationOptions.name;
+
+    const children: OSHVisualization[] = [];
+
+    const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 	const controlstreams = AggregateControlstreams(vizwizStore.csConfig);
 
 	const missionResult = CreateMissionVizProps(datastreams, controlstreams);
@@ -54,10 +61,63 @@ export default function build() {
 		[]
 	);
 	minimapViz.setVisualizationComponents(minimapVisualizationComponents);
+    children.push(minimapViz);
 
+
+	if (vizwizStore.dsConfig.homeLocation?.selected) {
+        const homeDatastreams = AggregateDatastreams({ location: vizwizStore.dsConfig.homeLocation });
+        const pmResult = await CreatePointMarkerVizProps(homeDatastreams, {
+            name: vizwizStore.visualizationCustomizationOptions.name,
+            icon: vizwizStore.visualizationCustomizationOptions.homeIcon,
+            iconColor: vizwizStore.visualizationCustomizationOptions.homeIconColor,
+            iconName: vizwizStore.visualizationCustomizationOptions.pmIconName,
+        });
+        const pmVisualizationComponents: VisualizationComponents = {
+            dataSource: pmResult.vizDatasources,
+            dataLayer: pmResult.pointMarkerLayer,
+        };
+        const pmViz: OSHVisualization = new OSHVisualization(
+            `${vizwizStore.id}-${randomUUID()}`,
+            `${vizwizStore.visualizationCustomizationOptions.name} - Home`,
+            'pointmarker',
+            PointMarkerDescriptor.viewLocation,
+            getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
+            undefined,
+            vizwizStore.id
+        );
+        pmViz.setVisualizationComponents(pmVisualizationComponents);
+        visualizationStore.addVisualization(pmViz);
+		children.push(pmViz);
+	}
+
+	if (vizwizStore.dsConfig.location?.selected) {
+		const locationDatastreams = AggregateDatastreams({ location: vizwizStore.dsConfig.location });
+        const pmResult = await CreatePointMarkerVizProps(locationDatastreams, {
+            name: vizwizStore.visualizationCustomizationOptions.name,
+            icon: vizwizStore.visualizationCustomizationOptions.locationIcon,
+            iconColor: vizwizStore.visualizationCustomizationOptions.locationIconColor,
+            iconName: vizwizStore.visualizationCustomizationOptions.pmIconName,
+        });
+        const pmVisualizationComponents: VisualizationComponents = {
+            dataSource: pmResult.vizDatasources,
+            dataLayer: pmResult.pointMarkerLayer,
+        };
+        const pmViz: OSHVisualization = new OSHVisualization(
+            `${vizwizStore.id}-${randomUUID()}`,
+            `${vizwizStore.visualizationCustomizationOptions.name} - Location`,
+            'pointmarker',
+            PointMarkerDescriptor.viewLocation,
+            getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
+            undefined,
+            vizwizStore.id
+        );
+        pmViz.setVisualizationComponents(pmVisualizationComponents);
+        visualizationStore.addVisualization(pmViz);
+        children.push(pmViz);
+    }
 	const newViz: OSHVisualization = new OSHVisualization(
 		vizwizStore.id,
-		vizwizStore.visualizationCustomizationOptions.name,
+		vizName,
 		'mission',
 		MissionDescriptor.viewLocation,
 		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
@@ -65,7 +125,7 @@ export default function build() {
 	);
 	newViz.setVisualizationComponents(missionVisualizationComponents);
 	newViz.setWizardConfig(vizwizStore.getWizardConfig());
-	newViz.addChildVisualization([minimapViz]);
+	newViz.addChildVisualization(children);
 	visualizationStore.addVisualization(newViz);
 	console.log('Created Mission Visualization:', newViz);
 }

@@ -41,6 +41,14 @@ export default defineConfig(({ mode }) => {
 				],
 			}),
 		],
+		server: {
+			proxy: {
+				'/maps': {
+					target: env.VITE_FILE_SERVER_URL,
+					changeOrigin: true,
+				},
+			},
+		},
 		resolve: {
 			alias: {
 				'@': fileURLToPath(new URL('./src', import.meta.url)),

@@ -5,9 +5,13 @@ import { Ion } from 'cesium';
 import { CursorMode, MapPoint, MapPointHandler } from '@/modules/map/types';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+import { colorHash, getColoredIconUrl } from '@/modules/map/services/colorId.service';
+import { ICON_BASE } from '@/lib/icons';
+import { getCenterPoint } from '@/modules/map/services/geospatial.service';
 
 // Showcase examples token :P
-// Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0NTkzNS02NzI0LTQwNDktODk4Zi0zZDJjOWI2NTdmYTMiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI1ODJ9.IbAajOLYnsoyKy1BOd7fY1p6GH-wwNVMdMduA2IzGjA';
+// Ion.defaultAccessToken =
+// 	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ODY0NTkzNS02NzI0LTQwNDktODk4Zi0zZDJjOWI2NTdmYTMiLCJpZCI6MTA1NzQsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NTY4NzI1ODJ9.IbAajOLYnsoyKy1BOd7fY1p6GH-wwNVMdMduA2IzGjA';
 // Personal token
 Ion.defaultAccessToken =
 	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkNDIyMzU2OC0wMWI4LTRjNGYtYTdiMy1kYjRmYzAwNGJkYTgiLCJpZCI6MzM1ODkzLCJpYXQiOjE3NTYzMDQ3MjZ9.5-F-lSal7TV6bHASnlpo5JCxamD0ppGPtQT7GUK5Ne4';
@@ -29,17 +33,58 @@ export function createCesiumAdapter(): MapAdapter {
 	let buildingsTileset: any = null;
 	let googlePhotorealistic: any = null;
 	let flightPathPolylines: any[] = [];
+	let waypointEntities: any[] = [];
 
 	/* GeoOverlays */
 	let previewEntity: any = null;
 
 	async function init(container: string) {
+		// OFFLINE MAP
+		const offlineEnabled = import.meta.env.VITE_OFFLINE_MAP_ENABLED === 'true';
+
 		mapView = new CesiumView({
 			container,
 			autoZoomOnFirstMarker: true,
 			layers: [],
-			geocoder: Cesium.IonGeocodeProviderType.GOOGLE,
+			...(offlineEnabled
+				? {}
+				: {
+						geocoder: Cesium.IonGeocodeProviderType.GOOGLE,
+					}),
 		});
+
+		if (offlineEnabled) {
+			const offlineMapPath = import.meta.env.VITE_OFFLINE_MAP_PATH;
+			const offlineMapMaxZoom = Number(import.meta.env.VITE_OFFLINE_MAP_MAX_ZOOM);
+			const offlineMapLat = Number(import.meta.env.VITE_OFFLINE_MAP_LAT);
+			const offlineMapLon = Number(import.meta.env.VITE_OFFLINE_MAP_LON);
+
+			console.log('Offline map enabled');
+			console.log('Offline map URL:', `${offlineMapPath}/{z}/{x}/{y}.png`);
+
+			// Remove Cesium's default imagery
+			mapView.viewer.imageryLayers.removeAll();
+
+			// Create local XYZ imagery provider
+			const offlineProvider = new Cesium.UrlTemplateImageryProvider({
+				url: `${offlineMapPath}/{z}/{x}/{y}.png`,
+				tilingScheme: new Cesium.WebMercatorTilingScheme(),
+				maximumLevel: offlineMapMaxZoom,
+				credit: 'Offline Map',
+			});
+
+			mapView.viewer.imageryLayers.addImageryProvider(offlineProvider);
+			mapView.viewer.scene.globe.show = true;
+
+			// Move camera over the offline map
+			mapView.viewer.camera.flyTo({
+				destination: Cesium.Cartesian3.fromDegrees(offlineMapLon, offlineMapLat, 3000),
+				duration: 0,
+			});
+		}
+
+		// CESIUM TERRAIN / DEPTH
+		mapView.viewer.scene.globe.depthTestAgainstTerrain = false;
 		// Wait for Cesium to be fully ready
 		await new Promise(requestAnimationFrame);
 	}
@@ -108,6 +153,37 @@ export function createCesiumAdapter(): MapAdapter {
 		};
 	}
 
+	function onRightClick(handler: MapPointHandler) {
+		const viewer = mapView.viewer;
+		// Description box styling
+		viewer.infoBox.frame.onload = function () {
+			const doc = viewer.infoBox.frame.contentDocument;
+			doc.body.style.backgroundColor = '#242424';
+			doc.body.style.color = '#ffffff';
+		};
+
+		let lat = 0,
+			lon = 0,
+			alt = 0;
+
+		clickHandler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+		clickHandler.setInputAction((click: any) => {
+			// Updated to pickPosition to handle 3D terrain/tiles
+			const cartesian = viewer.scene.pickPosition(click.position);
+			if (!cartesian) return;
+			const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+			lat = Cesium.Math.toDegrees(cartographic.latitude);
+			lon = Cesium.Math.toDegrees(cartographic.longitude);
+			alt = cartographic.height;
+			handler(lat, lon, alt ?? 120);
+		}, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+
+		return () => {
+			clickHandler?.destroy();
+			clickHandler = null;
+		};
+	}
+
 	function onMouseMove(handler: MapPointHandler) {
 		const viewer = mapView.viewer;
 
@@ -150,12 +226,53 @@ export function createCesiumAdapter(): MapAdapter {
 		mapView.updateMarker(props);
 	}
 
-	function drawPoint(point: MapPoint) {}
+	function addMarker(marker: any) {
+		mapView.viewer.entities.add(marker);
+		invalidate();
+	}
+
+	function removeMarker(marker: any) {
+		mapView.viewer.entities.remove(marker);
+		invalidate();
+	}
+
+	async function drawPoint(
+		point: MapPoint,
+		icon?: string,
+		iconColor?: string,
+		label?: string,
+		id?: string
+	) {
+		const coloredIcon =
+			iconColor && icon ? await getColoredIconUrl(`${ICON_BASE}${icon}`, iconColor) : icon;
+		return new Cesium.Entity({
+			id: id ?? randomUUID(),
+			position: Cesium.Cartesian3.fromDegrees(point.lon, point.lat, point.alt || 0),
+			billboard: {
+				image: coloredIcon ?? '/icons/map/map-marker.png',
+				width: 32,
+				height: 32,
+			},
+			...(label
+				? {
+						label: {
+							text: label,
+							font: '10pt monospace',
+							style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+							outlineWidth: 2,
+							verticalOrigin: Cesium.VerticalOrigin.TOP,
+							pixelOffset: new Cesium.Cartesian2(0, 32),
+						},
+					}
+				: {}),
+		});
+	}
 	function drawCircle(
 		center: MapPoint,
 		radius: number,
-		borderColor: string | null,
-		fillColor: string | null,
+		borderColor?: string,
+		fillColor?: string,
+		name?: string,
 		id?: string
 	) {
 		return new Cesium.Entity({
@@ -171,11 +288,24 @@ export function createCesiumAdapter(): MapAdapter {
 				outlineColor: Cesium.Color.fromCssColorString(borderColor ?? '#FF0000'),
 				outlineWidth: 3,
 			},
+			...(name
+				? {
+						label: {
+							text: name,
+							font: '14pt monospace',
+							style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+							outlineWidth: 2,
+							verticalOrigin: Cesium.VerticalOrigin.TOP,
+							pixelOffset: new Cesium.Cartesian2(0, 32),
+						},
+					}
+				: {}),
 		});
 	}
-	function drawPolyline(points: MapPoint[], borderColor: string | null, id?: string) {
+	function drawPolyline(points: MapPoint[], borderColor?: string, name?: string, id?: string) {
 		return new Cesium.Entity({
 			id: id ?? randomUUID(),
+			position: getCenterPoint(points), // Used for center of label
 			polyline: {
 				positions: points.map(({ lat, lon, alt }) => {
 					return Cesium.Cartesian3.fromDegrees(lon, lat);
@@ -187,16 +317,30 @@ export function createCesiumAdapter(): MapAdapter {
 				}),
 				clampToGround: true,
 			},
+			...(name
+				? {
+						label: {
+							text: name,
+							font: '14pt monospace',
+							style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+							outlineWidth: 2,
+							verticalOrigin: Cesium.VerticalOrigin.TOP,
+							pixelOffset: new Cesium.Cartesian2(0, 32),
+						},
+					}
+				: {}),
 		});
 	}
 	function drawPolygon(
 		points: MapPoint[],
-		borderColor: string | null,
-		fillColor: string | null,
+		borderColor?: string,
+		fillColor?: string,
+		name?: string,
 		id?: string
 	) {
 		return new Cesium.Entity({
 			id: id ?? randomUUID(),
+			// position: getCenterPoint(points), // Used for center of label
 			polygon: {
 				hierarchy: Cesium.Cartesian3.fromDegreesArrayHeights(
 					points.flatMap(({ lat, lon, alt }) => {
@@ -210,27 +354,28 @@ export function createCesiumAdapter(): MapAdapter {
 				outlineWidth: 3,
 				classificationType: Cesium.ClassificationType.TERRAIN,
 			},
+			...(name
+				? {
+						label: {
+							text: name,
+							font: '14pt monospace',
+							style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+							outlineWidth: 2,
+							verticalOrigin: Cesium.VerticalOrigin.TOP,
+							pixelOffset: new Cesium.Cartesian2(0, 32),
+						},
+					}
+				: {}),
 		});
 	}
 
-	function drawMissionPath(waypoints: MapPoint[]) {
-		const positions = waypoints.map((wp: MapPoint) => {
-			return Cesium.Cartesian3.fromDegrees(wp.lon, wp.lat, wp.alt || 0);
-		});
-		const entity = mapView.viewer.entities.add({
-			polyline: {
-				positions: positions,
-				width: 5,
-				material: new Cesium.PolylineOutlineMaterialProperty({
-					color: Cesium.Color.RED,
-					outlineWidth: 2,
-					outlineColor: Cesium.Color.BLACK,
-				}),
-				clampToGround: true,
-			},
-		});
+	function drawMissionPath(waypoints: MapPoint[], systemId: string) {
+		const color = colorHash(systemId).hex;
+		const entity = drawPolyline(waypoints, color);
+		mapView.viewer.entities.add(entity);
 		flightPathPolylines.push(entity);
 	}
+
 	function clearMissionPath() {
 		if (!mapView) return;
 		for (const entity of flightPathPolylines) {
@@ -239,6 +384,29 @@ export function createCesiumAdapter(): MapAdapter {
 		flightPathPolylines = [];
 	}
 
+	async function drawMissionWaypoints(waypoints: MapPoint[], systemId: string) {
+		const color = colorHash(systemId).hex;
+		clearMissionWaypoints();
+		for (let index = 0; index < waypoints.length; index++) {
+			const entity = await drawPoint(
+				waypoints[index],
+				'/icons/waypoint/round-pin.png',
+				color,
+				`WP ${index + 1}`
+			);
+			mapView.viewer.entities.add(entity);
+			waypointEntities.push(entity);
+		}
+		invalidate();
+	}
+
+	function clearMissionWaypoints() {
+		if (!mapView) return;
+		for (const entity of waypointEntities) {
+			mapView.viewer.entities.remove(entity);
+		}
+		waypointEntities = [];
+	}
 	async function addTerrain() {
 		// Assign terrain provider to map
 		if (!terrainProvider) {
@@ -265,6 +433,35 @@ export function createCesiumAdapter(): MapAdapter {
 		}
 	}
 
+	async function addOfflineBuildings() {
+		const viewer = mapView.viewer;
+		if (!viewer) return;
+
+		const dataSource = await Cesium.GeoJsonDataSource.load(
+			import.meta.env.VITE_OFFLINE_BUILDINGS_PATH
+		);
+
+		viewer.dataSources.add(dataSource);
+
+		for (const entity of dataSource.entities.values) {
+			if (!entity.polygon) continue;
+
+			const height =
+				Number(entity.properties?.height_m?.getValue(Cesium.JulianDate.now())) || 5;
+			entity.polygon.height = new Cesium.ConstantProperty(0);
+			entity.polygon.extrudedHeight = new Cesium.ConstantProperty(height);
+			entity.polygon.material = new Cesium.ColorMaterialProperty(
+				Cesium.Color.GRAY.withAlpha(1.0)
+			);
+			entity.polygon.outline = new Cesium.ConstantProperty(true);
+			entity.polygon.outlineColor = new Cesium.ConstantProperty(Cesium.Color.BLACK);
+		}
+
+		await viewer.flyTo(dataSource);
+
+		invalidate();
+	}
+
 	function removeBuildings() {
 		if (buildingsTileset && mapView.viewer) {
 			mapView.viewer.scene.primitives.remove(buildingsTileset);
@@ -284,12 +481,29 @@ export function createCesiumAdapter(): MapAdapter {
 			googlePhotorealistic = await Cesium.createGooglePhotorealistic3DTileset();
 			viewer.scene.primitives.add(googlePhotorealistic);
 		}
+		// The photorealistic tileset ships its own textured surface mesh. Leaving
+		// the globe (ellipsoid + imagery + terrain) visible underneath makes the
+		// two coplanar surfaces z-fight — the shimmer/splotchy effect from #365.
+		// Hide the globe while photoreal is on; selections underneath are kept.
+		viewer.scene.globe.show = false;
+		// The base layer picker only changes imagery/terrain on the now-hidden
+		// globe, so it's inert while photoreal is on — hide it to avoid the
+		// "clicking does nothing" confusion. Selections are preserved underneath.
+		if (viewer.baseLayerPicker?.container) {
+			viewer.baseLayerPicker.container.style.display = 'none';
+		}
 	}
 
 	function removeGooglePhotorealistic() {
 		if (googlePhotorealistic && mapView.viewer) {
 			mapView.viewer.scene.primitives.remove(googlePhotorealistic);
 			googlePhotorealistic = null;
+			// Restore the globe (and its preserved terrain/imagery selections).
+			mapView.viewer.scene.globe.show = true;
+			// Bring back the base layer picker hidden while photoreal was on.
+			if (mapView.viewer.baseLayerPicker?.container) {
+				mapView.viewer.baseLayerPicker.container.style.display = '';
+			}
 		}
 	}
 
@@ -394,26 +608,67 @@ export function createCesiumAdapter(): MapAdapter {
 		invalidate();
 	}
 
-	function updateCirclePreview(
-		center: MapPoint,
-		radius: number,
-		borderColor: string | null,
-		fillColor: string | null
+	/* Geofence Drawing Tools */
+	async function updatePointPreview(
+		point: MapPoint,
+		icon?: string | null,
+		fillColor?: string | null,
+		name?: string | null,
+		id?: string
 	) {
 		// Remove old layer
 		if (previewEntity) clearPreview();
 		// Build new entity
-		previewEntity = drawCircle(center, radius, borderColor, fillColor);
+		previewEntity = await drawPoint(
+			point,
+			icon ?? undefined,
+			fillColor ?? undefined,
+			name ?? undefined,
+			id ?? undefined
+		);
+		// Add to map
+		mapView.viewer.entities.add(previewEntity);
+		invalidate();
+	}
+	function updateCirclePreview(
+		center: MapPoint,
+		radius: number,
+		borderColor?: string | null,
+		fillColor?: string | null,
+		name?: string | null,
+		id?: string
+	) {
+		// Remove old layer
+		if (previewEntity) clearPreview();
+		// Build new entity
+		previewEntity = drawCircle(
+			center,
+			radius,
+			borderColor ?? undefined,
+			fillColor ?? undefined,
+			name ?? undefined,
+			id ?? undefined
+		);
 		// Add to map
 		mapView.viewer.entities.add(previewEntity);
 		invalidate();
 	}
 
-	function updatePolylinePreview(points: MapPoint[], borderColor: string | null) {
+	function updatePolylinePreview(
+		points: MapPoint[],
+		borderColor?: string | null,
+		name?: string | null,
+		id?: string
+	) {
 		// Remove old layer
 		if (previewEntity) clearPreview();
 		// Build new entity
-		previewEntity = drawPolyline(points, borderColor);
+		previewEntity = drawPolyline(
+			points,
+			borderColor ?? undefined,
+			name ?? undefined,
+			id ?? undefined
+		);
 		// Add to map
 		mapView.viewer.entities.add(previewEntity);
 		invalidate();
@@ -422,14 +677,29 @@ export function createCesiumAdapter(): MapAdapter {
 	function updatePolygonPreview(
 		points: MapPoint[],
 		borderColor: string | null,
-		fillColor: string | null
+		fillColor: string | null,
+		name: string | null,
+		id?: string
 	) {
 		// Remove old layer
 		if (previewEntity) clearPreview();
 		// Build new entity
 		if (points.length < 2) return; // Don't build with no points
-		if (points.length === 2) previewEntity = drawPolyline(points, borderColor);
-		else previewEntity = drawPolygon(points, borderColor, fillColor);
+		if (points.length === 2)
+			previewEntity = drawPolyline(
+				points,
+				borderColor ?? undefined,
+				name ?? undefined,
+				id ?? undefined
+			);
+		else
+			previewEntity = drawPolygon(
+				points,
+				borderColor ?? undefined,
+				fillColor ?? undefined,
+				name ?? undefined,
+				id ?? undefined
+			);
 		// Add to map
 		mapView.viewer.entities.add(previewEntity);
 		invalidate();
@@ -441,12 +711,30 @@ export function createCesiumAdapter(): MapAdapter {
 		invalidate();
 	}
 
-	function addGeoOverlay(geoOverlay: GeoOverlay) {
+	async function addGeoOverlay(geoOverlay: GeoOverlay) {
 		if (!geoOverlay) return;
 
 		// Clear preview before adding final geoOverlay
 		clearPreview();
 
+		// Point
+		if (geoOverlay.type === 'Point') {
+			const [lon, lat, alt] = geoOverlay.geometry.coordinates as [number, number, number];
+			const point: MapPoint = {
+				lat,
+				lon,
+				alt,
+			};
+			const newPoint = await drawPoint(
+				point,
+				geoOverlay.geometry.properties.icon,
+				geoOverlay.geometry.properties.fillColor,
+				geoOverlay.name,
+				geoOverlay.uuid
+			);
+			console.log(newPoint);
+			mapView.viewer.entities.add(newPoint);
+		}
 		// Circle
 		if (geoOverlay.type === 'Circle') {
 			const [lon, lat, alt] = geoOverlay.geometry.coordinates as [number, number, number];
@@ -460,6 +748,7 @@ export function createCesiumAdapter(): MapAdapter {
 				geoOverlay.geometry.properties.radius,
 				geoOverlay.geometry.properties.borderColor,
 				geoOverlay.geometry.properties.fillColor,
+				geoOverlay.name,
 				geoOverlay.uuid
 			);
 			mapView.viewer.entities.add(newCircle);
@@ -474,6 +763,7 @@ export function createCesiumAdapter(): MapAdapter {
 					alt,
 				})),
 				geoOverlay.geometry.properties.borderColor,
+				geoOverlay.name,
 				geoOverlay.uuid
 			);
 			mapView.viewer.entities.add(newPolyline);
@@ -489,6 +779,7 @@ export function createCesiumAdapter(): MapAdapter {
 				})),
 				geoOverlay.geometry.properties.borderColor,
 				geoOverlay.geometry.properties.fillColor,
+				geoOverlay.name,
 				geoOverlay.uuid
 			);
 			mapView.viewer.entities.add(newPolygon);
@@ -502,6 +793,22 @@ export function createCesiumAdapter(): MapAdapter {
 		invalidate();
 	}
 
+	function enableClustering() {
+		const viewer = mapView.viewer;
+		const defaultDataSource = viewer.dataSourceDisplay.defaultDataSource;
+		defaultDataSource.clustering.enabled = true;
+		defaultDataSource.clustering.pixelRange = 45;
+		defaultDataSource.clustering.minimumClusterSize = 2;
+		invalidate();
+	}
+
+	function disableClustering() {
+		const viewer = mapView.viewer;
+		const defaultDataSource = viewer.dataSourceDisplay.defaultDataSource;
+		defaultDataSource.clustering.enabled = false;
+		invalidate();
+	}
+
 	return {
 		init,
 		destroy,
@@ -509,18 +816,24 @@ export function createCesiumAdapter(): MapAdapter {
 		removeLayer,
 		setCursor,
 		onClick,
+		onRightClick,
 		onMouseMove,
 		flyToPoint,
 		updateMarker,
+		addMarker,
+		removeMarker,
 		drawPoint,
 		drawCircle,
 		drawPolyline,
 		drawPolygon,
+		drawMissionWaypoints,
+		clearMissionWaypoints,
 		drawMissionPath,
 		clearMissionPath,
 		addTerrain,
 		removeTerrain,
 		addBuildings,
+		addOfflineBuildings,
 		removeBuildings,
 		addGooglePhotorealistic,
 		removeGooglePhotorealistic,
@@ -528,11 +841,14 @@ export function createCesiumAdapter(): MapAdapter {
 		removeMapLayer,
 		destroyAllLayers,
 		rebuildMapLayers,
+		updatePointPreview,
 		updateCirclePreview,
 		updatePolylinePreview,
 		updatePolygonPreview,
 		clearPreview,
 		addGeoOverlay,
 		removeGeoOverlay,
+		enableClustering,
+		disableClustering,
 	};
 }

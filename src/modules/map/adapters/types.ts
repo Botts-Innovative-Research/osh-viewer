@@ -9,7 +9,8 @@ export interface MapAdapter {
 	addLayer(layer: any): void;
 	removeLayer(layer: any): Promise<void>;
 
-	onClick(handler: MapPointHandler): () => void;
+	onClick(handler: MapPointHandler): () => void; // Left click - DEFAULT
+	onRightClick(handler: MapPointHandler): () => void; // Right click
 	onMouseMove(handler: MapPointHandler): () => void;
 	setCursor(mode: CursorMode): void;
 	flyToPoint(location: { x: number; y: number; z: number }): void;
@@ -17,33 +18,59 @@ export interface MapAdapter {
 	updateMarker(props: any): void;
 
 	/* Map Drawing */
-	drawPoint(point: MapPoint): any;
+	addMarker(marker: any): void;
+	removeMarker(marker: any): void;
+	drawPoint(point: MapPoint, icon?: string, iconColor?: string, label?: string, id?: string): any;
 	drawCircle(
 		center: MapPoint,
 		radius: number,
-		borderColor: string | null,
-		fillColor: string | null
+		borderColor?: string,
+		fillColor?: string,
+		name?: string,
+		id?: string
 	): any;
-	drawPolyline(points: MapPoint[], borderColor: string | null): any;
-	drawPolygon(points: MapPoint[], borderColor: string | null, fillColor: string | null): any;
+	drawPolyline(points: MapPoint[], borderColor?: string, name?: string, id?: string): any;
+	drawPolygon(
+		points: MapPoint[],
+		borderColor?: string,
+		fillColor?: string,
+		name?: string,
+		id?: string
+	): any;
 
 	/* Mission Builder */
-	drawMissionPath(waypoints: MapPoint[]): void;
-	clearMissionPath(): void;
+	drawMissionWaypoints(waypoints: MapPoint[], systemId: string): void;
+	clearMissionWaypoints(): void; // Clear all missions
+	drawMissionPath(waypoints: MapPoint[], systemId: string): void;
+	clearMissionPath(): void; // Clear all missions
 
 	/* GeoOverlay */
+	updatePointPreview(
+		point: MapPoint,
+		icon?: string | null,
+		fillColor?: string | null,
+		name?: string | null,
+		id?: string
+	): void;
 	updateCirclePreview(
 		center: MapPoint,
 		radius: number,
-		borderColor: string | null,
-		fillColor: string | null,
+		borderColor?: string | null,
+		fillColor?: string | null,
+		name?: string | null,
 		id?: string
 	): void;
-	updatePolylinePreview(points: MapPoint[], borderColor: string | null, id?: string): void;
+	updatePolylinePreview(
+		points: MapPoint[],
+		borderColor?: string | null,
+		name?: string | null,
+		id?: string
+	): void;
 	updatePolygonPreview(
 		points: MapPoint[],
-		borderColor: string | null,
-		fillColor: string | null,
+		borderColor?: string | null,
+		fillColor?: string | null,
+		name?: string | null,
 		id?: string
 	): void;
 	clearPreview(): void;
@@ -54,6 +81,7 @@ export interface MapAdapter {
 	addTerrain?(): void;
 	removeTerrain?(): void;
 	addBuildings?(): void;
+	addOfflineBuildings?(): void;
 	removeBuildings?(): void;
 	addGooglePhotorealistic?(): void;
 	removeGooglePhotorealistic?(): void;
@@ -61,4 +89,6 @@ export interface MapAdapter {
 	removeMapLayer?(id: string): void;
 	destroyAllLayers?(): void;
 	rebuildMapLayers?(layers: MapLayer[]): void;
+	enableClustering?(): void;
+	disableClustering?(): void;
 }

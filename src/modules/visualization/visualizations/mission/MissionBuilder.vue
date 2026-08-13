@@ -3,6 +3,7 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import MissionCommandPad from './MissionCommandPad.vue';
+import LongPressButton from '@/components/ui/LongPressButton.vue';
 import PanelVisualizationWrapper from '../../sidebar/components/PanelVisualizationWrapper.vue';
 import PlanMission from './PlanMission.vue';
 import MissionSummaryDialog from './MissionSummaryDialog.vue';
@@ -56,18 +57,9 @@ const minimapViz = computed(() =>
 );
 
 
-function detectVehicleType(viz: OSHVisualization): string {
-	const hasGroundControls =
-		!!getControlstreamByRole('driveVelocity', viz) ||
-		!!getControlstreamByRole('driveLocation', viz) ||
-		!!getControlstreamByRole('driveMode', viz);
-	const hasAerialControls =
-		!!getControlstreamByRole('takeoff', viz) ||
-		!!getControlstreamByRole('land', viz) ||
-		!!getControlstreamByRole('offboard', viz);
-
-	if (hasGroundControls && !hasAerialControls) return 'Ground Rover';
-	return 'UAV';
+function getVehicleTypeForViz(vizId: string): string {
+	const planRef = planMissionRefs.value.get(vizId);
+	return planRef?.vehicleType ?? '';
 }
 function onSetHome(location: { lat: number; lon: number }, viz: OSHVisualization) {
 	const cs = getControlstreamByRole('homePos', viz);
@@ -76,7 +68,7 @@ function onSetHome(location: { lat: number; lon: number }, viz: OSHVisualization
 	sendCommand(
 		`${protocol}://${cs.endpointUrl}`,
 		cs.id,
-		{ parameters: { locationVectorLL: { Latitude: location.lat, Longitude: location.lon } } },
+		{ parameters: { locationVectorLL: { lat: location.lat, lon: location.lon } } },
 		`${cs.connectorOpts.username}:${cs.connectorOpts.password}`
 	);
 }
@@ -239,7 +231,7 @@ const allMissionSummaries = computed<MissionSummary[]>(() => {
 			summaries.push({
 				name: viz.name,
 				missionSource: 'waypoints',
-				vehicleType: detectVehicleType(viz),
+				vehicleType: getVehicleTypeForViz(viz.id),
 				waypointCount: planRef.waypoints.length,
 				cruiseSpeed: planRef.cruiseSpeed,
 				waypointAltitude: planRef.waypointAltitude,
@@ -274,6 +266,25 @@ onBeforeUnmount(() => {
 	}
 	missionStore.clearMissionWaypoints();
 });
+
+const hasAnyRtl = computed(() =>
+	validVisualizations.value.some((viz) => getControlstreamByRole('rtl', viz))
+);
+
+function returnAllHome() {
+  for (const viz of validVisualizations.value) {
+    const cs = getControlstreamByRole('rtl', viz);
+    if (!cs) continue;
+    const protocol = cs.tls ? 'https' : 'http';
+    sendCommand(
+        `${protocol}://${cs.endpointUrl}`,
+        cs.id,
+        { parameters: { rtl: true } },
+        `${cs.connectorOpts.username}:${cs.connectorOpts.password}`,
+        "All systems RTL"
+		);
+	}
+}
 
 const hasCommandPad = computed(
 	() =>
@@ -323,13 +334,23 @@ const hasCommandPad = computed(
 			>
 				<v-icon
 					start
-					:icon="detectVehicleType(viz) === 'Ground Rover' ? 'mdi-car' : 'mdi-quadcopter'"
+					:icon="getVehicleTypeForViz(viz.id) === 'Ground Rover' || getVehicleTypeForViz(viz.id) === 'Surface Boat' ? 'mdi-car' : getVehicleTypeForViz(viz.id) === 'Submarine' ? 'mdi-submarine' : getVehicleTypeForViz(viz.id) === 'UAV' ? 'mdi-quadcopter' : 'mdi-robot'"
 					size="small"
 				/>
 				{{ viz.name }}
 			</v-chip>
 		</div>
 
+    <LongPressButton
+        v-if="hasAnyRtl"
+        class="mt-4"
+        icon="mdi-home"
+        label="Return All Home"
+        color="warning"
+        tooltip="Send RTL command to all systems."
+        :duration="1200"
+        @confirm="returnAllHome"
+    />
     <v-sheet v-if="!noController && activeSystemState">
       <v-card v-if="minimapViewActive && minimapViz" class="minimap-card">
         <div class="d-flex align-center justify-space-between px-2 pt-1">
@@ -420,7 +441,6 @@ const hasCommandPad = computed(
 							:mission-control-stream="getControlstreamByRole('roverPlan', viz) ?? getControlstreamByRole('plan', viz)"
 							:no-controller="false"
 							:system-id="viz.id"
-							:vehicle-type="detectVehicleType(viz)"
               @set-home="(loc) => onSetHome(loc, viz)"
 						/>
 					</div>

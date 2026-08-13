@@ -3,19 +3,23 @@ import { ref, Ref } from 'vue';
 // @ts-ignore
 import { MapLayer } from '@/modules/map/adapters/cesium.adapter';
 import { fetchLayerFromUrl } from '@/modules/map/services/cesiumLayer.service';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { GeoOverlay } from '@/modules/map/geo-overlay/types';
+import { MapPoint } from '@/modules/map/types';
 
 export const useMapStore = defineStore(
 	'map',
 	() => {
-		const selectedMapItem: Ref<any | null> = ref(null); // Currently selected map item from list of map visualizations
+		const selectedMapItem: Ref<OSHVisualization | GeoOverlay | null> = ref(null); // Currently selected map item from list of map visualizations
 		const currentLLA: Ref<{ latitude: number; longitude: number; altitude: number } | null> =
 			ref(null); // Currently selected LLA coordinates
+		const tempLLA: Ref<MapPoint | null> = ref(null); // Right-clicked LLA coordinates
 
 		/* CESIUM */
 		const cesiumMapLayers: Ref<MapLayer[]> = ref([]);
 
 		// Handle selection of map item
-		function setSelectedMapItem(item: any | null) {
+		function setSelectedMapItem(item: OSHVisualization | GeoOverlay | null) {
 			selectedMapItem.value = item;
 		}
 
@@ -25,6 +29,14 @@ export const useMapStore = defineStore(
 		}
 		function clearCurrentLLA() {
 			currentLLA.value = null;
+		}
+
+		// Handle temp LLA coordinates (for right-click)
+		function setTempLLA(point: MapPoint) {
+			tempLLA.value = point;
+		}
+		function clearTempLLA() {
+			tempLLA.value = null;
 		}
 
 		// Cesium
@@ -39,10 +51,13 @@ export const useMapStore = defineStore(
 		return {
 			selectedMapItem,
 			currentLLA,
+			tempLLA,
 			cesiumMapLayers,
 			setSelectedMapItem,
 			setCurrentLLA,
 			clearCurrentLLA,
+			setTempLLA,
+			clearTempLLA,
 			addLayer,
 			removeLayer,
 		};

@@ -455,6 +455,8 @@ export class OSHVisualization {
 	}
 }
 
+export type BBox = [minLon: number, minLat: number, maxLon: number, maxLat: number];
+
 /**
  * Follows GeoJSON format, with optional systemId property for OSH FOIs
  */
@@ -463,7 +465,7 @@ export class Geometry {
 	type: string;
 	coordinates: number[] | number[][];
 	properties?: any;
-	bbox?: number[] | undefined;
+	bbox?: BBox;
 	systemId?: string | undefined;
 
 	constructor(
@@ -471,14 +473,14 @@ export class Geometry {
 		type: string,
 		coordinates: number[] | number[][],
 		properties?: any,
-		bbox?: number[],
+		bbox?: BBox,
 		systemId?: string
 	) {
 		this.id = id;
 		this.type = type;
 		this.coordinates = coordinates;
 		this.properties = properties || {};
-		this.bbox = bbox;
+		this.bbox = bbox ?? Geometry.computeBBox(type, coordinates, properties);
 		this.systemId = systemId;
 	}
 
@@ -491,6 +493,48 @@ export class Geometry {
 			properties: this.properties,
 			bbox: this.bbox,
 		};
+	}
+
+	/* BBox computations */
+	static computeBBox(type: string, coordinates: number[] | number[][], properties: any) {
+		switch (type) {
+			case 'Point':
+				return Geometry.pointBBox(coordinates as number[]);
+			case 'LineString':
+			case 'Polygon':
+				return Geometry.geometryBBox(coordinates as number[][]);
+			case 'Circle':
+				return Geometry.circleBBox(
+					coordinates as [lon: number, lat: number],
+					properties.radius!
+				);
+		}
+	}
+	static pointBBox(coordinate: number[]): BBox {
+		const [lon, lat] = coordinate;
+		return [lon, lat, lon, lat];
+	}
+
+	static geometryBBox(coordinates: number[][]): BBox {
+		let minLon = Infinity;
+		let minLat = Infinity;
+		let maxLon = -Infinity;
+		let maxLat = -Infinity;
+
+		for (const [lon, lat] of coordinates) {
+			minLon = Math.min(minLon, lon);
+			minLat = Math.min(minLat, lat);
+			maxLon = Math.max(maxLon, lon);
+			maxLat = Math.max(maxLat, lat);
+		}
+
+		return [minLon, minLat, maxLon, maxLat];
+	}
+	static circleBBox(center: [number, number], radiusMeters: number): BBox {
+		const [lon, lat] = center;
+		const latDelta = radiusMeters / 111_320;
+		const lonDelta = radiusMeters / (111_320 * Math.cos((lat * Math.PI) / 180));
+		return [lon - lonDelta, lat - latDelta, lon + lonDelta, lat + latDelta];
 	}
 }
 
