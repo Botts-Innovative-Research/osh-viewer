@@ -1,3 +1,4 @@
+import { AudioDescriptor } from '../visualizations/audio/Descriptor';
 import { ChartDescriptor } from '../visualizations/chart/Descriptor';
 import { GeoPtzDescriptor } from '../visualizations/geoptz/Descriptor';
 import { LobDescriptor } from '../visualizations/lob/Descriptor';
@@ -27,6 +28,7 @@ export const VisualizationRegistry: { [key: string]: VisualizationDescriptor } =
 	[EllipseDescriptor.id]: EllipseDescriptor,
 	[SigIntDescriptor.id]: SigIntDescriptor,
 	[PolylineDescriptor.id]: PolylineDescriptor,
+	[AudioDescriptor.id]: AudioDescriptor,
 	[FrustumDescriptor.id]: FrustumDescriptor,
 	[MiniMapDescriptor.id]: MiniMapDescriptor,
 };

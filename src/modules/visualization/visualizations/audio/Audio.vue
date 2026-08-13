@@ -1,0 +1,151 @@
+<script setup lang="ts">
+import { onMounted, ref, toRaw } from 'vue';
+import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
+import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
+import { createDatasource } from '@/modules/visualization/services/datasource.service';
+import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
+import { IConSysApiDataSourceProperties } from '../../types/datasource';
+import AudioSpectrogramVisualizer
+    from "osh-js/source/core/ui/view/audio/visualizer/spectrogram/AudioSpectrogramVisualizer";
+import AudioView from 'osh-js/source/core/ui/view/audio/AudioView';
+import AudioFrequencyChartJsVisualizer from 'osh-js/source/core/ui/view/audio/visualizer/frequency/AudioFrequencyChartJsVisualizer';
+import AudioTimeChartJsVisualizer from 'osh-js/source/core/ui/view/audio/visualizer/time/AudioTimeChartJsVisualizer';
+import AudioDataLayer from 'osh-js/source/core/ui/layer/AudioDataLayer';
+import { IAudioLayerProperties } from '../../types/layers';
+import { IAudioViewProperties } from '../../types/views';
+import { Chart, LinearScale, TimeScale, CategoryScale, LineController, BarController, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
+
+Chart.register(LinearScale, TimeScale, CategoryScale, LineController, BarController, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
+
+const props = defineProps<{
+	visualization: OSHVisualization;
+	datasource: IConSysApiDataSourceProperties[];
+	audioDataLayer: IAudioLayerProperties[];
+	audioView: IAudioViewProperties;
+}>();
+
+const audioId = ref(props.visualization.id);
+const audioLayer = ref<any>(null);
+let audioViewInstance = ref<AudioView | null>(null);
+
+onMounted(async () => {
+  initializeAudio();
+});
+
+// Array of ConSysApi instances for datasources
+const dsInstances = ref<(typeof ConSysApi)[]>([]);
+
+function initializeAudio() {
+   const viz = props.visualization;
+   if (!viz || viz.type !== 'audio') return;
+
+   const dsArray: IConSysApiDataSourceProperties[] = props.datasource;
+
+   let getSampleRate: any;
+   let getFrameData: any;
+   let getTimestamp: any;
+
+   for (const dsProps of dsArray) {
+        const rawDs = toRaw(dsProps);
+        const dsInstance = createDatasource(dsProps);
+
+        if (rawDs.properties.sampleRate) {
+            getSampleRate = {
+                dataSourceIds: [dsInstance.id],
+                handler: (rec: any) => rec[rawDs.properties.sampleRate.property],
+            };
+        }
+        if (rawDs.properties.samples) {
+            getFrameData = {
+                dataSourceIds: [dsInstance.id],
+                handler: (rec: any) => rec[rawDs.properties.samples.property],
+            };
+        }
+        getTimestamp = {
+            dataSourceIds: [dsInstance.id],
+            handler: (rec: any) => new Date(rec.time).getTime(),
+        };
+
+        dsInstance.connect();
+        dsInstances.value.push(dsInstance);
+        console.log('[Audio.vue] Audio datasource created:', dsInstance);
+    }
+
+   const layerOpts = props.audioDataLayer;
+   audioLayer.value = new AudioDataLayer({
+        ...layerOpts,
+        dataSourceIds: dsInstances.value.map((ds) => ds.id),
+        ...(getSampleRate ? { getSampleRate } : {}),
+        ...(getFrameData ? { getFrameData } : {}),
+        ...(getTimestamp ? { getTimestamp } : {}),
+    });
+
+    audioViewInstance.value = new AudioView({
+            ...props.audioView,
+            container: audioId.value,
+            dataSource: dsInstances.value[0],
+            playSound: false,
+            layers: [audioLayer.value],
+       });
+
+   if (props.audioView?.showSpectrogram ?? true) {
+       const audioSpectrogramVisualizer = new AudioSpectrogramVisualizer({
+           fftSize: props.audioView?.spectrogramOptions?.fftSize ?? 2048,
+           colorScale: props.audioView?.spectrogramOptions?.colorScale ?? 'jet',
+           container: `spectrogram-${audioId.value}`,
+       });
+       audioViewInstance.value.addVisualizer(audioSpectrogramVisualizer);
+   }
+
+  if (props.audioView?.showChartTime) {
+       const audioChartTimeVisualizer = new AudioTimeChartJsVisualizer({
+           fftSize: 1024,
+           container: `chart-time-${audioId.value}`,
+       });
+       audioViewInstance.value.addVisualizer(audioChartTimeVisualizer);
+  }
+
+  if (props.audioView?.showChartFreq)  {
+       const audioChartFreqVisualizer = new AudioFrequencyChartJsVisualizer({
+           fftSize: 32,
+           container: `chart-freq-${audioId.value}`,
+           options: {},
+           datasetOptions: {
+               borderColor: 'rgba(0,0,0,0.5)',
+               backgroundColor: 'rgba(210,210,210,0.8)',
+               barThickness: 20,
+               borderWidth: 1,
+           },
+       });
+       audioViewInstance.value.addVisualizer(audioChartFreqVisualizer);
+  }
+
+   console.log('[Audio.vue] Audio view created:', audioViewInstance.value);
+ }
+
+useVisualizationCleanup(dsInstances);
+</script>
+
+<template>
+  <v-sheet class="audio-card pa-4">
+    <div :id="audioId"></div>
+    <div v-if="audioView?.showSpectrogram ?? true" :id="`spectrogram-${audioId}`" class="audio-visualizer"></div>
+    <div v-if="audioView?.showChartTime" :id="`chart-time-${audioId}`" class="audio-chart"></div>
+    <div v-if="audioView?.showChartFreq" :id="`chart-freq-${audioId}`" class="audio-chart"></div>
+  </v-sheet>
+</template>
+
+<style scoped>
+.audio-card {
+  height: auto;
+}
+.audio-visualizer {
+    height: 200px;
+    width: 300px;
+}
+.audio-chart {
+    height: 200px;
+    width: 300px;
+}
+</style>
