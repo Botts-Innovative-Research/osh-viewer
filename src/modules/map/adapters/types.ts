@@ -9,7 +9,8 @@ export interface MapAdapter {
 	addLayer(layer: any): void;
 	removeLayer(layer: any): Promise<void>;
 
-	onClick(handler: MapPointHandler): () => void;
+	onClick(handler: MapPointHandler): () => void; // Left click - DEFAULT
+	onRightClick(handler: MapPointHandler): () => void; // Right click
 	onMouseMove(handler: MapPointHandler): () => void;
 	setCursor(mode: CursorMode): void;
 	flyToPoint(location: { x: number; y: number; z: number }): void;
@@ -80,6 +81,7 @@ export interface MapAdapter {
 	addTerrain?(): void;
 	removeTerrain?(): void;
 	addBuildings?(): void;
+	addOfflineBuildings?(): void;
 	removeBuildings?(): void;
 	addGooglePhotorealistic?(): void;
 	removeGooglePhotorealistic?(): void;
@@ -87,6 +89,6 @@ export interface MapAdapter {
 	removeMapLayer?(id: string): void;
 	destroyAllLayers?(): void;
 	rebuildMapLayers?(layers: MapLayer[]): void;
-    enableClustering?(): void;
-    disableClustering?(): void;
+	enableClustering?(): void;
+	disableClustering?(): void;
 }

@@ -3,7 +3,7 @@ import L from 'leaflet';
 import { MapAdapter } from './types';
 import { MapPoint, MapPointHandler } from '@/modules/map/types';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
-import {colorHash, getColoredIconUrl} from '@/modules/map/services/colorId.service';
+import { colorHash, getColoredIconUrl } from '@/modules/map/services/colorId.service';
 import { ICON_BASE } from '@/lib/icons';
 
 export function createLeafletAdapter(): MapAdapter {
@@ -15,10 +15,42 @@ export function createLeafletAdapter(): MapAdapter {
 	let previewEntity: any = null;
 
 	async function init(container: string) {
+		const onlineLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			maxZoom: 19,
+			attribution: '© OpenStreetMap contributors',
+		});
+
+		let offlineLayer: L.TileLayer | undefined;
+
+		if (import.meta.env.VITE_OFFLINE_MAP_ENABLED === 'true') {
+			offlineLayer = L.tileLayer(`${import.meta.env.VITE_OFFLINE_MAP_PATH}/{z}/{x}/{y}.png`, {
+				minZoom: Number(import.meta.env.VITE_OFFLINE_MAP_MIN_ZOOM),
+				maxZoom: Number(import.meta.env.VITE_OFFLINE_MAP_MAX_ZOOM),
+			});
+		}
+
 		mapView = new LeafletView({
 			container,
 			layers: [],
 			autoZoomOnFirstMarker: true,
+
+			baseLayers: {
+				'Online OSM': onlineLayer,
+
+				...(offlineLayer
+					? {
+							[import.meta.env.VITE_OFFLINE_MAP_NAME]: offlineLayer,
+						}
+					: {}),
+			},
+
+			defaultLayer: onlineLayer,
+
+			initialView: {
+				lat: Number(import.meta.env.VITE_OFFLINE_MAP_LAT),
+				lon: Number(import.meta.env.VITE_OFFLINE_MAP_LON),
+				zoom: Number(import.meta.env.VITE_OFFLINE_MAP_ZOOM),
+			},
 		});
 	}
 	function destroy() {
@@ -46,6 +78,19 @@ export function createLeafletAdapter(): MapAdapter {
 
 		return () => {
 			mapView.map.off('click', clickFn);
+		};
+	}
+	function onRightClick(handler: MapPointHandler) {
+		const map = mapView.map;
+
+		const handleRightClick = (event: L.LeafletMouseEvent) => {
+			handler(event.latlng.lat, event.latlng.lng, 0);
+		};
+
+		map.on('contextmenu', handleRightClick);
+
+		return () => {
+			map.off('contextmenu', handleRightClick);
 		};
 	}
 	function onMouseMove(handler: MapPointHandler) {
@@ -151,7 +196,7 @@ export function createLeafletAdapter(): MapAdapter {
 	}
 
 	function drawMissionPath(waypoints: MapPoint[], systemId: string) {
-        const color = colorHash(systemId).hex;
+		const color = colorHash(systemId).hex;
 		const polyline = drawPolyline(waypoints, color);
 		polyline.addTo(mapView.map);
 		flightPathPolylines.push(polyline);
@@ -165,9 +210,9 @@ export function createLeafletAdapter(): MapAdapter {
 	}
 
 	async function drawMissionWaypoints(waypoints: MapPoint[], systemId: string) {
-        const color = colorHash(systemId).hex;
+		const color = colorHash(systemId).hex;
 
-        clearMissionWaypoints();
+		clearMissionWaypoints();
 		for (let index = 0; index < waypoints.length; index++) {
 			const marker = await drawPoint(
 				waypoints[index],
@@ -367,6 +412,7 @@ export function createLeafletAdapter(): MapAdapter {
 		removeLayer,
 		setCursor,
 		onClick,
+		onRightClick,
 		onMouseMove,
 		flyToPoint,
 		updateMarker,
