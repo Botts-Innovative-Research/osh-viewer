@@ -43,8 +43,8 @@ export const useMapStore = defineStore(
 		}
 
 		// Offline Map Layers
-		function addOfflineMapLayer(newLayer: OfflineMapLayer) {
-			offlineMapLayers.value.push(newLayer);
+		function addOfflineMapLayer(map: OfflineMapLayer) {
+			offlineMapLayers.value.push(map);
 		}
 		function removeOfflineMapLayer(id: string) {
 			offlineMapLayers.value = offlineMapLayers.value.filter(

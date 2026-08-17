@@ -1,7 +1,7 @@
 import LeafletView from 'osh-js/source/core/ui/view/map/LeafletView';
 import L from 'leaflet';
 import { MapAdapter } from './types';
-import { MapPoint, MapPointHandler } from '@/modules/map/types';
+import { MapPoint, MapPointHandler, OfflineMapLayer } from '@/modules/map/types';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 import { colorHash, getColoredIconUrl } from '@/modules/map/services/colorId.service';
 import { ICON_BASE } from '@/lib/icons';
@@ -11,51 +11,48 @@ export function createLeafletAdapter(): MapAdapter {
 	let flightPathPolylines: any[] = [];
 	let waypointMarkers: any[] = [];
 
+	/* Offline Map Layers */
+	let offlineMapLayers = new Map<string, L.tileLayer>();
+
 	/* GeoOverlays */
 	let previewEntity: any = null;
 
 	async function init(container: string) {
-		const onlineLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-			maxZoom: 19,
-			attribution: '© OpenStreetMap contributors',
-		});
-
-		let offlineLayer: L.TileLayer | undefined;
-
-		if (import.meta.env.VITE_OFFLINE_MAP_ENABLED === 'true') {
-			offlineLayer = L.tileLayer(`${import.meta.env.VITE_OFFLINE_MAP_PATH}/{z}/{x}/{y}.png`, {
-				minZoom: Number(import.meta.env.VITE_OFFLINE_MAP_MIN_ZOOM),
-				maxZoom: Number(import.meta.env.VITE_OFFLINE_MAP_MAX_ZOOM),
-			});
-		}
-
 		mapView = new LeafletView({
 			container,
 			layers: [],
 			autoZoomOnFirstMarker: true,
-
-			baseLayers: {
-				'Online OSM': onlineLayer,
-
-				...(offlineLayer
-					? {
-							[import.meta.env.VITE_OFFLINE_MAP_NAME]: offlineLayer,
-						}
-					: {}),
-			},
-
-			defaultLayer: onlineLayer,
-
-			initialView: {
-				lat: Number(import.meta.env.VITE_OFFLINE_MAP_LAT),
-				lon: Number(import.meta.env.VITE_OFFLINE_MAP_LON),
-				zoom: Number(import.meta.env.VITE_OFFLINE_MAP_ZOOM),
-			},
 		});
 	}
 	function destroy() {
 		mapView?.destroy();
 		mapView = null;
+	}
+
+	function addOfflineMapLayer(map: OfflineMapLayer) {
+		if (offlineMapLayers.has(map.id)) {
+			console.log('Map with this ID already exists');
+		}
+
+		// Create tile layer
+		const newOfflineLayer = L.tileLayer(`${map.fileServerUrl}/${map.mapPath}/{z}/{x}/{y}.png`, {
+			minZoom: map.minZoom,
+			maxZoom: map.maxZoom,
+		});
+		offlineMapLayers.set(map.id, newOfflineLayer);
+
+		// Add to LeafletView
+		mapView?.map.addLayer(newOfflineLayer);
+
+		// Fly to center of new map and fix zoom
+		mapView.map.flyTo([map.lat, map.lon], map.minZoom);
+	}
+	function removeOfflineMapLayer(id: string) {
+		const layer = offlineMapLayers.get(id);
+		if (!layer) return;
+
+		mapView.map.removeLayer(layer);
+		offlineMapLayers.delete(id);
 	}
 
 	function addLayer(layer: any) {
@@ -408,6 +405,8 @@ export function createLeafletAdapter(): MapAdapter {
 	return {
 		init,
 		destroy,
+		addOfflineMapLayer,
+		removeOfflineMapLayer,
 		addLayer,
 		removeLayer,
 		setCursor,

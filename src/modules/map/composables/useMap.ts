@@ -158,6 +158,41 @@ export function useMap() {
 	watch(mapType, async () => {
 		await switchMap();
 	});
+	watch(
+		() => settingsStore.enableOfflineMaps,
+		async (enabled) => {
+			if (!mapAdapter.value) return;
+
+			console.log('Updated toggle', enabled);
+			// if (enabled) {
+			// mapAdapter.value.addOfflineMapLayer();
+			// } else {
+			// 	mapAdapter.value.removeBuildings?.();
+			// }
+		}
+	);
+	watch(
+		() => mapStore.offlineMapLayers.map((map) => map.id),
+		(newIds, oldIds = []) => {
+			const newSet = new Set(newIds);
+			const oldSet = new Set(oldIds);
+
+			// Removed
+			for (const id of oldSet) {
+				if (!newSet.has(id)) {
+					mapAdapter.value?.removeOfflineMapLayer(id);
+				}
+			}
+
+			// Added
+			for (const map of mapStore.offlineMapLayers) {
+				if (!oldSet.has(map.id)) {
+					mapAdapter.value?.addOfflineMapLayer(map);
+				}
+			}
+		},
+		{ immediate: true }
+	);
 
 	/* DATASOURCE MANAGEMENT */
 	function connectDatasources() {
