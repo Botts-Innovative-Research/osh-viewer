@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import { VisualizationComponentEmits } from '../../registry/VisualizationRegistry';
 import SliderValueControl from '../../wizard/customizations/SliderValueControl.vue';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
@@ -12,6 +12,20 @@ const vizwizStore = useVizWizStore();
 const showLineColor = computed(() => (vizwizStore.dsConfig.polylineColor ? false : true));
 
 const openPanels = ref<string[]>(['general', 'line']);
+
+const maxPoints = ref<number>(200);
+
+watch(maxPoints, (val) => {
+	vizwizStore.updateVisualizationCustomizationOptions({ maxPoints: val });
+});
+
+onMounted(() => {
+	if (!vizwizStore.visualizationCustomizationOptions['maxPoints']) {
+		vizwizStore.updateVisualizationCustomizationOptions({ maxPoints: maxPoints.value });
+	} else {
+		maxPoints.value = vizwizStore.visualizationCustomizationOptions['maxPoints'];
+	}
+});
 
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>();
@@ -99,6 +113,20 @@ useComponentValidation(valid, emit);
 						}
 					"
 				></slider-value-control>
+
+				<v-text-field
+					v-model.number="maxPoints"
+					type="number"
+					label="Max Points"
+					:rules="[
+						(v: number) => v >= 1 || 'Must be at least 1',
+						(v: number) => v <= 10000 || 'Must be at most 10,000',
+					]"
+					min="1"
+					max="10000"
+					hint="Number of points to display (1 - 10,000)"
+					persistent-hint
+				></v-text-field>
 			</v-expansion-panel-text>
 		</v-expansion-panel>
 	</v-expansion-panels>

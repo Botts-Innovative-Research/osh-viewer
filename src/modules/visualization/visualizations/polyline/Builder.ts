@@ -64,6 +64,7 @@ export function CreatePolylineVizProps(
 		color: visOptions.color,
 		weight: visOptions.weight,
 		opacity: visOptions.opacity,
+		maxPoints: visOptions.maxPoints,
 		iconName: 'vector-polyline', // For map visualizations list icon
 	};
 
