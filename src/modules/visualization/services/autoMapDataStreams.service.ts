@@ -17,12 +17,14 @@ const dsRoleKeywords: Record<string, string[]> = {
 	x: ['time', 'timestamp'],
 	y: [], //tbd
 	// lob
-	bearing: ['bearing', 'azimuth', 'angle', 'line of bearing'],
+	bearing: ['bearing', 'azimuth', 'angle', 'line of bearing', 'LOB'],
 	// text
 	stream: [''],
 	// ellipse
 	semiMajorAxis: [''],
 	semiMinorAxis: [''],
+	// point marker
+	iconLabel: [''],
 };
 
 export function autoMapDataStreams(
