@@ -78,7 +78,8 @@ function preventContextMenu(e: Event) {
   position: absolute;
   inset: 0;
   width: 0;
-  background: rgba(255, 255, 255, 0.2);
+  background: currentColor;
+  opacity: 0.2;
   z-index: 0;
   pointer-events: none;
   border-radius: 8px;
