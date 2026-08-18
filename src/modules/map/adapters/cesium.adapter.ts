@@ -2,7 +2,7 @@ import * as Cesium from 'cesium';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
 import { MapAdapter } from './types';
 import { Ion } from 'cesium';
-import { CursorMode, MapPoint, MapPointHandler } from '@/modules/map/types';
+import { CursorMode, MapPoint, MapPointHandler, OfflineMapLayer } from '@/modules/map/types';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { colorHash, getColoredIconUrl } from '@/modules/map/services/colorId.service';
@@ -35,53 +35,19 @@ export function createCesiumAdapter(): MapAdapter {
 	let flightPathPolylines: any[] = [];
 	let waypointEntities: any[] = [];
 
+	/* Offline Map Layers */
+	let offlineMapLayers = new Map<string, any>();
+
 	/* GeoOverlays */
 	let previewEntity: any = null;
 
 	async function init(container: string) {
-		// OFFLINE MAP
-		const offlineEnabled = import.meta.env.VITE_OFFLINE_MAP_ENABLED === 'true';
-
 		mapView = new CesiumView({
 			container,
 			autoZoomOnFirstMarker: true,
 			layers: [],
-			...(offlineEnabled
-				? {}
-				: {
-						geocoder: Cesium.IonGeocodeProviderType.GOOGLE,
-					}),
+			geocoder: Cesium.IonGeocodeProviderType.GOOGLE,
 		});
-
-		if (offlineEnabled) {
-			const offlineMapPath = import.meta.env.VITE_OFFLINE_MAP_PATH;
-			const offlineMapMaxZoom = Number(import.meta.env.VITE_OFFLINE_MAP_MAX_ZOOM);
-			const offlineMapLat = Number(import.meta.env.VITE_OFFLINE_MAP_LAT);
-			const offlineMapLon = Number(import.meta.env.VITE_OFFLINE_MAP_LON);
-
-			console.log('Offline map enabled');
-			console.log('Offline map URL:', `${offlineMapPath}/{z}/{x}/{y}.png`);
-
-			// Remove Cesium's default imagery
-			mapView.viewer.imageryLayers.removeAll();
-
-			// Create local XYZ imagery provider
-			const offlineProvider = new Cesium.UrlTemplateImageryProvider({
-				url: `${offlineMapPath}/{z}/{x}/{y}.png`,
-				tilingScheme: new Cesium.WebMercatorTilingScheme(),
-				maximumLevel: offlineMapMaxZoom,
-				credit: 'Offline Map',
-			});
-
-			mapView.viewer.imageryLayers.addImageryProvider(offlineProvider);
-			mapView.viewer.scene.globe.show = true;
-
-			// Move camera over the offline map
-			mapView.viewer.camera.flyTo({
-				destination: Cesium.Cartesian3.fromDegrees(offlineMapLon, offlineMapLat, 3000),
-				duration: 0,
-			});
-		}
 
 		// CESIUM TERRAIN / DEPTH
 		mapView.viewer.scene.globe.depthTestAgainstTerrain = false;
@@ -105,6 +71,41 @@ export function createCesiumAdapter(): MapAdapter {
 		mapView = null;
 		buildingsTileset = null;
 		terrainProvider = null;
+	}
+
+	function addOfflineMapLayer(map: OfflineMapLayer) {
+		const viewer = mapView.viewer;
+		if (!viewer) return;
+
+		// Create tile layer
+		const provider = new Cesium.UrlTemplateImageryProvider({
+			url: `/${map.mapPath}/{z}/{x}/{y}.png`,
+			tilingScheme: new Cesium.WebMercatorTilingScheme(),
+			maximumLevel: map.maxZoom,
+			credit: map.mapName ?? 'Offline Map',
+		});
+
+		// Add to CesiumView
+		const ref = viewer.imageryLayers.addImageryProvider(provider);
+		offlineMapLayers.set(map.id, ref);
+
+		// Fly to center of new map and fix zoom
+		viewer.camera.flyTo({
+			destination: Cesium.Cartesian3.fromDegrees(
+				parseFloat(map.lon.toString()),
+				parseFloat(map.lat.toString()),
+				3000 // Works for zoom 12-20
+			),
+			duration: 0,
+		});
+
+		mapView.viewer.scene.globe.show = true;
+	}
+	function removeOfflineMapLayer(id: string) {
+		const layer = offlineMapLayers.get(id);
+		if (!layer) return;
+
+		mapView.viewer.imageryLayers.remove(layer);
 	}
 
 	function addLayer(layer: any) {
@@ -812,6 +813,8 @@ export function createCesiumAdapter(): MapAdapter {
 	return {
 		init,
 		destroy,
+		addOfflineMapLayer,
+		removeOfflineMapLayer,
 		addLayer,
 		removeLayer,
 		setCursor,
