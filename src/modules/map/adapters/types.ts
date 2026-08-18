@@ -84,7 +84,8 @@ export interface MapAdapter {
 	addTerrain?(): void;
 	removeTerrain?(): void;
 	addBuildings?(): void;
-	addOfflineBuildings?(): void;
+	addOfflineBuildingLayer?(map: OfflineMapLayer): void;
+	removeOfflineBuildingLayer?(id: string): void;
 	removeBuildings?(): void;
 	addGooglePhotorealistic?(): void;
 	removeGooglePhotorealistic?(): void;

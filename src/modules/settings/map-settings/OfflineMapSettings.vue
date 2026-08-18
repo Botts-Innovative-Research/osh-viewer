@@ -24,7 +24,6 @@ const maxZoom = ref(20);
 const lat = ref(0);
 const lon = ref(0);
 const hasBuildings = ref(false);
-const buildingsPath = ref('');
 
 // Form actions and status
 const isFormOpen = ref(false);
@@ -40,8 +39,7 @@ const isValid = computed(() => {
 		lat.value <= 90 &&
 		lon.value !== null &&
 		lon.value >= -180 &&
-		lon.value <= 180 &&
-		(!hasBuildings.value || (hasBuildings.value && buildingsPath.value))
+		lon.value <= 180
 	)
 		return true;
 	else return false;
@@ -58,7 +56,6 @@ async function addMap() {
 		lat: lat.value,
 		lon: lon.value,
 		hasBuildings: hasBuildings.value,
-		buildingsPath: buildingsPath.value,
 	});
 
 	showToast('Map added successfully', 'SUCCESS');
@@ -74,7 +71,6 @@ function resetForm() {
 	lat.value = 0;
 	lon.value = 0;
 	hasBuildings.value = false;
-	buildingsPath.value = '';
 }
 const cancelForm = () => {
 	isFormOpen.value = false;
@@ -194,7 +190,7 @@ function flyToMap(map: OfflineMapLayer) {
 									/>
 								</v-col>
 							</v-row>
-							<v-row>
+							<v-row class="mt-0">
 								<v-col cols="6">
 									<v-text-field
 										label="Center Latitude"
@@ -237,24 +233,21 @@ function flyToMap(map: OfflineMapLayer) {
 										required
 								/></v-col>
 							</v-row>
-
-							<v-switch
-								label="Has Buildings"
-								v-model="hasBuildings"
-								color="primary"
-								inset="material"
-								hide-details
-							></v-switch>
-							<v-expand-transition>
-								<v-text-field
-									v-if="hasBuildings"
-									label="Buildings Path"
-									v-model="buildingsPath"
-									placeholder=""
-									:rules="[(v) => !!v || 'Buildings Path is required']"
-									required
-								/>
-							</v-expand-transition>
+							<v-list-item class="pa-0 ma-0">
+								<v-list-item-title>Has Buildings (Cesium)</v-list-item-title>
+								<v-list-item-subtitle
+									>Toggle if the map set includes <i>buildings.geojson</i> in the
+									map path</v-list-item-subtitle
+								>
+								<template #append>
+									<v-switch
+										v-model="hasBuildings"
+										color="primary"
+										inset="material"
+										hide-details
+									></v-switch>
+								</template>
+							</v-list-item>
 
 							<!-- Buttons inside the form -->
 							<v-card-actions>

@@ -36,7 +36,8 @@ export function createCesiumAdapter(): MapAdapter {
 	let waypointEntities: any[] = [];
 
 	/* Offline Map Layers */
-	let offlineMapLayers = new Map<string, any>();
+	let offlineMapLayers = new Map<string, Cesium.ImageryProvider>();
+	let offlineBuildingLayers = new Map<string, Cesium.GeoJsonDataSource>();
 
 	/* GeoOverlays */
 	let previewEntity: any = null;
@@ -71,9 +72,11 @@ export function createCesiumAdapter(): MapAdapter {
 		mapView = null;
 		buildingsTileset = null;
 		terrainProvider = null;
+		offlineMapLayers.clear();
+		offlineBuildingLayers.clear();
 	}
 
-	function addOfflineMapLayer(map: OfflineMapLayer) {
+	async function addOfflineMapLayer(map: OfflineMapLayer) {
 		const viewer = mapView.viewer;
 		if (!viewer) return;
 
@@ -88,6 +91,9 @@ export function createCesiumAdapter(): MapAdapter {
 		// Add to CesiumView
 		const ref = viewer.imageryLayers.addImageryProvider(provider);
 		offlineMapLayers.set(map.id, ref);
+
+		// Add offline buildings
+		if (map.hasBuildings) await addOfflineBuildingLayer(map);
 
 		// Fly to center of new map and fix zoom
 		viewer.camera.flyTo({
@@ -105,7 +111,50 @@ export function createCesiumAdapter(): MapAdapter {
 		const layer = offlineMapLayers.get(id);
 		if (!layer) return;
 
+		// Remove associated buildings, if existing
+		const buildings = offlineBuildingLayers.get(id);
+		if (buildings) removeOfflineBuildingLayer(id);
+
 		mapView.viewer.imageryLayers.remove(layer);
+		offlineMapLayers.delete(id);
+	}
+	async function addOfflineBuildingLayer(map: OfflineMapLayer) {
+		const viewer = mapView.viewer;
+		if (!viewer) return;
+
+		if (offlineBuildingLayers.has(map.id)) return;
+
+		const dataSource = await Cesium.GeoJsonDataSource.load(`/${map.mapPath}/buildings.geojson`);
+		viewer.dataSources.add(dataSource);
+		offlineBuildingLayers.set(map.id, dataSource);
+
+		for (const entity of dataSource.entities.values) {
+			if (!entity.polygon) continue;
+
+			const height =
+				Number(entity.properties?.height_m?.getValue(Cesium.JulianDate.now())) || 5;
+			entity.polygon.height = new Cesium.ConstantProperty(0);
+			entity.polygon.extrudedHeight = new Cesium.ConstantProperty(height);
+			entity.polygon.material = new Cesium.ColorMaterialProperty(
+				Cesium.Color.GRAY.withAlpha(1.0)
+			);
+			entity.polygon.outline = new Cesium.ConstantProperty(true);
+			entity.polygon.outlineColor = new Cesium.ConstantProperty(Cesium.Color.BLACK);
+		}
+
+		invalidate();
+	}
+	function removeOfflineBuildingLayer(id: string) {
+		const viewer = mapView.viewer;
+		if (!viewer) return;
+
+		const dataSource = offlineBuildingLayers.get(id);
+		if (!dataSource) return;
+
+		viewer.dataSources.remove(dataSource, true);
+		offlineBuildingLayers.delete(id);
+
+		invalidate();
 	}
 
 	function addLayer(layer: any) {
@@ -432,35 +481,6 @@ export function createCesiumAdapter(): MapAdapter {
 			buildingsTileset = await Cesium.Cesium3DTileset.fromIonAssetId(96188);
 			viewer.scene.primitives.add(buildingsTileset);
 		}
-	}
-
-	async function addOfflineBuildings() {
-		const viewer = mapView.viewer;
-		if (!viewer) return;
-
-		const dataSource = await Cesium.GeoJsonDataSource.load(
-			import.meta.env.VITE_OFFLINE_BUILDINGS_PATH
-		);
-
-		viewer.dataSources.add(dataSource);
-
-		for (const entity of dataSource.entities.values) {
-			if (!entity.polygon) continue;
-
-			const height =
-				Number(entity.properties?.height_m?.getValue(Cesium.JulianDate.now())) || 5;
-			entity.polygon.height = new Cesium.ConstantProperty(0);
-			entity.polygon.extrudedHeight = new Cesium.ConstantProperty(height);
-			entity.polygon.material = new Cesium.ColorMaterialProperty(
-				Cesium.Color.GRAY.withAlpha(1.0)
-			);
-			entity.polygon.outline = new Cesium.ConstantProperty(true);
-			entity.polygon.outlineColor = new Cesium.ConstantProperty(Cesium.Color.BLACK);
-		}
-
-		await viewer.flyTo(dataSource);
-
-		invalidate();
 	}
 
 	function removeBuildings() {
@@ -836,7 +856,8 @@ export function createCesiumAdapter(): MapAdapter {
 		addTerrain,
 		removeTerrain,
 		addBuildings,
-		addOfflineBuildings,
+		addOfflineBuildingLayer,
+		removeOfflineBuildingLayer,
 		removeBuildings,
 		addGooglePhotorealistic,
 		removeGooglePhotorealistic,

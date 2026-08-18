@@ -103,7 +103,7 @@ export function useMap() {
 					await mapAdapter.value?.addGooglePhotorealistic?.();
 				}
 			} else {
-				rebuildOfflineMaps();
+				await rebuildOfflineMaps();
 				await mapAdapter.value?.addOfflineBuildings?.();
 			}
 			if (settingsStore.enableEntityClustering) {
@@ -112,7 +112,7 @@ export function useMap() {
 		} else if (mapType.value === 'leaflet') {
 			mapAdapter.value = createLeafletAdapter();
 			await mapAdapter.value?.init?.('mapContainer');
-			if (isOffline) rebuildOfflineMaps();
+			if (isOffline) await rebuildOfflineMaps();
 		}
 		bindMapInteractions();
 	}
@@ -151,11 +151,11 @@ export function useMap() {
 	});
 	watch(
 		() => settingsStore.enableOfflineMaps,
-		(enabled) => {
+		async (enabled) => {
 			if (!mapAdapter.value) return;
 
 			if (enabled) {
-				rebuildOfflineMaps();
+				await rebuildOfflineMaps();
 			} else {
 				for (const map of mapStore.offlineMapLayers) {
 					mapAdapter.value.removeOfflineMapLayer(map.id);
@@ -165,7 +165,7 @@ export function useMap() {
 	);
 	watch(
 		() => mapStore.offlineMapLayers.map((map) => map.id),
-		(newIds, oldIds = []) => {
+		async (newIds, oldIds = []) => {
 			const newSet = new Set(newIds);
 			const oldSet = new Set(oldIds);
 
@@ -179,15 +179,16 @@ export function useMap() {
 			// Added
 			for (const map of mapStore.offlineMapLayers) {
 				if (!oldSet.has(map.id) && settingsStore.enableOfflineMaps) {
-					mapAdapter.value?.addOfflineMapLayer(map);
+					await mapAdapter.value?.addOfflineMapLayer(map);
 				}
 			}
 		},
 		{ immediate: true }
 	);
-	function rebuildOfflineMaps() {
+	async function rebuildOfflineMaps() {
 		if (!settingsStore.enableOfflineMaps) return; // Skip if not enabled
-		for (const map of mapStore.offlineMapLayers) mapAdapter.value?.addOfflineMapLayer(map);
+		for (const map of mapStore.offlineMapLayers)
+			await mapAdapter.value?.addOfflineMapLayer(map);
 	}
 
 	/* DATASOURCE MANAGEMENT */

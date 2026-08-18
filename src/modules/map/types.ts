@@ -15,5 +15,4 @@ export interface OfflineMapLayer {
 	lat: number; // Latitude of the map center
 	lon: number; // Longitude of the map center
 	hasBuildings: boolean; // Whether the map has buildings GeoJSON
-	buildingsPath?: string; // Path to the buildings data file ex: /maps/<area>/buildings.geojson
 }

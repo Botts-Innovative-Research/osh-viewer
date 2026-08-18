@@ -26,7 +26,6 @@ export async function loadOfflineMapMetadata(
 		lat: metadata.lat,
 		lon: metadata.lon,
 		hasBuildings: map.hasBuildings ?? false,
-		buildingsPath: map.hasBuildings ? map.buildingsPath : undefined,
 	};
 
 	return mapLayer;
