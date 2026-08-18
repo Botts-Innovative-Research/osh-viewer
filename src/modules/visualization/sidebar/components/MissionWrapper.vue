@@ -16,7 +16,9 @@ const emit = defineEmits<{
 </script>
 <template>
 	<v-select
-		label=""
+		hint="Select a controller to build and send missions."
+		persistent-hint
+		label="Mission Controllers"
 		:model-value="selectedMissionControllers"
 		@update:model-value="emit('update:selectedMissionControllers', $event)"
 		v-bind:items="missionVisualizations"
@@ -24,7 +26,6 @@ const emit = defineEmits<{
 		return-object
 		multiple
 		chips
-		hide-details
 		clearable
 	>
 		<template v-slot:item="{ item, props: itemProps }">
