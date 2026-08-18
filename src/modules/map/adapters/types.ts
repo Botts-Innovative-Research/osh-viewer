@@ -16,7 +16,7 @@ export interface MapAdapter {
 	onRightClick(handler: MapPointHandler): () => void; // Right click
 	onMouseMove(handler: MapPointHandler): () => void;
 	setCursor(mode: CursorMode): void;
-	flyToPoint(location: { x: number; y: number; z: number }): void;
+	flyToPoint(location: { x: number; y: number; z: number }, tilt?: boolean): void;
 
 	updateMarker(props: any): void;
 

@@ -5,6 +5,7 @@ import { useSettingsStore } from '@/stores/settingsstore';
 import { useMapStore } from '@/stores/mapstore';
 import { showToast } from '@/composables/useToast';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+import { OfflineMapLayer } from '@/modules/map/types';
 
 // Stores
 const settingsStore = useSettingsStore();
@@ -84,6 +85,20 @@ const onKeyDown = (event: KeyboardEvent) => {
 		event.preventDefault();
 	}
 };
+
+// Fly-to on click
+function flyToMap(map: OfflineMapLayer) {
+	// If already selected, deselect
+	if (
+		mapStore.selectedMapItem &&
+		'mapName' in mapStore.selectedMapItem &&
+		mapStore.selectedMapItem.id === map.id
+	) {
+		mapStore.setSelectedMapItem(null);
+	} else {
+		mapStore.setSelectedMapItem(map);
+	}
+}
 </script>
 <template>
 	<v-card style="padding: 0px">
@@ -273,7 +288,10 @@ const onKeyDown = (event: KeyboardEvent) => {
 									/>
 								</v-fade-transition>
 							</v-expansion-panel-title>
-							<v-expansion-panel-text v-if="mapStore.offlineMapLayers.length">
+							<v-expansion-panel-text
+								v-if="mapStore.offlineMapLayers.length"
+								class="layer-list"
+							>
 								<v-list
 									activatable
 									bg-color="transparent"
@@ -282,6 +300,7 @@ const onKeyDown = (event: KeyboardEvent) => {
 										v-for="map in mapStore.offlineMapLayers"
 										:key="map.id"
 										class="ga-2 px-2"
+										@click="flyToMap(map)"
 									>
 										<template #prepend>
 											<DeleteButton

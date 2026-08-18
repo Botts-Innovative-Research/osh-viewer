@@ -10,7 +10,8 @@ import { MapPoint, OfflineMapLayer } from '@/modules/map/types';
 export const useMapStore = defineStore(
 	'map',
 	() => {
-		const selectedMapItem: Ref<OSHVisualization | GeoOverlay | null> = ref(null); // Currently selected map item from list of map visualizations
+		const selectedMapItem: Ref<OSHVisualization | GeoOverlay | OfflineMapLayer | null> =
+			ref(null); // Currently selected map item from list of map visualizations
 		const currentLLA: Ref<{ latitude: number; longitude: number; altitude: number } | null> =
 			ref(null); // Currently selected LLA coordinates
 		const tempLLA: Ref<MapPoint | null> = ref(null); // Right-clicked LLA coordinates
@@ -22,7 +23,7 @@ export const useMapStore = defineStore(
 		const cesiumMapLayers: Ref<MapLayer[]> = ref([]);
 
 		// Handle selection of map item
-		function setSelectedMapItem(item: OSHVisualization | GeoOverlay | null) {
+		function setSelectedMapItem(item: OSHVisualization | GeoOverlay | OfflineMapLayer | null) {
 			selectedMapItem.value = item;
 		}
 

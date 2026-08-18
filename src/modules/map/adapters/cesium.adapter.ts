@@ -209,16 +209,16 @@ export function createCesiumAdapter(): MapAdapter {
 		};
 	}
 
-	function flyToPoint(location: { x: number; y: number; z: number }) {
+	function flyToPoint(location: { x: number; y: number; z: number }, tilt: boolean = true) {
 		mapView.viewer.camera.flyTo({
 			destination: Cesium.Cartesian3.fromDegrees(
 				location.x,
 				location.y - 0.001,
 				location.z + 100
 			),
-			// Offset to see the marker itself
+			// Offset to see the marker itself if specified
 			orientation: {
-				pitch: Cesium.Math.toRadians(-35),
+				pitch: tilt ? Cesium.Math.toRadians(-35) : undefined,
 			},
 		});
 	}
