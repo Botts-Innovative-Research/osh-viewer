@@ -154,7 +154,7 @@ async function connectSystemDatasources(viz: OSHVisualization) {
 		let dsInstance = createDatasource(ds);
 		dsInstance.connect();
 
-		if (ds?.properties?.home) {
+		if (ds?.properties?.homeLocation) {
 			state.homeDatasource = dsInstance;
 			let homeLLAResults = await getLatestObservation(ds);
 			state.homeLocation = {
@@ -163,7 +163,7 @@ async function connectSystemDatasources(viz: OSHVisualization) {
 				alt: homeLLAResults?.result.Home.alt,
 			};
 			onHomeLocationListener(dsInstance, state);
-		} else if (ds?.properties?.lla) {
+		} else if (ds?.properties?.location) {
 			state.llaDatasource = dsInstance;
 			onLLAListener(dsInstance, state);
 		} else if (ds?.properties?.status) {

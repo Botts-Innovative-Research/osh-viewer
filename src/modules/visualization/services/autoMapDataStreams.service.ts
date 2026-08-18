@@ -2,11 +2,12 @@ import type { OSHDatastream } from '@/lib/OSHConnectDataStructs';
 
 const dsRoleKeywords: Record<string, string[]> = {
 	// location/orientation
-	location: ['location', 'lla', 'gps', 'position', 'platform location'],
-	lla: ['location', 'lla', 'gps', 'position', 'platform location'],
-	position: ['location', 'lla', 'gps', 'position', 'platform location'],
-	origin: ['location', 'lla', 'gps', 'position', 'platform location', 'origin'],
+	location: ['location', 'lla', 'position', 'platform location'],
+	lla: ['location', 'lla', 'position', 'platform location'],
+	position: ['location', 'lla', 'position', 'platform location'],
+	origin: ['location', 'lla', 'position', 'platform location', 'origin'],
 	orientation: ['orientation', 'attitude', 'heading', 'euler'],
+	homeOrientation: ['orientation', 'attitude', 'heading', 'euler'],
 	// mission
 	home: ['home', 'home position', 'home location', 'launch position'],
 	homeLocation: ['home', 'home position', 'home location', 'launch position'],
