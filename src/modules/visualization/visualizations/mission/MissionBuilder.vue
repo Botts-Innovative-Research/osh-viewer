@@ -365,6 +365,7 @@ const hasCommandPad = computed(
 			@confirm="returnAllHome"
 		/>
 		<ToggleActionButton
+			v-if="!noController"
 			:toggle-on="minimapViewActive"
 			tool-name="Mini Map"
 			@submit="minimapViewActive = !minimapViewActive"
