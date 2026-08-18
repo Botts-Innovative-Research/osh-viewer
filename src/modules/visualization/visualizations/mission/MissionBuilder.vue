@@ -19,6 +19,7 @@ import { VisualizationComponents } from '../../types/visualization';
 import { useMapStore } from '@/stores/mapstore';
 import { useMissionStore } from '@/stores/missionstore';
 import { SystemState } from '@/modules/visualization/visualizations/mission/types';
+import ToggleActionButton from '@/components/ui/ToggleActionButton.vue';
 
 const missionStore = useMissionStore();
 
@@ -319,7 +320,10 @@ const hasCommandPad = computed(
 				<slot name="controllers"></slot>
 			</v-col>
 		</v-row>
-		<v-divider v-if="!noController"></v-divider>
+		<v-divider
+			v-if="!noController"
+			class="mb-2"
+		></v-divider>
 
 		<div
 			v-if="validVisualizations.length > 1"
@@ -352,7 +356,7 @@ const hasCommandPad = computed(
 
 		<LongPressButton
 			v-if="hasAnyRtl"
-			class="mt-4"
+			class="mb-2"
 			icon="mdi-home"
 			label="Return All Home"
 			color="warning"
@@ -360,37 +364,29 @@ const hasCommandPad = computed(
 			:duration="1200"
 			@confirm="returnAllHome"
 		/>
+		<ToggleActionButton
+			:toggle-on="minimapViewActive"
+			tool-name="Mini Map"
+			@submit="minimapViewActive = !minimapViewActive"
+		></ToggleActionButton>
 		<v-sheet v-if="!noController && activeSystemState">
-			<v-card
-				v-if="minimapViewActive && minimapViz"
-				class="minimap-card"
-			>
-				<div class="d-flex align-center justify-space-between px-2 pt-1">
-					<span class="text-caption font-weight-medium">Mini Map</span>
-				</div>
-				<PanelVisualizationWrapper
-					:key="activeSystemId"
-					:viz="minimapViz"
-				/>
-			</v-card>
+			<v-expand-transition>
+				<v-card
+					v-if="minimapViewActive && minimapViz"
+					class="minimap-card"
+				>
+					<div class="d-flex align-center justify-space-between px-2 pt-1">
+						<span class="text-caption font-weight-medium">Mini Map</span>
+					</div>
+					<PanelVisualizationWrapper
+						:key="activeSystemId"
+						:viz="minimapViz"
+					/>
+				</v-card>
+			</v-expand-transition>
 			<v-card class="telemetry-card">
 				<div class="d-flex align-center justify-space-between px-4 pt-2">
 					<v-card-text class="pa-0">Live Telemetry</v-card-text>
-					<v-btn
-						:color="minimapViewActive ? 'primary' : 'grey'"
-						variant="text"
-						density="compact"
-						@click="minimapViewActive = !minimapViewActive"
-						:prepend-icon="minimapViewActive ? 'mdi-eye' : 'mdi-eye-off'"
-					>
-						Mini Map
-						<v-tooltip
-							activator="parent"
-							location="top"
-						>
-							{{ minimapViewActive ? 'Hide mini map' : 'Show mini map' }}
-						</v-tooltip>
-					</v-btn>
 				</div>
 				<v-row density="comfortable">
 					<v-col
