@@ -5,21 +5,25 @@ import { MapLayer } from '@/modules/map/adapters/cesium.adapter';
 import { fetchLayerFromUrl } from '@/modules/map/services/cesiumLayer.service';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
-import { MapPoint } from '@/modules/map/types';
+import { MapPoint, OfflineMapLayer } from '@/modules/map/types';
 
 export const useMapStore = defineStore(
 	'map',
 	() => {
-		const selectedMapItem: Ref<OSHVisualization | GeoOverlay | null> = ref(null); // Currently selected map item from list of map visualizations
+		const selectedMapItem: Ref<OSHVisualization | GeoOverlay | OfflineMapLayer | null> =
+			ref(null); // Currently selected map item from list of map visualizations
 		const currentLLA: Ref<{ latitude: number; longitude: number; altitude: number } | null> =
 			ref(null); // Currently selected LLA coordinates
 		const tempLLA: Ref<MapPoint | null> = ref(null); // Right-clicked LLA coordinates
+
+		/* OFFLINE MAP LAYERS */
+		const offlineMapLayers: Ref<OfflineMapLayer[]> = ref([]);
 
 		/* CESIUM */
 		const cesiumMapLayers: Ref<MapLayer[]> = ref([]);
 
 		// Handle selection of map item
-		function setSelectedMapItem(item: OSHVisualization | GeoOverlay | null) {
+		function setSelectedMapItem(item: OSHVisualization | GeoOverlay | OfflineMapLayer | null) {
 			selectedMapItem.value = item;
 		}
 
@@ -39,7 +43,17 @@ export const useMapStore = defineStore(
 			tempLLA.value = null;
 		}
 
-		// Cesium
+		// Offline Map Layers
+		function addOfflineMapLayer(map: OfflineMapLayer) {
+			offlineMapLayers.value.push(map);
+		}
+		function removeOfflineMapLayer(id: string) {
+			offlineMapLayers.value = offlineMapLayers.value.filter(
+				(layer: OfflineMapLayer) => layer.id !== id
+			);
+		}
+
+		// Cesium Map Layers
 		async function addLayer(url: string) {
 			const newLayer: MapLayer = await fetchLayerFromUrl(url);
 			if (newLayer) cesiumMapLayers.value.push(newLayer);
@@ -52,15 +66,18 @@ export const useMapStore = defineStore(
 			selectedMapItem,
 			currentLLA,
 			tempLLA,
+			offlineMapLayers,
 			cesiumMapLayers,
 			setSelectedMapItem,
 			setCurrentLLA,
 			clearCurrentLLA,
 			setTempLLA,
 			clearTempLLA,
+			addOfflineMapLayer,
+			removeOfflineMapLayer,
 			addLayer,
 			removeLayer,
 		};
 	},
-	{ persist: { pick: ['cesiumMapLayers'] } }
+	{ persist: { pick: ['cesiumMapLayers', 'offlineMapLayers'] } }
 );

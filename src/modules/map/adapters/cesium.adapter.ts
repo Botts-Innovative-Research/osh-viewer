@@ -2,7 +2,7 @@ import * as Cesium from 'cesium';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
 import { MapAdapter } from './types';
 import { Ion } from 'cesium';
-import { CursorMode, MapPoint, MapPointHandler } from '@/modules/map/types';
+import { CursorMode, MapPoint, MapPointHandler, OfflineMapLayer } from '@/modules/map/types';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { colorHash, getColoredIconUrl } from '@/modules/map/services/colorId.service';
@@ -35,53 +35,20 @@ export function createCesiumAdapter(): MapAdapter {
 	let flightPathPolylines: any[] = [];
 	let waypointEntities: any[] = [];
 
+	/* Offline Map Layers */
+	let offlineMapLayers = new Map<string, Cesium.ImageryProvider>();
+	let offlineBuildingLayers = new Map<string, Cesium.GeoJsonDataSource>();
+
 	/* GeoOverlays */
 	let previewEntity: any = null;
 
 	async function init(container: string) {
-		// OFFLINE MAP
-		const offlineEnabled = import.meta.env.VITE_OFFLINE_MAP_ENABLED === 'true';
-
 		mapView = new CesiumView({
 			container,
 			autoZoomOnFirstMarker: true,
 			layers: [],
-			...(offlineEnabled
-				? {}
-				: {
-						geocoder: Cesium.IonGeocodeProviderType.GOOGLE,
-					}),
+			geocoder: Cesium.IonGeocodeProviderType.GOOGLE,
 		});
-
-		if (offlineEnabled) {
-			const offlineMapPath = import.meta.env.VITE_OFFLINE_MAP_PATH;
-			const offlineMapMaxZoom = Number(import.meta.env.VITE_OFFLINE_MAP_MAX_ZOOM);
-			const offlineMapLat = Number(import.meta.env.VITE_OFFLINE_MAP_LAT);
-			const offlineMapLon = Number(import.meta.env.VITE_OFFLINE_MAP_LON);
-
-			console.log('Offline map enabled');
-			console.log('Offline map URL:', `${offlineMapPath}/{z}/{x}/{y}.png`);
-
-			// Remove Cesium's default imagery
-			mapView.viewer.imageryLayers.removeAll();
-
-			// Create local XYZ imagery provider
-			const offlineProvider = new Cesium.UrlTemplateImageryProvider({
-				url: `${offlineMapPath}/{z}/{x}/{y}.png`,
-				tilingScheme: new Cesium.WebMercatorTilingScheme(),
-				maximumLevel: offlineMapMaxZoom,
-				credit: 'Offline Map',
-			});
-
-			mapView.viewer.imageryLayers.addImageryProvider(offlineProvider);
-			mapView.viewer.scene.globe.show = true;
-
-			// Move camera over the offline map
-			mapView.viewer.camera.flyTo({
-				destination: Cesium.Cartesian3.fromDegrees(offlineMapLon, offlineMapLat, 3000),
-				duration: 0,
-			});
-		}
 
 		// CESIUM TERRAIN / DEPTH
 		mapView.viewer.scene.globe.depthTestAgainstTerrain = false;
@@ -105,6 +72,89 @@ export function createCesiumAdapter(): MapAdapter {
 		mapView = null;
 		buildingsTileset = null;
 		terrainProvider = null;
+		offlineMapLayers.clear();
+		offlineBuildingLayers.clear();
+	}
+
+	async function addOfflineMapLayer(map: OfflineMapLayer) {
+		const viewer = mapView.viewer;
+		if (!viewer) return;
+
+		// Create tile layer
+		const provider = new Cesium.UrlTemplateImageryProvider({
+			url: `/${map.mapPath}/{z}/{x}/{y}.png`,
+			tilingScheme: new Cesium.WebMercatorTilingScheme(),
+			maximumLevel: map.maxZoom,
+			credit: map.mapName ?? 'Offline Map',
+		});
+
+		// Add to CesiumView
+		const ref = viewer.imageryLayers.addImageryProvider(provider);
+		offlineMapLayers.set(map.id, ref);
+
+		// Add offline buildings
+		if (map.hasBuildings) await addOfflineBuildingLayer(map);
+
+		// Fly to center of new map and fix zoom
+		viewer.camera.flyTo({
+			destination: Cesium.Cartesian3.fromDegrees(
+				parseFloat(map.lon.toString()),
+				parseFloat(map.lat.toString()),
+				3000 // Works for zoom 12-20
+			),
+			duration: 0,
+		});
+
+		mapView.viewer.scene.globe.show = true;
+	}
+	function removeOfflineMapLayer(id: string) {
+		const layer = offlineMapLayers.get(id);
+		if (!layer) return;
+
+		// Remove associated buildings, if existing
+		const buildings = offlineBuildingLayers.get(id);
+		if (buildings) removeOfflineBuildingLayer(id);
+
+		mapView.viewer.imageryLayers.remove(layer);
+		offlineMapLayers.delete(id);
+	}
+	async function addOfflineBuildingLayer(map: OfflineMapLayer) {
+		const viewer = mapView.viewer;
+		if (!viewer) return;
+
+		if (offlineBuildingLayers.has(map.id)) return;
+
+		const dataSource = await Cesium.GeoJsonDataSource.load(`/${map.mapPath}/buildings.geojson`);
+		viewer.dataSources.add(dataSource);
+		offlineBuildingLayers.set(map.id, dataSource);
+
+		for (const entity of dataSource.entities.values) {
+			if (!entity.polygon) continue;
+
+			const height =
+				Number(entity.properties?.height_m?.getValue(Cesium.JulianDate.now())) || 5;
+			entity.polygon.height = new Cesium.ConstantProperty(0);
+			entity.polygon.extrudedHeight = new Cesium.ConstantProperty(height);
+			entity.polygon.material = new Cesium.ColorMaterialProperty(
+				Cesium.Color.GRAY.withAlpha(1.0)
+			);
+			entity.polygon.outline = new Cesium.ConstantProperty(true);
+			entity.polygon.outlineColor = new Cesium.ConstantProperty(Cesium.Color.BLACK);
+		}
+
+		invalidate();
+	}
+	function removeOfflineBuildingLayer(id: string) {
+		const viewer = mapView.viewer;
+		if (!viewer) return;
+
+		const dataSource = offlineBuildingLayers.get(id);
+		if (!dataSource) return;
+
+		viewer.dataSources.remove(dataSource, true);
+		offlineBuildingLayers.delete(id);
+
+		invalidate();
 	}
 
 	function addLayer(layer: any) {
@@ -208,16 +258,16 @@ export function createCesiumAdapter(): MapAdapter {
 		};
 	}
 
-	function flyToPoint(location: { x: number; y: number; z: number }) {
+	function flyToPoint(location: { x: number; y: number; z: number }, tilt: boolean = true) {
 		mapView.viewer.camera.flyTo({
 			destination: Cesium.Cartesian3.fromDegrees(
 				location.x,
 				location.y - 0.001,
 				location.z + 100
 			),
-			// Offset to see the marker itself
+			// Offset to see the marker itself if specified
 			orientation: {
-				pitch: Cesium.Math.toRadians(-35),
+				pitch: tilt ? Cesium.Math.toRadians(-35) : undefined,
 			},
 		});
 	}
@@ -431,35 +481,6 @@ export function createCesiumAdapter(): MapAdapter {
 			buildingsTileset = await Cesium.Cesium3DTileset.fromIonAssetId(96188);
 			viewer.scene.primitives.add(buildingsTileset);
 		}
-	}
-
-	async function addOfflineBuildings() {
-		const viewer = mapView.viewer;
-		if (!viewer) return;
-
-		const dataSource = await Cesium.GeoJsonDataSource.load(
-			import.meta.env.VITE_OFFLINE_BUILDINGS_PATH
-		);
-
-		viewer.dataSources.add(dataSource);
-
-		for (const entity of dataSource.entities.values) {
-			if (!entity.polygon) continue;
-
-			const height =
-				Number(entity.properties?.height_m?.getValue(Cesium.JulianDate.now())) || 5;
-			entity.polygon.height = new Cesium.ConstantProperty(0);
-			entity.polygon.extrudedHeight = new Cesium.ConstantProperty(height);
-			entity.polygon.material = new Cesium.ColorMaterialProperty(
-				Cesium.Color.GRAY.withAlpha(1.0)
-			);
-			entity.polygon.outline = new Cesium.ConstantProperty(true);
-			entity.polygon.outlineColor = new Cesium.ConstantProperty(Cesium.Color.BLACK);
-		}
-
-		await viewer.flyTo(dataSource);
-
-		invalidate();
 	}
 
 	function removeBuildings() {
@@ -812,6 +833,8 @@ export function createCesiumAdapter(): MapAdapter {
 	return {
 		init,
 		destroy,
+		addOfflineMapLayer,
+		removeOfflineMapLayer,
 		addLayer,
 		removeLayer,
 		setCursor,
@@ -833,7 +856,8 @@ export function createCesiumAdapter(): MapAdapter {
 		addTerrain,
 		removeTerrain,
 		addBuildings,
-		addOfflineBuildings,
+		addOfflineBuildingLayer,
+		removeOfflineBuildingLayer,
 		removeBuildings,
 		addGooglePhotorealistic,
 		removeGooglePhotorealistic,

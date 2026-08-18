@@ -1,10 +1,13 @@
 import { MapLayer } from './cesium.adapter';
-import { CursorMode, MapPoint, MapPointHandler } from '@/modules/map/types';
+import { CursorMode, MapPoint, MapPointHandler, OfflineMapLayer } from '@/modules/map/types';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 
 export interface MapAdapter {
 	init(container: string): Promise<void>;
 	destroy(): void;
+	/* OFFLINE MAPS */
+	addOfflineMapLayer(map: OfflineMapLayer): void;
+	removeOfflineMapLayer(id: string): void;
 
 	addLayer(layer: any): void;
 	removeLayer(layer: any): Promise<void>;
@@ -13,7 +16,7 @@ export interface MapAdapter {
 	onRightClick(handler: MapPointHandler): () => void; // Right click
 	onMouseMove(handler: MapPointHandler): () => void;
 	setCursor(mode: CursorMode): void;
-	flyToPoint(location: { x: number; y: number; z: number }): void;
+	flyToPoint(location: { x: number; y: number; z: number }, tilt?: boolean): void;
 
 	updateMarker(props: any): void;
 
@@ -81,7 +84,8 @@ export interface MapAdapter {
 	addTerrain?(): void;
 	removeTerrain?(): void;
 	addBuildings?(): void;
-	addOfflineBuildings?(): void;
+	addOfflineBuildingLayer?(map: OfflineMapLayer): void;
+	removeOfflineBuildingLayer?(id: string): void;
 	removeBuildings?(): void;
 	addGooglePhotorealistic?(): void;
 	removeGooglePhotorealistic?(): void;
