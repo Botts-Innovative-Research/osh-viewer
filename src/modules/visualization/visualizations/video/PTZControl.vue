@@ -4,6 +4,7 @@ import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { showToast } from '@/composables/useToast';
 import { Direction } from './Descriptor';
 import { sendCommand } from '../../services/controlstream.service';
+import ActionButton from '@/components/ui/ActionButton.vue';
 
 interface PTZControlProps {
 	commandBaseUrl: string;
@@ -271,7 +272,10 @@ const constraintTooltip = computed(() => {
 							:min="constraints.minPan"
 							:max="constraints.maxPan"
 							v-bind="props"
-							:rules="[() => !!absPan || `Pan is required.`]"
+							:rules="[
+								() =>
+									(absPan !== null && absPan !== undefined) || `Pan is required.`,
+							]"
 						/>
 					</template>
 				</v-tooltip>
@@ -286,7 +290,11 @@ const constraintTooltip = computed(() => {
 							:min="constraints.minTilt"
 							:max="constraints.maxTilt"
 							v-bind="props"
-							:rules="[() => !!absTilt || `Tilt is required.`]"
+							:rules="[
+								() =>
+									(absTilt !== null && absTilt !== undefined) ||
+									`Tilt is required.`,
+							]"
 						/>
 					</template>
 				</v-tooltip>
@@ -301,7 +309,11 @@ const constraintTooltip = computed(() => {
 							:min="constraints.minZoom"
 							:max="constraints.maxZoom"
 							v-bind="props"
-							:rules="[() => !!absZoom || `Zoom is required.`]"
+							:rules="[
+								() =>
+									(absZoom !== null && absZoom !== undefined) ||
+									`Zoom is required.`,
+							]"
 						/>
 					</template>
 				</v-tooltip>
@@ -344,17 +356,19 @@ const constraintTooltip = computed(() => {
 										: constraints.maxZoom
 							"
 							v-bind="props"
-							:rules="[() => !!singleValue || `${selectedCommand} is required.`]"
+							:rules="[
+								() =>
+									(singleValue !== null && singleValue !== undefined) ||
+									`${selectedCommand} is required.`,
+							]"
 						/>
 					</template>
 				</v-tooltip>
 			</div>
-			<v-btn
-				color="primary"
-				@click="onSend"
-				block
-				>Send</v-btn
-			>
+			<ActionButton
+				@submit="onSend"
+				variant="flat"
+			/>
 		</v-sheet>
 	</v-container>
 </template>
