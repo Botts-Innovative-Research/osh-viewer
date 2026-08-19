@@ -127,6 +127,14 @@ watch(
 	},
 	{ deep: true }
 );
+function resetCruiseSpeed() {
+	// Reset to default cruise speed 5m/s if not set
+	if (cruiseSpeed.value === null || cruiseSpeed.value === undefined) cruiseSpeed.value = 5;
+}
+function resetHoverSpeed() {
+	// Reset to default hover speed 2m/s if not set
+	if (hoverSpeed.value === null || hoverSpeed.value === undefined) hoverSpeed.value = 2;
+}
 </script>
 
 <template>
@@ -218,8 +226,14 @@ watch(
 				v-model.number="cruiseSpeed"
 				:label="isGroundVehicle ? 'Ground Speed (m/s)' : 'Cruise Speed (m/s)'"
 				density="compact"
-				hide-details
 				type="number"
+				:min="0.0001"
+				:rules="[
+					(v) =>
+						(v !== null && v !== undefined && v !== '') || 'Cruise speed is required',
+					(v) => v > 0 || 'Must be greater than 0',
+				]"
+				@blur="resetCruiseSpeed()"
 			/>
 		</v-col>
 		<v-col
@@ -229,9 +243,14 @@ watch(
 			<v-text-field
 				v-model.number="hoverSpeed"
 				density="compact"
-				hide-details
 				label="Hover Speed (m/s)"
 				type="number"
+				:min="0"
+				:rules="[
+					(v) => (v !== null && v !== undefined && v !== '') || 'Hover speed is required',
+					(v) => v >= 0 || 'Must be positive',
+				]"
+				@blur="resetHoverSpeed()"
 			/>
 		</v-col>
 		<v-col

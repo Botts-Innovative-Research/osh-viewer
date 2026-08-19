@@ -723,6 +723,8 @@ onBeforeUnmount(() => {
 				!vehicleType ||
 				(missionSource === 'waypoints' && waypoints.length === 0) ||
 				(missionSource === 'file' && !selectedFile) ||
+				cruiseSpeed <= 0 ||
+				hoverSpeed <= 0 ||
 				missionSource === 'saved'
 			"
 			class="flex-grow-1"
