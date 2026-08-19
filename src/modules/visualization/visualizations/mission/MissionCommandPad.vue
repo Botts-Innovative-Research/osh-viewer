@@ -441,10 +441,20 @@ const hasSimpleCommands = computed(() =>
 					Fly the vehicle to a specific lat/lon/alt coordinate. Use the crosshairs to pick from the map.
 				</v-tooltip>
 			</div>
+				<v-alert
+					v-if="!isAirborne"
+					density="compact"
+					type="warning"
+					variant="tonal"
+					class="mb-4"
+				>
+					Vehicle must be airborne before sending a fly to command
+				</v-alert>
 				<MapPointEditor
 					v-model="flyLocationPoint"
 					:is-selected="isFlyLocationMapSelect"
 					:is-selector-disabled="!isAirborne"
+					:is-submit-disabled="!isAirborne"
 					submit-icon="mdi-send"
 					submit-label="Send"
 					@submit="flyToLocationCommand"
