@@ -11,7 +11,11 @@ import LongPressButton from "@/components/ui/LongPressButton.vue";
 
 const props = defineProps<{
 	controlstreams: IConSysApiControlStreamProperties[];
+	currentAltitude: number;
 }>();
+
+const AIRBORNE_THRESHOLD = 0.5; // meters AGL
+const isAirborne = computed(() => props.currentAltitude > AIRBORNE_THRESHOLD);
 
 function getControlstreamByRole(role: string) {
 	return props.controlstreams.find((cs) => cs.properties && cs.properties[role]);
@@ -159,6 +163,10 @@ function driveLocationCommand(location: MapPoint) {
 }
 
 function flyToLocationCommand(location: MapPoint) {
+	if (!isAirborne.value) {
+		console.warn('[MissionCommandPad] Fly-to blocked: vehicle has not taken off (altitude:', props.currentAltitude, 'm)');
+		return;
+	}
 	sendCommandToRole('flyToLocation', {
 		parameters: { locationVectorLLA: { Latitude: location.lat, Longitude: location.lon, AltitudeAGL: location.alt }, returnToStart: false, hoverSeconds: 5 },
 	});
@@ -436,7 +444,7 @@ const hasSimpleCommands = computed(() =>
 				<MapPointEditor
 					v-model="flyLocationPoint"
 					:is-selected="isFlyLocationMapSelect"
-					:is-selector-disabled="false"
+					:is-selector-disabled="!isAirborne"
 					submit-icon="mdi-send"
 					submit-label="Send"
 					@submit="flyToLocationCommand"
