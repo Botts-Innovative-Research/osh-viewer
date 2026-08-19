@@ -23,7 +23,7 @@ const mapInteractionStore = useMapInteractionStore();
 const driveLocationPoint = ref<MapPoint>({ lat: 0, lon: 0, alt: 0 });
 const isDriveLocationMapSelect = computed(() => mapInteractionStore.isDriveLocationSelected);
 
-const flyLocationPoint = ref<MapPoint>({ lat: 0, lon: 0, alt: 25 });
+const flyLocationPoint = ref<MapPoint>({ lat: 0, lon: 0, alt: 15 });
 const isFlyLocationMapSelect = computed(() => mapInteractionStore.isFlyToLocationSelected);
 
 watch(
