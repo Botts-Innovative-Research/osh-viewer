@@ -46,7 +46,7 @@ const selectedFile = ref<File | null>(null);
 const vehicleType = ref<string>('');
 const cruiseSpeed = ref<number>(5);
 const hoverSpeed = ref<number>(2);
-const waypointAltitude = ref<number>(25);
+const waypointAltitude = ref<number>(15);
 const altitudeMode = ref<number>(0);
 const autoContinue = true;
 const amslAltAboveTerrain = null;
@@ -723,6 +723,8 @@ onBeforeUnmount(() => {
 				!vehicleType ||
 				(missionSource === 'waypoints' && waypoints.length === 0) ||
 				(missionSource === 'file' && !selectedFile) ||
+				cruiseSpeed <= 0 ||
+				hoverSpeed <= 0 ||
 				missionSource === 'saved'
 			"
 			class="flex-grow-1"

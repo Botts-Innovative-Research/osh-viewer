@@ -474,7 +474,7 @@ const hasCommandPad = computed(
 
 				<v-window-item value="control">
 					<v-card v-if="hasCommandPad">
-						<MissionCommandPad :controlstreams="controlstreams" />
+						<MissionCommandPad :controlstreams="controlstreams" :current-altitude="activeSystemState?.receivedLLA.alt ?? 0" />
 					</v-card>
 				</v-window-item>
 			</v-window>
