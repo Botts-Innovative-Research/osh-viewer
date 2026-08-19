@@ -14,7 +14,7 @@ const props = defineProps<{
 	currentAltitude: number;
 }>();
 
-const AIRBORNE_THRESHOLD = 0.5; // meters AGL
+const AIRBORNE_THRESHOLD = 2.0; // meters AGL
 const isAirborne = computed(() => props.currentAltitude > AIRBORNE_THRESHOLD);
 
 function getControlstreamByRole(role: string) {
