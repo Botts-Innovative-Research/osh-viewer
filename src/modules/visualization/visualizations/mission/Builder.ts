@@ -70,7 +70,7 @@ export default async function build() {
             name: vizwizStore.visualizationCustomizationOptions.name,
             icon: vizwizStore.visualizationCustomizationOptions.homeIcon,
             iconColor: vizwizStore.visualizationCustomizationOptions.homeIconColor,
-            iconName: vizwizStore.visualizationCustomizationOptions.pmIconName,
+            iconName: vizwizStore.visualizationCustomizationOptions.homeIconName,
         });
         const pmVisualizationComponents: VisualizationComponents = {
             dataSource: pmResult.vizDatasources,
@@ -96,7 +96,7 @@ export default async function build() {
             name: vizwizStore.visualizationCustomizationOptions.name,
             icon: vizwizStore.visualizationCustomizationOptions.locationIcon,
             iconColor: vizwizStore.visualizationCustomizationOptions.locationIconColor,
-            iconName: vizwizStore.visualizationCustomizationOptions.pmIconName,
+            iconName: vizwizStore.visualizationCustomizationOptions.locationIconName,
         });
         const pmVisualizationComponents: VisualizationComponents = {
             dataSource: pmResult.vizDatasources,
