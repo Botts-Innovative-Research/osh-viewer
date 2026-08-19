@@ -361,7 +361,7 @@ const hasSimpleCommands = computed(() =>
 		</div>
 		<v-row
 			dense
-			align="center"
+			class="d-flex align-center"
 		>
 			<v-col
 				cols="12"
@@ -372,6 +372,7 @@ const hasSimpleCommands = computed(() =>
 					:items="driveModes"
 					class="mt-2"
 					label="Drive Mode"
+					hide-details
 				/>
 			</v-col>
 			<v-col
@@ -556,10 +557,7 @@ const hasSimpleCommands = computed(() =>
 						type="number"
 					/>
 				</v-col>
-				<v-col
-					cols="12"
-					sm="6"
-				>
+				<v-col cols="12">
 					<ActionButton @submit="offboard()" />
 				</v-col>
 			</v-row>
