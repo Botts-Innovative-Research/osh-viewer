@@ -16,6 +16,7 @@ const csRoleKeywords: Record<string, string[]> = {
 	hold: ['hold control', 'hold command', 'loiter'],
 	homePos: ['home position', 'home pos', 'set home', 'home position control'],
 	driveMode: ['flight mode', 'drive mode', 'mode control', 'drive mode control'],
+	video: ['video', 'camera', 'image', 'stream'],
 	// vid
 	ptz: ['ptz control', 'ptzcontrol', 'ptz', 'pan tilt', 'pan-tilt-zoom', 'camera control', 'control'],
 	// geoptz
