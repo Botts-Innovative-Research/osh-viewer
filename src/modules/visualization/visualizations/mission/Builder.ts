@@ -25,17 +25,19 @@ import {
 import { CreateMiniMapVizProps } from '../minimap/Builder';
 import { CreatePointMarkerVizProps } from '../pointmarker/Builder';
 import { iconPathBuilder } from '@/lib/icons';
+import { CreatePolylineVizProps } from '@/modules/visualization/visualizations/polyline/Builder';
+import { PolylineDescriptor } from '@/modules/visualization/visualizations/polyline/Descriptor';
 
 export default async function build() {
 	console.log('Building Mission Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
 
-    const vizName = vizwizStore.visualizationCustomizationOptions.name;
+	const vizName = vizwizStore.visualizationCustomizationOptions.name;
 
-    const children: OSHVisualization[] = [];
+	const children: OSHVisualization[] = [];
 
-    const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
+	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 	const controlstreams = AggregateControlstreams(vizwizStore.csConfig);
 
 	const missionResult = CreateMissionVizProps(datastreams, controlstreams);
@@ -61,60 +63,88 @@ export default async function build() {
 		[]
 	);
 	minimapViz.setVisualizationComponents(minimapVisualizationComponents);
-    children.push(minimapViz);
-
+	children.push(minimapViz);
 
 	if (vizwizStore.dsConfig.homeLocation?.selected) {
-        const homeDatastreams = AggregateDatastreams({ location: vizwizStore.dsConfig.homeLocation });
-        const pmResult = await CreatePointMarkerVizProps(homeDatastreams, {
-            name: vizwizStore.visualizationCustomizationOptions.name,
-            icon: vizwizStore.visualizationCustomizationOptions.homeIcon,
-            iconColor: vizwizStore.visualizationCustomizationOptions.homeIconColor,
-            iconName: vizwizStore.visualizationCustomizationOptions.homeIconName,
-        });
-        const pmVisualizationComponents: VisualizationComponents = {
-            dataSource: pmResult.vizDatasources,
-            dataLayer: pmResult.pointMarkerLayer,
-        };
-        const pmViz: OSHVisualization = new OSHVisualization(
-            `${vizwizStore.id}-${randomUUID()}`,
-            `${vizwizStore.visualizationCustomizationOptions.name} - Home`,
-            'pointmarker',
-            PointMarkerDescriptor.viewLocation,
-            getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
-            undefined,
-            vizwizStore.id
-        );
-        pmViz.setVisualizationComponents(pmVisualizationComponents);
-        visualizationStore.addVisualization(pmViz);
+		const homeDatastreams = AggregateDatastreams({
+			location: vizwizStore.dsConfig.homeLocation,
+		});
+		const pmResult = await CreatePointMarkerVizProps(homeDatastreams, {
+			name: vizwizStore.visualizationCustomizationOptions.name,
+			icon: vizwizStore.visualizationCustomizationOptions.homeIcon,
+			iconColor: vizwizStore.visualizationCustomizationOptions.homeIconColor,
+			iconName: vizwizStore.visualizationCustomizationOptions.homeIconName,
+		});
+		const pmVisualizationComponents: VisualizationComponents = {
+			dataSource: pmResult.vizDatasources,
+			dataLayer: pmResult.pointMarkerLayer,
+		};
+		const pmViz: OSHVisualization = new OSHVisualization(
+			`${vizwizStore.id}-${randomUUID()}`,
+			`${vizwizStore.visualizationCustomizationOptions.name} - Home`,
+			'pointmarker',
+			PointMarkerDescriptor.viewLocation,
+			getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
+			undefined,
+			vizwizStore.id
+		);
+		pmViz.setVisualizationComponents(pmVisualizationComponents);
+		visualizationStore.addVisualization(pmViz);
 		children.push(pmViz);
 	}
 
 	if (vizwizStore.dsConfig.location?.selected) {
-		const locationDatastreams = AggregateDatastreams({ location: vizwizStore.dsConfig.location });
-        const pmResult = await CreatePointMarkerVizProps(locationDatastreams, {
-            name: vizwizStore.visualizationCustomizationOptions.name,
-            icon: vizwizStore.visualizationCustomizationOptions.locationIcon,
-            iconColor: vizwizStore.visualizationCustomizationOptions.locationIconColor,
-            iconName: vizwizStore.visualizationCustomizationOptions.locationIconName,
-        });
-        const pmVisualizationComponents: VisualizationComponents = {
-            dataSource: pmResult.vizDatasources,
-            dataLayer: pmResult.pointMarkerLayer,
-        };
-        const pmViz: OSHVisualization = new OSHVisualization(
-            `${vizwizStore.id}-${randomUUID()}`,
-            `${vizwizStore.visualizationCustomizationOptions.name} - Location`,
-            'pointmarker',
-            PointMarkerDescriptor.viewLocation,
-            getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
-            undefined,
-            vizwizStore.id
-        );
-        pmViz.setVisualizationComponents(pmVisualizationComponents);
-        visualizationStore.addVisualization(pmViz);
-        children.push(pmViz);
-    }
+		const locationDatastreams = AggregateDatastreams({
+			location: vizwizStore.dsConfig.location,
+		});
+		// Pointmarker
+		const pmResult = await CreatePointMarkerVizProps(locationDatastreams, {
+			name: vizwizStore.visualizationCustomizationOptions.name,
+			icon: vizwizStore.visualizationCustomizationOptions.locationIcon,
+			iconColor: vizwizStore.visualizationCustomizationOptions.locationIconColor,
+			iconName: vizwizStore.visualizationCustomizationOptions.locationIconName,
+		});
+		const pmVisualizationComponents: VisualizationComponents = {
+			dataSource: pmResult.vizDatasources,
+			dataLayer: pmResult.pointMarkerLayer,
+		};
+		const pmViz: OSHVisualization = new OSHVisualization(
+			`${vizwizStore.id}-${randomUUID()}`,
+			`${vizwizStore.visualizationCustomizationOptions.name} - Location`,
+			'pointmarker',
+			PointMarkerDescriptor.viewLocation,
+			getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
+			undefined,
+			vizwizStore.id
+		);
+		pmViz.setVisualizationComponents(pmVisualizationComponents);
+		visualizationStore.addVisualization(pmViz);
+		children.push(pmViz);
+		// Polyline trail
+		const polylineResult = CreatePolylineVizProps(locationDatastreams, {
+			name: vizwizStore.visualizationCustomizationOptions.name,
+			color: vizwizStore.visualizationCustomizationOptions.locationIconColor,
+			weight: 5,
+			opacity: 0.5,
+			maxPoints: 1000,
+		});
+		const polylineVisualizationComponents: VisualizationComponents = {
+			dataSource: polylineResult.vizDatasources,
+			dataLayer: polylineResult.polylineLayer,
+		};
+		const polylineViz: OSHVisualization = new OSHVisualization(
+			`${vizwizStore.id}-${randomUUID()}`,
+			`${vizwizStore.visualizationCustomizationOptions.name} - Polyline`,
+			'polyline',
+			PolylineDescriptor.viewLocation,
+			getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
+			undefined,
+			vizwizStore.id
+		);
+		polylineViz.setVisualizationComponents(polylineVisualizationComponents);
+		visualizationStore.addVisualization(polylineViz);
+		children.push(polylineViz);
+	}
 	const newViz: OSHVisualization = new OSHVisualization(
 		vizwizStore.id,
 		vizName,
