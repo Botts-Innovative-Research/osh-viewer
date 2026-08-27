@@ -95,6 +95,11 @@ export function createCesiumAdapter(): MapAdapter {
 		// Add offline buildings
 		if (map.hasBuildings) await addOfflineBuildingLayer(map);
 
+		// TEST: Add offline terrain
+		viewer.scene.setTerrain(
+			new Cesium.Terrain(Cesium.CesiumTerrainProvider.fromUrl(`/${map.mapPath}/terrain`))
+		);
+
 		// Fly to center of new map and fix zoom
 		viewer.camera.flyTo({
 			destination: Cesium.Cartesian3.fromDegrees(
@@ -133,7 +138,17 @@ export function createCesiumAdapter(): MapAdapter {
 
 			const height =
 				Number(entity.properties?.height_m?.getValue(Cesium.JulianDate.now())) || 5;
-			entity.polygon.height = new Cesium.ConstantProperty(0);
+
+			// Base sits on the terrain
+			entity.polygon.heightReference = new Cesium.ConstantProperty(
+				Cesium.HeightReference.CLAMP_TO_GROUND
+			);
+
+			// Building height is measured upward from the terrain
+			entity.polygon.extrudedHeightReference = new Cesium.ConstantProperty(
+				Cesium.HeightReference.RELATIVE_TO_GROUND
+			);
+
 			entity.polygon.extrudedHeight = new Cesium.ConstantProperty(height);
 			entity.polygon.material = new Cesium.ColorMaterialProperty(
 				Cesium.Color.GRAY.withAlpha(1.0)
