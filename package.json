@@ -34,7 +34,7 @@
 		"milsymbol": "^3.0.4",
 		"ol": "^6.2.1",
 		"ol-layerswitcher": "^3.8.1",
-		"osh-js": "git+ssh://git@github.com/Botts-Innovative-Research/osh-js.git#fix-lob-jitter",
+		"osh-js": "git+ssh://git@github.com/Botts-Innovative-Research/osh-js.git",
 		"pinia": "^3.0.4",
 		"pinia-plugin-persistedstate": "^4.7.1",
 		"simple-worker-vite": "^0.3.0",
