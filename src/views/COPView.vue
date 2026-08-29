@@ -18,7 +18,10 @@ const storePaneSize = ({ panes }) => {
 	sessionStorage.setItem('paneSize2', panes[1].size);
 };
 
-const tab = ref('one');
+const tab = ref(sessionStorage.getItem('tab') ?? 'one');
+watch(tab, (newTab) => {
+	sessionStorage.setItem('tab', newTab);
+});
 
 const mapInteractionStore = useMapInteractionStore();
 watch(
