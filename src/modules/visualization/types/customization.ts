@@ -41,6 +41,7 @@ export interface IPolylineCustomizationOptions extends CustomizationOptions {
 	color: string;
 	weight: number;
 	opacity: number;
+	maxPoints: number;
 }
 
 export interface IFrustumCustomizationOptions extends CustomizationOptions {

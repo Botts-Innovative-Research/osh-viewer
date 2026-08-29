@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { GeofenceMode, GeoOverlayType } from '@/modules/map/geo-overlay/types';
+import { onMounted } from 'vue';
+import { GeoOverlayType } from '@/modules/map/geo-overlay/types';
 import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
 import ColorPicker from '@/components/ui/ColorPicker.vue';
+import IconPicker from '@/components/ui/IconPicker.vue';
+import { ICON_OPTIONS } from '@/lib/icons';
 
 const props = defineProps<{
 	defaultName: string;
@@ -26,21 +28,38 @@ onMounted(() => {
 		>
 		</v-text-field>
 		<v-list>
+			<!-- Icon -->
+			<v-list-item v-show="props.type === 'Point'">
+				<v-list-item-title>Icon</v-list-item-title>
+				<template #append>
+					<IconPicker
+						v-model="previewStore.icon"
+						:icon-options="
+							ICON_OPTIONS.filter(
+								(option) =>
+									option.category !== 'geoptz' && option.category !== 'waypoint'
+							)
+						"
+					></IconPicker>
+				</template>
+			</v-list-item>
 			<!-- Colors -->
-			<v-list-item>
+			<v-list-item v-show="props.type !== 'Point'">
 				<v-list-item-title>Border Color</v-list-item-title>
 				<template #append>
 					<ColorPicker v-model="previewStore.borderColor" />
 				</template>
 			</v-list-item>
-			<v-list-item v-show="props.type === 'Circle' || props.type === 'Polygon'">
-				<v-list-item-title>Fill Color</v-list-item-title>
+			<v-list-item v-show="props.type !== 'LineString'">
+				<v-list-item-title
+					>{{ props.type === 'Point' ? '' : 'Fill ' }}Color</v-list-item-title
+				>
 				<template #append>
 					<ColorPicker v-model="previewStore.fillColor" />
 				</template>
 			</v-list-item>
 			<!-- Geofence -->
-			<v-list-item>
+			<v-list-item v-show="props.type !== 'Point'">
 				<v-list-item-title>Geofence</v-list-item-title>
 				<template #append>
 					<v-switch

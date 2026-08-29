@@ -12,6 +12,8 @@ import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { IVideoLayerProperties } from '../../types/layers';
 import { IVideoViewProperties } from '../../types/views';
 import { fetchControlStreamSchema } from '../../services/controlstream.service';
+import ActionButton from '@/components/ui/ActionButton.vue';
+import ToggleActionButton from '@/components/ui/ToggleActionButton.vue';
 
 const props = defineProps<{
 	visualization: OSHVisualization;
@@ -129,6 +131,11 @@ async function initializePtz() {
 
 	await fetchControlStreamSchema(cs.controlstream.properties, cs.controlstream.networkProperties);
 }
+/* Hide/show PTZ controller */
+const showPtzController = ref<boolean>(ptzControl.value.hasControl);
+function togglePtzController() {
+	showPtzController.value = !showPtzController.value;
+}
 onMounted(async () => {
 	initializeVideo();
 	await initializePtz();
@@ -143,12 +150,23 @@ useVisualizationCleanup(ref(dsInstances));
 		class="video-mjpeg video-h264"
 	>
 	</v-sheet>
-	<PTZControl
-		v-if="ptzControl.hasControl"
-		:command-base-url="ptzControl.commandBaseUrl"
-		:id="ptzControl.id"
-		:auth="ptzControl.auth"
-	/>
+	<div v-if="ptzControl.hasControl">
+		<ToggleActionButton
+			:toggle-on="showPtzController"
+			tool-name="PTZ Controller"
+			@submit="togglePtzController"
+		></ToggleActionButton>
+		<v-expand-transition>
+			<div v-if="ptzControl.hasControl && showPtzController">
+				<PTZControl
+					v-if="ptzControl.hasControl"
+					:command-base-url="ptzControl.commandBaseUrl"
+					:id="ptzControl.id"
+					:auth="ptzControl.auth"
+				/>
+			</div>
+		</v-expand-transition>
+	</div>
 </template>
 
 <style>

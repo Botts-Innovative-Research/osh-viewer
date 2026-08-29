@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import MapView from '@/modules/map/components/MapView.vue';
 import SystemBrowser from '@/modules/system-browser/SystemBrowser.vue';
 import VisualizationSidebar from '@/modules/visualization/sidebar/components/VisualizationSidebar.vue';
@@ -7,15 +7,29 @@ import { Splitpanes, Pane } from 'splitpanes';
 import 'splitpanes/dist/splitpanes.css';
 import MapToolStatus from '@/modules/map/components/MapToolStatus.vue';
 import MapSidebar from '@/modules/map/geo-overlay/MapSidebar.vue';
+import MapSpeedDial from '@/modules/map/components/MapSpeedDial.vue';
+import { useMapInteractionStore } from '@/stores/mapinteractionstore.ts';
+import LLATooltip from '@/modules/map/components/LLATooltip.vue';
 
-const paneSize1 = ref(localStorage.paneSize1 ?? 30); // System browser AND Visualization pane
-const paneSize2 = ref(localStorage.paneSize2 ?? 70); // Map view pane
+const paneSize1 = ref(Number(sessionStorage.getItem('paneSize1') ?? 30));
+const paneSize2 = ref(Number(sessionStorage.getItem('paneSize2') ?? 70));
 const storePaneSize = ({ panes }) => {
-	localStorage.paneSize1 = panes[0].size;
-	localStorage.paneSize2 = panes[1].size;
+	sessionStorage.setItem('paneSize1', panes[0].size);
+	sessionStorage.setItem('paneSize2', panes[1].size);
 };
 
-const tab = ref('one');
+const tab = ref(sessionStorage.getItem('tab') ?? 'one');
+watch(tab, (newTab) => {
+	sessionStorage.setItem('tab', newTab);
+});
+
+const mapInteractionStore = useMapInteractionStore();
+watch(
+	() => mapInteractionStore.interactionMode,
+	(currentTool) => {
+		if (currentTool.startsWith('geoOverlay')) tab.value = 'three'; // Switch to map tab
+	}
+);
 </script>
 
 <template>
@@ -60,6 +74,8 @@ const tab = ref('one');
 			:size="paneSize2"
 		>
 			<MapToolStatus />
+			<MapSpeedDial />
+			<LLATooltip />
 			<MapView class="fill-height" />
 		</pane>
 	</splitpanes>

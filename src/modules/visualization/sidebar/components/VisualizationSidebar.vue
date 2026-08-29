@@ -124,7 +124,7 @@ const uiStore = useUIStore();
 							</v-sheet>
 						</v-expansion-panel-text>
 					</v-expansion-panel>
-					<!--				Mission Builder Visualizations-->
+					<!-- Mission Builder Visualizations-->
 					<v-expansion-panel
 						:disabled="missionVisualizations.length == 0"
 						value="mission"
@@ -294,10 +294,6 @@ const uiStore = useUIStore();
 	white-space: nowrap;
 }
 
-.v-expansion-panel--active {
-	margin-bottom: 0px; /* consistent gap */
-}
-
 .v-expansion-panel:hover .panel-actions {
 	max-width: 120px;
 	opacity: 1;
@@ -306,5 +302,17 @@ const uiStore = useUIStore();
 .v-list-item:hover .map-actions {
 	max-width: 120px;
 	opacity: 1;
+}
+
+:deep(.v-expansion-panels .v-expansion-panel) {
+	margin: 0 !important;
+}
+
+:deep(.v-expansion-panels .v-expansion-panel--active) {
+	margin: 0 !important;
+}
+
+:deep(.v-expansion-panels .v-expansion-panel + .v-expansion-panel) {
+	margin-top: 0 !important;
 }
 </style>

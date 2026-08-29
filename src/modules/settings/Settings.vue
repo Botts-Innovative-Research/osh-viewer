@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import MapSettings from './MapSettings.vue';
+import MapSettings from './map-settings/MapSettings.vue';
 import GeneralSettings from './GeneralSettings.vue';
+import OfflineMapSettings from '@/modules/settings/map-settings/OfflineMapSettings.vue';
 
 // Nav drawer state
 const selectedTab = ref(['general']);
@@ -27,19 +28,19 @@ const appVersion = APP_VERSION;
 							v-model:selected="selectedTab"
 							mandatory
 						>
-							<v-list-item
-								prepend-avatar="mdi-cog"
-								value="general"
-							>
+							<v-list-item value="general">
 								<template #prepend><v-icon icon="mdi-cog" /></template>
 								<v-list-item-title>General</v-list-item-title>
 							</v-list-item>
-							<v-list-item
-								prepend-avatar="mdi-map"
-								value="map"
-							>
+							<v-list-item value="map">
 								<template #prepend><v-icon icon="mdi-map" /></template>
 								<v-list-item-title>Map</v-list-item-title>
+							</v-list-item>
+							<v-list-item value="offline-map">
+								<template #prepend
+									><v-icon icon="mdi-cloud-off-outline"
+								/></template>
+								<v-list-item-title>Offline Map</v-list-item-title>
 							</v-list-item>
 						</v-list>
 					</v-navigation-drawer>
@@ -51,6 +52,9 @@ const appVersion = APP_VERSION;
 						</v-window-item>
 						<v-window-item value="map">
 							<MapSettings />
+						</v-window-item>
+						<v-window-item value="offline-map">
+							<OfflineMapSettings />
 						</v-window-item>
 					</v-window>
 				</v-col>

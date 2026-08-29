@@ -2,12 +2,13 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
 
-const { selectedMissionControllers, missionVisualizations, openEditViz, removeMission } = defineProps<{
-	selectedMissionControllers: OSHVisualization[];
-	missionVisualizations: OSHVisualization[];
-	openEditViz: (viz: string | OSHVisualization) => void;
-	removeMission: (viz: OSHVisualization) => void;
-}>();
+const { selectedMissionControllers, missionVisualizations, openEditViz, removeMission } =
+	defineProps<{
+		selectedMissionControllers: OSHVisualization[];
+		missionVisualizations: OSHVisualization[];
+		openEditViz: (viz: string | OSHVisualization) => void;
+		removeMission: (viz: OSHVisualization) => void;
+	}>();
 
 const emit = defineEmits<{
 	(e: 'update:selectedMissionControllers', value: OSHVisualization[]): void;
@@ -15,7 +16,9 @@ const emit = defineEmits<{
 </script>
 <template>
 	<v-select
-		label=""
+		hint="Select a controller to build and send missions."
+		persistent-hint
+		label="Mission Controllers"
 		:model-value="selectedMissionControllers"
 		@update:model-value="emit('update:selectedMissionControllers', $event)"
 		v-bind:items="missionVisualizations"
@@ -23,7 +26,6 @@ const emit = defineEmits<{
 		return-object
 		multiple
 		chips
-		hide-details
 		clearable
 	>
 		<template v-slot:item="{ item, props: itemProps }">

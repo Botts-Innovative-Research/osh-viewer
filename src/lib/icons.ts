@@ -42,7 +42,7 @@ export const ICON_OPTIONS: IconItem[] = [
 	// FOI
 	{ id: 15, label: 'Building', icon: 'domain', category: 'foi' },
 	// mission builder - home location
-	{ id: 16, label: 'HomeLocation', icon: 'home-map-marker', category: 'waypoint' },
+	{ id: 16, label: 'Home', icon: 'home-map-marker', category: 'map' },
 ];
 
 /**
@@ -55,4 +55,24 @@ export const ICON_OPTIONS: IconItem[] = [
  */
 export function iconPathBuilder(category: string, icon: string): string {
 	return `/icons/${category}/${icon}.png`;
+}
+
+/**
+ * Extracts the category and icon name from an icon path.
+ *
+ * Example:
+ * /icons/map/car.png
+ * => { category: "map", icon: "car" }
+ */
+export function iconPathParser(path: string): { category: string; icon: string } | null {
+	const match = path.match(/^\/icons\/([^/]+)\/([^/]+)\.png$/);
+
+	if (!match) {
+		return null;
+	}
+
+	return {
+		category: match[1],
+		icon: match[2],
+	};
 }

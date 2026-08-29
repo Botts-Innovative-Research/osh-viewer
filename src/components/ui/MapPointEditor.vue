@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { MapPoint } from '@/modules/map/types';
+import ActionButton from '@/components/ui/ActionButton.vue';
 
 const props = withDefaults(
 	defineProps<{
@@ -9,6 +10,7 @@ const props = withDefaults(
 		isSelectorDisabled?: boolean; // Crosshair "selector" disabled status
 		selectorToolLabel?: string; // Name of tool to use in selector button's tooltip
 		hasSubmit?: boolean; // Whether "Send"/"Submit" button is included
+		isSubmitDisabled?: boolean; // Whether submit button is disabled externally
 		submitLabel?: string; // Label for submit button
 		submitIcon?: string; // Icon for submit button
 		hideAlt?: boolean; // Whether to include altitude input
@@ -18,6 +20,7 @@ const props = withDefaults(
 		hasSelector: true,
 		isSelected: false,
 		isSelectorDisabled: true,
+		isSubmitDisabled: false,
 		selectorToolLabel: 'map tool',
 		hasSubmit: true,
 		submitLabel: 'Add',
@@ -40,7 +43,6 @@ const emit = defineEmits<{
 const form = ref<any>(null);
 const valid = ref(false);
 async function onSubmit() {
-	console.log('Test');
 	const { valid } = await form.value.validate();
 	if (!valid) return;
 
@@ -151,16 +153,12 @@ function defaultToZero(key: keyof MapPoint) {
 				v-if="props.hasSubmit"
 				class="field-floating-details"
 			>
-				<v-btn
-					block
-					color="primary"
-					variant="tonal"
-					@click="onSubmit"
-					:prepend-icon="props.submitIcon"
-					:disabled="!valid"
-				>
-					{{ props.submitLabel }}
-				</v-btn>
+				<ActionButton
+					:label="props.submitLabel"
+					:icon="props.submitIcon"
+					:disabled="!valid || props.isSubmitDisabled"
+					@submit="onSubmit"
+				/>
 			</v-col>
 		</v-row>
 	</v-form>

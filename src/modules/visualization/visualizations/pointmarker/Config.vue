@@ -7,7 +7,8 @@ import { useConfig } from '../../wizard/composables/useConfig';
 import RoleCheckbox from '../../wizard/components/RoleCheckbox.vue';
 import DataSourcePicker from '../../wizard/components/DataSourcePicker.vue';
 import ControlStreamPicker from '../../wizard/components/ControlStreamPicker.vue';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { useVizWizStore } from '@/stores/vizwizstore';
 
 const props = withDefaults(
 	defineProps<{ configRoles: VisualizationConfigRole[]; optional?: boolean }>(),
@@ -17,7 +18,21 @@ const props = withDefaults(
 	}
 );
 
-const { checkedRoles, validRoles, valid, include, autoMap } = useConfig(props.configRoles, !props.optional);
+const { checkedRoles, validRoles, valid, include, autoMap } = useConfig(
+	props.configRoles,
+	!props.optional
+);
+
+const vizwizStore = useVizWizStore();
+const useFlatLocation = ref(vizwizStore.dsConfig.location?.locationFormat === 'flat');
+
+watch(useFlatLocation, (isFlat) => {
+	vizwizStore.updateDsConfig('location', {
+		property: null,
+		label: null,
+		locationFormat: isFlat ? 'flat' : undefined,
+	});
+});
 
 // Validation
 const emit = defineEmits<VisualizationComponentEmits>();
@@ -57,12 +72,23 @@ useComponentValidation(effectiveValid, emit);
 					:tooltip="config.description"
 					:disabled="config.required"
 				>
+					<v-switch
+						v-if="config.role === 'location' && checkedRoles[config.role]"
+						v-model="useFlatLocation"
+						label="Use separate Lat / Lon / Alt fields"
+						color="primary"
+						density="compact"
+						hide-details
+						class="mb-2 ml-3"
+						inset="material"
+					/>
 					<DataSourcePicker
 						v-if="checkedRoles[config.role] && config.type === 'ds'"
 						:role="config.role"
 						:multiple="config.multiple"
 						v-model:valid="validRoles[config.role]"
 						:show-property-selector="config.showPropertySelector ?? true"
+						:flat-location="config.role === 'location' && useFlatLocation"
 					/>
 					<ControlStreamPicker
 						v-if="checkedRoles[config.role] && config.type === 'cs'"

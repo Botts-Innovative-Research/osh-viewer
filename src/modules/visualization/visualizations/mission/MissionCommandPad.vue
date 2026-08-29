@@ -6,11 +6,20 @@ import MapPointEditor from '@/components/ui/MapPointEditor.vue';
 import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 import type { IConSysApiControlStreamProperties } from '../../types/datasource';
 import type { MapPoint } from '@/modules/map/types';
-import SendButton from "@/components/ui/SendButton.vue";
+import ActionButton from '@/components/ui/ActionButton.vue';
+import LongPressButton from '@/components/ui/LongPressButton.vue';
 
 const props = defineProps<{
 	controlstreams: IConSysApiControlStreamProperties[];
+	currentAltitude: number;
 }>();
+
+const AIRBORNE_THRESHOLD = 2.0; // meters AGL
+const isAirborne = computed(() => props.currentAltitude > AIRBORNE_THRESHOLD);
+watch(isAirborne, (val) => {
+	// Deselect fly-to-location tool if vehicle is not airborne
+	if (!val) mapInteractionStore.deselectTool('flyToLocation');
+});
 
 function getControlstreamByRole(role: string) {
 	return props.controlstreams.find((cs) => cs.properties && cs.properties[role]);
@@ -22,6 +31,9 @@ const mapInteractionStore = useMapInteractionStore();
 const driveLocationPoint = ref<MapPoint>({ lat: 0, lon: 0, alt: 0 });
 const isDriveLocationMapSelect = computed(() => mapInteractionStore.isDriveLocationSelected);
 
+const flyLocationPoint = ref<MapPoint>({ lat: 0, lon: 0, alt: 15 });
+const isFlyLocationMapSelect = computed(() => mapInteractionStore.isFlyToLocationSelected);
+
 watch(
 	() => mapStore.currentLLA,
 	(newVal) => {
@@ -32,11 +44,22 @@ watch(
 				alt: newVal.altitude ?? 0,
 			};
 		}
+		if (isFlyLocationMapSelect.value && newVal) {
+			flyLocationPoint.value = {
+				lat: newVal.latitude,
+				lon: newVal.longitude,
+				alt: flyLocationPoint.value.alt,
+			};
+		}
 	}
 );
 
 function toggleDriveLocationSelect() {
 	mapInteractionStore.toggleTool('driveLocation');
+}
+
+function toggleFlyLocationSelect() {
+	mapInteractionStore.toggleTool('flyToLocation');
 }
 
 const xVelocity = ref(0.0);
@@ -51,8 +74,17 @@ const isPaused = ref(false);
 const isArmed = ref(false);
 const isHold = ref(false);
 const driveModes = [
-	'MANUAL', 'ACRO', 'STEERING', 'HOLD', 'LOITER',
-	'FOLLOW', 'SIMPLE', 'DOCK', 'AUTO', 'RTL', 'GUIDED',
+	'MANUAL',
+	'ACRO',
+	'STEERING',
+	'HOLD',
+	'LOITER',
+	'FOLLOW',
+	'SIMPLE',
+	'DOCK',
+	'AUTO',
+	'RTL',
+	'GUIDED',
 ];
 const selectedDriveMode = ref('HOLD');
 
@@ -76,7 +108,7 @@ function sendCommandToRole(role: string, payload: any) {
 	if (!config) return;
 
 	console.log(`[MissionCommandPad] Sending command to ${role}:`, payload);
-	sendCommand(config.baseUrl, config.id, payload, config.auth);
+	sendCommand(config.baseUrl, config.id, payload, config.auth, role.toUpperCase());
 }
 
 function pause() {
@@ -136,28 +168,58 @@ function driveMode() {
 	sendCommandToRole('driveMode', { parameters: { mode: selectedDriveMode.value } });
 }
 
-
 function driveLocationCommand(location: MapPoint) {
 	sendCommandToRole('driveLocation', {
 		parameters: { locationVectorLL: { Latitude: location.lat, Longitude: location.lon } },
 	});
 }
 
+function flyToLocationCommand(location: MapPoint) {
+	if (!isAirborne.value) {
+		console.warn(
+			'[MissionCommandPad] Fly-to blocked: vehicle has not taken off (altitude:',
+			props.currentAltitude,
+			'm)'
+		);
+		return;
+	}
+	sendCommandToRole('flyToLocation', {
+		parameters: {
+			locationVectorLLA: {
+				Latitude: location.lat,
+				Longitude: location.lon,
+				AltitudeAGL: location.alt,
+			},
+			returnToStart: false,
+			hoverSeconds: 5,
+		},
+	});
+}
+
 const hasSimpleCommands = computed(() =>
-	['pause', 'rtl', 'land', 'cancel', 'arm', 'hold', 'reboot']
-		.some((role) => getControlstreamByRole(role))
+	['pause', 'rtl', 'land', 'cancel', 'arm', 'hold', 'reboot'].some((role) =>
+		getControlstreamByRole(role)
+	)
 );
 </script>
 
 <template>
-		<div v-if="hasSimpleCommands" class="command-section">
-
-		<v-row class="command-grid pa-2" density="comfortable">
-			<v-col v-if="getControlstreamByRole('arm')" cols="4">
+	<div
+		v-if="hasSimpleCommands"
+		class="command-section"
+	>
+		<v-row
+			dense
+			class="pa-2"
+		>
+			<v-col
+				v-if="getControlstreamByRole('arm')"
+				cols="6"
+				sm="4"
+			>
 				<v-btn
 					:color="isArmed ? 'primary' : 'grey'"
 					block
-					class="command-btn"
 					variant="tonal"
 					@click="arm"
 				>
@@ -175,16 +237,18 @@ const hasSimpleCommands = computed(() =>
 
 			<v-col
 				v-if="getControlstreamByRole('hold')"
-				cols="4"
+				cols="6"
+				sm="4"
 			>
 				<v-btn
 					:color="isHold ? 'primary' : 'grey'"
 					block
-					class="command-btn"
 					variant="tonal"
 					@click="hold"
 				>
-					<v-icon start>{{ isHold ? 'mdi-pause-circle-outline' : 'mdi-hand-back-right' }}</v-icon>
+					<v-icon start>{{
+						isHold ? 'mdi-pause-circle-outline' : 'mdi-hand-back-right'
+					}}</v-icon>
 					{{ isHold ? 'Release' : 'Hold' }}
 					<v-tooltip
 						activator="parent"
@@ -198,12 +262,12 @@ const hasSimpleCommands = computed(() =>
 
 			<v-col
 				v-if="getControlstreamByRole('pause')"
-				cols="4"
+				cols="6"
+				sm="4"
 			>
 				<v-btn
 					:color="isPaused ? 'primary' : 'grey'"
 					block
-					class="command-btn"
 					variant="tonal"
 					@click="pause"
 				>
@@ -220,273 +284,358 @@ const hasSimpleCommands = computed(() =>
 
 			<v-col
 				v-if="getControlstreamByRole('rtl')"
-				cols="4"
+				cols="6"
+				sm="4"
 			>
-				<v-btn
-					block
-					class="command-btn"
+				<LongPressButton
+					icon="mdi-home"
+					label="RTL"
 					color="primary"
-					variant="tonal"
-					@click="returnToLaunch"
-				>
-					<v-icon start>mdi-home</v-icon>
-					RTL
-					<v-tooltip
-						activator="parent"
-						location="top"
-					>
-						Return to the launch position and land automatically.
-					</v-tooltip>
-				</v-btn>
+					tooltip="Return to the launch position and land automatically."
+					@confirm="returnToLaunch"
+				/>
 			</v-col>
 
 			<v-col
 				v-if="getControlstreamByRole('land')"
-				cols="4"
+				cols="6"
+				sm="4"
 			>
-				<v-btn
-					block
-					class="command-btn"
+				<LongPressButton
+					icon="mdi-airplane-landing"
+					label="Land"
 					color="warning"
-					variant="tonal"
-					@click="land"
-				>
-					<v-icon start>mdi-airplane-landing</v-icon>
-					Land
-					<v-tooltip
-						activator="parent"
-						location="top"
-					>
-						Land at the current position and disarm motors.
-					</v-tooltip>
-				</v-btn>
+					tooltip="Land at the current position and disarm motors."
+					@confirm="land"
+				/>
 			</v-col>
 
 			<v-col
 				v-if="getControlstreamByRole('cancel')"
-				cols="4"
+				cols="6"
+				sm="4"
 			>
-				<v-btn
-					block
-					class="command-btn"
+				<LongPressButton
+					icon="mdi-cancel"
+					label="Cancel"
 					color="error"
-					variant="tonal"
-					@click="cancel"
-				>
-					<v-icon start>mdi-cancel</v-icon>
-					Cancel
-					<v-tooltip
-						activator="parent"
-						location="top"
-					>
-						Cancel the current mission or command immediately.
-					</v-tooltip>
-				</v-btn>
+					tooltip="Cancel the current mission or command immediately."
+					@confirm="cancel"
+				/>
 			</v-col>
 
 			<v-col
 				v-if="getControlstreamByRole('reboot')"
-				cols="4"
+				cols="6"
+				sm="4"
 			>
-				<v-btn
-					block
-					class="command-btn"
+				<LongPressButton
+					icon="mdi-restart"
+					label="Reboot"
 					color="error"
-					variant="tonal"
-					@click="reboot"
-				>
-					<v-icon start>mdi-restart</v-icon>
-					Reboot
-					<v-tooltip
-						activator="parent"
-						location="top"
-					>
-						Restart the flight controller. Vehicle must be disarmed.
-					</v-tooltip>
-				</v-btn>
+					tooltip="Restart the flight controller. Vehicle must be disarmed."
+					@confirm="reboot"
+				/>
 			</v-col>
 		</v-row>
+	</div>
+
+	<!-- Drive mode -->
+	<div
+		v-if="getControlstreamByRole('driveMode')"
+		class="command-section"
+	>
+		<div class="section-header">
+			<v-icon
+				size="small"
+				class="mr-2"
+				>mdi-car</v-icon
+			>
+			<span class="text-subtitle-2 font-weight-medium">Drive Mode</span>
+			<v-tooltip
+				activator="parent"
+				location="top"
+			>
+				Sets the ArduRover flight mode for a ground rover or surface
+			</v-tooltip>
 		</div>
-
-		<!-- Drive mode -->
-		<div v-if="getControlstreamByRole('driveMode')" class="command-section">
-			<div class="section-header">
-				<v-icon size="small" class="mr-2">mdi-car</v-icon>
-				<span class="text-subtitle-2 font-weight-medium">Drive Mode</span>
-				<v-tooltip activator="parent" location="top">
-					Sets the ArduRover flight mode for a ground rover or surface
-				</v-tooltip>
-			</div>
-				<v-row
-					align="center"
-					density="comfortable"
-				>
-					<v-col cols="8">
-						<v-select
-							v-model="selectedDriveMode"
-							:items="driveModes"
-							class="mt-2"
-							label="Drive Mode"
-						/>
-					</v-col>
-					<v-col cols="4">
-            <SendButton
-                @send="driveMode()"
-            />
-					</v-col>
-				</v-row>
-		</div>
-
-		<!-- Takeoff control -->
-		<div v-if="getControlstreamByRole('takeoff')" class="command-section">
-			<div class="section-header">
-				<v-icon size="small" class="mr-2">mdi-airplane-takeoff</v-icon>
-				<span class="text-subtitle-2 font-weight-medium">Takeoff</span>
-				<v-tooltip activator="parent" location="top">
-					Set altitude (AGL) and launch the vehicle vertically.
-				</v-tooltip>
-			</div>
-				<v-row
-					align="center"
-					density="comfortable"
-				>
-					<v-col cols="4">
-						<v-text-field
-							v-model.number="takeOffAlt"
-							density="compact"
-							hide-details
-							label="Altitude (AGL)"
-							suffix="m"
-							type="number"
-						/>
-					</v-col>
-					<v-col cols="4">
-            <SendButton
-                @send="takeoffCommand()"
-            />
-					</v-col>
-				</v-row>
-		</div>
-
-		<!-- Drive velocity control -->
-		<div v-if="getControlstreamByRole('driveVelocity')" class="command-section">
-			<div class="section-header">
-				<v-icon size="small" class="mr-2">mdi-steering</v-icon>
-				<span class="text-subtitle-2 font-weight-medium">Drive Velocity</span>
-				<v-tooltip activator="parent" location="top">
-					Control forward speed and yaw rate for manual driving.
-				</v-tooltip>
-			</div>
-				<v-row
-					align="center"
-					density="comfortable"
-				>
-					<v-col cols="4">
-						<v-text-field
-							v-model.number="forwardVelocityDrive"
-							density="compact"
-							hide-details
-							label="Forward Velocity"
-							type="number"
-						/>
-					</v-col>
-					<v-col cols="4">
-						<v-text-field
-							v-model.number="yawRateDrive"
-							density="compact"
-							hide-details
-							label="Yaw Rate"
-							type="number"
-						/>
-					</v-col>
-					<v-col cols="4">
-            <SendButton
-                @send="driveVelocityCommand()"
-            />
-					</v-col>
-				</v-row>
-		</div>
-
-		<!-- Offboard control -->
-		<div v-if="getControlstreamByRole('offboard')" class="command-section">
-			<div class="section-header">
-				<v-icon size="small" class="mr-2">mdi-remote</v-icon>
-				<span class="text-subtitle-2 font-weight-medium">Offboard Control</span>
-				<v-tooltip activator="parent" location="top">
-					Send direct velocity commands and yaw rate for manual flight control.
-				</v-tooltip>
-			</div>
-				<v-form ref="offboardForm">
-					<v-row
-						align="center"
-						density="comfortable"
-					>
-						<v-col cols="6">
-							<v-text-field
-								v-model.number="xVelocity"
-								density="compact"
-								hide-details
-								label="Vx"
-								type="number"
-							/>
-						</v-col>
-						<v-col cols="6">
-							<v-text-field
-								v-model.number="yVelocity"
-								density="compact"
-								hide-details
-								label="Vy"
-								type="number"
-							/>
-						</v-col>
-						<v-col cols="6">
-							<v-text-field
-								v-model.number="zVelocity"
-								density="compact"
-								hide-details
-								label="Vz"
-								type="number"
-							/>
-						</v-col>
-						<v-col cols="6">
-							<v-text-field
-								v-model.number="yawRate"
-								density="compact"
-								hide-details
-								label="Yaw"
-								type="number"
-							/>
-						</v-col>
-						<v-col cols="6">
-              <SendButton
-                  @send="offboard()"
-              />
-						</v-col>
-					</v-row>
-				</v-form>
-    </div>
-
-		<!-- Drive to location -->
-		<div v-if="getControlstreamByRole('driveLocation')" class="command-section">
-			<div class="section-header">
-				<v-icon size="small" class="mr-2">mdi-map-marker</v-icon>
-				<span class="text-subtitle-2 font-weight-medium">Drive to Location</span>
-				<v-tooltip activator="parent" location="top">
-					Navigate the vehicle to a specific lat/lon coordinate. Use the crosshairs to pick from the map.
-				</v-tooltip>
-			</div>
-				<MapPointEditor
-					v-model="driveLocationPoint"
-					:is-selected="isDriveLocationMapSelect"
-					:is-selector-disabled="false"
-					submit-icon="mdi-send"
-					submit-label="Send"
-					hide-alt
-					@submit="driveLocationCommand"
-					@toggle="toggleDriveLocationSelect"
+		<v-row
+			dense
+			class="d-flex align-center"
+		>
+			<v-col
+				cols="12"
+				sm="8"
+			>
+				<v-select
+					v-model="selectedDriveMode"
+					:items="driveModes"
+					class="mt-2"
+					label="Drive Mode"
+					hide-details
 				/>
-		</div>
+			</v-col>
+			<v-col
+				cols="12"
+				sm="4"
+			>
+				<ActionButton @submit="driveMode()" />
+			</v-col>
+		</v-row>
+	</div>
 
+	<!-- Takeoff control -->
+	<div
+		v-if="getControlstreamByRole('takeoff')"
+		class="command-section"
+	>
+		<div class="section-header">
+			<v-icon
+				size="small"
+				class="mr-2"
+				>mdi-airplane-takeoff</v-icon
+			>
+			<span class="text-subtitle-2 font-weight-medium">Takeoff</span>
+			<v-tooltip
+				activator="parent"
+				location="top"
+			>
+				Set altitude (AGL) and launch the vehicle vertically.
+			</v-tooltip>
+		</div>
+		<v-row
+			dense
+			align="center"
+		>
+			<v-col
+				cols="12"
+				sm="6"
+			>
+				<v-text-field
+					v-model.number="takeOffAlt"
+					density="compact"
+					hide-details
+					label="Altitude (AGL)"
+					suffix="m"
+					type="number"
+				/>
+			</v-col>
+			<v-col
+				cols="12"
+				sm="6"
+			>
+				<ActionButton @submit="takeoffCommand()" />
+			</v-col>
+		</v-row>
+	</div>
+
+	<!-- Drive velocity control -->
+	<div
+		v-if="getControlstreamByRole('driveVelocity')"
+		class="command-section"
+	>
+		<div class="section-header">
+			<v-icon
+				size="small"
+				class="mr-2"
+				>mdi-steering</v-icon
+			>
+			<span class="text-subtitle-2 font-weight-medium">Drive Velocity</span>
+			<v-tooltip
+				activator="parent"
+				location="top"
+			>
+				Control forward speed and yaw rate for manual driving.
+			</v-tooltip>
+		</div>
+		<v-row
+			dense
+			align="center"
+		>
+			<v-col
+				cols="12"
+				sm="4"
+			>
+				<v-text-field
+					v-model.number="forwardVelocityDrive"
+					density="compact"
+					hide-details
+					label="Forward Velocity"
+					type="number"
+				/>
+			</v-col>
+			<v-col
+				cols="12"
+				sm="4"
+			>
+				<v-text-field
+					v-model.number="yawRateDrive"
+					density="compact"
+					hide-details
+					label="Yaw Rate"
+					type="number"
+				/>
+			</v-col>
+			<v-col
+				cols="12"
+				sm="4"
+			>
+				<ActionButton @submit="driveVelocityCommand()" />
+			</v-col>
+		</v-row>
+	</div>
+
+	<!-- Offboard control -->
+	<div
+		v-if="getControlstreamByRole('offboard')"
+		class="command-section"
+	>
+		<div class="section-header">
+			<v-icon
+				size="small"
+				class="mr-2"
+				>mdi-remote</v-icon
+			>
+			<span class="text-subtitle-2 font-weight-medium">Offboard Control</span>
+			<v-tooltip
+				activator="parent"
+				location="top"
+			>
+				Send direct velocity commands and yaw rate for manual flight control.
+			</v-tooltip>
+		</div>
+		<v-form ref="offboardForm">
+			<v-row
+				dense
+				align="center"
+			>
+				<v-col
+					cols="6"
+					sm="6"
+				>
+					<v-text-field
+						v-model.number="xVelocity"
+						density="compact"
+						hide-details
+						label="Vx"
+						type="number"
+					/>
+				</v-col>
+				<v-col
+					cols="6"
+					sm="6"
+				>
+					<v-text-field
+						v-model.number="yVelocity"
+						density="compact"
+						hide-details
+						label="Vy"
+						type="number"
+					/>
+				</v-col>
+				<v-col
+					cols="6"
+					sm="6"
+				>
+					<v-text-field
+						v-model.number="zVelocity"
+						density="compact"
+						hide-details
+						label="Vz"
+						type="number"
+					/>
+				</v-col>
+				<v-col
+					cols="6"
+					sm="6"
+				>
+					<v-text-field
+						v-model.number="yawRate"
+						density="compact"
+						hide-details
+						label="Yaw"
+						type="number"
+					/>
+				</v-col>
+				<v-col cols="12">
+					<ActionButton @submit="offboard()" />
+				</v-col>
+			</v-row>
+		</v-form>
+	</div>
+
+	<!-- Drive to location -->
+	<div
+		v-if="getControlstreamByRole('driveLocation')"
+		class="command-section"
+	>
+		<div class="section-header">
+			<v-icon
+				size="small"
+				class="mr-2"
+				>mdi-map-marker</v-icon
+			>
+			<span class="text-subtitle-2 font-weight-medium"> Drive to Location </span>
+			<v-tooltip
+				activator="parent"
+				location="top"
+			>
+				Navigate the vehicle to a specific lat/lon coordinate. Use the crosshairs to pick
+				from the map.
+			</v-tooltip>
+		</div>
+		<MapPointEditor
+			v-model="driveLocationPoint"
+			:is-selected="isDriveLocationMapSelect"
+			:is-selector-disabled="false"
+			submit-icon="mdi-send"
+			submit-label="Send"
+			hide-alt
+			@submit="driveLocationCommand"
+			@toggle="toggleDriveLocationSelect"
+		/>
+	</div>
+
+	<!-- Fly to location -->
+	<div
+		v-if="getControlstreamByRole('flyToLocation')"
+		class="command-section"
+	>
+		<div class="section-header">
+			<v-icon
+				size="small"
+				class="mr-2"
+				>mdi-airplane</v-icon
+			>
+			<span class="text-subtitle-2 font-weight-medium"> Fly to Location </span>
+			<v-tooltip
+				activator="parent"
+				location="top"
+			>
+				Fly the vehicle to a specific lat/lon/alt coordinate. Use the crosshairs to pick
+				from the map.
+			</v-tooltip>
+		</div>
+		<v-alert
+			v-if="!isAirborne"
+			density="compact"
+			type="warning"
+			variant="tonal"
+			class="mb-4"
+		>
+			Vehicle must be airborne before sending a fly to command
+		</v-alert>
+		<MapPointEditor
+			v-model="flyLocationPoint"
+			:is-selected="isFlyLocationMapSelect"
+			:is-selector-disabled="!isAirborne"
+			:is-submit-disabled="!isAirborne"
+			submit-icon="mdi-send"
+			submit-label="Send"
+			@submit="flyToLocationCommand"
+			@toggle="toggleFlyLocationSelect"
+		/>
+	</div>
 </template>
 
 <style scoped>
@@ -503,5 +652,4 @@ const hasSimpleCommands = computed(() =>
 	margin-bottom: 6px;
 	padding-bottom: 4px;
 }
-
 </style>
