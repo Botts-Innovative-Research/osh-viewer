@@ -11,11 +11,11 @@ import MapSpeedDial from '@/modules/map/components/MapSpeedDial.vue';
 import { useMapInteractionStore } from '@/stores/mapinteractionstore.ts';
 import LLATooltip from '@/modules/map/components/LLATooltip.vue';
 
-const paneSize1 = ref(localStorage.paneSize1 ?? 30); // System browser AND Visualization pane
-const paneSize2 = ref(localStorage.paneSize2 ?? 70); // Map view pane
+const paneSize1 = ref(Number(sessionStorage.getItem('paneSize1') ?? 30));
+const paneSize2 = ref(Number(sessionStorage.getItem('paneSize2') ?? 70));
 const storePaneSize = ({ panes }) => {
-	localStorage.paneSize1 = panes[0].size;
-	localStorage.paneSize2 = panes[1].size;
+	sessionStorage.setItem('paneSize1', panes[0].size);
+	sessionStorage.setItem('paneSize2', panes[1].size);
 };
 
 const tab = ref('one');
