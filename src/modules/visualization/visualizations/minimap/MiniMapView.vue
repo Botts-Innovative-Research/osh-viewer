@@ -542,10 +542,7 @@ useVisualizationCleanup(dsInstances);
           AR
         </v-btn>
       </div>
-
-      <div v-if="showAROverlay" class="ar-fov-control">
-        <span class="ar-fov-label">FOV {{ arFov }}°</span>
-      </div>
+      
 			<div v-if="showAROverlay" class="ar-fov-control">
 				<span class="ar-fov-label">FOV {{ arFov }}°</span>
 				<v-slider
