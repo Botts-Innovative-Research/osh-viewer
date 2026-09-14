@@ -5,12 +5,13 @@ import { Ref, ref } from 'vue';
 const persistedMapKeys = {
 	map: [
 		'focusedMap',
+		'enableOfflineMaps',
 		'geoPtzIcon',
 		'geoPtzIconColor',
 		'enable3DTerrain',
 		'enable3DBuildings',
 		'enableGooglePhotorealistic',
-        'enableEntityClustering'
+		'enableEntityClustering',
 	],
 };
 
@@ -22,6 +23,7 @@ export const useSettingsStore = defineStore(
 
 		// Map
 		const focusedMap: Ref<'cesium' | 'leaflet'> = ref('cesium'); // Focused map corresponds to map type
+		const enableOfflineMaps: Ref<boolean> = ref(false); // Whether offline maps are toggled on
 
 		// GeoPTZ settings
 		const geoPtzIcon: Ref<string> = ref(
@@ -40,6 +42,9 @@ export const useSettingsStore = defineStore(
 		}
 		function setFocusedMap(value: 'cesium' | 'leaflet') {
 			focusedMap.value = value;
+		}
+		function setEnableOfflineMaps(value: boolean) {
+			enableOfflineMaps.value = value;
 		}
 
 		function setGeoPtzIcon(value: string) {
@@ -82,28 +87,30 @@ export const useSettingsStore = defineStore(
 			if (value) enable3DTerrain.value = false;
 			syncBuildingsToSurface();
 		}
-        function setEntityClustering(value: boolean | null) {
-            if (value === null) return;
-            enableEntityClustering.value = value;
-        }
+		function setEntityClustering(value: boolean | null) {
+			if (value === null) return;
+			enableEntityClustering.value = value;
+		}
 
 		return {
 			theme,
 			focusedMap,
+			enableOfflineMaps,
 			geoPtzIcon,
 			geoPtzIconColor,
 			enable3DTerrain,
 			enable3DBuildings,
 			enableGooglePhotorealistic,
-            enableEntityClustering,
+			enableEntityClustering,
 			setTheme,
 			setFocusedMap,
+			setEnableOfflineMaps,
 			setGeoPtzIcon,
 			setGeoPtzIconColor,
 			set3DTerrain,
 			set3DBuildings,
 			setGooglePhotorealistic,
-            setEntityClustering
+			setEntityClustering,
 		};
 	},
 	{ persist: { pick: ['theme', ...persistedMapKeys.map] } }

@@ -27,7 +27,7 @@ import {
 	getGroundAltitude,
 } from '../services/geospatial.service';
 import { setLayerData } from '../services/foi.service';
-import { MapPoint } from '@/modules/map/types';
+import { MapPoint, OfflineMapLayer } from '@/modules/map/types';
 import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 import { useMissionStore } from '@/stores/missionstore';
 import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
@@ -80,7 +80,7 @@ export function useMap() {
 	/* MAP INITIALIZATION/DESTRUCTION/TOGGLE */
 	async function initMap() {
 		// OFFLINE MAP
-		const offlineEnabled = import.meta.env.VITE_OFFLINE_MAP_ENABLED === 'true';
+		const isOffline = settingsStore.enableOfflineMaps ?? false;
 
 		if (mapType.value === 'cesium') {
 			mapAdapter.value = createCesiumAdapter();
@@ -92,7 +92,7 @@ export function useMap() {
 			}
 
 			// Only apply these settings when ONLINE
-			if (!offlineEnabled) {
+			if (!isOffline) {
 				if (settingsStore.enable3DTerrain) {
 					await mapAdapter.value?.addTerrain?.();
 				}
@@ -103,6 +103,7 @@ export function useMap() {
 					await mapAdapter.value?.addGooglePhotorealistic?.();
 				}
 			} else {
+				await rebuildOfflineMaps();
 				await mapAdapter.value?.addOfflineBuildings?.();
 			}
 			if (settingsStore.enableEntityClustering) {
@@ -111,6 +112,7 @@ export function useMap() {
 		} else if (mapType.value === 'leaflet') {
 			mapAdapter.value = createLeafletAdapter();
 			await mapAdapter.value?.init?.('mapContainer');
+			if (isOffline) await rebuildOfflineMaps();
 		}
 		bindMapInteractions();
 	}
@@ -143,21 +145,51 @@ export function useMap() {
 		await rebuildFoiLayers(); // Rebuild all FOIs
 		rebuildGeoOverlayLayers(); // Rebuild GeoOverlays
 		rebuildMissionWaypoints(); // Rebuild all waypoints per system
-
-		// if (driveLocationLayer.value && mapStore.currentLLA) {
-		// 	const loc = driveLocationLayer.value.properties.location;
-		// 	driveLocationLayer.value = null;
-		// 	await addDriveLocationLayer(loc.x, loc.y);
-		// }
-		// if (homeLocationLayer.value && mapStore.currentLLA) {
-		// 	const loc = homeLocationLayer.value.properties.location;
-		// 	homeLocationLayer.value = null;
-		// 	await addHomeLocationLayer(loc.x, loc.y);
-		// }
 	}
 	watch(mapType, async () => {
 		await switchMap();
 	});
+	watch(
+		() => settingsStore.enableOfflineMaps,
+		async (enabled) => {
+			if (!mapAdapter.value) return;
+
+			if (enabled) {
+				await rebuildOfflineMaps();
+			} else {
+				for (const map of mapStore.offlineMapLayers) {
+					mapAdapter.value.removeOfflineMapLayer(map.id);
+				}
+			}
+		}
+	);
+	watch(
+		() => mapStore.offlineMapLayers.map((map) => map.id),
+		async (newIds, oldIds = []) => {
+			const newSet = new Set(newIds);
+			const oldSet = new Set(oldIds);
+
+			// Removed
+			for (const id of oldSet) {
+				if (!newSet.has(id)) {
+					mapAdapter.value?.removeOfflineMapLayer(id);
+				}
+			}
+
+			// Added
+			for (const map of mapStore.offlineMapLayers) {
+				if (!oldSet.has(map.id) && settingsStore.enableOfflineMaps) {
+					await mapAdapter.value?.addOfflineMapLayer(map);
+				}
+			}
+		},
+		{ immediate: true }
+	);
+	async function rebuildOfflineMaps() {
+		if (!settingsStore.enableOfflineMaps) return; // Skip if not enabled
+		for (const map of mapStore.offlineMapLayers)
+			await mapAdapter.value?.addOfflineMapLayer(map);
+	}
 
 	/* DATASOURCE MANAGEMENT */
 	function connectDatasources() {
@@ -406,10 +438,11 @@ export function useMap() {
 	);
 	watch(
 		() => mapStore.selectedMapItem,
-		async (newVal: OSHVisualization | GeoOverlay | null) => {
+		async (newVal: OSHVisualization | GeoOverlay | OfflineMapLayer | null) => {
 			if (!newVal) return; // Only fly when a map item is selected
 
 			let location;
+			let tilt; // Whether to tilt camera pitch in Cesium
 
 			// Handle GeoOverlay
 			if ('geometry' in newVal && newVal.geometry.bbox) {
@@ -423,9 +456,18 @@ export function useMap() {
 				const layerProps = layer.getCurrentProps();
 				location = layerProps.location ?? layerProps.position ?? layerProps.locations?.[0]; // Handle location for PM/LoB, position for ellipse, locations[0] for polyline
 			}
+			// Handle OfflineMapLayer
+			else if ('mapName' in newVal) {
+				location = {
+					x: parseFloat(newVal.lon.toString()),
+					y: parseFloat(newVal.lat.toString()),
+					z: mapType.value === 'leaflet' ? newVal.minZoom : 3000,
+				};
+				tilt = false;
+			}
 
 			if (!location) return;
-			mapAdapter.value?.flyToPoint(location);
+			mapAdapter.value?.flyToPoint(location, tilt ?? undefined);
 		}
 	);
 	watch(

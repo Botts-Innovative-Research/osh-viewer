@@ -43,6 +43,7 @@ export default defineConfig(({ mode }) => {
 		],
 		server: {
 			proxy: {
+				// Needed for Cesium offline maps - bypass CORS
 				'/maps': {
 					target: env.VITE_FILE_SERVER_URL,
 					changeOrigin: true,

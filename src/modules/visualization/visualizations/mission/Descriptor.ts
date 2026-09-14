@@ -131,6 +131,49 @@ export const HomePointMarkerConfigRoles: VisualizationConfigRole[] = [
         required: true,
     },
     {
+        role: 'homeOrientation',
+        label: 'Orientation',
+        description: 'The heading direction of the point marker.',
+        type: 'ds',
+    },
+    {
+        role: 'homeMarkerId',
+        label: 'Marker ID',
+        description: 'Select the properties to distinguish multiple point markers.',
+        type: 'ds',
+        multiple: true,
+    },
+    {
+        role: 'homeMilSymbol',
+        label: 'Military Symbology Icon',
+        description: 'Select a property to apply a milsymbol icon for the point marker.',
+        type: 'ds',
+    },
+    {
+        role: 'homeIconColor',
+        label: 'Icon Color',
+        description: 'Icon color will be generated dynamically based on the selected properties.',
+        type: 'ds',
+        multiple: true,
+        required: true
+    },
+    {
+        role: 'homeIconName',
+        label: 'Icon Label',
+        description: 'Select a property to appear as the point marker label.',
+        type: 'ds',
+    },
+];
+
+export const PointMarkerConfigRoles: VisualizationConfigRole[] = [
+    {
+        role: 'location',
+        label: 'Location',
+        description: 'The geographical location of the point marker.',
+        type: 'ds',
+        required: true,
+    },
+    {
         role: 'orientation',
         label: 'Orientation',
         description: 'The heading direction of the point marker.',
@@ -155,6 +198,7 @@ export const HomePointMarkerConfigRoles: VisualizationConfigRole[] = [
         description: 'Icon color will be generated dynamically based on the selected properties.',
         type: 'ds',
         multiple: true,
+        required: true
     },
     {
         role: 'pmLabel',
@@ -201,6 +245,7 @@ export const ConfigComponentPointMarker: VisualizationFormComponent = {
     component: defineAsyncComponent(
         () => import('@/modules/visualization/visualizations/pointmarker/Config.vue')
     ),
+    roles: PointMarkerConfigRoles,
 };
 
 

@@ -83,13 +83,13 @@ useComponentValidation(valid, emit);
 					</div>
 				</v-expand-transition>
 				<v-expand-transition>
-					<div v-if="showHomeIconColor">
-						<ColorControl
-							roleName="homeIconColor"
-							label="Home Icon Color"
-						/>
-					</div>
-					<div v-else class="pa-4">
+<!--					<div v-if="showHomeIconColor">-->
+<!--						<ColorControl-->
+<!--							roleName="homeIconColor"-->
+<!--							label="Home Icon Color"-->
+<!--						/>-->
+<!--					</div>-->
+					<div class="pa-4">
 						<v-alert variant="outlined">
 							Icon color will be dynamically generated based on the selected
 							properties from the previous step.
@@ -118,13 +118,13 @@ useComponentValidation(valid, emit);
 					</div>
 				</v-expand-transition>
 				<v-expand-transition>
-					<div v-if="showLocationIconColor">
-						<ColorControl
-							roleName="locationIconColor"
-							label="Vehicle Icon Color"
-						/>
-					</div>
-					<div v-else class="pa-4">
+<!--					<div v-if="showLocationIconColor">-->
+<!--						<ColorControl-->
+<!--							roleName="locationIconColor"-->
+<!--							label="Vehicle Icon Color"-->
+<!--						/>-->
+<!--					</div>-->
+					<div class="pa-4">
 						<v-alert variant="outlined">
 							Icon color will be dynamically generated based on the selected
 							properties from the previous step.

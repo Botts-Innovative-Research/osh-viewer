@@ -4,6 +4,7 @@ import Chart from '@/modules/visualization/visualizations/chart/Chart.vue';
 import Video from '@/modules/visualization/visualizations/video/Video.vue';
 import Text from '@/modules/visualization/visualizations/text/Text.vue';
 import Audio from '@/modules/visualization/visualizations/audio/Audio.vue';
+import Table from '@/modules/visualization/visualizations/table/Table.vue';
 import MissionBuilder from '@/modules/visualization/visualizations/mission/MissionBuilder.vue';
 import MiniMapView from '@/modules/visualization/visualizations/minimap/MiniMapView.vue';
 import { onMounted, ref } from 'vue';
@@ -62,12 +63,17 @@ onMounted(() => {
 			v-if="viz.type === 'text'"
 		></Text>
 		<Audio
-            :visualization="viz"
-            :datasource="dataSource"
-            :audio-layer="dataLayer"
-            :audio-view="dataView"
-            v-if="viz.type === 'audio'"
-        ></Audio>
+			:visualization="viz"
+			:datasource="dataSource"
+			:audio-layer="dataLayer"
+			:audio-view="dataView"
+			v-if="viz.type === 'audio'"
+		></Audio>
+		<Table
+			:visualization="viz"
+			:datasources="dataSource"
+			v-if="viz.type === 'table'"
+		></Table>
 		<MissionBuilder
 			:visualization="viz"
 			:datasource="dataSource"
