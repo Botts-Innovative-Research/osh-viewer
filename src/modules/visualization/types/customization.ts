@@ -35,6 +35,13 @@ export interface IChartCustomizationOptions extends CustomizationOptions {
 export interface IVideoCustomizationOptions extends CustomizationOptions {
 	stats: boolean;
 	time: boolean;
+	// Optional 360-degree video properties
+	props360:
+		| {
+				projection: string;
+				fisheyeFovDeg: number;
+		  }
+		| undefined;
 }
 
 export interface IPolylineCustomizationOptions extends CustomizationOptions {

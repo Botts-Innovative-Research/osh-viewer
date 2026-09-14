@@ -83,6 +83,7 @@ export function CreateVideoVizProps(
 		useWebCodecApi: true,
 		showTime: visOptions?.time,
 		showStats: visOptions?.stats,
+		props360: visOptions?.props360,
 	};
 
 	for (const [dsId, entry] of Object.entries(datastreams)) {
