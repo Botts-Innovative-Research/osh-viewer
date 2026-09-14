@@ -36,5 +36,6 @@ onMounted(() => {
 		v-model="show"
 		:label="props.label"
 		density="compact"
+		hide-details
 	/>
 </template>

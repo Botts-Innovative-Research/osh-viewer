@@ -1,4 +1,9 @@
-// Modified to add an alpha channel applied
+/**
+ * Generate a color based on given input string and alpha number
+ * @param inputString
+ * @param alpha
+ * @returns
+ */
 export function colorHash(inputString: string, alpha: number = 1.0): any {
 	let sum: number = 0;
 
@@ -80,4 +85,54 @@ function hsl2rgb(h: number, s: number, l: number): any {
 		b: f(4),
 	};
 	return rgb;
+}
+
+/** COLOR FOR LEAFLET */
+const iconCache = new Map<string, string>();
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+	return new Promise((resolve, reject) => {
+		const img = new Image();
+
+		// Only needed if loading from another domain
+		// img.crossOrigin = 'anonymous';
+
+		img.onload = () => resolve(img);
+		img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+
+		img.src = src;
+	});
+}
+
+export async function getColoredIconUrl(src: string, color: string): Promise<string> {
+	const key = `${src}:${color}`;
+
+	const cached = iconCache.get(key);
+	if (cached) return cached;
+
+	const img = await loadImage(src);
+
+	const canvas = document.createElement('canvas');
+	canvas.width = img.width;
+	canvas.height = img.height;
+
+	const ctx = canvas.getContext('2d');
+
+	if (!ctx) {
+		throw new Error('Could not create canvas context.');
+	}
+
+	// Draw the original image
+	ctx.imageSmoothingEnabled = false;
+	ctx.drawImage(img, 0, 0);
+
+	// Replace the color while preserving transparency
+	ctx.globalCompositeOperation = 'source-in';
+	ctx.fillStyle = color;
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+	const dataUrl = canvas.toDataURL('image/png');
+
+	iconCache.set(key, dataUrl);
+	return dataUrl;
 }

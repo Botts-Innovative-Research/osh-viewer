@@ -3,9 +3,13 @@ import { useVisualizationStore } from '@/stores/visualizationstore';
 import { useVizWizStore } from '@/stores/vizwizstore';
 //@ts-ignore
 import { Mode } from 'osh-js/source/core/datasource/Mode';
+// @ts-ignore
+import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { MissionDescriptor } from './Descriptor';
+import { MiniMapDescriptor } from '../minimap/Descriptor';
+import { PointMarkerDescriptor } from '../pointmarker/Descriptor';
 import {
 	AggregateControlstreams,
 	AggregateDatastreams,
@@ -15,36 +19,143 @@ import {
 } from '../../services/aggregation.service';
 import { VisualizationComponents } from '../../types/visualization';
 import {
-	ISweApiControlStreamProperties,
-	ISweApiDataSourceProperties,
+	IConSysApiControlStreamProperties,
+	IConSysApiDataSourceProperties,
 } from '../../types/datasource';
+import { CreateMiniMapVizProps } from '../minimap/Builder';
+import { CreatePointMarkerVizProps } from '../pointmarker/Builder';
+import { iconPathBuilder } from '@/lib/icons';
+import { CreatePolylineVizProps } from '@/modules/visualization/visualizations/polyline/Builder';
+import { PolylineDescriptor } from '@/modules/visualization/visualizations/polyline/Descriptor';
 
-export default function build() {
+export default async function build() {
 	console.log('Building Mission Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
+
+	const vizName = vizwizStore.visualizationCustomizationOptions.name;
+
+	const children: OSHVisualization[] = [];
 
 	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 	const controlstreams = AggregateControlstreams(vizwizStore.csConfig);
 
 	const missionResult = CreateMissionVizProps(datastreams, controlstreams);
 
-	const visualizationComponents: VisualizationComponents = {
+	const missionVisualizationComponents: VisualizationComponents = {
 		dataSource: missionResult.vizDatasources,
 		dataLayer: [],
 		controlstream: missionResult.vizControlstreams,
 	};
 
+	const minimapResult = CreateMiniMapVizProps(datastreams);
+	const minimapVisualizationComponents: VisualizationComponents = {
+		dataSource: minimapResult.vizDatasources,
+		dataLayer: [],
+		controlstream: [],
+	};
+	const minimapViz: OSHVisualization = new OSHVisualization(
+		`${vizwizStore.id}-${randomUUID()}`,
+		`${vizwizStore.visualizationCustomizationOptions.name} - Mini Map`,
+		'minimap',
+		MiniMapDescriptor.viewLocation,
+		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
+		[]
+	);
+	minimapViz.setVisualizationComponents(minimapVisualizationComponents);
+	children.push(minimapViz);
+
+	if (vizwizStore.dsConfig.homeLocation?.selected) {
+		const homeDatastreams = AggregateDatastreams({
+			location: vizwizStore.dsConfig.homeLocation,
+		});
+		const pmResult = await CreatePointMarkerVizProps(homeDatastreams, {
+			name: vizwizStore.visualizationCustomizationOptions.name,
+			icon: vizwizStore.visualizationCustomizationOptions.homeIcon,
+			iconColor: vizwizStore.visualizationCustomizationOptions.homeIconColor,
+			iconName: vizwizStore.visualizationCustomizationOptions.homeIconName,
+		});
+		const pmVisualizationComponents: VisualizationComponents = {
+			dataSource: pmResult.vizDatasources,
+			dataLayer: pmResult.pointMarkerLayer,
+		};
+		const pmViz: OSHVisualization = new OSHVisualization(
+			`${vizwizStore.id}-${randomUUID()}`,
+			`${vizwizStore.visualizationCustomizationOptions.name} - Home`,
+			'pointmarker',
+			PointMarkerDescriptor.viewLocation,
+			getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
+			undefined,
+			vizwizStore.id
+		);
+		pmViz.setVisualizationComponents(pmVisualizationComponents);
+		visualizationStore.addVisualization(pmViz);
+		children.push(pmViz);
+	}
+
+	if (vizwizStore.dsConfig.location?.selected) {
+		const locationDatastreams = AggregateDatastreams({
+			location: vizwizStore.dsConfig.location,
+		});
+		// Pointmarker
+		const pmResult = await CreatePointMarkerVizProps(locationDatastreams, {
+			name: vizwizStore.visualizationCustomizationOptions.name,
+			icon: vizwizStore.visualizationCustomizationOptions.locationIcon,
+			iconColor: vizwizStore.visualizationCustomizationOptions.locationIconColor,
+			iconName: vizwizStore.visualizationCustomizationOptions.locationIconName,
+		});
+		const pmVisualizationComponents: VisualizationComponents = {
+			dataSource: pmResult.vizDatasources,
+			dataLayer: pmResult.pointMarkerLayer,
+		};
+		const pmViz: OSHVisualization = new OSHVisualization(
+			`${vizwizStore.id}-${randomUUID()}`,
+			`${vizwizStore.visualizationCustomizationOptions.name} - Location`,
+			'pointmarker',
+			PointMarkerDescriptor.viewLocation,
+			getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
+			undefined,
+			vizwizStore.id
+		);
+		pmViz.setVisualizationComponents(pmVisualizationComponents);
+		visualizationStore.addVisualization(pmViz);
+		children.push(pmViz);
+		// Polyline trail
+		const polylineResult = CreatePolylineVizProps(locationDatastreams, {
+			name: vizwizStore.visualizationCustomizationOptions.name,
+			color: vizwizStore.visualizationCustomizationOptions.locationIconColor,
+			weight: 5,
+			opacity: 0.5,
+			maxPoints: 1000,
+		});
+		const polylineVisualizationComponents: VisualizationComponents = {
+			dataSource: polylineResult.vizDatasources,
+			dataLayer: polylineResult.polylineLayer,
+		};
+		const polylineViz: OSHVisualization = new OSHVisualization(
+			`${vizwizStore.id}-${randomUUID()}`,
+			`${vizwizStore.visualizationCustomizationOptions.name} - Polyline`,
+			'polyline',
+			PolylineDescriptor.viewLocation,
+			getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
+			undefined,
+			vizwizStore.id
+		);
+		polylineViz.setVisualizationComponents(polylineVisualizationComponents);
+		visualizationStore.addVisualization(polylineViz);
+		children.push(polylineViz);
+	}
 	const newViz: OSHVisualization = new OSHVisualization(
 		vizwizStore.id,
-		vizwizStore.visualizationCustomizationOptions.name,
+		vizName,
 		'mission',
 		MissionDescriptor.viewLocation,
 		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
 		getUsedControlstreams(vizwizStore.controlstreams, vizwizStore.csConfig)
 	);
-	newViz.setVisualizationComponents(visualizationComponents);
-	newViz.setWizardConfig(vizwizStore.getWizardConfig()); // Save wizard state in visualization
+	newViz.setVisualizationComponents(missionVisualizationComponents);
+	newViz.setWizardConfig(vizwizStore.getWizardConfig());
+	newViz.addChildVisualization(children);
 	visualizationStore.addVisualization(newViz);
 	console.log('Created Mission Visualization:', newViz);
 }
@@ -56,15 +167,15 @@ export function CreateMissionVizProps(
 	const controlstreamStore = useControlStreamStore();
 	const datastreamStore = useDataStreamStore();
 
-	const vizControlstreams: ISweApiControlStreamProperties[] = [];
-	const vizDatastreams: ISweApiDataSourceProperties[] = [];
+	const vizControlstreams: IConSysApiControlStreamProperties[] = [];
+	const vizDatastreams: IConSysApiDataSourceProperties[] = [];
 
 	for (const [dsId, entry] of Object.entries(datastreams)) {
 		const properties = BuildRoleProperty(entry);
 
 		const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
 
-		const currentDatastream: ISweApiDataSourceProperties = {
+		const currentDatastream: IConSysApiDataSourceProperties = {
 			endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
 			resource: `/datastreams/${dsId}/observations`,
 			tls: currentOSHDatastream[0].datastream.networkProperties.tls,
@@ -88,7 +199,7 @@ export function CreateMissionVizProps(
 		const currentOSHControlstream: OSHControlStream = controlstreamStore.getControlStreamsById([
 			csId,
 		])[0];
-		const currentControlstream: ISweApiControlStreamProperties = {
+		const currentControlstream: IConSysApiControlStreamProperties = {
 			endpointUrl: currentOSHControlstream.controlstream.networkProperties.endpointUrl,
 			tls: currentOSHControlstream.controlstream.networkProperties.tls,
 			protocol: 'ws',

@@ -12,7 +12,7 @@ import {
 } from '../../services/aggregation.service';
 import { VisualizationComponents } from '../../types/visualization';
 import { IEllipseCustomizationOptions } from '../../types/customization';
-import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { IEllipseLayerProperties } from '../../types/layers';
 
 export default function build() {
@@ -59,7 +59,7 @@ export function CreateEllipseVizProps(
 	const datastreamStore = useDataStreamStore();
 
 	// Create datasources, layer, and view
-	const vizDatasources: ISweApiDataSourceProperties[] = [];
+	const vizDatasources: IConSysApiDataSourceProperties[] = [];
 	let ellipseLayer: IEllipseLayerProperties = {
 		name: visOptions.name,
 		color: visOptions.ellipseColor,
@@ -71,9 +71,9 @@ export function CreateEllipseVizProps(
 		// Get selected properties for each role of the datastream
 		const properties = BuildRoleProperty(entry);
 
-		// Push new ISweApiDataSourceProperties
+		// Push new IConSysApiDataSourceProperties
 		const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
-		const currentDataSource: ISweApiDataSourceProperties = {
+		const currentDataSource: IConSysApiDataSourceProperties = {
 			endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
 			resource: `/datastreams/${dsId}/observations`,
 			tls: currentOSHDatastream[0].datastream.networkProperties.tls,

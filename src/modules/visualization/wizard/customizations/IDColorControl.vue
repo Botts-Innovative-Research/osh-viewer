@@ -54,7 +54,7 @@ onMounted(() => {
 });
 </script>
 <template>
-	<h3 class="pb-2">{{ props.label }}</h3>
+	<h3>{{ props.label }}</h3>
 	<v-color-picker
 		style="margin: auto"
 		v-model="color"

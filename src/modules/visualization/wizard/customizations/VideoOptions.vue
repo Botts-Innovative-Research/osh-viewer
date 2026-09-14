@@ -101,12 +101,12 @@ onMounted(() => {
 	<v-checkbox
 		v-model="stats"
 		label="Show Video Stats"
-		density="compact"
+		hide-details
 	/>
 	<v-checkbox
 		v-model="time"
 		label="Show Video Time"
-		density="compact"
+		hide-details
 	/>
 	<v-checkbox
 		v-model="is360"

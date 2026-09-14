@@ -3,7 +3,10 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import Chart from '@/modules/visualization/visualizations/chart/Chart.vue';
 import Video from '@/modules/visualization/visualizations/video/Video.vue';
 import Text from '@/modules/visualization/visualizations/text/Text.vue';
+import Audio from '@/modules/visualization/visualizations/audio/Audio.vue';
+import Table from '@/modules/visualization/visualizations/table/Table.vue';
 import MissionBuilder from '@/modules/visualization/visualizations/mission/MissionBuilder.vue';
+import MiniMapView from '@/modules/visualization/visualizations/minimap/MiniMapView.vue';
 import { onMounted, ref } from 'vue';
 
 const { viz, customClass = '' } = defineProps<{
@@ -20,13 +23,11 @@ const controlstream = ref();
 
 onMounted(() => {
 	isLoading.value = true;
-	if (viz.isParentVisualization() || Array.isArray(viz.visualizationComponents)) return;
-	else {
-		dataSource.value = viz.visualizationComponents.dataSource;
-		dataLayer.value = viz.visualizationComponents.dataLayer;
-		dataView.value = viz.visualizationComponents.dataView;
-		controlstream.value = viz.visualizationComponents.controlstream;
-	}
+	if (Array.isArray(viz.visualizationComponents)) return;
+	dataSource.value = viz.visualizationComponents.dataSource;
+	dataLayer.value = viz.visualizationComponents.dataLayer;
+	dataView.value = viz.visualizationComponents.dataView;
+	controlstream.value = viz.visualizationComponents.controlstream;
 	isLoading.value = false;
 });
 </script>
@@ -61,12 +62,29 @@ onMounted(() => {
 			:datasource="dataSource[0]"
 			v-if="viz.type === 'text'"
 		></Text>
+		<Audio
+			:visualization="viz"
+			:datasource="dataSource"
+			:audio-layer="dataLayer"
+			:audio-view="dataView"
+			v-if="viz.type === 'audio'"
+		></Audio>
+		<Table
+			:visualization="viz"
+			:datasources="dataSource"
+			v-if="viz.type === 'table'"
+		></Table>
 		<MissionBuilder
 			:visualization="viz"
 			:datasource="dataSource"
 			:controlstreams="controlstream"
 			v-if="viz.type === 'mission'"
 		></MissionBuilder>
+		<MiniMapView
+			:visualization="viz"
+			:datasource="dataSource"
+			v-if="viz.type === 'minimap'"
+		></MiniMapView>
 		<slot name="after"></slot>
 		<slot name="overlay"></slot>
 	</div>

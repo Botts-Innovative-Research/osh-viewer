@@ -4,6 +4,7 @@ import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { showToast } from '@/composables/useToast';
 import { Direction } from './Descriptor';
 import { sendCommand } from '../../services/controlstream.service';
+import ActionButton from '@/components/ui/ActionButton.vue';
 
 interface PTZControlProps {
 	commandBaseUrl: string;
@@ -162,7 +163,7 @@ watch(selectedCommand, (newCommand) => {
 });
 
 // Default values for manual input commands
-const singleValue = ref<number | string>(0.0);
+const singleValue = ref<number>(0.0);
 // Values for data record inputs
 const absPan = ref<number>(0.0);
 const absTilt = ref<number>(0.0);
@@ -205,7 +206,7 @@ const constraintTooltip = computed(() => {
 </script>
 
 <template>
-	<v-container class="controlsContainer">
+	<v-container class="controlsContainer pa-2">
 		<v-sheet
 			v-if="hasRelative"
 			class="wrapper"
@@ -233,6 +234,7 @@ const constraintTooltip = computed(() => {
 					}"
 					variant="text"
 					size="default"
+					rounded="xl"
 				></IconButton>
 				<IconButton
 					icon="mdi-home-circle"
@@ -242,11 +244,12 @@ const constraintTooltip = computed(() => {
 					variant="text"
 					size="default"
 					:style="{ zIndex: 1000, fontSize: '35px' }"
+					rounded="xl"
 				></IconButton>
 			</v-container>
-			<v-text-field
+			<v-number-input
 				v-model.number="increment"
-				type="number"
+				variant="outlined"
 				label="Increment"
 			/>
 		</v-sheet>
@@ -260,43 +263,57 @@ const constraintTooltip = computed(() => {
 			<div v-if="isDataRecord">
 				<v-tooltip :text="`min: ${constraints.minPan}, max: ${constraints.maxPan}`">
 					<template #activator="{ props }">
-						<v-text-field
+						<v-number-input
 							v-model.number="absPan"
-							type="number"
+							variant="outlined"
 							label="Pan"
 							placeholder="0.0"
 							class="w-100"
 							:min="constraints.minPan"
 							:max="constraints.maxPan"
 							v-bind="props"
+							:rules="[
+								() =>
+									(absPan !== null && absPan !== undefined) || `Pan is required.`,
+							]"
 						/>
 					</template>
 				</v-tooltip>
 				<v-tooltip :text="`min: ${constraints.minTilt}, max: ${constraints.maxTilt}`">
 					<template #activator="{ props }">
-						<v-text-field
+						<v-number-input
 							v-model.number="absTilt"
-							type="number"
+							variant="outlined"
 							label="Tilt"
 							placeholder="0.0"
 							class="w-100"
 							:min="constraints.minTilt"
 							:max="constraints.maxTilt"
 							v-bind="props"
+							:rules="[
+								() =>
+									(absTilt !== null && absTilt !== undefined) ||
+									`Tilt is required.`,
+							]"
 						/>
 					</template>
 				</v-tooltip>
 				<v-tooltip :text="`min: ${constraints.minZoom}, max: ${constraints.maxZoom}`">
 					<template #activator="{ props }">
-						<v-text-field
+						<v-number-input
 							v-model.number="absZoom"
-							type="number"
+							variant="outlined"
 							label="Zoom"
 							placeholder="0.0"
 							class="w-100"
 							:min="constraints.minZoom"
 							:max="constraints.maxZoom"
 							v-bind="props"
+							:rules="[
+								() =>
+									(absZoom !== null && absZoom !== undefined) ||
+									`Zoom is required.`,
+							]"
 						/>
 					</template>
 				</v-tooltip>
@@ -318,9 +335,9 @@ const constraintTooltip = computed(() => {
 					:disabled="!constraintTooltip"
 				>
 					<template #activator="{ props }">
-						<v-text-field
+						<v-number-input
 							v-model="singleValue"
-							type="number"
+							variant="outlined"
 							:label="selectedCommand"
 							placeholder="Enter value"
 							class="w-100"
@@ -339,16 +356,19 @@ const constraintTooltip = computed(() => {
 										: constraints.maxZoom
 							"
 							v-bind="props"
+							:rules="[
+								() =>
+									(singleValue !== null && singleValue !== undefined) ||
+									`${selectedCommand} is required.`,
+							]"
 						/>
 					</template>
 				</v-tooltip>
 			</div>
-			<v-btn
-				color="primary"
-				@click="onSend"
-				block
-				>Send</v-btn
-			>
+			<ActionButton
+				@submit="onSend"
+				variant="flat"
+			/>
 		</v-sheet>
 	</v-container>
 </template>
@@ -377,7 +397,7 @@ const constraintTooltip = computed(() => {
 	align-items: center;
 	width: 200px;
 	height: 200px;
-	border-radius: 50%;
+	border-radius: 100%;
 	border: 1px solid #888;
 	margin-bottom: 5%;
 }

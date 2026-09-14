@@ -5,7 +5,7 @@ import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { DATASOURCE_DATA_TOPIC } from 'osh-js/source/core/Constants.js';
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
-import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IConSysApiDataSourceProperties } from '../../types/datasource';
 
 // Generate a random ID when the component is created
 const textboxId = ref('textbox-' + randomUUID());
@@ -15,12 +15,12 @@ const receivedData = ref({});
 
 const props = defineProps<{
 	visualization: OSHVisualization;
-	datasource: ISweApiDataSourceProperties;
+	datasource: IConSysApiDataSourceProperties;
 }>();
 
-// Create SweApi datasource for Text visualization
+// Create ConSysApi datasource for Text visualization
 onMounted(async () => {
-	// Create SweApi instance from props.datasource if provided
+	// Create ConSysApi instance from props.datasource if provided
 	const dsInstance = createDatasource(props.datasource);
 
 	textboxDatasource.value = dsInstance;

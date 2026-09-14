@@ -7,62 +7,195 @@ import { storeToRefs } from 'pinia';
 import { computed, onMounted, ref, watch } from 'vue';
 import { VisualizationLayerProperties } from '../../types/visualization';
 import { SupportedMapLayer } from '@/modules/map/supportedMapLayers';
+import { useMissionStore } from '@/stores/missionstore';
 
 export function useVisualizationSidebar() {
 	// Stores
 	const uiStore = useUIStore();
 	const mapStore = useMapStore();
+	const missionStore = useMissionStore();
 	const visualizationStore = useVisualizationStore();
 	const { visualizations } = storeToRefs(visualizationStore);
 
 	// States
+	const openPanelsInitialized = ref(false);
+	const openMapPanelsInitialized = ref(false);
+	const openGeoPtzPanelsInitialized = ref(false);
+	const openMissionPanelsInitialized = ref(false);
 	const editViz = ref<OSHVisualization | undefined>();
 	const selectedGeoPTZControllers = ref<OSHVisualization[]>([]);
+	const selectedMissionControllers = ref<OSHVisualization[]>([]);
 
 	// Sorted visualizations
-	const panelVisualizations = computed<OSHVisualization[]>(() =>
-		visualizations.value.filter(
-			(viz) =>
-				viz.viewLocation === 'panel' ||
-				// Filter out geoPtz viz type from "multi" viewLocation visualizations
-				(viz.viewLocation === 'multi' && viz.type !== 'geoPtz')
-		)
-	);
-	const mapVisualizations = computed<OSHVisualization[]>(() =>
-		visualizations.value.filter((viz) => viz.viewLocation === 'map')
-	);
+	const panelVisualizations = computed({
+		get: () =>
+			visualizations.value.filter(
+				(viz) =>
+					viz.viewLocation === 'panel' ||
+					(viz.viewLocation === 'multi' &&
+						viz.type !== 'geoPtz' &&
+						viz.type !== 'mission')
+			),
+
+		set: (newOrder) => {
+			// Replace only the panel/multi visualizations in the source array
+			const others = visualizations.value.filter(
+				(viz) =>
+					viz.viewLocation !== 'panel' &&
+					!(
+						viz.viewLocation === 'multi' &&
+						viz.type !== 'geoPtz' &&
+						viz.type !== 'mission'
+					)
+			);
+
+			visualizations.value = [...others, ...newOrder];
+		},
+	});
+	const mapVisualizations = computed({
+		get: () =>
+			// Only allow map view location UNLESS parent viz is mission (mission pm)
+			visualizations.value.filter(
+				(viz) =>
+					viz.viewLocation === 'map' &&
+					(viz.isChildVisualization() && viz.parentId
+						? visualizationStore.getVisualizationById(viz.parentId)?.type !== 'mission'
+						: true)
+			),
+		set: (newOrder) => {
+			// Replace only the map visualizations in the source array
+			const others = visualizations.value.filter((viz) => viz.viewLocation !== 'map');
+			visualizations.value = [...others, ...newOrder];
+		},
+	});
 	const geoPtzVisualizations = computed<OSHVisualization[]>(() =>
 		visualizations.value.filter((viz) => viz.type === 'geoPtz')
 	);
+	const missionVisualizations = computed<OSHVisualization[]>(() =>
+		visualizations.value.filter((viz) => viz.type === 'mission')
+	);
 
 	/* Panel state */
-	const openPanels = ref<string[]>([]); // Tracks map visualizations and geoptz only
-	const openPanelVisualizations = ref<string[]>([]); // Tracks panel visualizations only
-	function handleOpenMapPanels() {
+	// Tracks map visualizations and geoptz only
+	const openPanels = ref<string[]>(JSON.parse(sessionStorage.getItem('openPanels') ?? '[]'));
+	// Tracks panel visualizations only
+	const openPanelVisualizations = ref<string[]>(
+		JSON.parse(sessionStorage.getItem('openPanelVisualizations') ?? '[]')
+	);
+	// Keep updated in session storage
+	watch(
+		openPanels,
+		(value) => {
+			sessionStorage.setItem('openPanels', JSON.stringify(value));
+		},
+		{ deep: true }
+	);
+	// Keep updated in session storage
+	watch(
+		openPanelVisualizations,
+		(value) => {
+			sessionStorage.setItem('openPanelVisualizations', JSON.stringify(value));
+		},
+		{ deep: true }
+	);
+	//
+	function handleOpenMapPanels(oldLen = 0) {
 		if (mapVisualizations.value.length) {
 			if (!openPanels.value.includes('map')) openPanels.value.push('map');
 		} else {
 			openPanels.value = openPanels.value.filter((id: string) => id !== 'map');
 		}
 	}
-	function handleOpenGeoPTZPanel() {
+	function handleOpenGeoPTZPanel(oldLen = 0) {
 		if (geoPtzVisualizations.value.length) {
 			if (!openPanels.value.includes('geoptz')) openPanels.value.push('geoptz');
 		} else {
 			openPanels.value = openPanels.value.filter((id: string) => id !== 'geoptz');
 		}
 	}
+	function handleOpenMissionPanel(oldLen = 0) {
+		if (missionVisualizations.value.length) {
+			if (!openPanels.value.includes('mission')) openPanels.value.push('mission');
+		} else {
+			openPanels.value = openPanels.value.filter((id: string) => id !== 'mission');
+		}
+	}
+	function handleOpenPanel(oldIds: string[] = []) {
+		const currentIds = panelVisualizations.value.map((v) => v.id);
+		const newIds = currentIds.filter((id) => !oldIds.includes(id));
+		openPanelVisualizations.value.push(...newIds);
+	}
+	watch(
+		() => panelVisualizations.value.map((v) => v.id),
+		(_newIds, oldIds) => {
+			if (!openPanelsInitialized.value) {
+				openPanelsInitialized.value = true;
+				return;
+			}
+			handleOpenPanel(oldIds);
+		}
+	);
 	watch(
 		() => mapVisualizations.value.length,
-		() => {
-			handleOpenMapPanels();
+		(_newLen, oldLen) => {
+			if (!openMapPanelsInitialized.value) {
+				openMapPanelsInitialized.value = true;
+				return;
+			}
+			handleOpenMapPanels(oldLen);
 		}
 	);
 	watch(
 		() => geoPtzVisualizations.value.length,
-		() => {
-			handleOpenGeoPTZPanel();
+		(_newLen, oldLen) => {
+			if (!openGeoPtzPanelsInitialized.value) {
+				openGeoPtzPanelsInitialized.value = true;
+				return;
+			}
+			handleOpenGeoPTZPanel(oldLen);
 		}
+	);
+	watch(
+		() => missionVisualizations.value.length,
+		(_newLen, oldLen) => {
+			if (!openMissionPanelsInitialized.value) {
+				openMissionPanelsInitialized.value = true;
+				return;
+			}
+			handleOpenMissionPanel(oldLen);
+		}
+	);
+
+	/* MISSION HELPERS */
+	function removeMission(controller: OSHVisualization) {
+		visualizationStore.removeVisualization(controller); // Remove from visualization store
+		// Remove from selected list
+		selectedMissionControllers.value = selectedMissionControllers.value.filter(
+			(item: OSHVisualization) => item.id !== controller.id
+		);
+		// Remove stored waypoints
+		missionStore.clearSystemWaypoints(controller.id);
+	}
+	watch(
+		() => selectedMissionControllers.value,
+		(newVal) => {
+			if (!newVal || newVal.length === 0) missionStore.clearSelectedMissionControllers();
+			missionStore.setSelectedMissionControllers(
+				newVal.flatMap((v: OSHVisualization) => v.id)
+			);
+		}
+	);
+	watch(
+		missionVisualizations,
+		(current) => {
+			const selectedIds = new Set(selectedMissionControllers.value.map((v) => v.id));
+
+			const updatedSelected = current.filter((v) => selectedIds.has(v.id));
+			const newVizs = current.filter((v) => !selectedIds.has(v.id));
+
+			selectedMissionControllers.value = [...updatedSelected, ...newVizs];
+		},
+		{ deep: true }
 	);
 
 	/* GEOPTZ HELPERS */
@@ -86,7 +219,11 @@ export function useVisualizationSidebar() {
 		visualizationStore.toggleMapLayerVisibility(item.id);
 	}
 	function toggleSelectedMapItem(item: any) {
-		if (mapStore.selectedMapItem && mapStore.selectedMapItem.id === item.id) {
+		if (
+			mapStore.selectedMapItem &&
+			'visualizationComponents' in mapStore.selectedMapItem &&
+			mapStore.selectedMapItem.id === item.id
+		) {
 			mapStore.setSelectedMapItem(null);
 		} else {
 			mapStore.setSelectedMapItem(item);
@@ -105,21 +242,18 @@ export function useVisualizationSidebar() {
 		uiStore.openEditViz();
 	}
 
-	onMounted(() => {
-		handleOpenMapPanels(); // Map panel only
-		handleOpenGeoPTZPanel(); // GeoPTZ panel only
-		openPanelVisualizations.value = panelVisualizations.value.map((v) => v.id);
-	});
-
 	return {
 		editViz,
 		panelVisualizations,
 		mapVisualizations,
 		geoPtzVisualizations,
+		missionVisualizations,
 		openPanels,
 		openPanelVisualizations,
 		selectedGeoPTZControllers,
+		selectedMissionControllers,
 		removeGeoPTZ,
+		removeMission,
 		isMapLayer,
 		isMapLayerVisible,
 		toggleMapLayerVisibility,

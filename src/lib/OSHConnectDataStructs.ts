@@ -1,10 +1,10 @@
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import Systems from 'osh-js/source/core/sweapi/system/Systems.js';
-import SystemFilter from 'osh-js/source/core/sweapi/system/SystemFilter.js';
-import System from 'osh-js/source/core/sweapi/system/System.js';
+import Systems from 'osh-js/source/core/consysapi/system/Systems.js';
+import SystemFilter from 'osh-js/source/core/consysapi/system/SystemFilter.js';
+import System from 'osh-js/source/core/consysapi/system/System.js';
 import DataSynchronizer from 'osh-js/source/core/timesync/DataSynchronizer.js';
-import FeatureOfInterestFilter from 'osh-js/source/core/sweapi/featureofinterest/FeatureOfInterestFilter.js';
+import SamplingFeatureFilter from 'osh-js/source/core/consysapi/samplingfeature/SamplingFeatureFilter.js';
 import { useNodeStore } from '@/stores/nodestore';
 import { useSystemStore } from '@/stores/systemstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
@@ -188,7 +188,7 @@ export class OSHNode {
 			connectorOpts: { username: this.username, password: this.password },
 		});
 		let retrievedSystems: any[] = [];
-		const results: System = await systems.searchSystems(new SystemFilter(), 100);
+		const results: typeof System = await systems.searchSystems(new SystemFilter(), 100);
 
 		// collect all results
 		while (results.hasNext()) {
@@ -243,7 +243,7 @@ export class OSHSystem {
 	name: string; // Name of system
 	type: string; // Type of system
 	parentId: string | null; // Parent ID, if applicable
-	system: System; // osh-js System object
+	system: typeof System; // osh-js System object
 	parentNode: OSHNode; // OSHNode parent node
 	children: string[]; // IDs of system's children (datastreams and controlstreams)
 	datastreams: OSHDatastream[] = []; // Datastreams associated with this system
@@ -287,7 +287,7 @@ export class OSHSystem {
 	}
 
 	async getControlStreams(): Promise<any[]> {
-		const result: any = await this.system.searchControls(undefined, 100);
+		const result: any = await this.system.searchControlStreams(undefined, 100);
 		let controlStreams: any[] = [];
 
 		const controlstreamStore = getSharedStores().controlstreamStore;
@@ -307,8 +307,8 @@ export class OSHSystem {
 	}
 
 	async getSamplingFeatures(): Promise<any[]> {
-		const result: any = await this.system.searchFeaturesOfInterest(
-			new FeatureOfInterestFilter(),
+		const result: any = await this.system.searchSamplingFeatures(
+			new SamplingFeatureFilter(),
 			100
 		);
 		let samplingFeatures: any[] = [];
@@ -355,7 +355,7 @@ export class OSHDatastream {
 		this.id = datastream.properties.id;
 	}
 
-	registerWithSynchronizer(synchronizer: DataSynchronizer): void {
+	registerWithSynchronizer(synchronizer: typeof DataSynchronizer): void {
 		synchronizer.addDataSource(this.datastream);
 	}
 
@@ -401,7 +401,7 @@ export class OSHVisualization {
 	type: string;
 	viewLocation: ViewLocation; // Defines where the visualization is displayed (e.g., 'panel', 'map', 'multi')
 	parentId?: string; // Optional parent ID for child visualizations
-	datastream: OSHDatastream[] | null; // TODO: null handles "All PMS"
+	datastream?: OSHDatastream[] | null; // TODO: null handles "All PMS"
 	controlstream?: OSHControlStream[]; // Optional control stream
 	visualizationComponents!: VisualizationComponents | VisualizationComponents[];
 	wizardConfig!: WizardConfig | null; // Store state of wizard for editing visualization. Null for child visualizations
@@ -412,7 +412,7 @@ export class OSHVisualization {
 		name: string,
 		type: string,
 		viewLocation: ViewLocation,
-		datastream: OSHDatastream[] | null,
+		datastream?: OSHDatastream[] | null,
 		controlstream?: OSHControlStream[],
 		parentId?: string | undefined
 	) {
@@ -455,36 +455,97 @@ export class OSHVisualization {
 	}
 }
 
+export type BBox = [minLon: number, minLat: number, maxLon: number, maxLat: number];
+
+/**
+ * Follows GeoJSON format, with optional systemId property for OSH FOIs
+ */
 export class Geometry {
 	id: string;
 	type: string;
 	coordinates: number[] | number[][];
 	properties?: any;
-	bbox?: number[] | undefined;
+	bbox?: BBox;
+	systemId?: string | undefined;
 
 	constructor(
 		id: string,
 		type: string,
 		coordinates: number[] | number[][],
 		properties?: any,
-		bbox?: number[]
+		bbox?: BBox,
+		systemId?: string
 	) {
 		this.id = id;
 		this.type = type;
 		this.coordinates = coordinates;
 		this.properties = properties || {};
-		this.bbox = bbox;
+		this.bbox = bbox ?? Geometry.computeBBox(type, coordinates, properties);
+		this.systemId = systemId;
+	}
+
+	// TODO: Handle "Circle" type
+	toGeoJSON() {
+		return {
+			id: this.id,
+			type: this.type,
+			coordinates: this.coordinates,
+			properties: this.properties,
+			bbox: this.bbox,
+		};
+	}
+
+	/* BBox computations */
+	static computeBBox(type: string, coordinates: number[] | number[][], properties: any) {
+		switch (type) {
+			case 'Point':
+				return Geometry.pointBBox(coordinates as number[]);
+			case 'LineString':
+			case 'Polygon':
+				return Geometry.geometryBBox(coordinates as number[][]);
+			case 'Circle':
+				return Geometry.circleBBox(
+					coordinates as [lon: number, lat: number],
+					properties.radius!
+				);
+		}
+	}
+	static pointBBox(coordinate: number[]): BBox {
+		const [lon, lat] = coordinate;
+		return [lon, lat, lon, lat];
+	}
+
+	static geometryBBox(coordinates: number[][]): BBox {
+		let minLon = Infinity;
+		let minLat = Infinity;
+		let maxLon = -Infinity;
+		let maxLat = -Infinity;
+
+		for (const [lon, lat] of coordinates) {
+			minLon = Math.min(minLon, lon);
+			minLat = Math.min(minLat, lat);
+			maxLon = Math.max(maxLon, lon);
+			maxLat = Math.max(maxLat, lat);
+		}
+
+		return [minLon, minLat, maxLon, maxLat];
+	}
+	static circleBBox(center: [number, number], radiusMeters: number): BBox {
+		const [lon, lat] = center;
+		const latDelta = radiusMeters / 111_320;
+		const lonDelta = radiusMeters / (111_320 * Math.cos((lat * Math.PI) / 180));
+		return [lon - lonDelta, lat - latDelta, lon + lonDelta, lat + latDelta];
 	}
 }
 
 export type OSHLayer =
-	// | 'AudioDataLayer'
+	| 'AudioDataLayer'
 	// | 'BinaryDataLayer'
 	// | 'CoPlanarPolygonLayer'
 	| 'CurveLayer'
 	// | 'DataLayer'
 	| 'EllipseLayer'
-	// | 'FrustumLayer'
+	| 'FrustumLayer'
 	// | 'ImageDrapingLayer'
 	| 'LoB'
 	| 'PointMarkerLayer'
@@ -499,7 +560,7 @@ export const OSHLayerLabels: Array<{ layer: OSHLayer; label: string }> = [
 	{ layer: 'CurveLayer', label: 'Curve' },
 	// { layer: 'DataLayer', label: 'Data' },
 	// { layer: 'EllipseLayer', label: 'Ellipse' },
-	// { layer: 'FrustumLayer', label: 'Frustum' },
+	{ layer: 'FrustumLayer', label: 'Frustum' },
 	// { layer: 'ImageDrapingLayer', label: 'Image Draping' },
 	{ layer: 'LoB', label: 'Line of Bearing' },
 	{ layer: 'PointMarkerLayer', label: 'Point Marker' },

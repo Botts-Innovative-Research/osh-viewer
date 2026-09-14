@@ -13,7 +13,7 @@ import {
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
 import { VisualizationComponents } from '../../types/visualization';
-import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { DataLayerProperties } from '../../types/layers';
 
 export default function build() {
@@ -48,7 +48,7 @@ export default function build() {
 export function CreateTextVizProps(datastreams: { [key: string]: any }, visOptions: any) {
 	const datastreamStore = useDataStreamStore();
 
-	const vizDatasources: ISweApiDataSourceProperties[] = [];
+	const vizDatasources: IConSysApiDataSourceProperties[] = [];
 	let dataLayer: DataLayerProperties = {
 		name: visOptions.name,
 	};
@@ -58,9 +58,9 @@ export function CreateTextVizProps(datastreams: { [key: string]: any }, visOptio
 		// Get selected properties for each role of the datastream
 		const properties = BuildRoleProperty(entry);
 
-		// Push new ISweApiDataSourceProperties
+		// Push new IConSysApiDataSourceProperties
 		const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
-		const currentDataSource: ISweApiDataSourceProperties = {
+		const currentDataSource: IConSysApiDataSourceProperties = {
 			endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
 			resource: `/datastreams/${dsId}/observations`,
 			tls: currentOSHDatastream[0].datastream.networkProperties.tls,

@@ -19,16 +19,11 @@ nodeStore.rehydrateNodes(connect).then(() => {
 </script>
 
 <template>
-	<VApp>
-		<v-sheet
-			class="background"
-			:theme="theme"
-		>
-			<HeaderToolbar />
-			<div class="router-content">
-				<RouterView />
-			</div>
-		</v-sheet>
+	<VApp :theme="theme">
+		<HeaderToolbar />
+		<div class="router-content">
+			<RouterView />
+		</div>
 	</VApp>
 </template>
 

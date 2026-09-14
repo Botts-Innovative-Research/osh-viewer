@@ -1,27 +1,39 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import MapView from '@/modules/map/components/MapView.vue';
 import SystemBrowser from '@/modules/system-browser/SystemBrowser.vue';
 import VisualizationSidebar from '@/modules/visualization/sidebar/components/VisualizationSidebar.vue';
 import { Splitpanes, Pane } from 'splitpanes';
 import 'splitpanes/dist/splitpanes.css';
 import MapToolStatus from '@/modules/map/components/MapToolStatus.vue';
+import MapSidebar from '@/modules/map/geo-overlay/MapSidebar.vue';
+import MapSpeedDial from '@/modules/map/components/MapSpeedDial.vue';
+import { useMapInteractionStore } from '@/stores/mapinteractionstore.ts';
+import LLATooltip from '@/modules/map/components/LLATooltip.vue';
 
-const paneSize1 = ref(localStorage.paneSize1 ?? 30); // System browser AND Visualization pane
-const paneSize2 = ref(localStorage.paneSize2 ?? 70); // Map view pane
+const paneSize1 = ref(Number(sessionStorage.getItem('paneSize1') ?? 30));
+const paneSize2 = ref(Number(sessionStorage.getItem('paneSize2') ?? 70));
 const storePaneSize = ({ panes }) => {
-	localStorage.paneSize1 = panes[0].size;
-	localStorage.paneSize2 = panes[1].size;
+	sessionStorage.setItem('paneSize1', panes[0].size);
+	sessionStorage.setItem('paneSize2', panes[1].size);
 };
 
-const tab = ref('one');
+const tab = ref(sessionStorage.getItem('tab') ?? 'one');
+watch(tab, (newTab) => {
+	sessionStorage.setItem('tab', newTab);
+});
+
+const mapInteractionStore = useMapInteractionStore();
+watch(
+	() => mapInteractionStore.interactionMode,
+	(currentTool) => {
+		if (currentTool.startsWith('geoOverlay')) tab.value = 'three'; // Switch to map tab
+	}
+);
 </script>
 
 <template>
-	<splitpanes
-		class="default-theme"
-		@resized="storePaneSize"
-	>
+	<splitpanes @resized="storePaneSize">
 		<pane
 			key="system-browser"
 			:size="paneSize1"
@@ -39,6 +51,7 @@ const tab = ref('one');
 				>
 					<v-tab value="one">Nodes</v-tab>
 					<v-tab value="two">Visualizations</v-tab>
+					<v-tab value="three">Map</v-tab>
 				</v-tabs>
 
 				<v-divider></v-divider>
@@ -50,6 +63,9 @@ const tab = ref('one');
 					<v-tabs-window-item value="two">
 						<VisualizationSidebar />
 					</v-tabs-window-item>
+					<v-tabs-window-item value="three">
+						<MapSidebar v-if="tab === 'three'" />
+					</v-tabs-window-item>
 				</v-tabs-window>
 			</v-sheet>
 		</pane>
@@ -58,15 +74,17 @@ const tab = ref('one');
 			:size="paneSize2"
 		>
 			<MapToolStatus />
+			<MapSpeedDial />
+			<LLATooltip />
 			<MapView class="fill-height" />
 		</pane>
 	</splitpanes>
 </template>
 
 <style scoped>
-.splitpanes--horizontal > .splitpanes__splitter {
-	min-height: 6px;
-	background: linear-gradient(0deg, #ccc, #111);
+:global(.splitpanes--vertical > .splitpanes__splitter) {
+	min-width: 8px;
+	background-color: color-mix(in srgb, rgb(var(--v-theme-background)) 92%, black 8%);
 }
 .equal-tabs .v-tab {
 	flex: 1;

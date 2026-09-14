@@ -1,5 +1,34 @@
 import { defineAsyncComponent } from 'vue';
-import { VisualizationDescriptor, VisualizationFormComponent } from '../../registry/types';
+import {
+	VisualizationConfigRole,
+	VisualizationDescriptor,
+	VisualizationFormComponent,
+} from '../../registry/types';
+
+export const PolylineConfigRoles: VisualizationConfigRole[] = [
+	{
+		role: 'location',
+		label: 'Location',
+		description: 'The stream of locations that generate the polyline.',
+		type: 'ds',
+		required: true,
+	},
+	{
+		role: 'polylineId',
+		label: 'Polyline ID',
+		description: 'Select the properties to distinguish multiple polylines.',
+		type: 'ds',
+		multiple: true,
+	},
+	{
+		role: 'polylineColor',
+		label: 'Color',
+		description:
+			'Polyline color will be generated dynamically based on the selected properties.',
+		type: 'ds',
+		multiple: true,
+	},
+];
 
 export const ConfigComponent: VisualizationFormComponent = {
 	id: 'polyline-config',
@@ -8,6 +37,7 @@ export const ConfigComponent: VisualizationFormComponent = {
 	component: defineAsyncComponent(
 		() => import('@/modules/visualization/visualizations/polyline/Config.vue')
 	),
+	roles: PolylineConfigRoles,
 };
 
 export const CustomizeComponent: VisualizationFormComponent = {

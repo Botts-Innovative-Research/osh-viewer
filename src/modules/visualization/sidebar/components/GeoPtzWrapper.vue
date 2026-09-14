@@ -15,7 +15,9 @@ const emit = defineEmits<{
 </script>
 <template>
 	<v-select
-		label="Process"
+		hint="Select a controller to send GeoPTZ tasks"
+		persistent-hint
+		label="GeoPTZ Controllers"
 		:model-value="selectedGeoPTZControllers"
 		@update:model-value="emit('update:selectedGeoPTZControllers', $event)"
 		v-bind:items="geoPtzVisualizations"
@@ -23,11 +25,10 @@ const emit = defineEmits<{
 		:item-value="(item: OSHVisualization) => item"
 		chips
 		multiple
-		hide-details
 		clearable
 	>
-		<template v-slot:item="{ props, item }">
-			<v-list-item v-bind="props">
+		<template v-slot:item="{ item, props: itemProps }">
+			<v-list-item v-bind="itemProps">
 				<template v-slot:prepend="{ isSelected }">
 					<v-checkbox-btn :model-value="isSelected"></v-checkbox-btn>
 				</template>
@@ -37,21 +38,21 @@ const emit = defineEmits<{
 						text="Edit Visualization"
 						location="bottom"
 					>
-						<template v-slot:activator="{ props }">
+						<template v-slot:activator="{ props: tooltipProps }">
 							<IconButton
-								v-bind="props"
+								v-bind="tooltipProps"
 								aria-label="Edit Visualization"
 								size="x-small"
 								variant="plain"
 								icon="mdi-pencil"
-								@click.stop="openEditViz(item.raw.id!)"
+								@click.stop="openEditViz(item.id!)"
 							>
 							</IconButton>
 						</template>
 					</v-tooltip>
 					<DeleteButton
 						label="Remove"
-						@delete="removeGeoPTZ(item.raw)"
+						@delete="removeGeoPTZ(item)"
 					></DeleteButton>
 				</template>
 			</v-list-item>

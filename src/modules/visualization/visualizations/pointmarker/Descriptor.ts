@@ -1,5 +1,51 @@
 import { defineAsyncComponent } from 'vue';
-import { VisualizationDescriptor, VisualizationFormComponent } from '../../registry/types';
+import {
+	VisualizationConfigRole,
+	VisualizationDescriptor,
+	VisualizationFormComponent,
+} from '../../registry/types';
+
+export const PointMarkerConfigRoles: VisualizationConfigRole[] = [
+	{
+		role: 'location',
+		label: 'Location',
+		description: 'The geographical location of the point marker.',
+		type: 'ds',
+		required: true,
+	},
+	{
+		role: 'orientation',
+		label: 'Orientation',
+		description: 'The heading direction of the point marker.',
+		type: 'ds',
+	},
+	{
+		role: 'markerId',
+		label: 'Marker ID',
+		description: 'Select the properties to distinguish multiple point markers.',
+		type: 'ds',
+		multiple: true,
+	},
+	{
+		role: 'milSymbol',
+		label: 'Military Symbology Icon',
+		description: 'Select a property to apply a milsymbol icon for the point marker.',
+		type: 'ds',
+	},
+	{
+		role: 'pmIconColor',
+		label: 'Icon Color',
+		description: 'Icon color will be generated dynamically based on the selected properties.',
+		type: 'ds',
+		multiple: true,
+	},
+	{
+		role: 'pmLabel',
+		label: 'Icon Label',
+		description: 'Select a property to appear as the point marker label.',
+		type: 'ds',
+	},
+];
 
 export const ConfigComponent: VisualizationFormComponent = {
 	id: 'pointmarker-config',
@@ -8,6 +54,7 @@ export const ConfigComponent: VisualizationFormComponent = {
 	component: defineAsyncComponent(
 		() => import('@/modules/visualization/visualizations/pointmarker/Config.vue')
 	),
+	roles: PointMarkerConfigRoles,
 };
 
 export const CustomizeComponent: VisualizationFormComponent = {
@@ -27,7 +74,7 @@ export const PointMarkerDescriptor: VisualizationDescriptor = {
 	layers: ['PointMarkerLayer'],
 	description: 'Visualize a point marker on the map.',
 	formComponents: [ConfigComponent, CustomizeComponent],
-	builder: () => import('@/modules/visualization/visualizations/pointmarker/Builder'),
+	builder: async () => import('@/modules/visualization/visualizations/pointmarker/Builder'),
 	supportsCs: false,
 	requireCs: false,
 	supportedMaps: ['cesium', 'leaflet'],

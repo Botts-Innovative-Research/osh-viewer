@@ -97,17 +97,19 @@ useComponentValidation(valid, emit);
 	></v-autocomplete>
 
 	<!-- Select for property -->
-	<v-autocomplete
-		v-if="showPropertySelector && csSchema && csSchema.parametersSchema"
-		v-model="selectedProperty"
-		:items="csSchema.parametersSchema.items"
-		label="Select property"
-		item-title="name"
-		persistent-hint
-		item-value="name"
-		multiple
-		chips
-	></v-autocomplete>
+	<v-expand-transition>
+		<v-autocomplete
+			v-if="showPropertySelector && csSchema && csSchema.parametersSchema"
+			v-model="selectedProperty"
+			:items="csSchema.parametersSchema.items"
+			label="Select property"
+			item-title="name"
+			persistent-hint
+			item-value="name"
+			multiple
+			chips
+		></v-autocomplete>
+	</v-expand-transition>
 </template>
 
 <style scoped></style>

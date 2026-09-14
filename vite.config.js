@@ -41,10 +41,20 @@ export default defineConfig(({ mode }) => {
 				],
 			}),
 		],
+		server: {
+			proxy: {
+				// Needed for Cesium offline maps - bypass CORS
+				'/maps': {
+					target: env.VITE_FILE_SERVER_URL,
+					changeOrigin: true,
+				},
+			},
+		},
 		resolve: {
 			alias: {
 				'@': fileURLToPath(new URL('./src', import.meta.url)),
-				'osh-js': fileURLToPath(new URL('./lib/osh-js', import.meta.url)),
+				// 'osh-js': fileURLToPath(new URL('./lib/osh-js', import.meta.url)),
+				// osh-js is resolved from node_modules
 			},
 		},
 		build: {
@@ -56,8 +66,15 @@ export default defineConfig(({ mode }) => {
 			noExternal: ['osh-js', 'cesium', 'leaflet'],
 		},
 		optimizeDeps: {
-			include: ['cesium', 'leaflet', 'osh-js'],
-			exclude: [],
+			include: [
+				'cesium',
+				'leaflet',
+				'@cesium/engine',
+				'@cesium/widgets',
+				'mersenne-twister',
+				'chart.js',
+			],
+			exclude: ['osh-js'],
 		},
 		worker: {
 			format: 'es',

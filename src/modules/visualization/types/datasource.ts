@@ -7,7 +7,7 @@ export interface DataSourceProperties {
 	mode: string;
 	responseFormat: string;
 	connectorOpts: { username: string; password: string };
-	id: string; // ID to use for SweApi
+	id: string; // ID to use for ConSysApi
 	properties: {
 		// Role: property pair
 		// Ex: "location": { property: "loc" }
@@ -15,8 +15,8 @@ export interface DataSourceProperties {
 	};
 }
 
-export interface ISweApiDataSourceProperties extends DataSourceProperties {
+export interface IConSysApiDataSourceProperties extends DataSourceProperties {
 	resource: string;
 }
 
-export interface ISweApiControlStreamProperties extends DataSourceProperties {}
+export interface IConSysApiControlStreamProperties extends DataSourceProperties {}

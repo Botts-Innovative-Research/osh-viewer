@@ -11,12 +11,12 @@ const theme = computed({
 </script>
 
 <template>
-	<v-card class="elevation-0">
+	<v-card style="padding: 0px">
 		<v-card-item>
 			<v-card-title>General</v-card-title>
 			<v-card-subtitle>Configure general application settings.</v-card-subtitle>
 		</v-card-item>
-		<v-card-text class="pl-0">
+		<v-card-text class="pa-0">
 			<v-list>
 				<v-list-item>
 					<v-list-item-title>Theme</v-list-item-title>

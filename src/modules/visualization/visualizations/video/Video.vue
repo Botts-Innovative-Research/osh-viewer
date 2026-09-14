@@ -3,19 +3,21 @@ import { computed, onMounted, ref, toRaw } from 'vue';
 import VideoDataLayer from 'osh-js/source/core/ui/layer/VideoDataLayer.js';
 import { OSHControlStream, OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import VideoView from 'osh-js/source/core/ui/view/video/VideoView.js';
-import SweApi from 'osh-js/source/core/datasource/sweapi/SweApi.datasource.js';
+import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import PTZControl from './PTZControl.vue';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { createDatasource } from '@/modules/visualization/services/datasource.service';
 import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizationCleanup';
-import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { IVideoLayerProperties } from '../../types/layers';
 import { IVideoViewProperties } from '../../types/views';
 import { fetchControlStreamSchema } from '../../services/controlstream.service';
+import ActionButton from '@/components/ui/ActionButton.vue';
+import ToggleActionButton from '@/components/ui/ToggleActionButton.vue';
 
 const props = defineProps<{
 	visualization: OSHVisualization;
-	datasource: ISweApiDataSourceProperties[];
+	datasource: IConSysApiDataSourceProperties[];
 	videoLayer: IVideoLayerProperties;
 	videoView: IVideoViewProperties;
 	controlstream?: OSHControlStream;
@@ -26,7 +28,7 @@ const videoDivId = ref(props.visualization.id);
 const controlstreamStore = useControlStreamStore();
 const videoView = ref<any>(null);
 const videoLayer = ref<VideoDataLayer | null>(null);
-const dsInstances: SweApi[] = [];
+const dsInstances: ConSysApi[] = [];
 
 function createVideoView(viewConfig: IVideoViewProperties) {
 	if (videoView.value) {
@@ -72,7 +74,7 @@ function initializeVideo() {
 	const viz = props.visualization;
 	if (!viz || viz.type !== 'video') return;
 
-	const dsArray: ISweApiDataSourceProperties[] = props.datasource;
+	const dsArray: IConSysApiDataSourceProperties[] = props.datasource;
 
 	let getFrameData: any;
 	let getTimestamp: any;
@@ -129,6 +131,11 @@ async function initializePtz() {
 
 	await fetchControlStreamSchema(cs.controlstream.properties, cs.controlstream.networkProperties);
 }
+/* Hide/show PTZ controller */
+const showPtzController = ref<boolean>(ptzControl.value.hasControl);
+function togglePtzController() {
+	showPtzController.value = !showPtzController.value;
+}
 onMounted(async () => {
 	initializeVideo();
 	await initializePtz();
@@ -143,12 +150,23 @@ useVisualizationCleanup(ref(dsInstances));
 		class="video-mjpeg video-h264"
 	>
 	</v-sheet>
-	<PTZControl
-		v-if="ptzControl.hasControl"
-		:command-base-url="ptzControl.commandBaseUrl"
-		:id="ptzControl.id"
-		:auth="ptzControl.auth"
-	/>
+	<div v-if="ptzControl.hasControl">
+		<ToggleActionButton
+			:toggle-on="showPtzController"
+			tool-name="PTZ Controller"
+			@submit="togglePtzController"
+		></ToggleActionButton>
+		<v-expand-transition>
+			<div v-if="ptzControl.hasControl && showPtzController">
+				<PTZControl
+					v-if="ptzControl.hasControl"
+					:command-base-url="ptzControl.commandBaseUrl"
+					:id="ptzControl.id"
+					:auth="ptzControl.auth"
+				/>
+			</div>
+		</v-expand-transition>
+	</div>
 </template>
 
 <style>

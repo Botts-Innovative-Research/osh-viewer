@@ -4,27 +4,31 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useMapStore } from '@/stores/mapstore';
 import { sendGeoPTZCommand } from '@/modules/map/services/geoPTZ.service';
 import { GeoPTZCommand } from './Descriptor';
+import { useMapInteractionStore } from '@/stores/mapinteractionstore';
+import MapPointEditor from '@/components/ui/MapPointEditor.vue';
+import type { MapPoint } from '@/modules/map/types';
 
 const props = defineProps<{
 	visualizations: OSHVisualization[];
 }>();
 
 // Values for LLA inputs
-const latInput = ref<number>(0.0);
-const lonInput = ref<number>(0.0);
-const altInput = ref<number>(0.0);
+const editorPoint = ref<MapPoint>({ lat: 0, lon: 0, alt: 0 });
 
 const mapStore = useMapStore();
-const isSelected = computed(() => mapStore.isGeoPTZSelected);
+const mapInteractionStore = useMapInteractionStore();
+const isSelected = computed(() => mapInteractionStore.isGeoPTZSelected);
 
 // Watch for changes in currentLLA to update input fields, IF selected
 watch(
 	() => mapStore.currentLLA,
 	(newVal) => {
 		if (isSelected.value && newVal) {
-			latInput.value = newVal.latitude;
-			lonInput.value = newVal.longitude;
-			altInput.value = newVal.altitude;
+			editorPoint.value = {
+				lat: newVal.latitude,
+				lon: newVal.longitude,
+				alt: newVal.altitude,
+			};
 		}
 	}
 );
@@ -33,127 +37,61 @@ watch(
 watch(
 	() => props.visualizations,
 	(newVal) => {
-		mapStore.setSelectedGeoPTZ(newVal);
+		mapInteractionStore.setSelectedGeoPTZ(newVal);
 	}
 );
 
 // Toggle selection of GeoPTZ in UI store and locally
 function toggle() {
-	if (isSelected.value) {
-		mapStore.setIsGeoPTZSelected(false);
-	} else {
-		mapStore.setIsGeoPTZSelected(true);
-		mapStore.setSelectedGeoPTZ(props.visualizations);
-	}
+	mapInteractionStore.toggleTool('geoptz');
+	if (mapInteractionStore.isGeoPTZSelected)
+		mapInteractionStore.setSelectedGeoPTZ(props.visualizations);
 }
 
 // Send PTZ command based on LLA inputs
 function onSend() {
 	// Ensure newly selected controllers are added
-	mapStore.setSelectedGeoPTZ(props.visualizations);
+	mapInteractionStore.setSelectedGeoPTZ(props.visualizations);
 
 	const command: GeoPTZCommand = {
-		parameters: {
-			lat: latInput.value,
-			lon: lonInput.value,
-			alt: altInput.value,
-		},
+		parameters: editorPoint.value,
 	};
 
-	if (mapStore.selectedGeoPTZ) {
-		sendGeoPTZCommand(mapStore.selectedGeoPTZ, command);
+	if (mapInteractionStore.selectedGeoPTZ) {
+		sendGeoPTZCommand(mapInteractionStore.selectedGeoPTZ, command);
 	} else {
 		console.warn('[GeoPtzView] No GeoPTZ selected, cannot send command');
 	}
 }
 
 onBeforeUnmount(() => {
-	// Disselect GeoPTZ before unmount
-	if (isSelected.value) mapStore.clearSelectedGeoPTZ();
+	// Deselect GeoPTZ before unmount
+	mapInteractionStore.clearSelectedGeoPTZ();
+	mapInteractionStore.deselectTool('geoptz');
 });
 </script>
 
 <template>
-	<v-container fluid>
-		<v-row
-			class="d-flex align-center"
-			no-gutters
-		>
-			<v-col
-				class="pr-4"
-				cols="auto"
-			>
-				<v-tooltip
-					:text="
-						props.visualizations.length === 0
-							? 'No GeoPTZ controllers selected'
-							: 'Select map click-to-task'
-					"
-					location="top"
-				>
-					<template #activator="{ props: tooltipProps }">
-						<span
-							v-bind="tooltipProps"
-							style="display: inline-block"
-						>
-							<IconButton
-								icon
-								:color="isSelected ? 'primary' : 'grey'"
-								@click="toggle"
-								:disabled="props.visualizations.length === 0"
-								class="pa-0"
-								size="default"
-							>
-								<v-icon>{{
-									isSelected ? 'mdi-crosshairs-gps' : 'mdi-crosshairs'
-								}}</v-icon>
-							</IconButton>
-						</span>
-					</template>
-				</v-tooltip>
-			</v-col>
-			<v-col>
-				<slot name="controllers"></slot>
-			</v-col>
-		</v-row>
-		<v-divider
-			class="my-4"
-			v-if="props.visualizations.length > 0"
-		></v-divider>
-		<v-row :style="{ display: props.visualizations.length > 0 ? 'block' : 'none' }">
-			<v-col no-gutters>
-				<v-text-field
-					v-model.number="latInput"
-					type="number"
-					label="Latitude (-90 to 90)"
-					placeholder="0.0"
-					min="-90"
-					max="90"
+	<v-container
+		fluid
+		class="py-4"
+	>
+		<slot name="controllers"></slot>
+		<v-expand-transition>
+			<div v-if="props.visualizations.length > 0">
+				<v-divider class="my-4"></v-divider>
+				<MapPointEditor
+					v-model="editorPoint"
+					:is-selected="isSelected"
+					:is-selector-disabled="props.visualizations.length === 0"
+					submit-icon="mdi-send"
+					submit-label="Send"
+					@submit="onSend"
+					@toggle="toggle"
+					class="pb-0"
 				/>
-				<v-text-field
-					v-model.number="lonInput"
-					type="number"
-					label="Longitude (-180 to 180)"
-					placeholder="0.0"
-					min="-180"
-					max="180"
-				/>
-				<v-text-field
-					v-model.number="altInput"
-					type="number"
-					label="Altitude"
-					placeholder="0.0"
-					min="-9999"
-					max="99999"
-				/>
-				<v-btn
-					color="primary"
-					@click="onSend"
-					block
-					>Send</v-btn
-				>
-			</v-col>
-		</v-row>
+			</div>
+		</v-expand-transition>
 	</v-container>
 </template>
 

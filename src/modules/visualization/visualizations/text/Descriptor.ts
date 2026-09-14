@@ -1,5 +1,20 @@
 import { defineAsyncComponent } from 'vue';
-import { VisualizationDescriptor, VisualizationFormComponent } from '../../registry/types';
+import {
+	VisualizationConfigRole,
+	VisualizationDescriptor,
+	VisualizationFormComponent,
+} from '../../registry/types';
+
+export const TextConfigRoles: VisualizationConfigRole[] = [
+	{
+		role: 'stream',
+		label: 'Stream',
+		description: 'The datastream to display data from.',
+		type: 'ds',
+		required: true,
+		multiple: true,
+	},
+];
 
 export const ConfigComponent: VisualizationFormComponent = {
 	id: 'text-config',
@@ -8,6 +23,7 @@ export const ConfigComponent: VisualizationFormComponent = {
 	component: defineAsyncComponent(
 		() => import('@/modules/visualization/visualizations/text/Config.vue')
 	),
+	roles: TextConfigRoles,
 };
 
 export const CustomizeComponent: VisualizationFormComponent = {

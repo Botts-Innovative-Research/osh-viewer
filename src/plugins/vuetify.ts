@@ -3,8 +3,6 @@ import 'vuetify/styles';
 import { createVuetify } from 'vuetify';
 import * as components from 'vuetify/components';
 import * as directives from 'vuetify/directives';
-import '@mdi/font/css/materialdesignicons.css';
-import { VBtn } from 'vuetify/components';
 
 export const vuetify = createVuetify({
 	components,
@@ -14,57 +12,101 @@ export const vuetify = createVuetify({
 	},
 	theme: {
 		defaultTheme: 'dark',
+		themes: {
+			dark: {
+				dark: true,
+				colors: {
+					primary: '#E64A19',
+					secondary: '#03A9F4',
+				},
+			},
+			light: {
+				dark: false,
+				colors: {
+					primary: '#E64A19',
+					secondary: '#03A9F4',
+				},
+			},
+		},
 	},
 	aliases: {
-		IconButton: VBtn,
+		IconButton: components.VBtn,
 	},
 	defaults: {
 		VTab: {
 			rounded: 0,
 		},
-		VTreeview: {
-			VBtn: {
-				rounded: 'circle',
-			},
-		},
 		VToolbar: {
 			VBtn: {
-				rounded: 'circle',
+				rounded: '100%',
+				color: 'on-primary',
 			},
 		},
 		VBtn: {
-			rounded: 'lg',
+			rounded: 10,
+			elevation: 0,
 		},
 		// Custom icon button
 		IconButton: {
 			icon: true,
-			rounded: 'circle',
+			rounded: 10,
 			size: 'small',
+			variant: 'flat',
 		},
 		VCard: {
-			rounded: 'lg',
+			rounded: 20,
+			elevation: 0,
+			class: 'pa-4',
+		},
+		VCardActions: {
+			class: 'justify-end',
 		},
 		VStepper: {
 			class: 'elevation-0',
 			VStepperHeader: {
 				class: 'elevation-0',
 			},
-			VStepperWindow: {
-				class: 'pa-2',
-			},
 		},
 		VExpansionPanels: {
-			rounded: 0,
+			rounded: [15, 15],
+			gap: 8,
+			static: true,
+			elevation: 0,
+			variant: 'accordion',
+		},
+		VExpansionPanel: {
+			class: 'border-sm',
+			rounded: 15,
 		},
 		VList: {
-			VListItem: {
-				rounded: 'lg',
-			},
+			rounded: 10,
+		},
+		VListItem: {
+			rounded: 10,
 		},
 		VTooltip: {
 			openDelay: 500,
+			rounded: 10,
 		},
 		VAlert: {
+			rounded: 10,
+		},
+		VAutocomplete: {
+			variant: 'outlined',
+			rounded: 10,
+		},
+		VSelect: {
+			variant: 'outlined',
+			rounded: 10,
+		},
+		VTextField: {
+			variant: 'outlined',
+			rounded: 10,
+		},
+		VContainer: {
+			class: 'pa-0',
+		},
+		VSheet: {
 			rounded: 'lg',
 		},
 	},

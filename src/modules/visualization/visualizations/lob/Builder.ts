@@ -11,7 +11,7 @@ import {
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
 import { ILineOfBearingCustomizationOptions } from '../../types/customization';
-import { ISweApiDataSourceProperties } from '../../types/datasource';
+import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { ILineOfBearingLayerProperties } from '../../types/layers';
 import { VisualizationComponents } from '../../types/visualization';
 
@@ -55,17 +55,13 @@ export function CreateLobVizProps(
 	const datastreamStore = useDataStreamStore();
 
 	// Create datasources, layer, and view
-	const vizDatasources: ISweApiDataSourceProperties[] = [];
+	const vizDatasources: IConSysApiDataSourceProperties[] = [];
 	let lobLayer: ILineOfBearingLayerProperties = {
 		color: visOptions.lineColor,
 		weight: visOptions.lobWeight,
 		opacity: visOptions.lobOpacity,
 		length: visOptions.lobDistanceKm * 1000, // Convert km to m
-		icon: visOptions.showIcon ? visOptions.icon : null,
-		iconColor: visOptions.iconColor,
-		iconName: visOptions.iconName,
-		iconOpacity: visOptions.showIcon ? 1 : 0, // Set opacity to 0 if no icon, otherwise use default opacity
-		iconSize: [32, 32],
+		iconName: 'ray-start',
 		label: visOptions.name,
 		name: visOptions.name,
 	};
@@ -75,9 +71,9 @@ export function CreateLobVizProps(
 		// Get selected properties for each role of the datastream
 		const properties = BuildRoleProperty(entry);
 
-		// Push new ISweApiDataSourceProperties
+		// Push new IConSysApiDataSourceProperties
 		const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
-		const currentDataSource: ISweApiDataSourceProperties = {
+		const currentDataSource: IConSysApiDataSourceProperties = {
 			endpointUrl: currentOSHDatastream[0].datastream.networkProperties.endpointUrl,
 			resource: `/datastreams/${dsId}/observations`,
 			tls: currentOSHDatastream[0].datastream.networkProperties.tls,

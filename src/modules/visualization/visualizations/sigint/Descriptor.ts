@@ -24,6 +24,7 @@ export const ConfigComponentEllipse: VisualizationFormComponent = {
 	component: defineAsyncComponent(
 		() => import('@/modules/visualization/visualizations/ellipse/Config.vue')
 	),
+	optional: true,
 };
 
 export const CustomizeComponent: VisualizationFormComponent = {
@@ -48,7 +49,7 @@ export const SigIntDescriptor: VisualizationDescriptor = {
 		ConfigComponentEllipse,
 		CustomizeComponent,
 	],
-	builder: () => import('@/modules/visualization/visualizations/sigint/Builder'),
+	builder: async () => import('@/modules/visualization/visualizations/sigint/Builder'),
 	supportsCs: false,
 	requireCs: false,
 	supportedMaps: ['cesium'],
