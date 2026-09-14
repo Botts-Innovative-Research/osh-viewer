@@ -79,6 +79,7 @@ function handleSubmitPoint(point: MapPoint) {
 				<v-btn
 					color="success"
 					@click="handleSubmit"
+					:disabled="!previewStore.name"
 					>Submit</v-btn
 				>
 			</template>

@@ -80,16 +80,10 @@ export function BuildRoleProperty(entry: any[]) {
 			const roleEntry = roleObj[role];
 
 			// Return [role, property string]
-			if (roleEntry.compression)
-				return [
-					role,
-					{
-						property: roleEntry.property,
-						outputName: roleEntry.outputName,
-						compression: roleEntry.compression,
-					},
-				];
-			return [role, { property: roleEntry.property, outputName: roleEntry.outputName }];
+			const result: any = { property: roleEntry.property, outputName: roleEntry.outputName };
+			if (roleEntry.compression) result.compression = roleEntry.compression;
+			if (roleEntry.locationFormat) result.locationFormat = roleEntry.locationFormat;
+			return [role, result];
 		})
 	);
 }

@@ -64,20 +64,36 @@ export async function createPointMarkerLayer(
 
 		// Check for location property
 		if (dsProps.properties.location) {
-			getLocation = {
-				dataSourceIds: [dsInstance.id],
-				handler: async (rec: any) => {
-					const lon = rec[dsProps.properties.location.property].lon;
-					const lat = rec[dsProps.properties.location.property].lat;
-					return {
-						x: lon,
-						y: lat,
-						z:
-							rec[dsProps.properties.location.property].alt ||
-							(await getGroundAltitude(lon, lat)),
-					};
-				},
-			};
+			const locConfig = dsProps.properties.location;
+
+			if (locConfig.locationFormat === 'flat') {
+				getLocation = {
+					dataSourceIds: [dsInstance.id],
+					handler: async (rec: any) => {
+						const lon = rec[locConfig.property.lon];
+						const lat = rec[locConfig.property.lat];
+						const alt = locConfig.property.alt ? rec[locConfig.property.alt] : null;
+						return {
+							x: lon,
+							y: lat,
+							z: alt || (await getGroundAltitude(lon, lat)),
+						};
+					},
+				};
+			} else {
+				getLocation = {
+					dataSourceIds: [dsInstance.id],
+					handler: async (rec: any) => {
+						const lon = rec[locConfig.property].lon;
+						const lat = rec[locConfig.property].lat;
+						return {
+							x: lon,
+							y: lat,
+							z: rec[locConfig.property].alt || (await getGroundAltitude(lon, lat)),
+						};
+					},
+				};
+			}
 		}
 		// Check for orientation property
 		if (dsProps.properties.orientation) {
@@ -85,7 +101,9 @@ export async function createPointMarkerLayer(
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
 					return {
-						heading: rec[dsProps.properties.orientation.property].heading,
+						heading:
+							rec[dsProps.properties.orientation.property].heading ??
+							rec[dsProps.properties.orientation.property],
 					};
 				},
 			};
@@ -557,39 +575,6 @@ export async function createLocationLayer(
 	const props = await setLayerData(locationLayer);
 
 	return { layer: locationLayer, props };
-}
-
-export async function createWaypointLayer(
-	waypoint: MapPoint,
-	index: string
-): Promise<{
-	layer: typeof PointMarkerLayer;
-	props: any;
-}> {
-	const icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, 'green');
-
-	const waypointLayer = new PointMarkerLayer({
-		id: `waypoint-${index}`,
-		name: `Waypoint ${index + 1}`,
-		location: {
-			x: waypoint.lon,
-			y: waypoint.lat,
-			z: waypoint.alt || (await getGroundAltitude(waypoint.lon, waypoint.lat)),
-		},
-		icon,
-		iconSize: [32, 32],
-		iconAnchor: [16, 32],
-		label: `WP ${index + 1}`,
-		labelColor: '#FFFFFF',
-		labelOutlineColor: '#000000',
-		labelSize: 14,
-		labelOffset: [0, -36],
-		defaultToTerrainElevation: true,
-	});
-
-	const props = await setWaypointData(waypointLayer);
-
-	return { layer: waypointLayer, props };
 }
 export async function createFOILayer(foiLayer: FoiLayer) {
 	const lon = Array.isArray(foiLayer.geometry.coordinates[0])

@@ -1,8 +1,7 @@
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { GeoOverlayType } from '@/modules/map/geo-overlay/types';
 import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
 import { MapInteractionMode, useMapInteractionStore } from '@/stores/mapinteractionstore';
-import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 
 export function useGeoOverlayConfig(options: { type: GeoOverlayType }) {
 	// Stores
@@ -34,11 +33,9 @@ export function useGeoOverlayConfig(options: { type: GeoOverlayType }) {
 		}
 	}
 
-	function changeStep(delta: number) {
-		step.value += delta;
-
+	watch(step, (newStep) => {
 		// Tool should be active on first step only
-		if (step.value === 1) {
+		if (newStep === 1) {
 			// Don't reselect for circle if already added
 			if (options.type === 'Circle' && previewStore.points.length) {
 				return;
@@ -46,9 +43,13 @@ export function useGeoOverlayConfig(options: { type: GeoOverlayType }) {
 				mapInteractionStore.selectTool(mapTool.value);
 			}
 		}
-		if (step.value === 2) {
+		if (newStep === 2) {
 			mapInteractionStore.deselectTool(mapTool.value);
 		}
+	});
+
+	function changeStep(delta: number) {
+		step.value += delta;
 	}
 
 	function deselectTool() {
@@ -71,6 +72,14 @@ export function useGeoOverlayConfig(options: { type: GeoOverlayType }) {
 		mapInteractionStore.deselectTool(mapTool.value);
 		previewStore.submit();
 	}
+
+	// Update step on tool reselection
+	watch(
+		() => mapInteractionStore.interactionMode,
+		(activeTool) => {
+			if (activeTool === mapTool.value) step.value = 1;
+		}
+	);
 
 	onMounted(async () => {
 		await init();

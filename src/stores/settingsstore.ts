@@ -5,11 +5,13 @@ import { Ref, ref } from 'vue';
 const persistedMapKeys = {
 	map: [
 		'focusedMap',
+		'enableOfflineMaps',
 		'geoPtzIcon',
 		'geoPtzIconColor',
 		'enable3DTerrain',
 		'enable3DBuildings',
 		'enableGooglePhotorealistic',
+		'enableEntityClustering',
 	],
 };
 
@@ -21,6 +23,7 @@ export const useSettingsStore = defineStore(
 
 		// Map
 		const focusedMap: Ref<'cesium' | 'leaflet'> = ref('cesium'); // Focused map corresponds to map type
+		const enableOfflineMaps: Ref<boolean> = ref(false); // Whether offline maps are toggled on
 
 		// GeoPTZ settings
 		const geoPtzIcon: Ref<string> = ref(
@@ -32,12 +35,16 @@ export const useSettingsStore = defineStore(
 		const enable3DTerrain: Ref<boolean> = ref(true); // Whether to enable 3D terrain in Cesium
 		const enable3DBuildings: Ref<boolean> = ref(false); // Whether to show 3D buildings layer in Cesium
 		const enableGooglePhotorealistic: Ref<boolean> = ref(true); // Whether to show 3D Google Photorealistic tileset layer in Cesium
+		const enableEntityClustering: Ref<boolean> = ref(true); // Whether to cluster entities
 
 		function setTheme(newTheme: 'dark' | 'light') {
 			theme.value = newTheme;
 		}
 		function setFocusedMap(value: 'cesium' | 'leaflet') {
 			focusedMap.value = value;
+		}
+		function setEnableOfflineMaps(value: boolean) {
+			enableOfflineMaps.value = value;
 		}
 
 		function setGeoPtzIcon(value: string) {
@@ -80,22 +87,30 @@ export const useSettingsStore = defineStore(
 			if (value) enable3DTerrain.value = false;
 			syncBuildingsToSurface();
 		}
+		function setEntityClustering(value: boolean | null) {
+			if (value === null) return;
+			enableEntityClustering.value = value;
+		}
 
 		return {
 			theme,
 			focusedMap,
+			enableOfflineMaps,
 			geoPtzIcon,
 			geoPtzIconColor,
 			enable3DTerrain,
 			enable3DBuildings,
 			enableGooglePhotorealistic,
+			enableEntityClustering,
 			setTheme,
 			setFocusedMap,
+			setEnableOfflineMaps,
 			setGeoPtzIcon,
 			setGeoPtzIconColor,
 			set3DTerrain,
 			set3DBuildings,
 			setGooglePhotorealistic,
+			setEntityClustering,
 		};
 	},
 	{ persist: { pick: ['theme', ...persistedMapKeys.map] } }
