@@ -15,10 +15,11 @@ import { SupportedMapLayer } from './supportedMapLayers';
 import { getGroundAltitude } from './services/geospatial.service';
 import { IConSysApiDataSourceProperties } from '../visualization/types/datasource';
 import { setLayerData } from './services/foi.service';
-import { ICON_BASE } from '@/lib/icons';
+import { getIconAnchor, ICON_BASE } from '@/lib/icons';
 import { FoiLayer } from '@/stores/visualizationstore';
 import { getMilSymbol } from './services/milIcon.service';
 import { MapPoint } from '@/modules/map/types';
+import { DEFAULT_POINTMARKER_LAYER_PROPERTIES } from '@/modules/visualization/types/layers';
 
 export interface ICreateMapVisualizationResult {
 	vizLayer: SupportedMapLayer;
@@ -499,19 +500,18 @@ export async function createGeoPTZLayer(
 	);
 
 	const geoPtzLayer = new PointMarkerLayer({
+		...DEFAULT_POINTMARKER_LAYER_PROPERTIES,
 		name: 'GeoPTZ',
 		label: 'GeoPTZ',
 		id: vizId,
 		icon,
 		iconColor: useSettingsStore().geoPtzIconColor,
-		iconSize: [32, 32],
-		iconAnchor: [16, 16],
-		labelOffset: [0, -48],
 		location: {
 			x: location.lon,
 			y: location.lat,
 			z: location.alt,
 		},
+		iconAnchor: getIconAnchor(useSettingsStore().geoPtzIcon),
 		defaultToTerrainElevation: true,
 		markerId: vizId + '-geoptz' + randomUUID(),
 		getDescription: {
@@ -551,6 +551,7 @@ export async function createLocationLayer(
 	} else icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, '#00BFFF');
 
 	const locationLayer = new PointMarkerLayer({
+		...DEFAULT_POINTMARKER_LAYER_PROPERTIES,
 		id: vizId,
 		name: name,
 		label: label,
@@ -561,12 +562,9 @@ export async function createLocationLayer(
 		},
 		icon,
 		iconColor: '#FFFFFF',
-		iconSize: [32, 32],
-		iconAnchor: [16, 32],
 		labelColor: '#FFFFFF',
 		labelOutlineColor: '#000000',
-		labelSize: 14,
-		labelOffset: [0, -36],
+		iconAnchor: [16, 32],
 		defaultToTerrainElevation: true,
 		markerId: vizId + '-location' + randomUUID(),
 	});
@@ -592,6 +590,7 @@ export async function createFOILayer(foiLayer: FoiLayer) {
 	const icon = await getColoredIconUrl(`${ICON_BASE}${foiLayer.icon}`, foiLayer.color);
 
 	const pmLayer = new PointMarkerLayer({
+		...DEFAULT_POINTMARKER_LAYER_PROPERTIES,
 		id: foiLayer.geometry.id,
 		location: {
 			x: lon,
@@ -600,16 +599,15 @@ export async function createFOILayer(foiLayer: FoiLayer) {
 		},
 		icon,
 		iconColor: foiLayer.color,
-		iconSize: [32, 32],
-		iconAnchor: [16, 32],
 		label: foiLayer.geometry.properties.properties.name,
 		labelColor: '#FFFFFF',
 		labelOutlineColor: '#000000',
-		labelSize: 14,
-		labelOffset: [0, -36],
+		iconAnchor: getIconAnchor(foiLayer.icon),
 		defaultToTerrainElevation: true,
 		markerId: foiLayer.geometry.id + '-feature' + randomUUID(),
 	});
+
+	console.log(pmLayer);
 
 	const props = await setLayerData(pmLayer);
 

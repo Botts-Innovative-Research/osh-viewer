@@ -1,3 +1,5 @@
+import { ICON_OPTIONS, iconPathBuilder } from '@/lib/icons';
+
 export interface DataLayerProperties {
 	name: string;
 }
@@ -31,7 +33,20 @@ export interface IPointMarkerLayerProperties extends DataLayerProperties {
 	iconName: string;
 	iconSize: number[];
 	iconAnchor: number[];
+	labelOffset: number[];
 }
+
+// Default PointMarkerLayerProperties with default values for a new point marker layer
+export const DEFAULT_POINTMARKER_LAYER_PROPERTIES: IPointMarkerLayerProperties = {
+	name: 'New PointMarker',
+	label: '',
+	icon: iconPathBuilder(ICON_OPTIONS[0].category, ICON_OPTIONS[0].icon),
+	iconColor: '#FF0000',
+	iconName: ICON_OPTIONS[0].icon,
+	iconSize: [32, 32],
+	iconAnchor: [16, 16],
+	labelOffset: [0, -48],
+};
 
 export interface ILineOfBearingLayerProperties extends DataLayerProperties {
 	color: any;
