@@ -30,6 +30,7 @@ export interface IPointMarkerLayerProperties extends DataLayerProperties {
 	iconColor: string;
 	iconName: string;
 	iconSize: number[];
+	iconAnchor: number[];
 }
 
 export interface ILineOfBearingLayerProperties extends DataLayerProperties {
@@ -51,7 +52,7 @@ export interface IPolylineLayerProperties extends DataLayerProperties {
 	weight: number;
 	opacity: number;
 	iconName: string; // Used for display in map visualizations list
-    maxPoints: number;
+	maxPoints: number;
 }
 
 export interface IFrustumLayerProperties extends DataLayerProperties {

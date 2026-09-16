@@ -14,6 +14,7 @@ import { VisualizationComponents } from '../../types/visualization';
 import { IPointMarkerCustomizationOptions } from '../../types/customization';
 import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { IPointMarkerLayerProperties } from '../../types/layers';
+import { getIconAnchor } from '@/lib/icons';
 
 export default async function build() {
 	console.log('Building Point Marker Visualization...');
@@ -66,6 +67,7 @@ export async function CreatePointMarkerVizProps(
 		iconColor: visOptions.iconColor || '#FF0000',
 		iconName: visOptions.iconName ?? '',
 		iconSize: [32, 32],
+		iconAnchor: getIconAnchor(visOptions.icon ?? ''),
 	};
 
 	// Iterate through each unique datastream ID

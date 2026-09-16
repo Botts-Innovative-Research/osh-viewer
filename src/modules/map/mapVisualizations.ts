@@ -168,7 +168,6 @@ export async function createPointMarkerLayer(
 		name: viz.name,
 		id: viz.id,
 		...(icon ? { icon } : {}),
-		defaultToTerrainElevation: true,
 		dataSourceIds: dsInstances.map((ds) => ds.id),
 		...(getLocation ? { getLocation } : {}),
 		...(getOrientation ? { getOrientation } : {}),
@@ -507,7 +506,7 @@ export async function createGeoPTZLayer(
 		iconColor: useSettingsStore().geoPtzIconColor,
 		iconSize: [32, 32],
 		iconAnchor: [16, 16],
-		labelOffset: [-16, -32],
+		labelOffset: [0, -48],
 		location: {
 			x: location.lon,
 			y: location.lat,
