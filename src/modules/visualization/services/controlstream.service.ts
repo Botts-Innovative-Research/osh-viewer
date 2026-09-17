@@ -57,7 +57,8 @@ export function sendCommand(
 	commandBaseUrl: string,
 	controlStreamId: string,
 	command: any,
-	auth: string
+	auth: string,
+    label?: string
 ) {
 	console.log(
 		`Sending command to ${commandBaseUrl}/controlstreams/${controlStreamId}/commands `,
@@ -78,17 +79,24 @@ export function sendCommand(
 	})
 		.then((response) => {
 			if (!response.ok) {
-				throw new Error('API call failed: ' + response.statusText);
+                showToast(`API call failed`, 'ERROR');
+                throw new Error('API call failed: ' + response.statusText);
 			}
 			return response.json();
 		})
 		.then((data) => {
-			console.log('Command successful: ', data);
-			showToast(`Command successful!`, 'SUCCESS');
+            const name = label ?? 'Command';
+            if (data.statusCode === 'COMPLETED')
+                showToast(`${name} successful`, 'SUCCESS');
+            else if (data.statusCode === 'FAILED')
+                showToast(`${name} failed`, 'ERROR');
+            else
+                showToast(`${name} : ${data.statusCode}}`, 'INFO');
 		})
 		.catch((error) => {
-			console.error('Error sending command: ', error);
-			showToast('Error sending command.', 'ERROR');
+            const name = label ?? 'command';
+			console.error(`Error sending ${name}: `, error);
+			showToast(`Error sending ${name}`, 'ERROR');
 		});
 }
 

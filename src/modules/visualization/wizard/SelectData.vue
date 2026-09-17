@@ -43,6 +43,37 @@ const selectedControlstreams = computed({
 	set: (val: OSHControlStream[]) => vizwizStore.setControlstreams(val),
 });
 
+function selectAllDs() {
+  if (isAllDsSelected.value) {
+    selectedDatastreams.value = [];
+  } else {
+    selectedDatastreams.value = [...listDatastreams.value]
+  }
+}
+
+function selectAllCs() {
+  if (isAllCsSelected.value) {
+    selectedControlstreams.value = [];
+  } else {
+    selectedControlstreams.value = [...listControlstreams.value]
+  }
+}
+
+const isAllDsSelected = computed(() => {
+  return selectedDatastreams.value.length === listDatastreams.value.length
+})
+const isAllCsSelected = computed(() => {
+  return selectedControlstreams.value.length === listControlstreams.value.length
+})
+
+const isSomeDsSelected = computed(() => {
+  return selectedDatastreams.value.length > 0
+})
+
+const isSomeCsSelected = computed(() => {
+  return selectedControlstreams.value.length > 0
+})
+
 // List of available systems
 const listSystems = useSystemStore().getFilteredSystems();
 // Filter list of datastreams to include ONLY those from selected systems
@@ -124,7 +155,23 @@ useComponentValidation(valid, emit);
 				: []
 		"
 		:disabled="!selectedSystems.length"
-	></v-autocomplete>
+	>
+    <template #prepend-item>
+      <v-list-item
+          title="Select All"
+          @click="selectAllDs"
+      >
+        <template #prepend>
+          <v-checkbox-btn
+              :ripple="false"
+              :model-value="isAllDsSelected"
+              :indeterminate="isSomeDsSelected && !isAllDsSelected"
+          ></v-checkbox-btn>
+        </template>
+      </v-list-item>
+      <v-divider class="mt-2"></v-divider>
+    </template>
+  </v-autocomplete>
 	<!-- Select for controlstreams -->
 	<v-autocomplete
 		v-if="props.supportsCs"
@@ -145,6 +192,22 @@ useComponentValidation(valid, emit);
 				: []
 		"
 		:disabled="!selectedSystems.length"
-	></v-autocomplete>
+	>
+    <template #prepend-item>
+      <v-list-item
+          title="Select All"
+          @click="selectAllCs"
+      >
+        <template #prepend>
+          <v-checkbox-btn
+              :ripple="false"
+              :model-value="isAllCsSelected"
+              :indeterminate="isSomeCsSelected && !isAllCsSelected"
+          ></v-checkbox-btn>
+        </template>
+      </v-list-item>
+      <v-divider class="mt-2"></v-divider>
+    </template>
+  </v-autocomplete>
 </template>
 <style scoped></style>

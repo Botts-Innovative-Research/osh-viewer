@@ -124,7 +124,7 @@ const uiStore = useUIStore();
 							</v-sheet>
 						</v-expansion-panel-text>
 					</v-expansion-panel>
-					<!--				Mission Builder Visualizations-->
+					<!-- Mission Builder Visualizations-->
 					<v-expansion-panel
 						:disabled="missionVisualizations.length == 0"
 						value="mission"
@@ -170,6 +170,7 @@ const uiStore = useUIStore();
 						:animation="150"
 						tag="div"
 						style="display: contents"
+						handle=".drag-handle"
 					>
 						<v-expansion-panel
 							v-for="viz in panelVisualizations"
@@ -178,6 +179,13 @@ const uiStore = useUIStore();
 							:value="viz.id"
 						>
 							<template #title>
+								<div class="panel-actions">
+									<v-icon
+										class="drag-handle mr-1"
+										size="small"
+										>mdi-drag</v-icon
+									>
+								</div>
 								<div class="panel-header">
 									<span class="viz-name">{{ viz.name }}</span>
 									<div class="panel-actions">
@@ -274,28 +282,12 @@ const uiStore = useUIStore();
 		opacity 0.15s ease;
 }
 
-.map-actions {
-	display: flex;
-	align-items: center;
-	flex-shrink: 0;
-	overflow: hidden;
-	max-width: 0;
-	opacity: 0;
-	transition:
-		max-width 0.2s ease,
-		opacity 0.15s ease;
-}
-
 .viz-name {
 	flex: 1;
 	min-width: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-}
-
-.v-expansion-panel--active {
-	margin-bottom: 0px; /* consistent gap */
 }
 
 .v-expansion-panel:hover .panel-actions {
@@ -306,5 +298,17 @@ const uiStore = useUIStore();
 .v-list-item:hover .map-actions {
 	max-width: 120px;
 	opacity: 1;
+}
+
+:deep(.v-expansion-panels .v-expansion-panel) {
+	margin: 0 !important;
+}
+
+:deep(.v-expansion-panels .v-expansion-panel--active) {
+	margin: 0 !important;
+}
+
+:deep(.v-expansion-panels .v-expansion-panel + .v-expansion-panel) {
+	margin-top: 0 !important;
 }
 </style>

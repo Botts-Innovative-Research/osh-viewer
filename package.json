@@ -6,12 +6,13 @@
 	"scripts": {
 		"dev": "vite",
 		"dev:sensorlink": "vite --mode sensorlink",
-		"build": "run-p \"build-only {@}\" --",
+		"build": "npm run update-osh-js && run-p \"build-only {@}\" --",
 		"build:sensorlink": "vite build --mode sensorlink",
 		"preview": "vite preview",
 		"build-only": "vite build",
 		"format": "prettier --write src/",
-		"host": "vite --host"
+		"host": "vite --host",
+		"update-osh-js": "npm update osh-js"
 	},
 	"dependencies": {
 		"@cesium/engine": "latest",

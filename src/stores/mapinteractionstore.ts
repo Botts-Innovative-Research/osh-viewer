@@ -8,6 +8,7 @@ export type MapInteractionMode =
 	| 'geoptz'
 	| 'missionWaypoint'
 	| 'driveLocation'
+	| 'flyToLocation'
 	| 'homeLocation'
 	| 'geoOverlayPoint'
 	| 'geoOverlayLineString'
@@ -48,6 +49,7 @@ export const useMapInteractionStore = defineStore(
 			() => interactionMode.value === 'missionWaypoint'
 		);
 		const isDriveLocationSelected = computed(() => interactionMode.value === 'driveLocation');
+		const isFlyToLocationSelected = computed(() => interactionMode.value === 'flyToLocation');
 		const isHomeLocationSelected = computed(() => interactionMode.value === 'homeLocation');
 		const isGeoOverlayPointSelected = computed(
 			() => interactionMode.value === 'geoOverlayPoint'
@@ -82,6 +84,7 @@ export const useMapInteractionStore = defineStore(
 			isGeoPTZSelected,
 			isMissionWaypointSelected,
 			isDriveLocationSelected,
+			isFlyToLocationSelected,
 			isHomeLocationSelected,
 			isGeoOverlayPointSelected,
 			isGeoOverlayLineStringSelected,

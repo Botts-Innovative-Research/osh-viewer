@@ -53,7 +53,8 @@ export default function build() {
 export function CreateChartVizProps(
 	datastreams: { [key: string]: any },
 	visOptions: IChartCustomizationOptions
-) {
+)
+{
 	const vizwizStore = useVizWizStore();
 	const datastreamStore = useDataStreamStore();
 

@@ -15,7 +15,9 @@ const emit = defineEmits<{
 </script>
 <template>
 	<v-select
-		label="Process"
+		hint="Select a controller to send GeoPTZ tasks"
+		persistent-hint
+		label="GeoPTZ Controllers"
 		:model-value="selectedGeoPTZControllers"
 		@update:model-value="emit('update:selectedGeoPTZControllers', $event)"
 		v-bind:items="geoPtzVisualizations"
@@ -23,10 +25,9 @@ const emit = defineEmits<{
 		:item-value="(item: OSHVisualization) => item"
 		chips
 		multiple
-		hide-details
 		clearable
 	>
-		<template v-slot:item="{item, props: itemProps }">
+		<template v-slot:item="{ item, props: itemProps }">
 			<v-list-item v-bind="itemProps">
 				<template v-slot:prepend="{ isSelected }">
 					<v-checkbox-btn :model-value="isSelected"></v-checkbox-btn>

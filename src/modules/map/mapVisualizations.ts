@@ -15,10 +15,11 @@ import { SupportedMapLayer } from './supportedMapLayers';
 import { getGroundAltitude } from './services/geospatial.service';
 import { IConSysApiDataSourceProperties } from '../visualization/types/datasource';
 import { setLayerData } from './services/foi.service';
-import { ICON_BASE } from '@/lib/icons';
+import { getIconAnchor, ICON_BASE } from '@/lib/icons';
 import { FoiLayer } from '@/stores/visualizationstore';
 import { getMilSymbol } from './services/milIcon.service';
 import { MapPoint } from '@/modules/map/types';
+import { DEFAULT_POINTMARKER_LAYER_PROPERTIES } from '@/modules/visualization/types/layers';
 
 export interface ICreateMapVisualizationResult {
 	vizLayer: SupportedMapLayer;
@@ -64,20 +65,36 @@ export async function createPointMarkerLayer(
 
 		// Check for location property
 		if (dsProps.properties.location) {
-			getLocation = {
-				dataSourceIds: [dsInstance.id],
-				handler: async (rec: any) => {
-					const lon = rec[dsProps.properties.location.property].lon;
-					const lat = rec[dsProps.properties.location.property].lat;
-					return {
-						x: lon,
-						y: lat,
-						z:
-							rec[dsProps.properties.location.property].alt ||
-							(await getGroundAltitude(lon, lat)),
-					};
-				},
-			};
+			const locConfig = dsProps.properties.location;
+
+			if (locConfig.locationFormat === 'flat') {
+				getLocation = {
+					dataSourceIds: [dsInstance.id],
+					handler: async (rec: any) => {
+						const lon = rec[locConfig.property.lon];
+						const lat = rec[locConfig.property.lat];
+						const alt = locConfig.property.alt ? rec[locConfig.property.alt] : null;
+						return {
+							x: lon,
+							y: lat,
+							z: alt || (await getGroundAltitude(lon, lat)),
+						};
+					},
+				};
+			} else {
+				getLocation = {
+					dataSourceIds: [dsInstance.id],
+					handler: async (rec: any) => {
+						const lon = rec[locConfig.property].lon;
+						const lat = rec[locConfig.property].lat;
+						return {
+							x: lon,
+							y: lat,
+							z: rec[locConfig.property].alt || (await getGroundAltitude(lon, lat)),
+						};
+					},
+				};
+			}
 		}
 		// Check for orientation property
 		if (dsProps.properties.orientation) {
@@ -85,7 +102,9 @@ export async function createPointMarkerLayer(
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
 					return {
-						heading: rec[dsProps.properties.orientation.property].heading,
+						heading:
+							rec[dsProps.properties.orientation.property].heading ??
+							rec[dsProps.properties.orientation.property],
 					};
 				},
 			};
@@ -150,7 +169,6 @@ export async function createPointMarkerLayer(
 		name: viz.name,
 		id: viz.id,
 		...(icon ? { icon } : {}),
-		defaultToTerrainElevation: true,
 		dataSourceIds: dsInstances.map((ds) => ds.id),
 		...(getLocation ? { getLocation } : {}),
 		...(getOrientation ? { getOrientation } : {}),
@@ -482,19 +500,18 @@ export async function createGeoPTZLayer(
 	);
 
 	const geoPtzLayer = new PointMarkerLayer({
+		...DEFAULT_POINTMARKER_LAYER_PROPERTIES,
 		name: 'GeoPTZ',
 		label: 'GeoPTZ',
 		id: vizId,
 		icon,
 		iconColor: useSettingsStore().geoPtzIconColor,
-		iconSize: [32, 32],
-		iconAnchor: [16, 16],
-		labelOffset: [-16, -32],
 		location: {
 			x: location.lon,
 			y: location.lat,
 			z: location.alt,
 		},
+		iconAnchor: getIconAnchor(useSettingsStore().geoPtzIcon),
 		defaultToTerrainElevation: true,
 		markerId: vizId + '-geoptz' + randomUUID(),
 		getDescription: {
@@ -534,6 +551,7 @@ export async function createLocationLayer(
 	} else icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, '#00BFFF');
 
 	const locationLayer = new PointMarkerLayer({
+		...DEFAULT_POINTMARKER_LAYER_PROPERTIES,
 		id: vizId,
 		name: name,
 		label: label,
@@ -544,12 +562,9 @@ export async function createLocationLayer(
 		},
 		icon,
 		iconColor: '#FFFFFF',
-		iconSize: [32, 32],
-		iconAnchor: [16, 32],
 		labelColor: '#FFFFFF',
 		labelOutlineColor: '#000000',
-		labelSize: 14,
-		labelOffset: [0, -36],
+		iconAnchor: [16, 32],
 		defaultToTerrainElevation: true,
 		markerId: vizId + '-location' + randomUUID(),
 	});
@@ -557,39 +572,6 @@ export async function createLocationLayer(
 	const props = await setLayerData(locationLayer);
 
 	return { layer: locationLayer, props };
-}
-
-export async function createWaypointLayer(
-	waypoint: MapPoint,
-	index: string
-): Promise<{
-	layer: typeof PointMarkerLayer;
-	props: any;
-}> {
-	const icon = await getColoredIconUrl(`${ICON_BASE}/icons/waypoint/round-pin.png`, 'green');
-
-	const waypointLayer = new PointMarkerLayer({
-		id: `waypoint-${index}`,
-		name: `Waypoint ${index + 1}`,
-		location: {
-			x: waypoint.lon,
-			y: waypoint.lat,
-			z: waypoint.alt || (await getGroundAltitude(waypoint.lon, waypoint.lat)),
-		},
-		icon,
-		iconSize: [32, 32],
-		iconAnchor: [16, 32],
-		label: `WP ${index + 1}`,
-		labelColor: '#FFFFFF',
-		labelOutlineColor: '#000000',
-		labelSize: 14,
-		labelOffset: [0, -36],
-		defaultToTerrainElevation: true,
-	});
-
-	const props = await setWaypointData(waypointLayer);
-
-	return { layer: waypointLayer, props };
 }
 export async function createFOILayer(foiLayer: FoiLayer) {
 	const lon = Array.isArray(foiLayer.geometry.coordinates[0])
@@ -608,6 +590,7 @@ export async function createFOILayer(foiLayer: FoiLayer) {
 	const icon = await getColoredIconUrl(`${ICON_BASE}${foiLayer.icon}`, foiLayer.color);
 
 	const pmLayer = new PointMarkerLayer({
+		...DEFAULT_POINTMARKER_LAYER_PROPERTIES,
 		id: foiLayer.geometry.id,
 		location: {
 			x: lon,
@@ -616,16 +599,15 @@ export async function createFOILayer(foiLayer: FoiLayer) {
 		},
 		icon,
 		iconColor: foiLayer.color,
-		iconSize: [32, 32],
-		iconAnchor: [16, 32],
 		label: foiLayer.geometry.properties.properties.name,
 		labelColor: '#FFFFFF',
 		labelOutlineColor: '#000000',
-		labelSize: 14,
-		labelOffset: [0, -36],
+		iconAnchor: getIconAnchor(foiLayer.icon),
 		defaultToTerrainElevation: true,
 		markerId: foiLayer.geometry.id + '-feature' + randomUUID(),
 	});
+
+	console.log(pmLayer);
 
 	const props = await setLayerData(pmLayer);
 

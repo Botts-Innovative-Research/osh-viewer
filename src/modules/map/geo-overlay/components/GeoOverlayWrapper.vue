@@ -2,12 +2,15 @@
 import DeleteButton from '@/components/ui/DeleteButton.vue';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 import { useGeoOverlayStore } from '@/stores/geooverlaystore';
+import { watch } from 'vue';
+import { useMapStore } from '@/stores/mapstore';
 
 const { overlay } = defineProps<{
 	overlay: GeoOverlay;
 }>();
 
 const geoOverlayStore = useGeoOverlayStore();
+const mapStore = useMapStore();
 
 // function isSelected(overlay: GeoOverlay) {
 // 	if (!mapStore.selectedMapItem) return false;
@@ -18,30 +21,33 @@ function getIcon(overlay: GeoOverlay) {
 	if (overlay.type === 'Circle') return `mdi-vector-circle-variant`;
 	if (overlay.type === 'LineString') return `mdi-vector-polyline`;
 	if (overlay.type === 'Polygon') return `mdi-vector-polygon-variant`;
+	if (overlay.type === 'Point') {
+		return `mdi-${overlay.geometry.properties.iconName ?? 'map-marker'}`;
+	}
 }
 function getIconColor(overlay: GeoOverlay) {
-	return overlay.geometry.properties.borderColor;
+	// Default border color, use fill for point
+	return overlay.geometry.properties.borderColor ?? overlay.geometry.properties.fillColor;
 }
 
-// watch(
-// 	() => mapStore.selectedMapItem,
-// 	(newVal) => {
-// 		// If selected item is this visualization or one of its children, keep children open. Otherwise, close children.
-// 		if (!newVal) {
-// 			childrenOpen.value = false;
-// 			return;
-// 		}
-// 		if (newVal.id === viz.id || viz.children.some((child) => child.id === newVal.id)) {
-// 			childrenOpen.value = true;
-// 		} else {
-// 			childrenOpen.value = false;
-// 		}
-// 	}
-// );
+function toggleSelectedMapItem(item: GeoOverlay) {
+	if (
+		mapStore.selectedMapItem &&
+		'geometry' in mapStore.selectedMapItem &&
+		mapStore.selectedMapItem.uuid === item.uuid
+	) {
+		mapStore.setSelectedMapItem(null);
+	} else {
+		mapStore.setSelectedMapItem(item);
+	}
+}
 </script>
 
 <template>
-	<v-list-item :key="overlay.uuid">
+	<v-list-item
+		:key="overlay.uuid"
+		@click="toggleSelectedMapItem(overlay)"
+	>
 		<!-- Icon -->
 		<template #prepend>
 			<v-icon

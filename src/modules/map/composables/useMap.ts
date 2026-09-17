@@ -7,7 +7,6 @@ import {
 	createGeoPTZLayer,
 	createLocationLayer,
 	createMapVisualizations,
-	createWaypointLayer,
 	rebuildMapVisualizations,
 } from '../mapVisualizations';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
@@ -22,9 +21,13 @@ import {
 	connectDatasources as connect,
 	disconnectDatasources as disconnect,
 } from '@/modules/visualization/services/datasource.service';
-import { getDistanceBetween, getGroundAltitude } from '../services/geospatial.service';
+import {
+	getBboxCenter,
+	getDistanceBetween,
+	getGroundAltitude,
+} from '../services/geospatial.service';
 import { setLayerData } from '../services/foi.service';
-import { MapPoint } from '@/modules/map/types';
+import { MapPoint, OfflineMapLayer } from '@/modules/map/types';
 import { useMapInteractionStore } from '@/stores/mapinteractionstore';
 import { useMissionStore } from '@/stores/missionstore';
 import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
@@ -44,13 +47,11 @@ export function useMap() {
 
 	// STORE REFS
 	const {
-		id: previewId,
 		type: previewType,
 		name: previewName,
-		isGeofence: previewIsGeofence,
-		geofenceMode: previewGeofenceMode,
 		borderColor: previewBorderColor,
 		fillColor: previewFillColor,
+		icon: previewIcon,
 		points: previewPoints,
 		radius: previewRadius,
 		circleCreationStep: previewCircleCreationStep,
@@ -70,14 +71,17 @@ export function useMap() {
 	// GEOPTZ
 	const geoPtzLayer = ref<typeof PointMarkerLayer | null>(null);
 	// MISSION BUILDER
-	const driveLocationLayer = ref<typeof PointMarkerLayer | null>(null);
-	const homeLocationLayer = ref<typeof PointMarkerLayer | null>(null);
-	const waypointLayers = ref<(typeof PointMarkerLayer)[]>([]); // Array of waypoint Pointmarkers for mission builder
+	const driveLocationLayer = ref(null);
+	const flyToLocationLayer = ref(null);
+	const homeLocationLayer = ref(null);
 	// FOI
 	const foiLayers = ref<{ layer: typeof PointMarkerLayer; props: any }[]>([]);
 
 	/* MAP INITIALIZATION/DESTRUCTION/TOGGLE */
 	async function initMap() {
+		// OFFLINE MAP
+		const isOffline = settingsStore.enableOfflineMaps ?? false;
+
 		if (mapType.value === 'cesium') {
 			mapAdapter.value = createCesiumAdapter();
 			await mapAdapter.value?.init?.('mapContainer');
@@ -87,19 +91,28 @@ export function useMap() {
 				await mapAdapter.value.rebuildMapLayers?.(mapStore.cesiumMapLayers);
 			}
 
-			// Apply current settings
-			if (settingsStore.enable3DTerrain) {
-				await mapAdapter.value?.addTerrain?.();
+			// Only apply these settings when ONLINE
+			if (!isOffline) {
+				if (settingsStore.enable3DTerrain) {
+					await mapAdapter.value?.addTerrain?.();
+				}
+				if (settingsStore.enable3DBuildings) {
+					await mapAdapter.value?.addBuildings?.();
+				}
+				if (settingsStore.enableGooglePhotorealistic) {
+					await mapAdapter.value?.addGooglePhotorealistic?.();
+				}
+			} else {
+				await rebuildOfflineMaps();
+				await mapAdapter.value?.addOfflineBuildings?.();
 			}
-			if (settingsStore.enable3DBuildings) {
-				await mapAdapter.value?.addBuildings?.();
-			}
-			if (settingsStore.enableGooglePhotorealistic) {
-				await mapAdapter.value?.addGooglePhotorealistic?.();
+			if (settingsStore.enableEntityClustering) {
+				await mapAdapter.value?.enableClustering?.();
 			}
 		} else if (mapType.value === 'leaflet') {
 			mapAdapter.value = createLeafletAdapter();
 			await mapAdapter.value?.init?.('mapContainer');
+			if (isOffline) await rebuildOfflineMaps();
 		}
 		bindMapInteractions();
 	}
@@ -131,31 +144,52 @@ export function useMap() {
 
 		await rebuildFoiLayers(); // Rebuild all FOIs
 		rebuildGeoOverlayLayers(); // Rebuild GeoOverlays
-
-		// Rebuild all waypoints per system
-		waypointLayers.value = [];
-		let idx = 0;
-		for (const [, systemWaypoints] of missionStore.missionWaypointsPerSystem) {
-			for (const waypoint of systemWaypoints) {
-				await addWaypointLayer(waypoint, idx);
-				idx++;
-			}
-			drawMissionPath(systemWaypoints);
-		}
-		if (driveLocationLayer.value && mapStore.currentLLA) {
-			const loc = driveLocationLayer.value.properties.location;
-			driveLocationLayer.value = null;
-			await addDriveLocationLayer(loc.x, loc.y);
-		}
-		if (homeLocationLayer.value && mapStore.currentLLA) {
-			const loc = homeLocationLayer.value.properties.location;
-			homeLocationLayer.value = null;
-			await addHomeLocationLayer(loc.x, loc.y);
-		}
+		rebuildMissionWaypoints(); // Rebuild all waypoints per system
 	}
 	watch(mapType, async () => {
 		await switchMap();
 	});
+	watch(
+		() => settingsStore.enableOfflineMaps,
+		async (enabled) => {
+			if (!mapAdapter.value) return;
+
+			if (enabled) {
+				await rebuildOfflineMaps();
+			} else {
+				for (const map of mapStore.offlineMapLayers) {
+					mapAdapter.value.removeOfflineMapLayer(map.id);
+				}
+			}
+		}
+	);
+	watch(
+		() => mapStore.offlineMapLayers.map((map) => map.id),
+		async (newIds, oldIds = []) => {
+			const newSet = new Set(newIds);
+			const oldSet = new Set(oldIds);
+
+			// Removed
+			for (const id of oldSet) {
+				if (!newSet.has(id)) {
+					mapAdapter.value?.removeOfflineMapLayer(id);
+				}
+			}
+
+			// Added
+			for (const map of mapStore.offlineMapLayers) {
+				if (!oldSet.has(map.id) && settingsStore.enableOfflineMaps) {
+					await mapAdapter.value?.addOfflineMapLayer(map);
+				}
+			}
+		},
+		{ immediate: true }
+	);
+	async function rebuildOfflineMaps() {
+		if (!settingsStore.enableOfflineMaps) return; // Skip if not enabled
+		for (const map of mapStore.offlineMapLayers)
+			await mapAdapter.value?.addOfflineMapLayer(map);
+	}
 
 	/* DATASOURCE MANAGEMENT */
 	function connectDatasources() {
@@ -292,8 +326,15 @@ export function useMap() {
 	function bindMapInteractions() {
 		if (!mapAdapter.value) return;
 
-		/* MOUSE CLICK */
+		/* MOUSE CLICK (LEFT-CLICK) */
 		mapAdapter.value.onClick(async (lat, lon, alt) => {
+			// CLOSE LLA POPUP
+			mapStore.clearTempLLA();
+
+			// Point GeoOverlay
+			if (mapInteractionStore.isGeoOverlayPointSelected) {
+				previewPoints.value = [{ lat, lon, alt }];
+			}
 			// Circle GeoOverlay
 			if (mapInteractionStore.isGeoOverlayCircleSelected) {
 				// Handle second click FIRST - radius
@@ -358,7 +399,17 @@ export function useMap() {
 				mapStore.setCurrentLLA(lat, lon, 0);
 				await addHomeLocationLayer(lon, lat);
 			}
+			// Fly to Location
+			if (mapInteractionStore.isFlyToLocationSelected) {
+				mapStore.setCurrentLLA(lat, lon, 0);
+				await addFlyToLocationLayer(lon, lat);
+			}
 			// Add additional onClick functions
+		});
+
+		/* MOUSE RIGHT-CLICK */
+		mapAdapter.value.onRightClick(async (lat, lon, alt) => {
+			mapStore.setTempLLA({ lat, lon, alt });
 		});
 
 		/* MOUSE MOVE */
@@ -387,18 +438,36 @@ export function useMap() {
 	);
 	watch(
 		() => mapStore.selectedMapItem,
-		(newVal) => {
+		async (newVal: OSHVisualization | GeoOverlay | OfflineMapLayer | null) => {
 			if (!newVal) return; // Only fly when a map item is selected
 
-			const layer = mapItemLayers.value.get(newVal.id);
-			if (!layer) return;
+			let location;
+			let tilt; // Whether to tilt camera pitch in Cesium
 
-			const layerProps = layer.getCurrentProps();
-			const location =
-				layerProps.location ?? layerProps.position ?? layerProps.locations?.[0]; // Handle location for PM/LoB, position for ellipse, locations[0] for polyline
+			// Handle GeoOverlay
+			if ('geometry' in newVal && newVal.geometry.bbox) {
+				location = await getBboxCenter(newVal.geometry.bbox);
+			}
+			// Handle OSHVisualization
+			else if ('visualizationComponents' in newVal) {
+				const layer = mapItemLayers.value.get(newVal.id);
+				if (!layer) return;
+
+				const layerProps = layer.getCurrentProps();
+				location = layerProps.location ?? layerProps.position ?? layerProps.locations?.[0]; // Handle location for PM/LoB, position for ellipse, locations[0] for polyline
+			}
+			// Handle OfflineMapLayer
+			else if ('mapName' in newVal) {
+				location = {
+					x: parseFloat(newVal.lon.toString()),
+					y: parseFloat(newVal.lat.toString()),
+					z: mapType.value === 'leaflet' ? newVal.minZoom : 3000,
+				};
+				tilt = false;
+			}
+
 			if (!location) return;
-
-			mapAdapter.value?.flyToPoint(location);
+			mapAdapter.value?.flyToPoint(location, tilt ?? undefined);
 		}
 	);
 	watch(
@@ -448,10 +517,8 @@ export function useMap() {
 	watch(
 		hiddenGeoOverlays,
 		async (newList, oldList) => {
-			console.log(newList, oldList);
 			const removedIds = new Set([...oldList].filter((id) => !newList.has(id)));
 			const addedIds = new Set([...newList].filter((id) => !oldList.has(id)));
-			console.log(removedIds, addedIds);
 			// Removed hidden geo overlays -> SHOW
 			if (removedIds.size > 0) {
 				removedIds.forEach((id: string) => {
@@ -508,6 +575,17 @@ export function useMap() {
 	watch(
 		previewPoints,
 		(newPoints) => {
+			// Point
+			if (previewType.value === 'Point') {
+				const point = newPoints[0];
+				if (!point) return;
+				mapAdapter.value?.updatePointPreview(
+					point,
+					previewIcon.value,
+					previewFillColor.value,
+					previewName.value
+				);
+			}
 			// Circle
 			if (previewType.value === 'Circle') {
 				const center = newPoints[0];
@@ -516,18 +594,25 @@ export function useMap() {
 					center,
 					previewRadius.value ?? 0, // Default radius = 0
 					previewBorderColor.value,
-					previewFillColor.value
+					previewFillColor.value,
+					previewName.value
 				);
 			}
 			// Polyline
-			if (previewType.value === 'LineString')
-				mapAdapter.value?.updatePolylinePreview(newPoints, previewBorderColor.value);
+			if (previewType.value === 'LineString') {
+				mapAdapter.value?.updatePolylinePreview(
+					newPoints,
+					previewBorderColor.value,
+					previewName.value
+				);
+			}
 			// Polygon
 			if (previewType.value === 'Polygon') {
 				mapAdapter.value?.updatePolygonPreview(
 					newPoints,
 					previewBorderColor.value,
-					previewFillColor.value
+					previewFillColor.value,
+					previewName.value
 				);
 			}
 		},
@@ -536,13 +621,16 @@ export function useMap() {
 	watch(
 		previewRadius,
 		(newRadius) => {
+			// Circle ONLY
+			if (previewType.value !== 'Circle') return;
 			const center = previewPoints.value[0];
 			if (!center) return;
 			mapAdapter.value?.updateCirclePreview(
 				center,
 				newRadius ?? 0, // Default radius = 0
 				previewBorderColor.value,
-				previewFillColor.value
+				previewFillColor.value,
+				previewName.value
 			);
 		},
 		{ deep: true }
@@ -558,25 +646,42 @@ export function useMap() {
 					center,
 					previewRadius.value ?? 0, // Default radius = 0
 					newColor,
-					previewFillColor.value
+					previewFillColor.value,
+					previewName.value
 				);
 			}
 			// Polyline
-			if (previewType.value === 'LineString')
-				mapAdapter.value?.updatePolylinePreview(previewPoints.value, newColor);
+			if (previewType.value === 'LineString') {
+				mapAdapter.value?.updatePolylinePreview(
+					previewPoints.value,
+					newColor,
+					previewName.value
+				);
+			}
 			// Polygon
-			if (previewType.value === 'Polygon')
+			if (previewType.value === 'Polygon') {
 				mapAdapter.value?.updatePolygonPreview(
 					previewPoints.value,
 					newColor,
-					previewFillColor.value
+					previewFillColor.value,
+					previewName.value
 				);
+			}
 		},
 		{ deep: true }
 	);
 	watch(
 		previewFillColor,
 		(newColor) => {
+			// Point
+			if (previewType.value === 'Point') {
+				mapAdapter.value?.updatePointPreview(
+					previewPoints.value[0],
+					previewIcon.value,
+					newColor,
+					previewName.value
+				);
+			}
 			// Circle
 			if (previewType.value === 'Circle') {
 				const center = previewPoints.value[0];
@@ -585,19 +690,73 @@ export function useMap() {
 					center,
 					previewRadius.value ?? 0, // Default radius = 0
 					previewBorderColor.value,
-					newColor
+					newColor,
+					previewName.value
 				);
 			}
 			// Polygon
-			if (previewType.value === 'Polygon')
+			if (previewType.value === 'Polygon') {
 				mapAdapter.value?.updatePolygonPreview(
 					previewPoints.value,
 					previewBorderColor.value,
-					newColor
+					newColor,
+					previewName.value
 				);
+			}
 		},
 		{ deep: true }
 	);
+	watch(previewIcon, (newIcon) => {
+		// ONLY for Point
+		if (previewType.value !== 'Point' || !newIcon) return;
+		mapAdapter.value?.updatePointPreview(
+			previewPoints.value[0],
+			newIcon,
+			previewFillColor.value,
+			previewName.value
+		);
+	});
+	watch(previewName, (newName) => {
+		if (!newName) return;
+		// Point
+		if (previewType.value === 'Point') {
+			mapAdapter.value?.updatePointPreview(
+				previewPoints.value[0],
+				previewIcon.value,
+				previewFillColor.value,
+				newName
+			);
+		}
+		// Circle
+		if (previewType.value === 'Circle') {
+			const center = previewPoints.value[0];
+			if (!center) return;
+			mapAdapter.value?.updateCirclePreview(
+				center,
+				previewRadius.value ?? 0, // Default radius = 0
+				previewBorderColor.value,
+				previewFillColor.value,
+				newName
+			);
+		}
+		// Polyline
+		if (previewType.value === 'LineString') {
+			mapAdapter.value?.updatePolylinePreview(
+				previewPoints.value,
+				previewBorderColor.value,
+				newName
+			);
+		}
+		// Polygon
+		if (previewType.value === 'Polygon') {
+			mapAdapter.value?.updatePolygonPreview(
+				previewPoints.value,
+				previewBorderColor.value,
+				previewFillColor.value,
+				newName
+			);
+		}
+	});
 
 	/* GEOPTZ */
 	watch(
@@ -611,22 +770,25 @@ export function useMap() {
 
 	/* DRIVE LOCATION */
 	async function addDriveLocationLayer(lon: number, lat: number) {
-		const result = await createLocationLayer(
+		if (!mapAdapter.value) return;
+		removeDriveLocationLayer();
+
+		const marker = await mapAdapter.value.drawPoint(
 			{ lon, lat, alt: 0 },
-			'driveLocation',
-			'Drive to Location'
+			'/icons/waypoint/round-pin.png',
+			'#00BFFF',
+			`Drive to ${lat.toFixed(6)} , ${lon.toFixed(6)}`
 		);
-		if (result) {
-			removeDriveLocationLayer();
-			driveLocationLayer.value = result.layer;
-			mapAdapter.value?.addLayer(driveLocationLayer.value);
-			if (result.props) mapAdapter.value?.updateMarker(result.props);
-		}
+
+		mapAdapter.value.addMarker(marker);
+		driveLocationLayer.value = marker;
 	}
+
 	function removeDriveLocationLayer() {
-		if (driveLocationLayer.value) mapAdapter.value?.removeLayer(driveLocationLayer.value);
+		if (driveLocationLayer.value) mapAdapter.value?.removeMarker(driveLocationLayer.value);
 		driveLocationLayer.value = null;
 	}
+
 	watch(
 		() => mapInteractionStore.isDriveLocationSelected,
 		(selected) => {
@@ -634,23 +796,51 @@ export function useMap() {
 		}
 	);
 
+	/* FLY TO LOCATION */
+	async function addFlyToLocationLayer(lon: number, lat: number) {
+		if (!mapAdapter.value) return;
+		removeFlyToLocationLayer();
+
+		const marker = await mapAdapter.value.drawPoint(
+			{ lon, lat, alt: 0 },
+			'/icons/waypoint/round-pin.png',
+			'#ff00f2',
+			`Fly To ${lat.toFixed(6)} , ${lon.toFixed(6)}`
+		);
+
+		mapAdapter.value.addMarker(marker);
+		flyToLocationLayer.value = marker;
+	}
+	function removeFlyToLocationLayer() {
+		if (flyToLocationLayer.value) mapAdapter.value?.removeMarker(flyToLocationLayer.value);
+		flyToLocationLayer.value = null;
+	}
+
+	watch(
+		() => mapInteractionStore.isFlyToLocationSelected,
+		(selected) => {
+			removeFlyToLocationLayer();
+		}
+	);
+
 	/* HOME LOCATION */
 	async function addHomeLocationLayer(lon: number, lat: number) {
 		if (!mapAdapter.value) return;
-		const result = await createLocationLayer(
+
+		removeHomeLocationLayer();
+
+		const marker = await mapAdapter.value.drawPoint(
 			{ lon, lat, alt: 0 },
-			'homeLocation',
-			'Home Location'
+			'/icons/waypoint/home-map-marker.png',
+			'#bd1616',
+			`${lat.toFixed(6)} , ${lon.toFixed(6)}`
 		);
-		if (result) {
-			removeHomeLocationLayer();
-			homeLocationLayer.value = result.layer;
-			mapAdapter.value?.addLayer(homeLocationLayer.value);
-			if (result.props) mapAdapter.value?.updateMarker(result.props);
-		}
+
+		mapAdapter.value.addMarker(marker);
+		homeLocationLayer.value = marker;
 	}
 	function removeHomeLocationLayer() {
-		if (homeLocationLayer.value) mapAdapter.value?.removeLayer(homeLocationLayer.value);
+		if (homeLocationLayer.value) mapAdapter.value?.removeMarker(homeLocationLayer.value);
 		homeLocationLayer.value = null;
 	}
 	watch(
@@ -662,50 +852,52 @@ export function useMap() {
 
 	/* MISSION BUILDER */
 	watch(
-		() => missionStore.missionWaypoints,
-		async (waypoints) => {
-			if (!mapAdapter.value) return;
-
-			// Remove waypoints
-			clearMission();
-
-			let idx = 0;
-			for (const [, systemWaypoints] of missionStore.missionWaypointsPerSystem) {
-				// Add waypoints
-				for (const waypoint of systemWaypoints) {
-					await addWaypointLayer(waypoint, idx);
-					idx++;
-				}
-                // Draw mission path
-                drawMissionPath(systemWaypoints)
-            }
+		[
+			() => missionStore.missionWaypoints,
+			() => missionStore.selectedMissionControllers,
+			() => missionStore.hiddenMissionWaypoints,
+		],
+		rebuildMissionWaypoints
+	);
+	watch(
+		() => missionStore.homeLocation,
+		async (newValue) => {
+			if (mapInteractionStore.isHomeLocationSelected && newValue) {
+				mapStore.setCurrentLLA(newValue.lat, newValue.lon, 0);
+				await addHomeLocationLayer(newValue.lon, newValue.lat);
+			}
 		}
 	);
-	async function addWaypointLayer(waypoint: MapPoint, index: number) {
-		if (!mapAdapter.value) return;
-
-		const result = await createWaypointLayer(waypoint, index.toString());
-		if (result) {
-			mapAdapter.value?.addLayer(result.layer);
-			waypointLayers.value.push(result.layer);
-			if (result.props) mapAdapter.value?.updateMarker(result.props);
-		}
-	}
-	function drawMissionPath(waypoints: MapPoint[]) {
+	function drawMissionPath(waypoints: MapPoint[], systemId: string) {
 		if (!mapAdapter.value) return;
 
 		// Handle polyline if waypoints >= 2
 		if (waypoints.length >= 2) {
-			mapAdapter.value.drawMissionPath(waypoints);
+			mapAdapter.value.drawMissionPath(waypoints, systemId);
 		}
 	}
 	function clearMission() {
-		for (const layer of waypointLayers.value) {
-			mapAdapter.value?.removeLayer(layer);
-		}
-		waypointLayers.value = [];
-
+		mapAdapter.value?.clearMissionWaypoints();
 		mapAdapter.value?.clearMissionPath();
+	}
+	function rebuildMissionWaypoints() {
+		if (!mapAdapter.value) return;
+		clearMission();
+
+		for (const [systemId, systemWaypoints] of Object.entries(
+			missionStore.missionWaypointsPerSystem
+		)) {
+			// Skip if unselected controllers or hidden
+			if (
+				!missionStore.selectedMissionControllers.includes(systemId) ||
+				missionStore.hiddenMissionWaypoints.includes(systemId)
+			)
+				continue;
+			else {
+				mapAdapter.value?.drawMissionWaypoints(systemWaypoints, systemId);
+				drawMissionPath(systemWaypoints, systemId);
+			}
+		}
 	}
 
 	/* CESIUM-ONLY FEATURES */
@@ -742,6 +934,18 @@ export function useMap() {
 				await mapAdapter.value.addGooglePhotorealistic?.();
 			} else {
 				mapAdapter.value.removeGooglePhotorealistic?.();
+			}
+		}
+	);
+	watch(
+		() => settingsStore.enableEntityClustering,
+		async (enabled) => {
+			if (!mapAdapter.value) return;
+
+			if (enabled) {
+				await mapAdapter.value.enableClustering?.();
+			} else {
+				mapAdapter.value.disableClustering?.();
 			}
 		}
 	);
