@@ -4,6 +4,7 @@ import { VisualizationComponentEmits } from '../../registry/VisualizationRegistr
 import IconControl from '@/modules/visualization/wizard/customizations/IconControl.vue';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import ColorControl from '../../wizard/customizations/ColorControl.vue';
+import MilSymbolControl from '@/modules/visualization/wizard/customizations/MilSymbolControl.vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 import { useVizWizStore } from '@/stores/vizwizstore';
 
@@ -14,6 +15,8 @@ const showIcon = computed(() => (vizwizStore.dsConfig.milSymbol ? false : true))
 const showIconColor = computed(() =>
 	vizwizStore.dsConfig.pmIconColor || vizwizStore.dsConfig.milSymbol ? false : true
 );
+// If milSymbol is not selected in Config, show manual milSymbol icon select
+const showManualMilSymbol = computed(() => !vizwizStore.dsConfig.milSymbol);
 
 const openPanels = ref<string[]>(['general', 'pointmarker']);
 
@@ -63,6 +66,11 @@ useComponentValidation(valid, emit);
 			value="pointmarker"
 		>
 			<v-expansion-panel-text>
+			    <v-expand-transition>
+                    <div v-if="showManualMilSymbol">
+                        <MilSymbolControl />
+                    </div>
+                </v-expand-transition>
 				<v-expand-transition>
 					<div v-if="showIcon">
 						<icon-control roleName="icon"></icon-control>
