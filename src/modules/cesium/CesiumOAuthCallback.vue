@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { exchangeCesiumCode, setCesiumIonToken } from './cesiumAuth.service';
+import { exchangeCesiumCode, getCesiumIonUser, setCesiumIonToken } from './cesiumAuth.service';
 import { useCesiumIonStore } from '@/stores/cesiumionstore';
 import * as Cesium from 'cesium';
 import { useRouter } from 'vue-router';
@@ -19,10 +19,12 @@ onMounted(async () => {
 
 	try {
 		const tokens = await exchangeCesiumCode(code);
+		const user = await getCesiumIonUser(tokens.access_token);
 
 		const cesiumIonStore = useCesiumIonStore();
 
 		cesiumIonStore.setTokens(tokens.access_token, tokens.refresh_token ?? null);
+		cesiumIonStore.setUser(user);
 
 		setCesiumIonToken(tokens.access_token);
 

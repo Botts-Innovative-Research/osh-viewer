@@ -5,9 +5,11 @@ import { showToast } from '@/composables/useToast';
 import { useMapStore } from '@/stores/mapstore';
 import { useSettingsStore } from '@/stores/settingsstore';
 import { connectToCesiumIon } from '@/modules/cesium/cesiumAuth.service';
+import { useCesiumIonStore } from '@/stores/cesiumionstore';
 
 const settingsStore = useSettingsStore();
 const mapStore = useMapStore();
+const cesiumIonStore = useCesiumIonStore();
 const url = ref('');
 
 const focusedMap = computed(() => {
@@ -61,6 +63,7 @@ const connectCesiumIon = () => {
 <template>
 	<v-divider class="ma-2">CESIUM</v-divider>
 	<v-list>
+		<!-- Cesium Ion -->
 		<v-list-item>
 			<v-list-item-title>Cesium Ion</v-list-item-title>
 			<template #append>
@@ -73,6 +76,16 @@ const connectCesiumIon = () => {
 				</v-btn>
 			</template>
 		</v-list-item>
+		<v-list-item>
+			<template #prepend>
+				<v-icon>mdi-account</v-icon>
+			</template>
+			<v-list-item-title v-if="cesiumIonStore.isConnected && cesiumIonStore.user">
+				Connected as {{ cesiumIonStore.user.username }}
+			</v-list-item-title>
+			<v-list-item-title v-else> No Cesium Ion account connected. </v-list-item-title>
+		</v-list-item>
+		<!-- Customize -->
 		<v-list-item>
 			<v-list-item-title>Enable 3D Terrain</v-list-item-title>
 			<template #append>

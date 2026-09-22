@@ -38,7 +38,7 @@ export async function connectToCesiumIon() {
 		response_type: 'code',
 		client_id: CESIUM_CLIENT_ID,
 		redirect_uri: CESIUM_REDIRECT_URI,
-		scope: 'assets:read',
+		scope: 'assets:read profile:read',
 		state,
 		code_challenge: codeChallenge,
 		code_challenge_method: 'S256',
@@ -79,4 +79,18 @@ export async function exchangeCesiumCode(code: string) {
 
 export function setCesiumIonToken(token: string) {
 	Cesium.Ion.defaultAccessToken = token;
+}
+
+export async function getCesiumIonUser(accessToken: string) {
+	const response = await fetch('https://api.cesium.com/v1/me', {
+		headers: {
+			Authorization: `Bearer ${accessToken}`,
+		},
+	});
+
+	if (!response.ok) {
+		throw new Error(`Failed to get Cesium Ion user: ${response.status}`);
+	}
+
+	return await response.json();
 }
