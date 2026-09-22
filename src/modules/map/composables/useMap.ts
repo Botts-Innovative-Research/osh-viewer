@@ -34,6 +34,8 @@ import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
 import { storeToRefs } from 'pinia';
 import { useGeoOverlayStore } from '@/stores/geooverlaystore';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
+import { useCesiumIonStore } from '@/stores/cesiumionstore';
+import { setCesiumIonToken } from '@/modules/cesium/cesiumAuth.service';
 
 export function useMap() {
 	// STORES
@@ -44,6 +46,7 @@ export function useMap() {
 	const settingsStore = useSettingsStore();
 	const previewStore = useGeoOverlayPreviewStore();
 	const geoOverlayStore = useGeoOverlayStore();
+	const cesiumIonStore = useCesiumIonStore();
 
 	// STORE REFS
 	const {
@@ -83,6 +86,10 @@ export function useMap() {
 		const isOffline = settingsStore.enableOfflineMaps ?? false;
 
 		if (mapType.value === 'cesium') {
+			if (cesiumIonStore.accessToken) {
+				setCesiumIonToken(cesiumIonStore.accessToken);
+			}
+
 			mapAdapter.value = createCesiumAdapter();
 			await mapAdapter.value?.init?.('mapContainer');
 

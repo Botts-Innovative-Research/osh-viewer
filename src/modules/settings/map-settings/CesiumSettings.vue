@@ -4,6 +4,7 @@ import { computed, ref } from 'vue';
 import { showToast } from '@/composables/useToast';
 import { useMapStore } from '@/stores/mapstore';
 import { useSettingsStore } from '@/stores/settingsstore';
+import { connectToCesiumIon } from '@/modules/cesium/cesiumAuth.service';
 
 const settingsStore = useSettingsStore();
 const mapStore = useMapStore();
@@ -51,10 +52,27 @@ async function addIonAssetUrl() {
 const canAddUrl = computed(() => {
 	return focusedMap.value === 'cesium' && url.value && url.value.startsWith('http');
 });
+
+const connectCesiumIon = () => {
+	// Open Cesium Ion connection dialog
+	connectToCesiumIon();
+};
 </script>
 <template>
 	<v-divider class="ma-2">CESIUM</v-divider>
 	<v-list>
+		<v-list-item>
+			<v-list-item-title>Cesium Ion</v-list-item-title>
+			<template #append>
+				<v-btn
+					prepend-icon="mdi-plus"
+					color="primary"
+					@click="connectCesiumIon"
+				>
+					Connect Cesium Ion
+				</v-btn>
+			</template>
+		</v-list-item>
 		<v-list-item>
 			<v-list-item-title>Enable 3D Terrain</v-list-item-title>
 			<template #append>

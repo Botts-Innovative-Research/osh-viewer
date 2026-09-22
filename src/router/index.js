@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import COPView from '@/views/COPView.vue';
+import CesiumOAuthCallback from '@/modules/cesium/CesiumOAuthCallback.vue';
 
 const router = createRouter({
 	history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,6 +22,10 @@ const router = createRouter({
 			path: '/mapview',
 			name: 'mapview',
 			component: () => import('../modules/map/components/MapView.vue'),
+		},
+		{
+			path: '/oauth/cesium/callback',
+			component: CesiumOAuthCallback,
 		},
 	],
 });
