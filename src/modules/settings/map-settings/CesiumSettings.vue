@@ -6,6 +6,7 @@ import { useMapStore } from '@/stores/mapstore';
 import { useSettingsStore } from '@/stores/settingsstore';
 import { connectToCesiumIon } from '@/modules/cesium/cesiumAuth.service';
 import { useCesiumIonStore } from '@/stores/cesiumionstore';
+import ConfirmationDialog from '@/components/ui/ConfirmationDialog.vue';
 
 const settingsStore = useSettingsStore();
 const mapStore = useMapStore();
@@ -55,37 +56,72 @@ const canAddUrl = computed(() => {
 	return focusedMap.value === 'cesium' && url.value && url.value.startsWith('http');
 });
 
+// Cesium Ion account login/logout
 const connectCesiumIon = () => {
 	// Open Cesium Ion connection dialog
 	connectToCesiumIon();
 };
+const showLogoutConfirm = ref(false);
+function logoutCesiumIon() {
+	cesiumIonStore.disconnect();
+	showLogoutConfirm.value = false;
+	showToast('Logged out of Cesium Ion', 'INFO');
+}
 </script>
 <template>
-	<v-divider class="ma-2">CESIUM</v-divider>
+	<v-card
+		variant="outlined"
+		class="ma-2"
+		v-if="cesiumIonStore.isConnected"
+	>
+		<v-card-item>
+			<v-row class="justify-center align-center">
+				<v-col cols="auto">
+					<v-avatar :image="cesiumIonStore.user?.avatar ?? ''" />
+				</v-col>
+				<v-col>
+					<v-card-title class="ga-2">
+						{{ cesiumIonStore.user?.username }}
+					</v-card-title>
+					<v-card-subtitle>Connected</v-card-subtitle>
+				</v-col>
+			</v-row>
+		</v-card-item>
+		<v-card-text> TBD </v-card-text>
+		<v-card-actions>
+			<v-btn
+				color="error"
+				variant="tonal"
+				@click="showLogoutConfirm = true"
+				>Log Out</v-btn
+			>
+		</v-card-actions>
+	</v-card>
+	<v-card
+		variant="outlined"
+		class="ma-2"
+		v-else
+	>
+		<v-card-item>
+			<v-card-subtitle>No Cesium Ion account connected</v-card-subtitle>
+		</v-card-item>
+		<v-card-text>
+			Connect your Cesium Ion account to access 3D terrain, 3D buildings, and other Cesium Ion
+			features.
+		</v-card-text>
+		<v-card-actions>
+			<v-btn
+				prepend-icon="mdi-plus"
+				color="primary"
+				variant="flat"
+				@click="connectCesiumIon"
+			>
+				Connect Cesium Ion
+			</v-btn>
+		</v-card-actions>
+	</v-card>
+	<!-- Settings -->
 	<v-list>
-		<!-- Cesium Ion -->
-		<v-list-item>
-			<v-list-item-title>Cesium Ion</v-list-item-title>
-			<template #append>
-				<v-btn
-					prepend-icon="mdi-plus"
-					color="primary"
-					@click="connectCesiumIon"
-				>
-					Connect Cesium Ion
-				</v-btn>
-			</template>
-		</v-list-item>
-		<v-list-item>
-			<template #prepend>
-				<v-icon>mdi-account</v-icon>
-			</template>
-			<v-list-item-title v-if="cesiumIonStore.isConnected && cesiumIonStore.user">
-				Connected as {{ cesiumIonStore.user.username }}
-			</v-list-item-title>
-			<v-list-item-title v-else> No Cesium Ion account connected. </v-list-item-title>
-		</v-list-item>
-		<!-- Customize -->
 		<v-list-item>
 			<v-list-item-title>Enable 3D Terrain</v-list-item-title>
 			<template #append>
@@ -203,4 +239,12 @@ const connectCesiumIon = () => {
 			</v-expansion-panels>
 		</v-list-item>
 	</v-list>
+	<ConfirmationDialog
+		v-model="showLogoutConfirm"
+		title="Log Out of Cesium Ion"
+		text="Are you sure you want to disconnect your Cesium Ion account?"
+		confirm-text="Log Out"
+		@confirm="logoutCesiumIon"
+		@cancel="showLogoutConfirm = false"
+	/>
 </template>
