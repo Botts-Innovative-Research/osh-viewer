@@ -1,13 +1,5 @@
 import { useCesiumIonStore } from '@/stores/cesiumionstore';
 
-export interface CesiumIonAssetHeaders {
-	id: number,
-	type: string,
-	name: string,
-	description: string,
-	status: string,
-}
-
 export async function getCesiumIonAssets() {
 	const cesiumIonStore = useCesiumIonStore();
 

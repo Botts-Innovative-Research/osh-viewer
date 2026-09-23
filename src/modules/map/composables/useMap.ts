@@ -111,7 +111,6 @@ export function useMap() {
 				}
 			} else {
 				await rebuildOfflineMaps();
-				await mapAdapter.value?.addOfflineBuildings?.();
 			}
 			if (settingsStore.enableEntityClustering) {
 				await mapAdapter.value?.enableClustering?.();
@@ -975,6 +974,37 @@ export function useMap() {
 			for (const id of oldIds) {
 				if (!newSet.has(id)) {
 					mapAdapter.value.removeMapLayer?.(id);
+				}
+			}
+		},
+		{ deep: true }
+	);
+	watch(
+		() => cesiumIonStore.addedAssets.map((a) => a.id),
+		async (newIds, oldIds = []) => {
+			if (!mapAdapter.value || mapType.value !== 'cesium') return;
+
+			const newIdsSet = new Set(newIds);
+			const oldIdsSet = new Set(oldIds);
+
+			// ADD
+			for (const id of newIds) {
+				if (!oldIdsSet.has(id)) {
+					const asset = cesiumIonStore.addedAssets.find((a) => a.id === id);
+					if (asset) {
+						console.log('Adding...', asset);
+						await mapAdapter.value.addIonAsset?.(asset);
+					}
+				}
+			}
+			// REMOVE
+			for (const id of oldIds) {
+				if (!newIdsSet.has(id)) {
+					const asset = cesiumIonStore.addedAssets.find((a) => a.id === id);
+					if (asset) {
+						console.log('Removing...', asset);
+						await mapAdapter.value.removeIonAsset?.(asset);
+					}
 				}
 			}
 		},

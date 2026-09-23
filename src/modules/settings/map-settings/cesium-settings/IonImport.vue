@@ -46,25 +46,24 @@ onMounted(() => {
 					:headers="headers"
 					:items="cesiumIonAssets"
 					height="400"
-					item-value="name"
+					item-value="id"
 					fixed-header
 					class="cesium-asset-table"
 				>
 					<template #item.add="{ item }">
 						<v-btn
-							v-if="cesiumIonStore.isAssetAdded(item.id)"
+							v-if="cesiumIonStore.isAssetAdded(item)"
 							icon="mdi-minus"
 							size="small"
 							variant="text"
 							@click="cesiumIonStore.removeAsset(item.id)"
 						/>
-
 						<v-btn
 							v-else
 							icon="mdi-plus"
 							size="small"
 							variant="text"
-							@click="cesiumIonStore.addAsset(item.id)"
+							@click="cesiumIonStore.addAsset(item)"
 						/>
 					</template>
 				</v-data-table-virtual>
