@@ -4,7 +4,7 @@ import MapSettings from './map-settings/MapSettings.vue';
 import GeneralSettings from './GeneralSettings.vue';
 import OfflineMapSettings from '@/modules/settings/map-settings/OfflineMapSettings.vue';
 import CesiumIcon from '@/components/icons/Cesium_logo_only.svg';
-import CesiumSettings from '@/modules/settings/map-settings/CesiumSettings.vue';
+import CesiumSettings from '@/modules/settings/map-settings/cesium-settings/CesiumSettings.vue';
 
 // Nav drawer state
 const selectedTab = ref(['general']);

@@ -7,7 +7,7 @@ import { useSettingsStore } from '@/stores/settingsstore';
 import ColorPicker from '@/components/ui/ColorPicker.vue';
 import IconPicker from '@/components/ui/IconPicker.vue';
 import { ICON_OPTIONS } from '@/lib/icons';
-import CesiumSettings from '@/modules/settings/map-settings/CesiumSettings.vue';
+import CesiumSettings from '@/modules/settings/map-settings/cesium-settings/CesiumSettings.vue';
 
 const settingsStore = useSettingsStore();
 

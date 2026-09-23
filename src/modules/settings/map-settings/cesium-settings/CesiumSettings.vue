@@ -7,6 +7,7 @@ import { useSettingsStore } from '@/stores/settingsstore';
 import { connectToCesiumIon } from '@/modules/cesium/cesiumAuth.service';
 import { useCesiumIonStore } from '@/stores/cesiumionstore';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog.vue';
+import IonImport from '@/modules/settings/map-settings/cesium-settings/IonImport.vue';
 
 const settingsStore = useSettingsStore();
 const mapStore = useMapStore();
@@ -87,7 +88,9 @@ function logoutCesiumIon() {
 				</v-col>
 			</v-row>
 		</v-card-item>
-		<v-card-text> TBD </v-card-text>
+		<v-card-text>
+			<IonImport />
+		</v-card-text>
 		<v-card-actions>
 			<v-btn
 				color="error"

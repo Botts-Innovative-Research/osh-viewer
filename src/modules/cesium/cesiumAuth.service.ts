@@ -38,7 +38,7 @@ export async function connectToCesiumIon() {
 		response_type: 'code',
 		client_id: CESIUM_CLIENT_ID,
 		redirect_uri: CESIUM_REDIRECT_URI,
-		scope: 'assets:read profile:read',
+		scope: 'assets:list assets:read assets:write profile:read',
 		state,
 		code_challenge: codeChallenge,
 		code_challenge_method: 'S256',
