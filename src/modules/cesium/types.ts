@@ -5,9 +5,23 @@ export interface CesiumIonUser {
 	avatar: string | null;
 }
 
+export interface CesiumIonAssetsResponse {
+	items: CesiumIonAsset[];
+}
+
 export interface CesiumIonAsset {
 	id: number;
 	type: string;
+	name: string;
+	description: string;
+	attribution: string;
+	bytes: number;
+	dateAdded: string;
+	status: string;
+	percentComplete: number;
+	labels: string[];
+	creatorId?: number;
+	creatorUsername?: string;
 }
 
 export type LayerType = 'WMS' | 'WMTS' | 'XYZ' | 'GEOJSON' | 'KML' | 'CZML' | 'GLTF';

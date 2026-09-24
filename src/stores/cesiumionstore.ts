@@ -18,7 +18,6 @@ export const useCesiumIonStore = defineStore(
 		}
 		function setUser(profile: CesiumIonUser) {
 			user.value = profile;
-			console.log(profile);
 		}
 		function disconnect() {
 			accessToken.value = null;
@@ -33,14 +32,12 @@ export const useCesiumIonStore = defineStore(
 		// Ion Assets
 		const addedAssets = ref<CesiumIonAsset[]>([]);
 		function addAsset(asset: CesiumIonAsset) {
-			console.log('STORE ADD:', asset);
 			if (!addedAssets.value.some((item) => item.id === asset.id)) {
-				addedAssets.value.push({
-					id: asset.id,
-					type: asset.type,
-				});
+				addedAssets.value = [
+					...addedAssets.value,
+					asset,
+				];
 			}
-			console.log('ADDED ASSETS:', addedAssets.value);
 		}
 		function removeAsset(assetId: number) {
 			addedAssets.value = addedAssets.value.filter((item) => item.id !== assetId);

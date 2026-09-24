@@ -1,6 +1,7 @@
 import { useCesiumIonStore } from '@/stores/cesiumionstore';
+import { CesiumIonAssetsResponse } from '@/modules/cesium/types';
 
-export async function getCesiumIonAssets() {
+export async function getCesiumIonAssets(): Promise<CesiumIonAssetsResponse> {
 	const cesiumIonStore = useCesiumIonStore();
 
 	if (!cesiumIonStore.accessToken) {

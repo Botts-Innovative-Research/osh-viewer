@@ -8,6 +8,7 @@ import { colorHash, getColoredIconUrl } from '@/modules/map/services/colorId.ser
 import { ICON_BASE } from '@/lib/icons';
 import { getCenterPoint } from '@/modules/map/services/geospatial.service';
 import { CesiumIonAsset, MapLayer } from '@/modules/cesium/types';
+import { showToast } from '@/composables/useToast';
 
 export function createCesiumAdapter(): MapAdapter {
 	let mapView: typeof CesiumView | null;
@@ -897,9 +898,11 @@ export function createCesiumAdapter(): MapAdapter {
 			}
 
 			default:
+				showToast(`Unsupported Cesium Ion asset type: ${asset.type}`, 'ERROR');
 				throw new Error(`Unsupported Cesium Ion asset type: ${asset.type}`);
 		}
 
+		showToast(`Asset "${asset.name}" has been added to the map.`, 'SUCCESS');
 		invalidate();
 	}
 
@@ -935,6 +938,7 @@ export function createCesiumAdapter(): MapAdapter {
 		}
 
 		ionAssets.delete(asset.id);
+		showToast(`Asset "${asset.name}" has been removed from the map.`, 'SUCCESS');
 		invalidate();
 	}
 

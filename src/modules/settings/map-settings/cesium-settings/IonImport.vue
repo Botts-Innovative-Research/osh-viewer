@@ -2,7 +2,9 @@
 import { computed, onMounted, ref } from 'vue';
 import { getCesiumIonAssets } from '@/modules/cesium/cesiumIon.service';
 import { useCesiumIonStore } from '@/stores/cesiumionstore';
+import { CesiumIonAsset, CesiumIonAssetsResponse } from '@/modules/cesium/types';
 
+const loading = ref(true);
 const cesiumIonStore = useCesiumIonStore();
 const tab = ref('search');
 
@@ -12,19 +14,19 @@ const headers = [
 	{ title: 'Type', key: 'type' },
 	{ title: 'Name', key: 'name' },
 	{ title: 'Description', key: 'description' },
-	{ title: 'Status', key: 'status' },
 ];
 
 // Fetch assets
-const cesiumIonAssets = ref([]);
+const cesiumIonAssets = ref<CesiumIonAsset[]>([]);
 async function fetchAssets() {
+	loading.value = true;
 	try {
-		const response = await getCesiumIonAssets();
+		const response: CesiumIonAssetsResponse = await getCesiumIonAssets();
 		cesiumIonAssets.value = response.items;
-		console.log(response);
 	} catch (error) {
 		console.error('Failed to fetch Cesium Ion assets:', error);
 	}
+	loading.value = false;
 }
 onMounted(() => {
 	fetchAssets();
@@ -41,7 +43,27 @@ onMounted(() => {
 	<v-tabs-window v-model="tab">
 		<v-tabs-window-item value="search">
 			<v-sheet>
-				<v-btn @click="fetchAssets()">Fetch Assets</v-btn>
+				<v-row class="my-2">
+					<v-col cols="auto">
+						<v-tooltip
+							text="Fetch Assets"
+							location="bottom"
+						>
+							<template v-slot:activator="{ props }">
+								<IconButton
+									v-bind="props"
+									aria-label="Fetch Assets"
+									@click="fetchAssets"
+									icon="mdi-refresh"
+									variant="outlined"
+								></IconButton>
+							</template>
+						</v-tooltip>
+					</v-col>
+					<v-col>
+						Search for Cesium Ion assets and add them to your project. Click the plus icon to add an asset, or the minus icon to remove it.
+					</v-col>
+				</v-row>
 				<v-data-table-virtual
 					:headers="headers"
 					:items="cesiumIonAssets"
@@ -49,6 +71,7 @@ onMounted(() => {
 					item-value="id"
 					fixed-header
 					class="cesium-asset-table"
+					:loading="loading"
 				>
 					<template #item.add="{ item }">
 						<v-btn
@@ -66,13 +89,16 @@ onMounted(() => {
 							@click="cesiumIonStore.addAsset(item)"
 						/>
 					</template>
+					<template #item.description="{ item }">
+						<div class="description-cell">
+							{{ item.description }}
+						</div>
+					</template>
 				</v-data-table-virtual>
 			</v-sheet>
 		</v-tabs-window-item>
 		<v-tabs-window-item value="manual">
-			<v-sheet>
-				TBD
-			</v-sheet>
+			<v-sheet> TBD </v-sheet>
 		</v-tabs-window-item>
 	</v-tabs-window>
 </template>
@@ -85,5 +111,12 @@ onMounted(() => {
 .cesium-asset-table :deep(th) {
 	padding-top: 2px;
 	padding-bottom: 2px;
+}
+
+.description-cell {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 300px;
 }
 </style>

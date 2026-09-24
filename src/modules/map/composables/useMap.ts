@@ -109,6 +109,11 @@ export function useMap() {
 				if (settingsStore.enableGooglePhotorealistic) {
 					await mapAdapter.value?.addGooglePhotorealistic?.();
 				}
+				if (cesiumIonStore.isConnected && cesiumIonStore.addedAssets.length > 0) {
+					await Promise.all(
+						cesiumIonStore.addedAssets.map((asset) => mapAdapter.value?.addIonAsset?.(asset))
+					);
+				}
 			} else {
 				await rebuildOfflineMaps();
 			}
@@ -980,29 +985,25 @@ export function useMap() {
 		{ deep: true }
 	);
 	watch(
-		() => cesiumIonStore.addedAssets.map((a) => a.id),
-		async (newIds, oldIds = []) => {
+		() => cesiumIonStore.addedAssets,
+		async (newAssets, oldAssets = []) => {
 			if (!mapAdapter.value || mapType.value !== 'cesium') return;
 
-			const newIdsSet = new Set(newIds);
-			const oldIdsSet = new Set(oldIds);
+			const newIds = new Set(newAssets.map((asset) => asset.id));
+			const oldIds = new Set(oldAssets.map((asset) => asset.id));
 
 			// ADD
-			for (const id of newIds) {
-				if (!oldIdsSet.has(id)) {
-					const asset = cesiumIonStore.addedAssets.find((a) => a.id === id);
+			for (const asset of newAssets) {
+				if (!oldIds.has(asset.id)) {
 					if (asset) {
-						console.log('Adding...', asset);
 						await mapAdapter.value.addIonAsset?.(asset);
 					}
 				}
 			}
 			// REMOVE
-			for (const id of oldIds) {
-				if (!newIdsSet.has(id)) {
-					const asset = cesiumIonStore.addedAssets.find((a) => a.id === id);
+			for (const asset of oldAssets) {
+				if (!newIds.has(asset.id)) {
 					if (asset) {
-						console.log('Removing...', asset);
 						await mapAdapter.value.removeIonAsset?.(asset);
 					}
 				}
