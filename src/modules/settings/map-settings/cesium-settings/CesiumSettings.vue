@@ -8,6 +8,8 @@ import { connectToCesiumIon } from '@/modules/cesium/cesiumAuth.service';
 import { useCesiumIonStore } from '@/stores/cesiumionstore';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog.vue';
 import IonImport from '@/modules/settings/map-settings/cesium-settings/IonImport.vue';
+import CurrentIonAssets from '@/modules/settings/map-settings/cesium-settings/CurrentIonAssets.vue';
+import ActionButton from '@/components/ui/ActionButton.vue';
 
 const settingsStore = useSettingsStore();
 const mapStore = useMapStore();
@@ -68,6 +70,10 @@ function logoutCesiumIon() {
 	showLogoutConfirm.value = false;
 	showToast('Logged out of Cesium Ion', 'INFO');
 }
+
+const emit = defineEmits<{
+	navigate: [page: 'cesium-import' | 'cesium-upload'];
+}>();
 </script>
 <template>
 	<v-card
@@ -75,7 +81,7 @@ function logoutCesiumIon() {
 		class="ma-2"
 		v-if="cesiumIonStore.isConnected"
 	>
-		<v-card-item>
+		<v-card-item class="pa-0">
 			<v-row class="justify-center align-center">
 				<v-col cols="auto">
 					<v-avatar :image="cesiumIonStore.user?.avatar ?? ''" />
@@ -88,8 +94,46 @@ function logoutCesiumIon() {
 				</v-col>
 			</v-row>
 		</v-card-item>
-		<v-card-text>
-			<IonImport />
+		<v-card-text class="px-0 py-2">
+			<v-row class="py-2">
+				<v-col>
+					<ActionButton
+						label="Import Assets"
+						icon="mdi-import"
+						@submit="emit('navigate', 'cesium-import')"
+					/>
+				</v-col>
+				<v-col>
+					<ActionButton
+						label="Upload Assets"
+						icon="mdi-upload"
+						@submit="emit('navigate', 'cesium-upload')"
+					/>
+				</v-col>
+			</v-row>
+			<v-expansion-panels
+				variant="accordion"
+				rounded="lg"
+				flat
+			>
+				<v-expansion-panel>
+					<v-expansion-panel-title>
+						Current Assets
+						<v-fade-transition>
+							<v-badge
+								v-if="cesiumIonStore.addedAssets.length"
+								inline
+								location="top right"
+								:content="cesiumIonStore.addedAssets.length"
+								class="pl-2"
+							/>
+						</v-fade-transition>
+					</v-expansion-panel-title>
+					<v-expansion-panel-text class="layer-list">
+						<CurrentIonAssets />
+					</v-expansion-panel-text>
+				</v-expansion-panel>
+			</v-expansion-panels>
 		</v-card-text>
 		<v-card-actions>
 			<v-btn
