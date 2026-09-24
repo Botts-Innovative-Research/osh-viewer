@@ -16,7 +16,7 @@ const emit = defineEmits<{
 <template>
 	<v-tooltip
 		v-bind="$attrs"
-		text="Delete"
+		:text="props.label"
 		location="bottom"
 	>
 		<template #activator="{ props: tooltipProps }">

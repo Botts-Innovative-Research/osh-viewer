@@ -34,6 +34,8 @@ import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
 import { storeToRefs } from 'pinia';
 import { useGeoOverlayStore } from '@/stores/geooverlaystore';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
+import { useCesiumIonStore } from '@/stores/cesiumionstore';
+import { setCesiumIonToken } from '@/modules/cesium/cesiumAuth.service';
 
 export function useMap() {
 	// STORES
@@ -44,6 +46,7 @@ export function useMap() {
 	const settingsStore = useSettingsStore();
 	const previewStore = useGeoOverlayPreviewStore();
 	const geoOverlayStore = useGeoOverlayStore();
+	const cesiumIonStore = useCesiumIonStore();
 
 	// STORE REFS
 	const {
@@ -83,6 +86,10 @@ export function useMap() {
 		const isOffline = settingsStore.enableOfflineMaps ?? false;
 
 		if (mapType.value === 'cesium') {
+			if (cesiumIonStore.accessToken) {
+				setCesiumIonToken(cesiumIonStore.accessToken);
+			}
+
 			mapAdapter.value = createCesiumAdapter();
 			await mapAdapter.value?.init?.('mapContainer');
 
@@ -102,9 +109,13 @@ export function useMap() {
 				if (settingsStore.enableGooglePhotorealistic) {
 					await mapAdapter.value?.addGooglePhotorealistic?.();
 				}
+				if (cesiumIonStore.isConnected && cesiumIonStore.addedAssets.length > 0) {
+					await Promise.all(
+						cesiumIonStore.addedAssets.map((asset) => mapAdapter.value?.addIonAsset?.(asset))
+					);
+				}
 			} else {
 				await rebuildOfflineMaps();
-				await mapAdapter.value?.addOfflineBuildings?.();
 			}
 			if (settingsStore.enableEntityClustering) {
 				await mapAdapter.value?.enableClustering?.();
@@ -968,6 +979,33 @@ export function useMap() {
 			for (const id of oldIds) {
 				if (!newSet.has(id)) {
 					mapAdapter.value.removeMapLayer?.(id);
+				}
+			}
+		},
+		{ deep: true }
+	);
+	watch(
+		() => cesiumIonStore.addedAssets,
+		async (newAssets, oldAssets = []) => {
+			if (!mapAdapter.value || mapType.value !== 'cesium') return;
+
+			const newIds = new Set(newAssets.map((asset) => asset.id));
+			const oldIds = new Set(oldAssets.map((asset) => asset.id));
+
+			// ADD
+			for (const asset of newAssets) {
+				if (!oldIds.has(asset.id)) {
+					if (asset) {
+						await mapAdapter.value.addIonAsset?.(asset);
+					}
+				}
+			}
+			// REMOVE
+			for (const asset of oldAssets) {
+				if (!newIds.has(asset.id)) {
+					if (asset) {
+						await mapAdapter.value.removeIonAsset?.(asset);
+					}
 				}
 			}
 		},
