@@ -7,6 +7,7 @@ import CesiumIcon from '@/components/icons/Cesium_logo_only.svg';
 import CesiumSettings from '@/modules/settings/map-settings/cesium-settings/CesiumSettings.vue';
 import IonImport from '@/modules/settings/map-settings/cesium-settings/IonImport.vue';
 import IonUpload from '@/modules/settings/map-settings/cesium-settings/IonUpload.vue';
+import { useCesiumIonStore } from '@/stores/cesiumionstore';
 
 // Nav drawer state
 const selectedTab = ref(['general']);
@@ -89,6 +90,9 @@ const appVersion = APP_VERSION;
 								:value="page.value"
 								:style="{ '--page-indent': `${getPageDepth(page) * 16}px` }"
 								class="settings-page-item"
+								v-show="
+									page.parent !== 'cesium-map' || useCesiumIonStore().isConnected
+								"
 							>
 								<template #prepend>
 									<v-icon :icon="page.icon" />
@@ -122,9 +126,7 @@ const appVersion = APP_VERSION;
 									/>
 									<IonImport v-else-if="page.value === 'cesium-import'" />
 									<IonUpload v-else-if="page.value === 'cesium-upload'" />
-									<OfflineMapSettings
-										v-else-if="page.value === 'offline-map'"
-									/>
+									<OfflineMapSettings v-else-if="page.value === 'offline-map'" />
 								</v-card-text>
 							</v-card>
 						</v-window-item>
