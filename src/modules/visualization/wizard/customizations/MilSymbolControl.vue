@@ -1,13 +1,25 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useVizWizStore } from '@/stores/vizwizstore';
+import ms from 'milsymbol';
 
 const vwStore = useVizWizStore();
 
 const milSymbol = ref('');
 
+const milSymbolOptions = [
+    {
+        name: 'Unknown',
+        sidc: 'SFGPUCI----K---',
+    },
+    {
+        name: 'Friendly Infantry',
+        sidc: 'SFGPUCI----K---',
+    },
+];
+
 function selectMilSymbol(val: string) {
-    milSymbol.value = val;
+    milSymbol.value  = val;
 
     vwStore.updateVisualizationCustomizationOptions({
         milSymbol: val,
