@@ -36,6 +36,7 @@ import { useGeoOverlayStore } from '@/stores/geooverlaystore';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 import { useCesiumIonStore } from '@/stores/cesiumionstore';
 import { setCesiumIonToken } from '@/modules/cesium/cesiumAuth.service';
+import { getCesiumIonAsset } from '@/modules/cesium/cesiumIon.service';
 
 export function useMap() {
 	// STORES
@@ -100,24 +101,26 @@ export function useMap() {
 
 			// Only apply these settings when ONLINE
 			if (!isOffline) {
-				if (settingsStore.enable3DTerrain) {
+				if (cesiumIonStore.enable3DTerrain) {
 					await mapAdapter.value?.addTerrain?.();
 				}
-				if (settingsStore.enable3DBuildings) {
+				if (cesiumIonStore.enable3DBuildings) {
 					await mapAdapter.value?.addBuildings?.();
 				}
-				if (settingsStore.enableGooglePhotorealistic) {
+				if (cesiumIonStore.enableGooglePhotorealistic) {
 					await mapAdapter.value?.addGooglePhotorealistic?.();
 				}
 				if (cesiumIonStore.isConnected && cesiumIonStore.addedAssets.length > 0) {
 					await Promise.all(
-						cesiumIonStore.addedAssets.map((asset) => mapAdapter.value?.addIonAsset?.(asset))
+						cesiumIonStore.addedAssets.map((asset) =>
+							mapAdapter.value?.addIonAsset?.(asset)
+						)
 					);
 				}
 			} else {
 				await rebuildOfflineMaps();
 			}
-			if (settingsStore.enableEntityClustering) {
+			if (cesiumIonStore.enableEntityClustering) {
 				await mapAdapter.value?.enableClustering?.();
 			}
 		} else if (mapType.value === 'leaflet') {
@@ -913,7 +916,7 @@ export function useMap() {
 
 	/* CESIUM-ONLY FEATURES */
 	watch(
-		() => settingsStore.enable3DTerrain,
+		() => cesiumIonStore.enable3DTerrain,
 		async (enabled) => {
 			if (!mapAdapter.value) return;
 
@@ -925,7 +928,7 @@ export function useMap() {
 		}
 	);
 	watch(
-		() => settingsStore.enable3DBuildings,
+		() => cesiumIonStore.enable3DBuildings,
 		async (enabled) => {
 			if (!mapAdapter.value) return;
 
@@ -937,7 +940,7 @@ export function useMap() {
 		}
 	);
 	watch(
-		() => settingsStore.enableGooglePhotorealistic,
+		() => cesiumIonStore.enableGooglePhotorealistic,
 		async (enabled) => {
 			if (!mapAdapter.value) return;
 
@@ -949,7 +952,7 @@ export function useMap() {
 		}
 	);
 	watch(
-		() => settingsStore.enableEntityClustering,
+		() => cesiumIonStore.enableEntityClustering,
 		async (enabled) => {
 			if (!mapAdapter.value) return;
 
@@ -1023,5 +1026,6 @@ export function useMap() {
 		initMap,
 		destroyMap,
 		switchMap,
+		mapType,
 	};
 }

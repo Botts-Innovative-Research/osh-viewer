@@ -24,6 +24,12 @@ export interface CesiumIonAsset {
 	creatorUsername?: string;
 }
 
+// Reserved asset IDs - prevent manually importing these assets
+const id3DTerrain = 1;
+const idGooglePhotorealistic = 2275207;
+const id3DBuildings = 96188;
+export const RESERVED_ASSET_IDS = [id3DTerrain, idGooglePhotorealistic, id3DBuildings];
+
 export type LayerType = 'WMS' | 'WMTS' | 'XYZ' | 'GEOJSON' | 'KML' | 'CZML' | 'GLTF';
 
 export interface MapLayer {

@@ -2,7 +2,11 @@
 import { computed, onMounted, ref } from 'vue';
 import { getCesiumIonAsset, getCesiumIonAssets } from '@/modules/cesium/cesiumIon.service';
 import { useCesiumIonStore } from '@/stores/cesiumionstore';
-import { CesiumIonAsset, CesiumIonAssetsResponse } from '@/modules/cesium/types';
+import {
+	CesiumIonAsset,
+	CesiumIonAssetsResponse,
+	RESERVED_ASSET_IDS,
+} from '@/modules/cesium/types';
 import ActionButton from '@/components/ui/ActionButton.vue';
 import { showToast } from '@/composables/useToast';
 
@@ -70,7 +74,10 @@ async function manualFetchAsset() {
 		<v-tab value="search">Search</v-tab>
 		<v-tab value="manual">Manual</v-tab>
 	</v-tabs>
-	<v-tabs-window v-model="tab" class="ma-2">
+	<v-tabs-window
+		v-model="tab"
+		class="ma-2"
+	>
 		<v-tabs-window-item value="search">
 			<v-sheet class="d-flex flex-column py-2">
 				<v-row>
@@ -113,26 +120,60 @@ async function manualFetchAsset() {
 						class="cesium-asset-table"
 						:loading="loading"
 					>
-						<template #item.add="{ item }">
-							<v-btn
-								v-if="cesiumIonStore.isAssetAdded(item)"
-								icon="mdi-minus"
-								size="small"
-								variant="text"
-								@click="cesiumIonStore.removeAsset(item.id)"
-							/>
-							<v-btn
-								v-else
-								icon="mdi-plus"
-								size="small"
-								variant="text"
-								@click="cesiumIonStore.addAsset(item)"
-							/>
-						</template>
-						<template #item.description="{ item }">
-							<div class="description-cell">
-								{{ item.description }}
-							</div>
+						<template #item="{ item, columns }">
+							<tr
+								:class="{
+									'asset-added': cesiumIonStore.isAssetAdded(item),
+								}"
+							>
+								<td
+									v-for="column in columns"
+									:key="column.key"
+								>
+									<template v-if="column.key === 'add'">
+										<v-btn
+											v-if="cesiumIonStore.isAssetAdded(item)"
+											icon="mdi-minus"
+											size="small"
+											variant="text"
+											@click="cesiumIonStore.removeAsset(item.id)"
+										/>
+
+										<v-tooltip v-else-if="RESERVED_ASSET_IDS.includes(item.id)">
+											<template #activator="{ props }">
+												<span v-bind="props">
+													<v-btn
+														icon="mdi-plus"
+														size="small"
+														variant="text"
+														disabled
+													/>
+												</span>
+											</template>
+
+											This asset is managed by Cesium Ion
+										</v-tooltip>
+
+										<v-btn
+											v-else
+											icon="mdi-plus"
+											size="small"
+											variant="text"
+											@click="cesiumIonStore.addAsset(item)"
+										/>
+									</template>
+
+									<template v-else-if="column.key === 'description'">
+										<div class="description-cell">
+											{{ item.description }}
+										</div>
+									</template>
+
+									<template v-else>
+										{{ item[column.key] }}
+									</template>
+								</td>
+							</tr>
 						</template>
 					</v-data-table-virtual>
 				</v-row>
@@ -188,5 +229,8 @@ async function manualFetchAsset() {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	max-width: 300px;
+}
+:deep(.asset-added) {
+	background: rgba(var(--v-theme-primary), 0.08);
 }
 </style>

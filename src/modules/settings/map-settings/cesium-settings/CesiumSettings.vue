@@ -4,12 +4,11 @@ import { computed, ref } from 'vue';
 import { showToast } from '@/composables/useToast';
 import { useMapStore } from '@/stores/mapstore';
 import { useSettingsStore } from '@/stores/settingsstore';
-import { connectToCesiumIon } from '@/modules/cesium/cesiumAuth.service';
 import { useCesiumIonStore } from '@/stores/cesiumionstore';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog.vue';
-import IonImport from '@/modules/settings/map-settings/cesium-settings/IonImport.vue';
 import CurrentIonAssets from '@/modules/settings/map-settings/cesium-settings/CurrentIonAssets.vue';
 import ActionButton from '@/components/ui/ActionButton.vue';
+import CesiumRequiredDialog from '@/modules/map/components/CesiumRequiredDialog.vue';
 
 const settingsStore = useSettingsStore();
 const mapStore = useMapStore();
@@ -20,20 +19,20 @@ const focusedMap = computed(() => {
 	return settingsStore.focusedMap;
 });
 const enable3DTerrain = computed({
-	get: () => settingsStore.enable3DTerrain,
-	set: (val) => settingsStore.set3DTerrain(val),
+	get: () => cesiumIonStore.enable3DTerrain,
+	set: (val) => cesiumIonStore.set3DTerrain(val),
 });
 const enable3DBuildings = computed({
-	get: () => settingsStore.enable3DBuildings,
-	set: (val) => settingsStore.set3DBuildings(val),
+	get: () => cesiumIonStore.enable3DBuildings,
+	set: (val) => cesiumIonStore.set3DBuildings(val),
 });
 const enableGooglePhotorealistic = computed({
-	get: () => settingsStore.enableGooglePhotorealistic,
-	set: (val) => settingsStore.setGooglePhotorealistic(val),
+	get: () => cesiumIonStore.enableGooglePhotorealistic,
+	set: (val) => cesiumIonStore.setGooglePhotorealistic(val),
 });
 const enableEntityClustering = computed({
-	get: () => settingsStore.enableEntityClustering,
-	set: (val) => settingsStore.setEntityClustering(val),
+	get: () => cesiumIonStore.enableEntityClustering,
+	set: (val) => cesiumIonStore.setEntityClustering(val),
 });
 async function addIonAssetUrl() {
 	if (focusedMap.value === 'cesium' && url.value) {
@@ -59,11 +58,6 @@ const canAddUrl = computed(() => {
 	return focusedMap.value === 'cesium' && url.value && url.value.startsWith('http');
 });
 
-// Cesium Ion account login/logout
-const connectCesiumIon = () => {
-	// Open Cesium Ion connection dialog
-	connectToCesiumIon();
-};
 const showLogoutConfirm = ref(false);
 function logoutCesiumIon() {
 	cesiumIonStore.disconnect();
@@ -76,6 +70,7 @@ const emit = defineEmits<{
 }>();
 </script>
 <template>
+	<!-- Ion Account & Assets -->
 	<v-card
 		variant="outlined"
 		class="ma-2"
@@ -144,36 +139,25 @@ const emit = defineEmits<{
 			>
 		</v-card-actions>
 	</v-card>
-	<v-card
-		variant="outlined"
-		class="ma-2"
-		v-else
-	>
-		<v-card-item>
-			<v-card-subtitle>No Cesium Ion account connected</v-card-subtitle>
-		</v-card-item>
-		<v-card-text>
-			Connect your Cesium Ion account to access 3D terrain, 3D buildings, and other Cesium Ion
-			features.
-		</v-card-text>
-		<v-card-actions>
-			<v-btn
-				prepend-icon="mdi-plus"
-				color="primary"
-				variant="flat"
-				@click="connectCesiumIon"
-			>
-				Connect Cesium Ion
-			</v-btn>
-		</v-card-actions>
-	</v-card>
+	<div v-else><CesiumRequiredDialog /></div>
 	<!-- Settings -->
-	<v-list>
+	<v-list v-if="cesiumIonStore.isConnected">
 		<v-list-item>
 			<v-list-item-title>Enable 3D Terrain</v-list-item-title>
 			<template #append>
 				<v-switch
 					v-model="enable3DTerrain"
+					color="primary"
+					inset="material"
+					hide-details
+				></v-switch>
+			</template>
+		</v-list-item>
+		<v-list-item>
+			<v-list-item-title>Enable 3D Google Photorealistic Tiles</v-list-item-title>
+			<template #append>
+				<v-switch
+					v-model="enableGooglePhotorealistic"
 					color="primary"
 					inset="material"
 					hide-details
@@ -189,17 +173,6 @@ const emit = defineEmits<{
 				<v-switch
 					v-model="enable3DBuildings"
 					:disabled="!enable3DTerrain && !enableGooglePhotorealistic"
-					color="primary"
-					inset="material"
-					hide-details
-				></v-switch>
-			</template>
-		</v-list-item>
-		<v-list-item>
-			<v-list-item-title>Enable 3D Google Photorealistic Tiles</v-list-item-title>
-			<template #append>
-				<v-switch
-					v-model="enableGooglePhotorealistic"
 					color="primary"
 					inset="material"
 					hide-details

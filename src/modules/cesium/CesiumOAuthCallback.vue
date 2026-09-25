@@ -38,5 +38,11 @@ onMounted(async () => {
 </script>
 
 <template>
-	<div>Connecting to Cesium Ion...</div>
+	<v-sheet class="d-flex flex-column justify-center align-center h-100">
+		<h2>Connecting to Cesium Ion...</h2>
+		<v-progress-circular
+			indeterminate
+			color="primary"
+		></v-progress-circular>
+	</v-sheet>
 </template>
