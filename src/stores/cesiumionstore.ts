@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { computed, ref, Ref } from 'vue';
-import { CesiumIonAsset, CesiumIonUser } from '@/modules/cesium/types';
-import { has } from 'vuetify/lib/util';
+import { CesiumIonAsset, CesiumIonUser, RESERVED_ASSET_IDS } from '@/modules/cesium/types';
+import { showToast } from '@/composables/useToast';
 
 const persistedMapKeys = [
 	'accessToken',
@@ -44,6 +44,13 @@ export const useCesiumIonStore = defineStore(
 		// Ion Assets
 		const addedAssets = ref<CesiumIonAsset[]>([]);
 		function addAsset(asset: CesiumIonAsset) {
+			// Handle reserved asset IDs
+			if (RESERVED_ASSET_IDS.includes(asset.id)) {
+				console.warn(`Reserved asset: ${asset.id}`);
+				showToast('This asset is managed by Cesium Ion settings', 'WARNING');
+				return;
+			}
+
 			if (!addedAssets.value.some((item) => item.id === asset.id)) {
 				addedAssets.value = [...addedAssets.value, asset];
 			}
@@ -64,42 +71,41 @@ export const useCesiumIonStore = defineStore(
 			// If neither terrain is turned on, set false - else true
 			return !(!enable3DTerrain.value && !enableGooglePhotorealistic.value);
 		});
-
 		// Buildings need a surface to sit on (terrain or photorealistic tiles).
 		// With neither on there's nothing to place them on, so force them off.
 		// The UI also greys out the buildings toggle in that state.
 		function syncBuildingsToSurface() {
-			console.log(hasSurface.value);
 			if (!hasSurface.value) {
-				console.log('Turned off: ', hasSurface.value);
 				enable3DBuildings.value = false;
 			}
 		}
-		function set3DTerrain(value: boolean | null) {
+		async function set3DTerrain(value: boolean | null) {
 			if (value === null) return;
 
 			if (value) {
 				enable3DTerrain.value = true;
-				enableGooglePhotorealistic.value = false; // Mutually exclusive - turn off Google photorealistic
+				// Mutually exclusive - turn off Google photorealistic
+				enableGooglePhotorealistic.value = false;
 			} else {
 				enable3DTerrain.value = false;
 			}
 
 			syncBuildingsToSurface();
 		}
-		function setGooglePhotorealistic(value: boolean | null) {
+		async function setGooglePhotorealistic(value: boolean | null) {
 			if (value === null) return;
 
 			if (value) {
 				enableGooglePhotorealistic.value = true;
-				enable3DTerrain.value = false; // Mutually exclusive - turn off 3d terrain
+				// Mutually exclusive - turn off 3d terrain
+				enable3DTerrain.value = false;
 			} else {
 				enableGooglePhotorealistic.value = false;
 			}
 
 			syncBuildingsToSurface();
 		}
-		function set3DBuildings(value: boolean | null) {
+		async function set3DBuildings(value: boolean | null) {
 			if (value === null) return;
 
 			if (value) {
