@@ -1,5 +1,5 @@
 import { useCesiumIonStore } from '@/stores/cesiumionstore';
-import { CesiumIonAsset, CesiumIonAssetsResponse } from '@/modules/cesium/types';
+import { CESIUM_API_URL, CesiumIonAsset, CesiumIonAssetsResponse } from '@/modules/cesium/types';
 
 /**
  * Fetch all "my assets" from connected Cesium Ion account
@@ -11,7 +11,7 @@ export async function getCesiumIonAssets(): Promise<CesiumIonAssetsResponse> {
 		throw new Error('Cesium Ion account is not connected');
 	}
 
-	const response = await fetch('https://api.cesium.com/v1/assets', {
+	const response = await fetch(`${CESIUM_API_URL}/assets`, {
 		headers: {
 			Authorization: `Bearer ${cesiumIonStore.accessToken}`,
 		},
@@ -35,7 +35,7 @@ export async function getCesiumIonAsset(assetId: number): Promise<CesiumIonAsset
 		throw new Error('Cesium Ion account is not connected');
 	}
 
-	const response = await fetch(`https://api.cesium.com/v1/assets/${assetId}`, {
+	const response = await fetch(`${CESIUM_API_URL}/v1/assets/${assetId}`, {
 		headers: {
 			Authorization: `Bearer ${cesiumIonStore.accessToken}`,
 		},

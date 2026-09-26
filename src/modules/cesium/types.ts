@@ -1,3 +1,5 @@
+export const CESIUM_API_URL = 'https://api.cesium.com/v1';
+
 export interface CesiumIonUser {
 	id: number;
 	username: string;
@@ -22,6 +24,16 @@ export interface CesiumIonAsset {
 	labels: string[];
 	creatorId?: number;
 	creatorUsername?: string;
+}
+
+export interface CesiumUploadConfig {
+	name: string;
+	description?: string;
+	type: '3DTILES' | 'IMAGERY' | 'TERRAIN';
+	options: {
+		sourceType: string;
+		[key: string]: unknown;
+	};
 }
 
 // Reserved asset IDs - prevent manually importing these assets

@@ -1,4 +1,5 @@
 import * as Cesium from 'cesium';
+import { CESIUM_API_URL } from '@/modules/cesium/types';
 
 const CESIUM_CLIENT_ID = '2363';
 const CESIUM_REDIRECT_URI = 'http://localhost:5173/oauth/cesium/callback';
@@ -82,7 +83,7 @@ export function setCesiumIonToken(token: string) {
 }
 
 export async function getCesiumIonUser(accessToken: string) {
-	const response = await fetch('https://api.cesium.com/v1/me', {
+	const response = await fetch(`${CESIUM_API_URL}/me`, {
 		headers: {
 			Authorization: `Bearer ${accessToken}`,
 		},

@@ -36,7 +36,7 @@ import { useGeoOverlayStore } from '@/stores/geooverlaystore';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 import { useCesiumIonStore } from '@/stores/cesiumionstore';
 import { setCesiumIonToken } from '@/modules/cesium/cesiumAuth.service';
-import { getCesiumIonAsset } from '@/modules/cesium/cesiumIon.service';
+import { getCesiumIonAsset } from '@/modules/cesium/cesiumImport.service';
 
 export function useMap() {
 	// STORES

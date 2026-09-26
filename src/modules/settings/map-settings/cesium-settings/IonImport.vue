@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { getCesiumIonAsset, getCesiumIonAssets } from '@/modules/cesium/cesiumIon.service';
+import { getCesiumIonAsset, getCesiumIonAssets } from '@/modules/cesium/cesiumImport.service';
 import { useCesiumIonStore } from '@/stores/cesiumionstore';
 import {
 	CesiumIonAsset,
