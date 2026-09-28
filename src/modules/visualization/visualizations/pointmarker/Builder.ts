@@ -89,6 +89,9 @@ export async function CreatePointMarkerVizProps(
 			endTime: '2125-08-01T00:00:00Z',
 			mode: Mode.REAL_TIME,
 			responseFormat: 'application/swe+json',
+			// For PMs fetch latest on connect rather than only after the next observation arrives
+			// this matters most for a manually set location, which emits a single observation
+			fetchLatestOnConnect: true,
 			id: dsId,
 			properties: properties,
 			connectorOpts: {

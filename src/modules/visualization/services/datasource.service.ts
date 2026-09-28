@@ -63,6 +63,7 @@ export function createDatasource(dsProps: IConSysApiDataSourceProperties) {
 		endTime: dsProps.endTime,
 		mode: dsProps.mode,
 		responseFormat: dsProps.responseFormat,
+		fetchLatestOnConnect: dsProps.fetchLatestOnConnect ?? false,
 		connectorOpts: {
 			username: dsProps?.connectorOpts.username ?? '',
 			password: dsProps?.connectorOpts.password ?? '',
