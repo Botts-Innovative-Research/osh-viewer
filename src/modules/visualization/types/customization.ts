@@ -11,6 +11,7 @@ export interface IPointMarkerCustomizationOptions extends CustomizationOptions {
 	iconColor: string;
 	iconName: string;
 	milSymbol?: string;
+	useMilSymbol?: boolean;
 }
 
 export interface ILineOfBearingCustomizationOptions extends CustomizationOptions {
