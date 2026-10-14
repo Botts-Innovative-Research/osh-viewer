@@ -16,6 +16,7 @@ export type IconItem = {
 	label: string;
 	icon: string;
 	category: IconCategory;
+	anchor?: [number, number]; // Optional anchor point for the icon
 };
 
 /**
@@ -23,10 +24,10 @@ export type IconItem = {
  */
 export const ICON_OPTIONS: IconItem[] = [
 	// Map
-	{ id: 1, label: 'Marker', icon: 'map-marker', category: 'map' },
-	{ id: 2, label: 'Pin', icon: 'pin', category: 'map' },
-	{ id: 3, label: 'Arrow', icon: 'arrow-up-bold', category: 'map' },
-	{ id: 4, label: 'Antenna', icon: 'antenna', category: 'map' },
+	{ id: 1, label: 'Marker', icon: 'map-marker', category: 'map', anchor: [16, 32] },
+	{ id: 2, label: 'Pin', icon: 'pin', category: 'map', anchor: [16, 32] },
+	{ id: 3, label: 'Arrow', icon: 'arrow-up-bold', category: 'map', anchor: [16, 0] },
+	{ id: 4, label: 'Antenna', icon: 'antenna', category: 'map', anchor: [16, 32] },
 	{ id: 5, label: 'Camera', icon: 'camera-marker', category: 'map' },
 	{ id: 6, label: 'Cellphone', icon: 'cellphone-marker', category: 'map' },
 	{ id: 7, label: 'Eye', icon: 'eye', category: 'map' },
@@ -38,7 +39,7 @@ export const ICON_OPTIONS: IconItem[] = [
 	{ id: 12, label: 'Target', icon: 'target', category: 'geoptz' },
 	{ id: 13, label: 'Square Target', icon: 'target-variant', category: 'geoptz' },
 	// Waypoint
-	{ id: 14, label: 'Round Pin', icon: 'round-pin', category: 'waypoint' }, // Not an mdi icon
+	{ id: 14, label: 'Round Pin', icon: 'round-pin', category: 'waypoint', anchor: [16, 32] }, // Not an mdi icon
 	// FOI
 	{ id: 15, label: 'Building', icon: 'domain', category: 'foi' },
 	// mission builder - home location
@@ -75,4 +76,14 @@ export function iconPathParser(path: string): { category: string; icon: string }
 		category: match[1],
 		icon: match[2],
 	};
+}
+
+/**
+ * Returns the anchor point for a given icon path. If the icon is not found in ICON_OPTIONS, it returns a default anchor point of [16, 16].
+ * @param path
+ */
+export function getIconAnchor(path: string) {
+	const { category, icon } = iconPathParser(path) || { category: '', icon: '' };
+	const iconItem = ICON_OPTIONS.find((i) => i.category === category && i.icon === icon);
+	return iconItem?.anchor || [16, 16]; // Default anchor point if not specified
 }

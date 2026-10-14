@@ -8,8 +8,10 @@ export function colorHash(inputString: string, alpha: number = 1.0): any {
 	let sum: number = 0;
 
 	for (let idx: number = 0; idx < inputString.length; ++idx) {
-		sum += inputString.charCodeAt(idx);
+		// sum += inputString.charCodeAt(idx);
+		sum = (sum * 31 + inputString.charCodeAt(idx)) | 0; // bitwise OR with 0 to ensure sum is a 32-bit integer
 	}
+	sum = sum >>> 0; // convert to unsigned 32-bit integer
 
 	let r: number = ~~(
 		parseFloat(
@@ -37,8 +39,13 @@ export function colorHash(inputString: string, alpha: number = 1.0): any {
 	);
 
 	// Ensure colors are brighter by boosting saturation
-	let hsl: any = rgb2hsl(r, g, b);
-	let rgb: any = hsl2rgb(hsl.h, hsl.s, hsl.l);
+	let hsl: any = rgb2hsl(r / 255, g / 255, b / 255);
+	let rgbF: any = hsl2rgb(hsl.h, hsl.s, hsl.l);
+	let rgb: any = {
+		r: Math.round(rgbF.r * 255),
+		g: Math.round(rgbF.g * 255),
+		b: Math.round(rgbF.b * 255),
+	};
 
 	let rgba: string = 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', ' + alpha + ')';
 
@@ -50,7 +57,7 @@ export function colorHash(inputString: string, alpha: number = 1.0): any {
 
 	return {
 		r: rgb.r,
-		g: rgb.b,
+		g: rgb.g,
 		b: rgb.b,
 		a: alpha,
 		rgba: rgba,

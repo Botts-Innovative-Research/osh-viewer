@@ -170,6 +170,7 @@ const uiStore = useUIStore();
 						:animation="150"
 						tag="div"
 						style="display: contents"
+						handle=".drag-handle"
 					>
 						<v-expansion-panel
 							v-for="viz in panelVisualizations"
@@ -178,6 +179,13 @@ const uiStore = useUIStore();
 							:value="viz.id"
 						>
 							<template #title>
+								<div class="panel-actions">
+									<v-icon
+										class="drag-handle mr-1"
+										size="small"
+										>mdi-drag</v-icon
+									>
+								</div>
 								<div class="panel-header">
 									<span class="viz-name">{{ viz.name }}</span>
 									<div class="panel-actions">
@@ -263,18 +271,6 @@ const uiStore = useUIStore();
 }
 
 .panel-actions {
-	display: flex;
-	align-items: center;
-	flex-shrink: 0;
-	overflow: hidden;
-	max-width: 0;
-	opacity: 0;
-	transition:
-		max-width 0.2s ease,
-		opacity 0.15s ease;
-}
-
-.map-actions {
 	display: flex;
 	align-items: center;
 	flex-shrink: 0;

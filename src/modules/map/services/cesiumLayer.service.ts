@@ -24,7 +24,10 @@ export async function fetchLayerFromUrl(url: string) {
 }
 
 export function detectLayerType(parsed: URL, url: string): LayerType | null {
-	const service = parsed.searchParams.get('SERVICE')?.toUpperCase();
+	const params = new URLSearchParams(
+		[...parsed.searchParams.entries()].map(([key, value]) => [key.toUpperCase(), value])
+	);
+	const service = params.get('SERVICE')?.toUpperCase();
 
 	if (service === 'WMS') return 'WMS';
 	else if (service === 'WMTS') return 'WMTS';

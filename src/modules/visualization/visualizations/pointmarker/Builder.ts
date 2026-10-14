@@ -13,7 +13,11 @@ import {
 import { VisualizationComponents } from '../../types/visualization';
 import { IPointMarkerCustomizationOptions } from '../../types/customization';
 import { IConSysApiDataSourceProperties } from '../../types/datasource';
-import { IPointMarkerLayerProperties } from '../../types/layers';
+import {
+	DEFAULT_POINTMARKER_LAYER_PROPERTIES,
+	IPointMarkerLayerProperties,
+} from '../../types/layers';
+import { getIconAnchor } from '@/lib/icons';
 
 export default async function build() {
 	console.log('Building Point Marker Visualization...');
@@ -60,12 +64,13 @@ export async function CreatePointMarkerVizProps(
 	// Create datasources, layer, and view
 	const vizDatasources: IConSysApiDataSourceProperties[] = [];
 	let pointMarkerLayer: IPointMarkerLayerProperties = {
+		...DEFAULT_POINTMARKER_LAYER_PROPERTIES,
 		name: visOptions.name,
 		label: visOptions.name,
-		icon: visOptions.icon ?? '',
-		iconColor: visOptions.iconColor || '#FF0000',
-		iconName: visOptions.iconName ?? '',
-		iconSize: [32, 32],
+		icon: visOptions.icon ?? DEFAULT_POINTMARKER_LAYER_PROPERTIES.icon,
+		iconColor: visOptions.iconColor || DEFAULT_POINTMARKER_LAYER_PROPERTIES.iconColor,
+		iconName: visOptions.iconName ?? DEFAULT_POINTMARKER_LAYER_PROPERTIES.iconName,
+		iconAnchor: getIconAnchor(visOptions.icon ?? ''),
 	};
 
 	// Iterate through each unique datastream ID

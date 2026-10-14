@@ -16,11 +16,14 @@ const dsRoleKeywords: Record<string, string[]> = {
 	video: ['video', 'camera', 'image', 'stream'],
 	// chart
 	x: ['time', 'timestamp'],
-	y: [], //tbd
 	// lob
-	bearing: ['bearing', 'azimuth', 'angle', 'line of bearing'],
-	// text
-	stream: [], //tbd
+	bearing: ['bearing', 'azimuth', 'angle', 'line of bearing', 'LOB'],
+	// ellipse
+	semiMajorAxis: ['ellipse major', 'ellipse axis 1'],
+	semiMinorAxis: ['ellipse minor', 'ellipse axis 0'],
+	// audio
+	sampleRate: ['audio', 'samples', 'AAC', 'AMR-NB', 'AMR-WB', 'FLAC', 'VORBIS', 'OPUS', 'PCM'],
+	samples: ['audio', 'samples', 'AAC', 'AMR-NB', 'AMR-WB', 'FLAC', 'VORBIS', 'OPUS', 'PCM'],
 };
 
 export function autoMapDataStreams(

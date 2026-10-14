@@ -19,4 +19,8 @@ export interface IVideoViewProperties extends DataViewProperties {
 	useWebCodecApi: boolean;
 	width: number;
 	height: number;
+	props360?: {
+		projection: string;
+		fisheyeFovDeg: number;
+	};
 }
