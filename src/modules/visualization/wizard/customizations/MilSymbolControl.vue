@@ -240,6 +240,7 @@ onMounted(() => {
 
         <v-expand-transition>
             <div v-if="selectedCategory">
+            <div class="milsymbol-palette">
                 <radio-cards
                     :items="basicPalette"
                     :selected-item="selectedBasicItem"
@@ -247,6 +248,7 @@ onMounted(() => {
                     @update:value="(val) => selectSymbol(val.sidc)"
                     size="small"
                 ></radio-cards>
+            </div>
 
                 <div class="d-flex justify-center">
                     <v-btn
@@ -270,16 +272,40 @@ onMounted(() => {
                             variant="outlined"
                             density="comfortable"
                         ></v-select>
-                        <radio-cards
-                            :items="advancedPalette"
-                            :selected-item="selectedAdvancedItem"
-                            :tooltip="false"
-                            @update:value="(val) => selectSymbol(val.sidc)"
-                            size="small"
-                        ></radio-cards>
+                        <div class="milsymbol-palette">
+                            <radio-cards
+                                :items="advancedPalette"
+                                :selected-item="selectedAdvancedItem"
+                                :tooltip="true"
+                                @update:value="(val) => selectSymbol(val.sidc)"
+                                size="small"
+                            ></radio-cards>
+                        </div>
                     </div>
                 </v-expand-transition>
             </div>
         </v-expand-transition>
     </div>
 </template>
+<style scoped>
+.milsymbol-palette :deep(.v-card .flex-column) {
+    width: 100%;
+    padding: 0 4px;
+}
+
+.milsymbol-palette :deep(.v-card .flex-column > img) {
+    height: 36px;
+    flex-shrink: 0;
+    margin-bottom: 4px !important;
+}
+
+.milsymbol-palette :deep(.v-card .flex-column > span) {
+    font-size: 0.75rem;
+    line-height: 1.2;
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+</style>
