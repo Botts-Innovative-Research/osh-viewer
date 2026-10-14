@@ -158,10 +158,14 @@ export async function createPointMarkerLayer(
 	// Color the initial icon if not milsymbol
 	let icon: string = '';
 	if (!getIcon) {
-		icon = await getColoredIconUrl(
-			`${ICON_BASE}${viz.visualizationComponents.dataLayer.icon}`,
-			viz.visualizationComponents.dataLayer.iconColor
-		);
+		if (viz.visualizationComponents.dataLayer.milSymbol) {
+			icon = getMilSymbol(viz.visualizationComponents.dataLayer.milSymbol);
+		} else {
+			icon = await getColoredIconUrl(
+				`${ICON_BASE}${viz.visualizationComponents.dataLayer.icon}`,
+				viz.visualizationComponents.dataLayer.iconColor
+			);
+		}
 	}
 
 	const pmLayer = new PointMarkerLayer({

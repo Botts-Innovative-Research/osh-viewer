@@ -96,6 +96,7 @@ useComponentValidation(valid, emit);
             v-if="!milSymbolFromConfig"
             :model-value="useMilSymbol"
             label="Use Military Symbol Icon"
+            class="ms-4"
             hide-details
             @update:model-value="onUseMilSymbolChange"
         />
