@@ -5,6 +5,7 @@ import { MapPoint, MapPointHandler, OfflineMapLayer } from '@/modules/map/types'
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 import { colorHash, getColoredIconUrl } from '@/modules/map/services/colorId.service';
 import { ICON_BASE } from '@/lib/icons';
+import { patchLeafletLineStyles } from '@/modules/map/services/lineStyle.service';
 
 export function createLeafletAdapter(): MapAdapter {
 	let mapView: typeof LeafletView | null;
@@ -23,6 +24,7 @@ export function createLeafletAdapter(): MapAdapter {
 			layers: [],
 			autoZoomOnFirstMarker: true,
 		});
+		patchLeafletLineStyles(mapView);
 	}
 	function destroy() {
 		mapView?.destroy();

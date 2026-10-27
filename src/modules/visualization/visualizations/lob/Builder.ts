@@ -61,6 +61,7 @@ export function CreateLobVizProps(
 		weight: visOptions.lobWeight,
 		opacity: visOptions.lobOpacity,
 		length: visOptions.lobDistanceKm * 1000, // Convert km to m
+		lineStyle: visOptions.lobLineStyle ?? 'solid',
 		iconName: 'ray-start',
 		label: visOptions.name,
 		name: visOptions.name,

@@ -6,6 +6,7 @@ import { VisualizationComponentEmits } from '../../registry/VisualizationRegistr
 import { computed, ref } from 'vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 import { useVizWizStore } from '@/stores/vizwizstore';
+import LineStyleControl from '../../wizard/customizations/LineStyleControl.vue';
 
 const vizwizStore = useVizWizStore();
 // If lobLineColor selected in Config, don't show line color select
@@ -76,6 +77,7 @@ useComponentValidation(valid, emit);
 						>
 					</div>
 				</v-expand-transition>
+				<line-style-control roleName="lobLineStyle"></line-style-control>
 				<slider-value-control
 					roleName="lobWeight"
 					label="Line Weight"

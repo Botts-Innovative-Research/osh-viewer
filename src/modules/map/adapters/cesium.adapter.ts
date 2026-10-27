@@ -8,6 +8,7 @@ import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { colorHash, getColoredIconUrl } from '@/modules/map/services/colorId.service';
 import { ICON_BASE } from '@/lib/icons';
 import { getCenterPoint } from '@/modules/map/services/geospatial.service';
+import { patchCesiumLineStyles } from '@/modules/map/services/lineStyle.service';
 
 // Showcase examples token :P
 // Ion.defaultAccessToken =
@@ -49,6 +50,7 @@ export function createCesiumAdapter(): MapAdapter {
 			layers: [],
 			geocoder: Cesium.IonGeocodeProviderType.GOOGLE,
 		});
+		patchCesiumLineStyles(mapView);
 
 		// CESIUM TERRAIN / DEPTH
 		mapView.viewer.scene.globe.depthTestAgainstTerrain = false;
