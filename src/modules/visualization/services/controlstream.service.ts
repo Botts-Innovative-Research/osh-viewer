@@ -86,8 +86,9 @@ export function sendCommand(
 		})
 		.then((data) => {
             const name = label ?? 'Command';
-            if (data.statusCode === 'COMPLETED')
-                showToast(`${name} successful`, 'SUCCESS');
+            if (data.statusCode === 'COMPLETED'){
+				// showToast(`${name} successful`, 'SUCCESS');
+			}
             else if (data.statusCode === 'FAILED')
                 showToast(`${name} failed`, 'ERROR');
             else

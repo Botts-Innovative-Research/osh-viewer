@@ -1,18 +1,20 @@
 <script setup xmlns="http://www.w3.org/1999/html" lang="ts">
-import { Ion } from 'cesium';
 import { useMap } from '../composables/useMap';
+import Settings from '@/modules/settings/Settings.vue';
+import { useCesiumIonStore } from '@/stores/cesiumionstore';
+import CesiumRequiredDialog from '@/modules/map/components/CesiumRequiredDialog.vue';
 
-Ion.defaultAccessToken =
-	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkNDIyMzU2OC0wMWI4LTRjNGYtYTdiMy1kYjRmYzAwNGJkYTgiLCJpZCI6MzM1ODkzLCJpYXQiOjE3NTYzMDQ3MjZ9.5-F-lSal7TV6bHASnlpo5JCxamD0ppGPtQT7GUK5Ne4';
-
-const { mapAdapter } = useMap();
+const { mapAdapter, mapType } = useMap();
+const cesiumIonStore = useCesiumIonStore();
 </script>
 
 <template>
 	<div
+		v-if="mapType !== 'cesium' || cesiumIonStore.isConnected"
 		class="maphero"
 		id="mapContainer"
 	></div>
+	<CesiumRequiredDialog v-if="mapType === 'cesium' && !cesiumIonStore.isConnected" />
 </template>
 
 <style>

@@ -1,6 +1,8 @@
-import { MapLayer } from './cesium.adapter';
+
 import { CursorMode, MapPoint, MapPointHandler, OfflineMapLayer } from '@/modules/map/types';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
+
+import { CesiumIonAsset, MapLayer } from '@/modules/cesium/types';
 
 export interface MapAdapter {
 	init(container: string): Promise<void>;
@@ -95,4 +97,6 @@ export interface MapAdapter {
 	rebuildMapLayers?(layers: MapLayer[]): void;
 	enableClustering?(): void;
 	disableClustering?(): void;
+	addIonAsset?(asset: CesiumIonAsset): void;
+	removeIonAsset?(asset: CesiumIonAsset): void;
 }
