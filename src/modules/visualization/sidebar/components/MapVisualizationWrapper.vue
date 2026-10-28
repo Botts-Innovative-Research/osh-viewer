@@ -2,7 +2,8 @@
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { VisualizationRegistry } from '../../registry/VisualizationRegistry';
 import DeleteButton from '@/components/ui/DeleteButton.vue';
-import { computed, ref, watch } from 'vue';
+import { computed, h, ref, watch } from 'vue';
+import { getMilSymbol } from '@/modules/map/services/milIcon.service';
 import { useMapStore } from '@/stores/mapstore';
 import { isMapLayerCompatible } from '@/modules/map/supportedMapLayers';
 import MilIcon from '@/components/icons/mil.svg';
@@ -34,6 +35,18 @@ function isSelected(viz: OSHVisualization) {
 	return mapStore.selectedMapItem?.id === viz.id;
 }
 
+const milSymbolIcons = new Map<string, any>();
+
+function getMilSymbolIcon(sidc: string) {
+	if (!milSymbolIcons.has(sidc)) {
+		const src = getMilSymbol(sidc);
+		milSymbolIcons.set(sidc, () =>
+			h('img', { src, style: 'width: 100%; height: 100%; object-fit: contain;' })
+		);
+	}
+	return milSymbolIcons.get(sidc);
+}
+
 function getIcon(viz: OSHVisualization) {
 	// Parent visualizations - use viz type icon
 	if (viz.isParentVisualization()) {
@@ -42,7 +55,10 @@ function getIcon(viz: OSHVisualization) {
 	// Use iconName from dataLayer
 	const iconName = viz.visualizationComponents.dataLayer.iconName;
 	if (iconName) {
-		if (iconName === 'mil-symbol') return MilIcon;
+		if (iconName === 'mil-symbol' && viz.visualizationComponents.dataLayer.milSymbol) {
+            return getMilSymbolIcon(viz.visualizationComponents.dataLayer.milSymbol);
+        }
+        if (iconName === 'mil-symbol') return MilIcon;
 		else return `mdi-${iconName}`;
 	}
 	// Otherwise, use viz type icon
