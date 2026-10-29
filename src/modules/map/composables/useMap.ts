@@ -1,6 +1,6 @@
 import { useMapStore } from '@/stores/mapstore';
 import { FoiLayer, useVisualizationStore } from '@/stores/visualizationstore';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import {
 	createFOILayer,
@@ -139,6 +139,7 @@ export function useMap() {
 		disconnectDatasources();
 
 		destroyMap();
+		await nextTick();
 		await initMap();
 
 		// Rebuild layers
@@ -160,9 +161,13 @@ export function useMap() {
 		rebuildGeoOverlayLayers(); // Rebuild GeoOverlays
 		rebuildMissionWaypoints(); // Rebuild all waypoints per system
 	}
-	watch(mapType, async () => {
-		await switchMap();
-	});
+	watch(
+		mapType,
+		async () => {
+			await switchMap();
+		},
+		{ flush: 'post' }
+	);
 	watch(
 		() => settingsStore.enableOfflineMaps,
 		async (enabled) => {
@@ -1016,7 +1021,9 @@ export function useMap() {
 	);
 
 	onMounted(async () => {
-		await initMap();
+		if (mapType.value !== 'cesium' || cesiumIonStore.isConnected) {
+			await initMap();
+		}
 		await rebuildFoiLayers();
 		rebuildGeoOverlayLayers();
 	});

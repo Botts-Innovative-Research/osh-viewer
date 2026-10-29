@@ -13,7 +13,7 @@ export const useSettingsStore = defineStore(
 		const theme = ref<'dark' | 'light'>('dark');
 
 		// Map
-		const focusedMap: Ref<'cesium' | 'leaflet'> = ref('leaflet'); // Focused map corresponds to map type
+		const focusedMap: Ref<'cesium' | 'leaflet'> = ref('cesium'); // Focused map corresponds to map type
 		const enableOfflineMaps: Ref<boolean> = ref(false); // Whether offline maps are toggled on
 
 		// GeoPTZ settings
