@@ -1,7 +1,13 @@
 import * as Cesium from 'cesium';
 
 const CESIUM_CLIENT_ID = '2363';
-const CESIUM_REDIRECT_URI = 'http://localhost:5173/oauth/cesium/callback';
+const appBaseUrl = new URL(
+	import.meta.env.BASE_URL.endsWith('/')
+		? import.meta.env.BASE_URL
+		: `${import.meta.env.BASE_URL}/`,
+	window.location.origin
+);
+const CESIUM_REDIRECT_URI = new URL('oauth/cesium/callback', appBaseUrl).toString();
 
 function generateCodeVerifier(): string {
 	const array = new Uint8Array(32);

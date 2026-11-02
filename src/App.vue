@@ -1,11 +1,13 @@
 <script setup>
-import { RouterView } from 'vue-router';
+import { computed } from 'vue';
+import { RouterView, useRoute } from 'vue-router';
 import HeaderToolbar from '@/components/HeaderToolbar.vue';
 import { storeToRefs } from 'pinia';
 import { useNodeStore } from '@/stores/nodestore';
 import { OSHConnect } from '@/lib/OSHConnectDataStructs';
 import { useVisualizationStore } from '@/stores/visualizationstore.js';
 import { useSettingsStore } from './stores/settingsstore';
+import CesiumOAuthCallback from '@/modules/cesium/CesiumOAuthCallback.vue';
 
 const settingsStore = useSettingsStore();
 const { theme } = storeToRefs(settingsStore);
@@ -13,6 +15,10 @@ const { theme } = storeToRefs(settingsStore);
 const connect = new OSHConnect();
 const nodeStore = useNodeStore();
 const visualizationStore = useVisualizationStore();
+const route = useRoute();
+const isCesiumOAuthCallback = computed(
+	() => route.query.cesium_oauth_callback === '1'
+);
 nodeStore.rehydrateNodes(connect).then(() => {
 	visualizationStore.rehydrateVisualizations();
 });
@@ -22,7 +28,8 @@ nodeStore.rehydrateNodes(connect).then(() => {
 	<VApp :theme="theme">
 		<HeaderToolbar />
 		<div class="router-content">
-			<RouterView />
+			<CesiumOAuthCallback v-if="isCesiumOAuthCallback" />
+			<RouterView v-else />
 		</div>
 	</VApp>
 </template>
