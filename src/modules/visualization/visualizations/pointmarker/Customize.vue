@@ -10,10 +10,6 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 
 const vizwizStore = useVizWizStore();
 const useMilSymbol = ref<boolean>(!!vizwizStore.visualizationCustomizationOptions.useMilSymbol);
-// If milSymbol is selected in Config, don't show icon select
-const showIcon = computed(() =>
-    vizwizStore.dsConfig.milSymbol || useMilSymbol.value ? false : true
-);
 // If pmIconColor or milSymbol selected in Config, don't show icon color select
 const showIconColor = computed(() =>
     vizwizStore.dsConfig.pmIconColor || vizwizStore.dsConfig.milSymbol || useMilSymbol.value
@@ -21,34 +17,31 @@ const showIconColor = computed(() =>
         : true
 );
 
-const showMilSymbolPanel = computed(() => showManualMilSymbol.value && useMilSymbol.value);
-// If milSymbol is not selected in Config, show manual milSymbol icon select
 const showManualMilSymbol = computed(() => !vizwizStore.dsConfig.milSymbol);
-
+const showMilSymbolSelect = computed(() => showManualMilSymbol.value && useMilSymbol.value);
+// If milSymbol is selected in Config or milSymbol select is showing, don't show icon select
+const showIcon = computed(() =>
+	vizwizStore.dsConfig.milSymbol || showMilSymbolSelect.value ? false : true
+);
 const openPanels = ref<string[]>(['general', 'pointmarker']);
 
-if (showMilSymbolPanel.value) openPanels.value.push('milsymbol');
 
 function onUseMilSymbolChange(val: boolean | null) {
     useMilSymbol.value = !!val;
 
     vizwizStore.updateVisualizationCustomizationOptions({
-        useMilSymbol: useMilSymbol.value,
-        // Unchecking clears the chosen symbol
-        ...(useMilSymbol.value ? {} : { milSymbol: '' }),
-    });
+   		useMilSymbol: useMilSymbol.value,
+   		// Unchecking clears the chosen symbol
+   		...(useMilSymbol.value ? {} : { milSymbol: '' }),
+   	});
 
-    // Open the Mil Symbol panel when the box is checked
-    if (useMilSymbol.value && !openPanels.value.includes('milsymbol')) {
-        openPanels.value.push('milsymbol');
-    }
 }
 
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>();
 const nameValid = ref<boolean>(false);
 const milSymbolValid = computed(
-    () => !showMilSymbolPanel.value || !!vizwizStore.visualizationCustomizationOptions.milSymbol
+    () => !showMilSymbolSelect.value || !!vizwizStore.visualizationCustomizationOptions.milSymbol
 );
 const valid = computed(() => {
     return nameValid.value && milSymbolValid.value;
@@ -89,30 +82,45 @@ useComponentValidation(valid, emit);
 		</v-expansion-panel>
 		<v-expansion-panel
 			eager
-			title="Point Marker"
 			value="pointmarker"
 		>
-		<v-checkbox
-            v-if="!milSymbolFromConfig"
-            :model-value="useMilSymbol"
-            label="Use Military Symbol Icon"
-            class="ms-4"
-            hide-details
-            @update:model-value="onUseMilSymbolChange"
-        />
+			<v-expansion-panel-title>
+				Point Marker
+				<template
+					v-slot:actions
+					v-if="!milSymbolValid"
+				>
+					<v-icon
+						color="error"
+						icon="mdi-alert-circle"
+					>
+					</v-icon>
+				</template>
+			</v-expansion-panel-title>
 			<v-expansion-panel-text>
-
+				<v-checkbox
+					v-if="showManualMilSymbol"
+					:model-value="useMilSymbol"
+					label="Use Military Symbol Icon"
+					class="ms-n2"
+					hide-details
+					@update:model-value="onUseMilSymbolChange"
+				></v-checkbox>
+				<v-expand-transition>
+					<div v-if="showMilSymbolSelect">
+						<MilSymbolControl />
+					</div>
+				</v-expand-transition>
 				<v-expand-transition>
 					<div v-if="showIcon">
 						<icon-control roleName="icon"></icon-control>
 					</div>
+					<!-- CHANGED: Only show when milSymbol comes from Config -->
 					<div
-						v-else
+						v-else-if="!showMilSymbolSelect"
 						class="pa-4"
 					>
-						<v-alert
-						v-if="!showManualMilSymbol"
-						variant="outlined"
+						<v-alert variant="outlined"
 							>Icon will be dynamically generated with the respective military symbol
 							based on the selected properties from the previous step.</v-alert
 						>
@@ -126,9 +134,9 @@ useComponentValidation(valid, emit);
 						></color-control>
 					</div>
 					<div
-                       v-else-if="!useMilSymbol"
-                       class="pa-4"
-                    >
+						v-else-if="!showMilSymbolSelect"
+						class="pa-4"
+					>
 						<v-alert variant="outlined"
 							>Icon color will be dynamically generated based on the selected
 							properties from the previous step.</v-alert
@@ -137,27 +145,5 @@ useComponentValidation(valid, emit);
 				</v-expand-transition>
 			</v-expansion-panel-text>
 		</v-expansion-panel>
-		<v-expansion-panel
-          v-if="showMilSymbolPanel"
-          eager
-          value="milsymbol"
-          >
-          <v-expansion-panel-title>
-             Military Symbol
-             <template
-                v-slot:actions
-                v-if="!milSymbolValid"
-             >
-                <v-icon
-                   color="error"
-                   icon="mdi-alert-circle"
-                >
-                </v-icon>
-             </template>
-          </v-expansion-panel-title>
-          <v-expansion-panel-text>
-             <MilSymbolControl />
-          </v-expansion-panel-text>
-       </v-expansion-panel>
 	</v-expansion-panels>
 </template>

@@ -227,6 +227,7 @@ onMounted(() => {
 
 <template>
     <div>
+        <h3>Military Symbol</h3>
         <v-select
             v-model="category"
             :items="milSymbolCategories"
