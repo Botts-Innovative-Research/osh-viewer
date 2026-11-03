@@ -22,6 +22,7 @@ export interface ILineOfBearingCustomizationOptions extends CustomizationOptions
 	lobDistanceKm: number;
 	lineColor: string;
 	lobLineStyle?: 'solid' | 'dashed' | 'dotted';
+	lobShowLabel?: boolean;
 }
 
 export interface IEllipseCustomizationOptions extends CustomizationOptions {
