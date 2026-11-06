@@ -34,6 +34,7 @@ export interface IPointMarkerLayerProperties extends DataLayerProperties {
 	iconSize: number[];
 	iconAnchor: number[];
 	labelOffset: number[];
+	milSymbol?: string;
 }
 
 // Default PointMarkerLayerProperties with default values for a new point marker layer

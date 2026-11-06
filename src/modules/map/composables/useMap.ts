@@ -1,6 +1,6 @@
 import { useMapStore } from '@/stores/mapstore';
 import { FoiLayer, useVisualizationStore } from '@/stores/visualizationstore';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import {
 	createFOILayer,
@@ -34,6 +34,9 @@ import { useGeoOverlayPreviewStore } from '@/stores/geooverlaypreviewstore';
 import { storeToRefs } from 'pinia';
 import { useGeoOverlayStore } from '@/stores/geooverlaystore';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
+import { useCesiumIonStore } from '@/stores/cesiumionstore';
+import { setCesiumIonToken } from '@/modules/cesium/cesiumAuth.service';
+import { getCesiumIonAsset } from '@/modules/cesium/cesiumIon.service';
 
 export function useMap() {
 	// STORES
@@ -44,6 +47,7 @@ export function useMap() {
 	const settingsStore = useSettingsStore();
 	const previewStore = useGeoOverlayPreviewStore();
 	const geoOverlayStore = useGeoOverlayStore();
+	const cesiumIonStore = useCesiumIonStore();
 
 	// STORE REFS
 	const {
@@ -83,6 +87,10 @@ export function useMap() {
 		const isOffline = settingsStore.enableOfflineMaps ?? false;
 
 		if (mapType.value === 'cesium') {
+			if (cesiumIonStore.accessToken) {
+				setCesiumIonToken(cesiumIonStore.accessToken);
+			}
+
 			mapAdapter.value = createCesiumAdapter();
 			await mapAdapter.value?.init?.('mapContainer');
 
@@ -93,20 +101,26 @@ export function useMap() {
 
 			// Only apply these settings when ONLINE
 			if (!isOffline) {
-				if (settingsStore.enable3DTerrain) {
+				if (cesiumIonStore.enable3DTerrain) {
 					await mapAdapter.value?.addTerrain?.();
 				}
-				if (settingsStore.enable3DBuildings) {
+				if (cesiumIonStore.enable3DBuildings) {
 					await mapAdapter.value?.addBuildings?.();
 				}
-				if (settingsStore.enableGooglePhotorealistic) {
+				if (cesiumIonStore.enableGooglePhotorealistic) {
 					await mapAdapter.value?.addGooglePhotorealistic?.();
+				}
+				if (cesiumIonStore.isConnected && cesiumIonStore.addedAssets.length > 0) {
+					await Promise.all(
+						cesiumIonStore.addedAssets.map((asset) =>
+							mapAdapter.value?.addIonAsset?.(asset)
+						)
+					);
 				}
 			} else {
 				await rebuildOfflineMaps();
-				await mapAdapter.value?.addOfflineBuildings?.();
 			}
-			if (settingsStore.enableEntityClustering) {
+			if (cesiumIonStore.enableEntityClustering) {
 				await mapAdapter.value?.enableClustering?.();
 			}
 		} else if (mapType.value === 'leaflet') {
@@ -125,6 +139,7 @@ export function useMap() {
 		disconnectDatasources();
 
 		destroyMap();
+		await nextTick();
 		await initMap();
 
 		// Rebuild layers
@@ -146,9 +161,13 @@ export function useMap() {
 		rebuildGeoOverlayLayers(); // Rebuild GeoOverlays
 		rebuildMissionWaypoints(); // Rebuild all waypoints per system
 	}
-	watch(mapType, async () => {
-		await switchMap();
-	});
+	watch(
+		mapType,
+		async () => {
+			await switchMap();
+		},
+		{ flush: 'post' }
+	);
 	watch(
 		() => settingsStore.enableOfflineMaps,
 		async (enabled) => {
@@ -902,7 +921,7 @@ export function useMap() {
 
 	/* CESIUM-ONLY FEATURES */
 	watch(
-		() => settingsStore.enable3DTerrain,
+		() => cesiumIonStore.enable3DTerrain,
 		async (enabled) => {
 			if (!mapAdapter.value) return;
 
@@ -914,7 +933,7 @@ export function useMap() {
 		}
 	);
 	watch(
-		() => settingsStore.enable3DBuildings,
+		() => cesiumIonStore.enable3DBuildings,
 		async (enabled) => {
 			if (!mapAdapter.value) return;
 
@@ -926,7 +945,7 @@ export function useMap() {
 		}
 	);
 	watch(
-		() => settingsStore.enableGooglePhotorealistic,
+		() => cesiumIonStore.enableGooglePhotorealistic,
 		async (enabled) => {
 			if (!mapAdapter.value) return;
 
@@ -938,7 +957,7 @@ export function useMap() {
 		}
 	);
 	watch(
-		() => settingsStore.enableEntityClustering,
+		() => cesiumIonStore.enableEntityClustering,
 		async (enabled) => {
 			if (!mapAdapter.value) return;
 
@@ -973,9 +992,38 @@ export function useMap() {
 		},
 		{ deep: true }
 	);
+	watch(
+		() => cesiumIonStore.addedAssets,
+		async (newAssets, oldAssets = []) => {
+			if (!mapAdapter.value || mapType.value !== 'cesium') return;
+
+			const newIds = new Set(newAssets.map((asset) => asset.id));
+			const oldIds = new Set(oldAssets.map((asset) => asset.id));
+
+			// ADD
+			for (const asset of newAssets) {
+				if (!oldIds.has(asset.id)) {
+					if (asset) {
+						await mapAdapter.value.addIonAsset?.(asset);
+					}
+				}
+			}
+			// REMOVE
+			for (const asset of oldAssets) {
+				if (!newIds.has(asset.id)) {
+					if (asset) {
+						await mapAdapter.value.removeIonAsset?.(asset);
+					}
+				}
+			}
+		},
+		{ deep: true }
+	);
 
 	onMounted(async () => {
-		await initMap();
+		if (mapType.value !== 'cesium' || cesiumIonStore.isConnected) {
+			await initMap();
+		}
 		await rebuildFoiLayers();
 		rebuildGeoOverlayLayers();
 	});
@@ -985,5 +1033,6 @@ export function useMap() {
 		initMap,
 		destroyMap,
 		switchMap,
+		mapType,
 	};
 }

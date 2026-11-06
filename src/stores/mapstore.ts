@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia';
 import { ref, Ref } from 'vue';
 // @ts-ignore
-import { MapLayer } from '@/modules/map/adapters/cesium.adapter';
 import { fetchLayerFromUrl } from '@/modules/map/services/cesiumLayer.service';
 import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 import { MapPoint, OfflineMapLayer } from '@/modules/map/types';
+import { MapLayer } from '@/modules/cesium/types';
 
 export const useMapStore = defineStore(
 	'map',

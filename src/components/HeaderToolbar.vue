@@ -90,7 +90,8 @@ const viewerName = import.meta.env.VITE_VIEWER_NAME;
 		</v-btn>
 		<v-dialog
 			v-model="settingsDialog"
-			max-width="800"
+			max-width="900"
+			max-height="800"
 		>
 			<Settings />
 		</v-dialog>

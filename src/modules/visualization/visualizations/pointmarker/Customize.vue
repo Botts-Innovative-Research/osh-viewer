@@ -4,24 +4,47 @@ import { VisualizationComponentEmits } from '../../registry/VisualizationRegistr
 import IconControl from '@/modules/visualization/wizard/customizations/IconControl.vue';
 import NameControl from '@/modules/visualization/wizard/customizations/NameControl.vue';
 import ColorControl from '../../wizard/customizations/ColorControl.vue';
+import MilSymbolControl from '@/modules/visualization/wizard/customizations/MilSymbolControl.vue';
 import { useComponentValidation } from '../../wizard/composables/useComponentValidation';
 import { useVizWizStore } from '@/stores/vizwizstore';
 
 const vizwizStore = useVizWizStore();
-// If milSymbol is selected in Config, don't show icon select
-const showIcon = computed(() => (vizwizStore.dsConfig.milSymbol ? false : true));
+const useMilSymbol = ref<boolean>(!!vizwizStore.visualizationCustomizationOptions.useMilSymbol);
 // If pmIconColor or milSymbol selected in Config, don't show icon color select
 const showIconColor = computed(() =>
-	vizwizStore.dsConfig.pmIconColor || vizwizStore.dsConfig.milSymbol ? false : true
+    vizwizStore.dsConfig.pmIconColor || vizwizStore.dsConfig.milSymbol || useMilSymbol.value
+        ? false
+        : true
 );
 
+const showManualMilSymbol = computed(() => !vizwizStore.dsConfig.milSymbol);
+const showMilSymbolSelect = computed(() => showManualMilSymbol.value && useMilSymbol.value);
+// If milSymbol is selected in Config or milSymbol select is showing, don't show icon select
+const showIcon = computed(() =>
+	vizwizStore.dsConfig.milSymbol || showMilSymbolSelect.value ? false : true
+);
 const openPanels = ref<string[]>(['general', 'pointmarker']);
+
+
+function onUseMilSymbolChange(val: boolean | null) {
+    useMilSymbol.value = !!val;
+
+    vizwizStore.updateVisualizationCustomizationOptions({
+   		useMilSymbol: useMilSymbol.value,
+   		// Unchecking clears the chosen symbol
+   		...(useMilSymbol.value ? {} : { milSymbol: '' }),
+   	});
+
+}
 
 // Validation: Name cannot be empty
 const emit = defineEmits<VisualizationComponentEmits>();
 const nameValid = ref<boolean>(false);
+const milSymbolValid = computed(
+    () => !showMilSymbolSelect.value || !!vizwizStore.visualizationCustomizationOptions.milSymbol
+);
 const valid = computed(() => {
-	return nameValid.value;
+    return nameValid.value && milSymbolValid.value;
 });
 useComponentValidation(valid, emit);
 </script>
@@ -59,16 +82,42 @@ useComponentValidation(valid, emit);
 		</v-expansion-panel>
 		<v-expansion-panel
 			eager
-			title="Point Marker"
 			value="pointmarker"
 		>
+			<v-expansion-panel-title>
+				Point Marker
+				<template
+					v-slot:actions
+					v-if="!milSymbolValid"
+				>
+					<v-icon
+						color="error"
+						icon="mdi-alert-circle"
+					>
+					</v-icon>
+				</template>
+			</v-expansion-panel-title>
 			<v-expansion-panel-text>
+				<v-checkbox
+					v-if="showManualMilSymbol"
+					:model-value="useMilSymbol"
+					label="Use Military Symbol Icon"
+					class="ms-n2"
+					hide-details
+					@update:model-value="onUseMilSymbolChange"
+				></v-checkbox>
+				<v-expand-transition>
+					<div v-if="showMilSymbolSelect">
+						<MilSymbolControl />
+					</div>
+				</v-expand-transition>
 				<v-expand-transition>
 					<div v-if="showIcon">
 						<icon-control roleName="icon"></icon-control>
 					</div>
+					<!-- CHANGED: Only show when milSymbol comes from Config -->
 					<div
-						v-else
+						v-else-if="!showMilSymbolSelect"
 						class="pa-4"
 					>
 						<v-alert variant="outlined"
@@ -85,7 +134,7 @@ useComponentValidation(valid, emit);
 						></color-control>
 					</div>
 					<div
-						v-else
+						v-else-if="!showMilSymbolSelect"
 						class="pa-4"
 					>
 						<v-alert variant="outlined"

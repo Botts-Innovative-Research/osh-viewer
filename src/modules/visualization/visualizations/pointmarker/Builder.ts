@@ -73,6 +73,13 @@ export async function CreatePointMarkerVizProps(
 		iconAnchor: getIconAnchor(visOptions.icon ?? ''),
 	};
 
+	if (visOptions.useMilSymbol && visOptions.milSymbol) {
+		pointMarkerLayer.milSymbol = visOptions.milSymbol;
+		pointMarkerLayer.iconName = 'mil-symbol';
+		pointMarkerLayer.iconColor = '';
+		pointMarkerLayer.iconAnchor = DEFAULT_POINTMARKER_LAYER_PROPERTIES.iconAnchor;
+	}
+
 	// Iterate through each unique datastream ID
 	for (const [dsId, entry] of Object.entries(datastreams)) {
 		// Get selected properties for each role of the datastream

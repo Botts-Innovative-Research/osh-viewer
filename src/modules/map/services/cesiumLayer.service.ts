@@ -1,5 +1,5 @@
-import { LayerType } from '../adapters/cesium.adapter';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
+import { LayerType } from '@/modules/cesium/types';
 
 export async function fetchLayerFromUrl(url: string) {
 	let parsedUrl: URL;
