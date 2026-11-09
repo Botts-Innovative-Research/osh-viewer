@@ -4,6 +4,8 @@ name: Release OSH Viewer
 on:
   push:
     branches: [master, dev]
+  pull_request: 
+    branches: [master]
   workflow_dispatch:
 
 env:
