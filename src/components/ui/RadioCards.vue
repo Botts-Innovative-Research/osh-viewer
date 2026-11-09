@@ -50,19 +50,27 @@ function selectItem(item: any) {
 								@click="toggle"
 							>
 								<v-scroll-y-transition>
-									<div class="d-flex flex-column align-center text-center">
-										<v-icon
-											size="36"
-											class="mb-2"
-											>{{
-												item.icon.startsWith('mdi-')
-													? item.icon
-													: `mdi-${item.icon}`
-											}}</v-icon
-										>
-										<span>{{ item.label }}</span>
-									</div>
-								</v-scroll-y-transition>
+                                    <div class="d-flex flex-column align-center text-center">
+                                       <img
+                                          v-if="item.image"
+                                          :src="item.image"
+                                          :alt="item.label"
+                                          class="mb-2"
+                                          style="height: 36px"
+                                       />
+                                               <v-icon
+                                          v-else
+                                          size="36"
+                                          class="mb-2"
+                                          >{{
+                                             item.icon.startsWith('mdi-')
+                                                ? item.icon
+                                                : `mdi-${item.icon}`
+                                          }}</v-icon
+                                       >
+                                       <span>{{ item.label }}</span>
+                                    </div>
+                                 </v-scroll-y-transition>
 								<v-tooltip
 									v-if="props.tooltip"
 									activator="parent"

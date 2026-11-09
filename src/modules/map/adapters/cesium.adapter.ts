@@ -1,13 +1,14 @@
 import * as Cesium from 'cesium';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
 import { MapAdapter } from './types';
-import { Ion } from 'cesium';
 import { CursorMode, MapPoint, MapPointHandler, OfflineMapLayer } from '@/modules/map/types';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { colorHash, getColoredIconUrl } from '@/modules/map/services/colorId.service';
 import { ICON_BASE } from '@/lib/icons';
 import { getCenterPoint } from '@/modules/map/services/geospatial.service';
+import { CesiumIonAsset, MapLayer } from '@/modules/cesium/types';
+import { showToast } from '@/composables/useToast';
 import { patchCesiumLineStyles } from '@/modules/map/services/lineStyle.service';
 import { patchCesiumLineLabels } from '@/modules/map/services/lineLabel.service';
 
@@ -43,6 +44,9 @@ export function createCesiumAdapter(): MapAdapter {
 
 	/* GeoOverlays */
 	let previewEntity: any = null;
+
+	/* Ion Assets */
+	let ionAssets = new Map<number, any>();
 
 	async function init(container: string) {
 		mapView = new CesiumView({
@@ -834,6 +838,129 @@ export function createCesiumAdapter(): MapAdapter {
 		invalidate();
 	}
 
+	async function addIonAsset(asset: CesiumIonAsset) {
+		const viewer = mapView.viewer;
+		if (!viewer) return;
+
+		switch (asset.type) {
+			case '3DTILES': {
+				const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(asset.id);
+
+				viewer.scene.primitives.add(tileset);
+				ionAssets.set(asset.id, tileset);
+				break;
+			}
+
+			case 'GLTF': {
+				const gltfResource = await Cesium.IonResource.fromAssetId(asset.id);
+
+				const model = await Cesium.Model.fromGltfAsync({
+					url: gltfResource,
+				});
+
+				viewer.scene.primitives.add(model);
+				ionAssets.set(asset.id, model);
+				break;
+			}
+
+			case 'IMAGERY': {
+				const imageryLayer = await Cesium.ImageryLayer.fromProviderAsync(
+					Cesium.IonImageryProvider.fromAssetId(asset.id)
+				);
+
+				viewer.imageryLayers.add(imageryLayer);
+				ionAssets.set(asset.id, imageryLayer);
+				break;
+			}
+
+			case 'TERRAIN': {
+				const terrainProvider = await Cesium.CesiumTerrainProvider.fromIonAssetId(asset.id);
+
+				viewer.terrainProvider = terrainProvider;
+				ionAssets.set(asset.id, terrainProvider);
+				break;
+			}
+
+			case 'KML': {
+				const kmlResource = await Cesium.IonResource.fromAssetId(asset.id);
+
+				const kmlDataSource = await Cesium.KmlDataSource.load(kmlResource, {
+					camera: viewer.camera,
+					canvas: viewer.scene.canvas,
+				});
+
+				await viewer.dataSources.add(kmlDataSource);
+				ionAssets.set(asset.id, kmlDataSource);
+				break;
+			}
+
+			case 'CZML': {
+				const czmlResource = await Cesium.IonResource.fromAssetId(asset.id);
+
+				const czmlDataSource = await Cesium.CzmlDataSource.load(czmlResource);
+
+				await viewer.dataSources.add(czmlDataSource);
+				ionAssets.set(asset.id, czmlDataSource);
+				break;
+			}
+
+			case 'GEOJSON': {
+				const geoJsonResource = await Cesium.IonResource.fromAssetId(asset.id);
+
+				const geoJsonDataSource = await Cesium.GeoJsonDataSource.load(geoJsonResource);
+
+				await viewer.dataSources.add(geoJsonDataSource);
+
+				ionAssets.set(asset.id, geoJsonDataSource);
+
+				break;
+			}
+
+			default:
+				showToast(`Unsupported Cesium Ion asset type: ${asset.type}`, 'ERROR');
+				throw new Error(`Unsupported Cesium Ion asset type: ${asset.type}`);
+		}
+
+		showToast(`Asset "${asset.name}" has been added to the map.`, 'SUCCESS');
+		invalidate();
+	}
+
+	function removeIonAsset(asset: CesiumIonAsset) {
+		const viewer = mapView.viewer;
+		if (!viewer) return;
+
+		const ionAsset = ionAssets.get(asset.id);
+
+		if (!ionAsset) {
+			return;
+		}
+
+		switch (asset.type) {
+			case '3DTILES':
+			case 'GLTF':
+				viewer.scene.primitives.remove(ionAsset);
+				break;
+
+			case 'IMAGERY':
+				viewer.imageryLayers.remove(ionAsset, true);
+				break;
+
+			case 'TERRAIN':
+				// We'll handle this separately below.
+				break;
+
+			case 'KML':
+			case 'CZML':
+			case 'GEOJSON':
+				viewer.dataSources.remove(ionAsset, true);
+				break;
+		}
+
+		ionAssets.delete(asset.id);
+		showToast(`Asset "${asset.name}" has been removed from the map.`, 'SUCCESS');
+		invalidate();
+	}
+
 	return {
 		init,
 		destroy,
@@ -878,5 +1005,7 @@ export function createCesiumAdapter(): MapAdapter {
 		removeGeoOverlay,
 		enableClustering,
 		disableClustering,
+		addIonAsset,
+		removeIonAsset,
 	};
 }
