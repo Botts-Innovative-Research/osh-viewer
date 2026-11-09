@@ -3,7 +3,7 @@ name: Release OSH Viewer
 
 on:
   push:
-    branches: [master]
+    branches: [master, dev]
   workflow_dispatch:
 
 env:
