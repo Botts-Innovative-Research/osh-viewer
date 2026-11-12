@@ -3,7 +3,7 @@ import { OSHVisualization } from '@/lib/OSHConnectDataStructs';
 import ConSysApi from 'osh-js/source/core/datasource/consysapi/ConSysApi.datasource.js';
 import PointMarkerLayer from 'osh-js/source/core/ui/layer/PointMarkerLayer';
 import FrustumLayer from 'osh-js/source/core/ui/layer/FrustumLayer';
-import LoBLayer from 'osh-js/source/core/ui/layer/viewer/LoB.js';
+import LoBLayer from './StyledLoBLayer';
 import EllipseLayer from 'osh-js/source/core/ui/layer/EllipseLayer';
 import PolylineLayer from 'osh-js/source/core/ui/layer/PolylineLayer';
 import { setWaypointData } from './services/missionBuilder.service';
