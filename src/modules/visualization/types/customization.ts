@@ -25,6 +25,7 @@ export interface ILineOfBearingCustomizationOptions extends CustomizationOptions
 	lineColor: string;
 	lobLineStyle?: 'solid' | 'dashed' | 'dotted';
 	lobShowLabel?: boolean;
+	lobShowArrow?: boolean;
 }
 
 export interface IEllipseCustomizationOptions extends CustomizationOptions {

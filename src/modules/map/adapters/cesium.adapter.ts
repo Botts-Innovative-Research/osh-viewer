@@ -1,16 +1,16 @@
 import * as Cesium from 'cesium';
 import CesiumView from 'osh-js/source/core/ui/view/map/CesiumView';
 import { MapAdapter } from './types';
+import { Ion } from 'cesium';
 import { CursorMode, MapPoint, MapPointHandler, OfflineMapLayer } from '@/modules/map/types';
 import { GeoOverlay } from '@/modules/map/geo-overlay/types';
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
 import { colorHash, getColoredIconUrl } from '@/modules/map/services/colorId.service';
 import { ICON_BASE } from '@/lib/icons';
 import { getCenterPoint } from '@/modules/map/services/geospatial.service';
-import { CesiumIonAsset, MapLayer } from '@/modules/cesium/types';
-import { showToast } from '@/composables/useToast';
 import { patchCesiumLineStyles } from '@/modules/map/services/lineStyle.service';
 import { patchCesiumLineLabels } from '@/modules/map/services/lineLabel.service';
+import { patchCesiumLineArrows } from '@/modules/map/services/lineArrow.service';
 
 // Showcase examples token :P
 // Ion.defaultAccessToken =
@@ -57,6 +57,7 @@ export function createCesiumAdapter(): MapAdapter {
 		});
 		patchCesiumLineStyles(mapView);
 		patchCesiumLineLabels(mapView);
+		patchCesiumLineArrows(mapView);
 
 		// CESIUM TERRAIN / DEPTH
 		mapView.viewer.scene.globe.depthTestAgainstTerrain = false;

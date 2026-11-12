@@ -85,6 +85,12 @@ useComponentValidation(valid, emit);
                     :defaultValue="false"
                     class="mb-4"
                 ></icon-visibility-control>
+                <icon-visibility-control
+                    roleName="lobShowArrow"
+                    label="Show direction arrow"
+                    :defaultValue="false"
+                    class="mb-4"
+                ></icon-visibility-control>
 				<slider-value-control
 					roleName="lobWeight"
 					label="Line Weight"

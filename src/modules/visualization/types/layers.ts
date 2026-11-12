@@ -58,6 +58,7 @@ export interface ILineOfBearingLayerProperties extends DataLayerProperties {
 	label: string;
 	lineStyle?: 'solid' | 'dashed' | 'dotted';
 	showLabel?: boolean;
+	showArrow?: boolean;
 }
 
 export interface IEllipseLayerProperties extends DataLayerProperties {

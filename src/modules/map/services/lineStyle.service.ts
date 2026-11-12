@@ -1,27 +1,14 @@
-import {
-	Color,
-	Material,
-	GeometryInstance,
-	GroundPolylineGeometry,
-	GroundPolylinePrimitive,
-	PolylineGeometry,
-	PolylineMaterialAppearance,
-	Primitive,
-	Cartesian3,
-} from '@cesium/engine';
+import * as Cesium from 'cesium';
 
-/**
- * Adds dashed/dotted line support to osh-js map views without modifying osh-js.
- * Wraps `addPolyline` on a single view instance. Solid lines fall through
- * to the original osh-js implementation untouched.
- */
 
-const isPatterned = (style?: string) => style === 'dashed' || style === 'dotted';
+function isPatterned(style?: string): boolean {
+	return style === 'dashed' || style === 'dotted';
+}
 
-function leafletDashArray(style: string, weight = 1): string | null {
+
+function leafletDashArray(style: string, weight: number = 1): string | null {
 	const w = Math.max(weight, 1);
 	if (style === 'dashed') return `${w * 3}, ${w * 2}`;
-	// Leaflet's default round lineCap turns a 1px dash into a round dot
 	if (style === 'dotted') return `1, ${w * 2}`;
 	return null;
 }
@@ -40,40 +27,51 @@ export function patchLeafletLineStyles(view: any) {
 	view.__lineStylePatched = true;
 }
 
+
 export function patchCesiumLineStyles(view: any) {
 	if (!view || view.__lineStylePatched) return;
 	const originalAdd = view.addPolyline.bind(view);
 
 	view.addPolyline = (props: any) => {
-		if (!isPatterned(props.lineStyle)) return originalAdd(props);
+		const opacity = props.opacity ?? 1;
+		if (!isPatterned(props.lineStyle) && opacity >= 1) return originalAdd(props);
 
 		const id = props.id + '$' + props.polylineId;
-		const positions = props.locations.map((p: any) => Cartesian3.fromDegrees(p.x, p.y, p.z));
+		const positions = props.locations.map((p: any) =>
+			Cesium.Cartesian3.fromDegrees(p.x, p.y, p.z)
+		);
 		const w = Math.max(props.weight || 1, 1);
+		const color = Cesium.Color.fromCssColorString(props.color).withAlpha(opacity);
 
-		const material = Material.fromType('PolylineDash', {
-			color: Color.fromCssColorString(props.color).withAlpha(props.opacity ?? 1),
-			gapColor: Color.TRANSPARENT,
-			dashLength: props.lineStyle === 'dotted' ? w * 2 : w * 8,
-		});
-		const appearance = new PolylineMaterialAppearance({ material });
+		const material = isPatterned(props.lineStyle)
+			? Cesium.Material.fromType('PolylineDash', {
+				color,
+				gapColor: Cesium.Color.TRANSPARENT,
+				dashLength: props.lineStyle === 'dotted' ? w * 2 : w * 8,
+			})
+			: Cesium.Material.fromType('Color', { color });
+		const appearance = new Cesium.PolylineMaterialAppearance({ material });
 
 		const primitive = props.clampToGround
-			? new GroundPolylinePrimitive({
-				geometryInstances: new GeometryInstance({
-					geometry: new GroundPolylineGeometry({ positions, width: w, loop: false }),
+			? new Cesium.GroundPolylinePrimitive({
+				geometryInstances: new Cesium.GeometryInstance({
+					geometry: new Cesium.GroundPolylineGeometry({
+						positions,
+						width: w,
+						loop: false,
+					}),
 					id,
 				}),
 				appearance,
 				asynchronous: false,
 				show: props.visible,
 			})
-			: new Primitive({
-				geometryInstances: new GeometryInstance({
-					geometry: new PolylineGeometry({
+			: new Cesium.Primitive({
+				geometryInstances: new Cesium.GeometryInstance({
+					geometry: new Cesium.PolylineGeometry({
 						positions,
 						width: w,
-						vertexFormat: PolylineMaterialAppearance.VERTEX_FORMAT,
+						vertexFormat: Cesium.PolylineMaterialAppearance.VERTEX_FORMAT,
 					}),
 					id,
 				}),

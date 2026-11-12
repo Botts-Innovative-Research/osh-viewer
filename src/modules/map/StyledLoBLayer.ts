@@ -8,5 +8,6 @@ export default class StyledLoBLayer extends LoBLayer {
 		super.init(properties);
 		this.props.lineStyle = (properties?.lineStyle as LineStyle) ?? 'solid';
 		this.props.showLabel = properties?.showLabel ?? false;
+		this.props.showArrow = properties?.showArrow ?? false;
 	}
 }

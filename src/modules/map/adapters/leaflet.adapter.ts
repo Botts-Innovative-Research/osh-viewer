@@ -7,6 +7,7 @@ import { colorHash, getColoredIconUrl } from '@/modules/map/services/colorId.ser
 import { ICON_BASE } from '@/lib/icons';
 import { patchLeafletLineStyles } from '@/modules/map/services/lineStyle.service';
 import { patchLeafletLineLabels } from '@/modules/map/services/lineLabel.service';
+import { patchLeafletLineArrows } from '@/modules/map/services/lineArrow.service';
 
 export function createLeafletAdapter(): MapAdapter {
 	let mapView: typeof LeafletView | null;
@@ -27,6 +28,7 @@ export function createLeafletAdapter(): MapAdapter {
 		});
 		patchLeafletLineStyles(mapView);
 		patchLeafletLineLabels(mapView);
+		patchLeafletLineArrows(mapView);
 	}
 	function destroy() {
 		mapView?.destroy();
