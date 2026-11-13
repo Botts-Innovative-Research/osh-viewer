@@ -42,6 +42,7 @@ const csSchema = ref<any>(null);
 // Fetch datasource observed properties
 async function fetchProps() {
 	const { cs, controlledProperties } = mineControlObsPropsFromCS(selectedControlstream.value);
+	if (!cs || !cs.controlstream) return;
 	csSchema.value = await fetchCsSchema(cs.controlstream);
 
 	// Add schema to control stream store for PTZControl to access

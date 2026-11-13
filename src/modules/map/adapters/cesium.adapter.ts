@@ -41,6 +41,84 @@ export function createCesiumAdapter(): MapAdapter {
 
 		// CESIUM TERRAIN / DEPTH
 		mapView.viewer.scene.globe.depthTestAgainstTerrain = false;
+
+		const viewer = mapView.viewer;
+
+		// Style InfoBox iframe content
+		const styleInfoBox = () => {
+			try {
+				const frame = viewer.infoBox?.frame;
+				if (frame?.contentDocument?.body) {
+					const body = frame.contentDocument.body;
+					body.style.backgroundColor = '#242424';
+					body.style.color = '#ffffff';
+					body.style.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+					body.style.fontSize = '13px';
+					body.style.padding = '8px';
+				}
+			} catch (e) {}
+		};
+		styleInfoBox();
+		viewer.infoBox?.frame?.addEventListener('load', styleInfoBox);
+		viewer.selectedEntityChanged.addEventListener((selectedEntity: any) => {
+			if (selectedEntity) {
+				styleInfoBox();
+				setTimeout(styleInfoBox, 50);
+				setTimeout(styleInfoBox, 200);
+			}
+		});
+
+		// Wrap mapView.addMarker to guarantee name, description, and bright iconColor are always set on entity
+		const originalAddMarker = mapView.addMarker.bind(mapView);
+		mapView.addMarker = function (properties: any, entity: any) {
+			const resEntity = originalAddMarker(properties, entity);
+			if (resEntity) {
+				const title = properties.label || properties.name || properties.markerId || 'Target';
+				resEntity.name = title;
+				if (properties.description) {
+					resEntity.description = new Cesium.ConstantProperty(properties.description);
+				}
+				if (properties.iconColor) {
+					try {
+						const c = Cesium.Color.fromCssColorString(properties.iconColor);
+						if (resEntity.billboard) {
+							resEntity.billboard.color = c;
+						}
+						if (resEntity.model) {
+							resEntity.model.color = c;
+							resEntity.model.silhouetteColor = c;
+						}
+					} catch (e) {}
+				}
+			}
+			return resEntity;
+		};
+
+		// Patch getLayerObject so onClick can look up markers by markerId or full composite ID
+		const originalGetLayerObject = mapView.getLayerObject.bind(mapView);
+		mapView.getLayerObject = function (id: string) {
+			let obj = originalGetLayerObject(id);
+			if (!obj && id) {
+				if (this.layerIdToMarkers) {
+					if (this.layerIdToMarkers[id]) {
+						return this.layerIdToMarkers[id];
+					}
+					if (id.includes('$')) {
+						const markerId = id.split('$')[1];
+						if (this.layerIdToMarkers[markerId]) {
+							return this.layerIdToMarkers[markerId];
+						}
+					}
+					for (const [key, marker] of Object.entries(this.layerIdToMarkers)) {
+						if (key === id || (marker as any)?.id === id || (marker as any)?._id === id) {
+							return marker;
+						}
+					}
+				}
+			}
+			return obj;
+		};
+
 		// Wait for Cesium to be fully ready
 		await new Promise(requestAnimationFrame);
 	}
@@ -163,12 +241,6 @@ export function createCesiumAdapter(): MapAdapter {
 
 	function onClick(handler: MapPointHandler) {
 		const viewer = mapView.viewer;
-		// Description box styling
-		viewer.infoBox.frame.onload = function () {
-			const doc = viewer.infoBox.frame.contentDocument;
-			doc.body.style.backgroundColor = '#242424';
-			doc.body.style.color = '#ffffff';
-		};
 
 		let lat = 0,
 			lon = 0,
@@ -176,6 +248,20 @@ export function createCesiumAdapter(): MapAdapter {
 
 		clickHandler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
 		clickHandler.setInputAction((click: any) => {
+			// Direct entity selection to ensure InfoBox opens on marker click
+			const picked = viewer.scene.pick(click.position);
+			if (Cesium.defined(picked)) {
+				let pickedEntity: any = null;
+				if (picked.id instanceof Cesium.Entity) {
+					pickedEntity = picked.id;
+				} else if (picked._id instanceof Cesium.Entity) {
+					pickedEntity = picked._id;
+				}
+				if (pickedEntity) {
+					viewer.selectedEntity = pickedEntity;
+				}
+			}
+
 			// Updated to pickPosition to handle 3D terrain/tiles
 			const cartesian = viewer.scene.pickPosition(click.position);
 			if (!cartesian) return;
@@ -262,6 +348,7 @@ export function createCesiumAdapter(): MapAdapter {
 	}
 
 	function updateMarker(props: any) {
+		if (!props || !props.location || isNaN(props.location.x) || isNaN(props.location.y)) return;
 		mapView.updateMarker(props);
 	}
 

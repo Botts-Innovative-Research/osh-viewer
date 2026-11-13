@@ -37,17 +37,26 @@ const selectedDatastream = computed({
 	},
 });
 
+const currentFields = computed(() => {
+	return (
+		dsSchema.value?.recordSchema?.fields ||
+		dsSchema.value?.resultSchema?.fields ||
+		dsSchema.value?.fields ||
+		[]
+	);
+});
+
 const selectedProperty = computed({
 	get: () => vizwizStore.dsConfig[props.role]?.label ?? (props.multiple ? [] : ''),
 	set: (val) => {
-		const fields = dsSchema.value?.recordSchema?.fields ?? [];
+		const fields = currentFields.value;
 
 		// Helper to get the display value (label or name)
 		const display = (f: any) => f.label ?? f.name;
 
 		if (Array.isArray(val)) {
 			// Multi-select: match by label OR name
-			const selected = fields.filter((f: any) => val.includes(display(f)));
+			const selected = fields.filter((f: any) => val.includes(display(f)) || val.includes(f.name));
 
 			vizwizStore.updateDsConfig(props.role, {
 				property: selected.map((f: any) => f.name),
@@ -56,7 +65,7 @@ const selectedProperty = computed({
 			});
 		} else if (val) {
 			// Single-select: match by label OR name
-			const field = fields.find((f: any) => display(f) === val);
+			const field = fields.find((f: any) => display(f) === val || f.name === val);
 			if (!field) return;
 
 			vizwizStore.updateDsConfig(props.role, {
@@ -122,14 +131,59 @@ const dsSchema = ref<any>(null);
 // Fetch datasource observed properties
 async function fetchProps() {
 	const { ds, observedProps } = mineDatasourceObsPropsFromDS(selectedDatastream.value);
-	dsSchema.value = await fetchDsSchema(ds.datastream);
+	if (!ds || !ds.datastream) return;
 
-	let isBinary = dsSchema.value.obsFormat === 'application/swe+binary';
-	if (isBinary) {
-		let compression = dsSchema.value.recordEncoding.members[1].compression;
+	try {
+		dsSchema.value = await fetchDsSchema(ds.datastream);
+	} catch (e) {
+		console.error('[DataSourcePicker] Error fetching schema:', e);
+		dsSchema.value = null;
+	}
+
+	if (dsSchema.value?.obsFormat === 'application/swe+binary') {
+		let compression = dsSchema.value.recordEncoding?.members?.[1]?.compression;
 		if (compression) vizwizStore.updateDsConfig(props.role, { compression: compression });
 	}
-	vizwizStore.updateDsConfig(props.role, { outputName: ds.datastream.properties.outputName });
+	if (ds.datastream?.properties?.outputName) {
+		vizwizStore.updateDsConfig(props.role, { outputName: ds.datastream.properties.outputName });
+	}
+
+	const fields = currentFields.value;
+
+	// Auto-select property if none is selected yet and schema fields are available
+	if (!vizwizStore.dsConfig[props.role]?.property && fields.length > 0) {
+		const display = (f: any) => f.label ?? f.name;
+
+		const roleLower = props.role.toLowerCase();
+		const match =
+			fields.find((f: any) => {
+				const fn = (f.name || '').toLowerCase();
+				const fl = (f.label || '').toLowerCase();
+				return (
+					fn === roleLower ||
+					fl === roleLower ||
+					(roleLower.includes('loc') && (fn === 'location' || fn === 'pos' || fl === 'location' || fn.includes('loc') || fn.includes('pos'))) ||
+					(roleLower.includes('marker') && (fn.includes('icao') || fn.includes('mmsi') || fn.includes('id') || fl.includes('icao') || fl.includes('mmsi'))) ||
+					(roleLower.includes('label') && (fn.includes('callsign') || fn.includes('vessel') || fn.includes('name') || fl.includes('callsign') || fl.includes('name'))) ||
+					(roleLower.includes('orient') && (fn.includes('heading') || fn.includes('track') || fn.includes('cog') || fl.includes('heading') || fl.includes('track'))) ||
+					(roleLower.includes('amp') && !fn.includes('time') && !fl.includes('time') && !fn.includes('count') && !fn.includes('size') && (fn.includes('amplitude') || fn === 'amp' || fn.includes('spectrum') || fn.includes('psd') || fl.includes('amplitude') || fl.includes('spectrum') || fl.includes('psd'))) ||
+					(roleLower.includes('centerfreq') && !fn.includes('count') && !fn.includes('size') && (fn.includes('center') || fl.includes('center'))) ||
+					(roleLower.includes('frequencyaxis') && !fn.includes('count') && !fn.includes('size') && (fn.includes('axis') || fl.includes('axis'))) ||
+					(roleLower.includes('freq') && !fn.includes('count') && !fn.includes('size') && (fn.includes('freq') || fl.includes('freq'))) ||
+					(roleLower.includes('rate') && !fn.includes('time') && !fl.includes('time') && (fn.includes('rate') || fl.includes('rate') || fn.includes('span') || fn.includes('bandwidth'))) ||
+					(roleLower.includes('video') && (fn.includes('video') || fn.includes('image') || fl.includes('video'))) ||
+					(roleLower.includes('sample') && !roleLower.includes('rate') && !fn.includes('time') && !fl.includes('time') && (fn.includes('audio') || fn.includes('samples') || fn === 'sample'))
+				);
+			}) || (fields.length === 1 ? fields[0] : null);
+
+		if (match) {
+			vizwizStore.updateDsConfig(props.role, {
+				property: props.multiple ? [match.name] : match.name,
+				label: props.multiple ? [display(match)] : display(match),
+				uom: match.uom?.code ?? '',
+			});
+		}
+	}
 }
 
 // Watch for changes in selected datastream to update properties
@@ -178,9 +232,9 @@ useComponentValidation(valid, emit);
 	<!-- Select for property -->
 	<v-expand-transition>
 		<v-autocomplete
-			v-if="!props.flatLocation && showPropertySelector && dsSchema && dsSchema.recordSchema"
+			v-if="!props.flatLocation && showPropertySelector && currentFields.length > 0"
 			v-model="selectedProperty"
-			:items="dsSchema.recordSchema.fields"
+			:items="currentFields"
 			label="Select property"
 			:item-title="(item: any) => item.label ?? item.name"
 			persistent-hint
@@ -190,10 +244,10 @@ useComponentValidation(valid, emit);
 		></v-autocomplete>
 	</v-expand-transition>
 	<v-expand-transition>
-		<div v-if="props.flatLocation && dsSchema && dsSchema.recordSchema">
+		<div v-if="props.flatLocation && currentFields.length > 0">
 			<v-autocomplete
 				v-model="selectedLatProperty"
-				:items="dsSchema.recordSchema.fields"
+				:items="currentFields"
 				label="Latitude property"
 				:item-title="(item: any) => item.label ?? item.name"
 				:item-value="(item: any) => item.name"
@@ -201,7 +255,7 @@ useComponentValidation(valid, emit);
 			/>
 			<v-autocomplete
 				v-model="selectedLonProperty"
-				:items="dsSchema.recordSchema.fields"
+				:items="currentFields"
 				label="Longitude property"
 				:item-title="(item: any) => item.label ?? item.name"
 				:item-value="(item: any) => item.name"
@@ -209,7 +263,7 @@ useComponentValidation(valid, emit);
 			/>
 			<v-autocomplete
 				v-model="selectedAltProperty"
-				:items="dsSchema.recordSchema.fields"
+				:items="currentFields"
 				label="Altitude property (optional)"
 				:item-title="(item: any) => item.label ?? item.name"
 				:item-value="(item: any) => item.name"

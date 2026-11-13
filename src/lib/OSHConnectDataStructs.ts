@@ -551,7 +551,8 @@ export type OSHLayer =
 	| 'PointMarkerLayer'
 	// | 'PolygonLayer'
 	| 'PolylineLayer'
-	| 'VideoDataLayer';
+	| 'VideoDataLayer'
+	| 'SdrLayer';
 
 export const OSHLayerLabels: Array<{ layer: OSHLayer; label: string }> = [
 	// { layer: 'AudioDataLayer', label: 'Audio' },
@@ -567,4 +568,6 @@ export const OSHLayerLabels: Array<{ layer: OSHLayer; label: string }> = [
 	// { layer: 'PolygonLayer', label: 'Polygon' },
 	{ layer: 'PolylineLayer', label: 'Polyline' },
 	{ layer: 'VideoDataLayer', label: 'Video' },
+	{ layer: 'SdrLayer', label: 'SDR' },
 ];
+

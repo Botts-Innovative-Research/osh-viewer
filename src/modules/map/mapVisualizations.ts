@@ -59,20 +59,65 @@ export async function createPointMarkerLayer(
 	let getIconColor: any;
 	let getLabel: any;
 	let getIcon: any;
+	let getDescription: any;
+	let filter: any;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);
 
+		// Filter unlocalized frames (e.g. lat === 0 && lon === 0 or missing/NaN)
+		filter = {
+			dataSourceIds: [dsInstance.id],
+			handler: (rec: any) => {
+				let lat: any;
+				let lon: any;
+				if (dsProps.properties?.location) {
+					const locConfig = dsProps.properties.location;
+					if (locConfig.locationFormat === 'flat' && locConfig.property) {
+						lat = rec[locConfig.property.lat];
+						lon = rec[locConfig.property.lon];
+					} else if (locConfig.property) {
+						const locObj = rec[locConfig.property];
+						if (locObj) {
+							lat = locObj.lat ?? locObj.y;
+							lon = locObj.lon ?? locObj.x;
+						}
+					}
+				}
+				if (lat === undefined || lon === undefined) {
+					const locObj = rec.location ?? rec.position ?? rec.pos;
+					if (locObj && typeof locObj === 'object') {
+						lat = locObj.lat ?? locObj.y;
+						lon = locObj.lon ?? locObj.x;
+					} else {
+						lat = rec.lat ?? rec.latitude;
+						lon = rec.lon ?? rec.longitude;
+					}
+				}
+				if (lat === undefined || lon === undefined || isNaN(Number(lat)) || isNaN(Number(lon))) {
+					return false;
+				}
+				// Ignore (0,0) unlocalized frames from ADS-B/AIS
+				if (Number(lat) === 0 && Number(lon) === 0) {
+					return false;
+				}
+				return true;
+			},
+		};
+
 		// Check for location property
-		if (dsProps.properties.location) {
+		if (dsProps.properties?.location) {
 			const locConfig = dsProps.properties.location;
 
 			if (locConfig.locationFormat === 'flat') {
 				getLocation = {
 					dataSourceIds: [dsInstance.id],
 					handler: async (rec: any) => {
-						const lon = rec[locConfig.property.lon];
-						const lat = rec[locConfig.property.lat];
+						const lon = rec[locConfig.property.lon] ?? rec.lon ?? rec.longitude;
+						const lat = rec[locConfig.property.lat] ?? rec.lat ?? rec.latitude;
+						if (lat === undefined || lon === undefined || isNaN(lat) || isNaN(lon)) {
+							return { x: 0, y: 0, z: 0 };
+						}
 						const alt = locConfig.property.alt ? rec[locConfig.property.alt] : null;
 						return {
 							x: lon,
@@ -85,64 +130,272 @@ export async function createPointMarkerLayer(
 				getLocation = {
 					dataSourceIds: [dsInstance.id],
 					handler: async (rec: any) => {
-						const lon = rec[locConfig.property].lon;
-						const lat = rec[locConfig.property].lat;
+						const locObj = rec[locConfig.property] ?? rec.location ?? rec.position ?? rec.pos;
+						if (!locObj) return { x: 0, y: 0, z: 0 };
+						const lon = locObj.lon ?? locObj.x ?? rec.lon ?? rec.longitude;
+						const lat = locObj.lat ?? locObj.y ?? rec.lat ?? rec.latitude;
+						if (lat === undefined || lon === undefined || isNaN(lat) || isNaN(lon)) {
+							return { x: 0, y: 0, z: 0 };
+						}
 						return {
 							x: lon,
 							y: lat,
-							z: rec[locConfig.property].alt || (await getGroundAltitude(lon, lat)),
+							z: locObj.alt ?? locObj.z ?? (await getGroundAltitude(lon, lat)),
 						};
 					},
 				};
 			}
 		}
-		// Check for orientation property
-		if (dsProps.properties.orientation) {
-			getOrientation = {
-				dataSourceIds: [dsInstance.id],
-				handler: (rec: any) => {
-					return {
-						heading:
-							rec[dsProps.properties.orientation.property].heading ??
-							rec[dsProps.properties.orientation.property],
-					};
-				},
-			};
-		}
-		// Check for markerId property
-		if (dsProps.properties.markerId) {
-			getMarkerId = {
-				dataSourceIds: [dsInstance.id],
-				handler: (rec: any) => {
-					return getLayerId(rec, dsProps.properties.markerId.property);
-				},
-			};
-		}
-		// Check for iconColor property
-		if (dsProps.properties.pmIconColor) {
-			getIconColor = {
-				dataSourceIds: [dsInstance.id],
-				handler: (rec: any) => {
-					return colorHash(getLayerId(rec, dsProps.properties.pmIconColor.property)).rgba;
-				},
-			};
-		}
-		// Check for label property
-		if (dsProps.properties.pmLabel) {
-			getLabel = {
-				dataSourceIds: [dsInstance.id],
-				handler: (rec: any) => {
-					const labelValue = rec[dsProps.properties.pmLabel.property];
-					if (labelValue === undefined || labelValue === null) return '';
-					if (typeof labelValue === 'object') {
-						return JSON.stringify(labelValue);
+
+		// Orientation property: configured or auto-detected heading/course
+		getOrientation = {
+			dataSourceIds: [dsInstance.id],
+			handler: (rec: any) => {
+				if (dsProps.properties?.orientation?.property) {
+					const orient = rec[dsProps.properties.orientation.property];
+					const h = orient?.heading ?? orient;
+					if (h !== undefined && h !== null && !isNaN(Number(h))) {
+						return { heading: Number(h) };
 					}
-					return labelValue?.toString() || '';
-				},
-			};
-		}
+				}
+				const autoHeading = rec.heading ?? rec.cog ?? rec.track;
+				if (
+					autoHeading !== undefined &&
+					autoHeading !== null &&
+					!isNaN(Number(autoHeading)) &&
+					Number(autoHeading) >= 0 &&
+					Number(autoHeading) <= 360
+				) {
+					return { heading: Number(autoHeading) };
+				}
+				return { heading: 0 };
+			},
+		};
+
+		// Marker ID: explicitly configured or auto-detected (e.g. unique AIS MMSI, ADS-B ICAO)
+		getMarkerId = {
+			dataSourceIds: [dsInstance.id],
+			handler: (rec: any) => {
+				if (dsProps.properties?.markerId?.property) {
+					const id = getLayerId(rec, dsProps.properties.markerId.property);
+					if (id !== undefined && id !== null && id !== '') {
+						return String(id);
+					}
+				}
+				// Auto-detect unique ship MMSI (AIS)
+				if (rec.mmsi !== undefined && rec.mmsi !== null && rec.mmsi !== '') {
+					return String(rec.mmsi);
+				}
+				if (rec.MMSI !== undefined && rec.MMSI !== null && rec.MMSI !== '') {
+					return String(rec.MMSI);
+				}
+				// Auto-detect aircraft ICAO / Hex (ADS-B)
+				if (rec.icao !== undefined && rec.icao !== null && rec.icao !== '') {
+					return String(rec.icao);
+				}
+				if (rec.ICAO !== undefined && rec.ICAO !== null && rec.ICAO !== '') {
+					return String(rec.ICAO);
+				}
+				if (rec.hex !== undefined && rec.hex !== null && rec.hex !== '') {
+					return String(rec.hex);
+				}
+				// Common target identifier fields
+				if (rec.targetId !== undefined && rec.targetId !== null && rec.targetId !== '') {
+					return String(rec.targetId);
+				}
+				if (rec.entityId !== undefined && rec.entityId !== null && rec.entityId !== '') {
+					return String(rec.entityId);
+				}
+				if (rec.trackId !== undefined && rec.trackId !== null && rec.trackId !== '') {
+					return String(rec.trackId);
+				}
+				if (rec.id !== undefined && rec.id !== null && rec.id !== '') {
+					return String(rec.id);
+				}
+				if (rec.vesselName !== undefined && rec.vesselName !== null && String(rec.vesselName).trim() !== '') {
+					return String(rec.vesselName).trim();
+				}
+				if (rec.callsign !== undefined && rec.callsign !== null && String(rec.callsign).trim() !== '') {
+					return String(rec.callsign).trim();
+				}
+				return viz.id;
+			},
+		};
+
+		// Icon Color property: configured or unique color-hash per MMSI / target ID
+		getIconColor = {
+			dataSourceIds: [dsInstance.id],
+			handler: (rec: any) => {
+				const r = rec?.data && typeof rec.data === 'object' ? { ...rec.data, ...rec } : (rec || {});
+				if (dsProps.properties?.pmIconColor?.property) {
+					const c = colorHash(getLayerId(r, dsProps.properties.pmIconColor.property)).rgba;
+					if (c) return c;
+				}
+				// Auto-assign distinct colors to unique vessels/targets
+				const mmsi = r.mmsi ?? r.MMSI ?? r.mmsi_number;
+				if (mmsi !== undefined && mmsi !== null && mmsi !== '') {
+					return colorHash(String(mmsi)).rgba;
+				}
+				const icao = r.icao ?? r.ICAO ?? r.hex ?? r.HEX;
+				if (icao !== undefined && icao !== null && icao !== '') {
+					return colorHash(String(icao)).rgba;
+				}
+				const targetId = r.targetId ?? r.entityId ?? r.trackId ?? r.id;
+				if (targetId !== undefined && targetId !== null && targetId !== '') {
+					return colorHash(String(targetId)).rgba;
+				}
+				return viz.visualizationComponents?.dataLayer?.iconColor || '#FFCC00';
+			},
+		};
+
+		// Label property: configured or auto-detected vesselName, callsign, MMSI
+		getLabel = {
+			dataSourceIds: [dsInstance.id],
+			handler: (rec: any) => {
+				const r = rec?.data && typeof rec.data === 'object' ? { ...rec.data, ...rec } : (rec || {});
+				if (dsProps.properties?.pmLabel?.property) {
+					const labelValue = r[dsProps.properties.pmLabel.property];
+					if (labelValue !== undefined && labelValue !== null && labelValue !== '') {
+						return typeof labelValue === 'object' ? JSON.stringify(labelValue) : String(labelValue);
+					}
+				}
+				// Auto-detect vessel / flight / target label
+				const vesselName = r.vesselName ?? r.vessel_name ?? r.shipName ?? r.ship_name ?? r.name ?? r.NAME ?? r.vessel;
+				if (vesselName && String(vesselName).trim().length > 0) return String(vesselName).trim();
+				const callsign = r.callsign ?? r.call_sign ?? r.callSign ?? r.CALLSIGN;
+				if (callsign && String(callsign).trim().length > 0) return String(callsign).trim();
+				const flight = r.flight ?? r.FLIGHT;
+				if (flight && String(flight).trim().length > 0) return String(flight).trim();
+				const mmsi = r.mmsi ?? r.MMSI ?? r.mmsi_number;
+				if (mmsi !== undefined && mmsi !== null && mmsi !== '') return `MMSI: ${mmsi}`;
+				const icao = r.icao ?? r.ICAO ?? r.hex ?? r.HEX;
+				if (icao !== undefined && icao !== null && icao !== '') return `ICAO: ${icao}`;
+				return viz.name;
+			},
+		};
+
+		// Description property: detailed vessel / target metadata for tooltip/popup
+		getDescription = {
+			dataSourceIds: [dsInstance.id],
+			handler: (rec: any) => {
+				if (!rec) return viz.description || '';
+				const r = rec?.data && typeof rec.data === 'object' ? { ...rec.data, ...rec } : rec;
+
+				// Check explicitly configured description property
+				if (dsProps.properties?.description?.property) {
+					const val = r[dsProps.properties.description.property];
+					if (val !== undefined && val !== null && val !== '') {
+						return typeof val === 'object' ? JSON.stringify(val) : String(val);
+					}
+				}
+
+				const rows: [string, any][] = [];
+
+				// MMSI (AIS)
+				const mmsi = r.mmsi ?? r.MMSI ?? r.mmsi_number ?? r.mmsiNumber;
+				if (mmsi !== undefined && mmsi !== null && mmsi !== '') rows.push(['MMSI', mmsi]);
+
+				// Vessel Name
+				const vesselName = r.vesselName ?? r.vessel_name ?? r.shipName ?? r.ship_name ?? r.name ?? r.NAME ?? r.vessel;
+				if (vesselName && String(vesselName).trim()) rows.push(['Vessel', String(vesselName).trim()]);
+
+				// Callsign
+				const callsign = r.callsign ?? r.call_sign ?? r.callSign ?? r.CALLSIGN;
+				if (callsign && String(callsign).trim()) rows.push(['Callsign', String(callsign).trim()]);
+
+				// Ship Type
+				const shipType = r.shipType ?? r.ship_type ?? r.vesselType ?? r.vessel_type ?? r.shiptype ?? r.type ?? r.TYPE;
+				if (shipType && String(shipType).trim()) rows.push(['Ship Type', String(shipType).trim()]);
+
+				// Nav Status
+				const navStatus = r.navStatus ?? r.nav_status ?? r.navstatus ?? r.status ?? r.STATUS ?? r.navigationStatus ?? r.navState;
+				if (navStatus && String(navStatus).trim()) rows.push(['Status', String(navStatus).trim()]);
+
+				// Speed (SOG)
+				const sog = r.sog ?? r.SOG ?? r.speed ?? r.SPEED ?? r.speedOverGround ?? r.velocity ?? r.spd;
+				if (sog !== undefined && sog !== null && !isNaN(Number(sog))) {
+					rows.push(['Speed', `${Number(sog).toFixed(1)} kts`]);
+				}
+
+				// Heading
+				const heading = r.heading ?? r.HEADING ?? r.trueHeading ?? r.true_heading ?? r.hdg;
+				if (heading !== undefined && heading !== null && !isNaN(Number(heading)) && Number(heading) <= 360) {
+					rows.push(['Heading', `${Number(heading).toFixed(1)}°`]);
+				}
+
+				// Course (COG)
+				const cog = r.cog ?? r.COG ?? r.course ?? r.COURSE ?? r.courseOverGround ?? r.track ?? r.TRACK;
+				if (cog !== undefined && cog !== null && !isNaN(Number(cog))) {
+					rows.push(['Course', `${Number(cog).toFixed(1)}°`]);
+				}
+
+				// Position (Lat/Lon)
+				const lat = r.lat ?? r.latitude ?? r.Latitude ?? r.y;
+				const lon = r.lon ?? r.longitude ?? r.Longitude ?? r.x;
+				if (lat !== undefined && lon !== undefined && !isNaN(Number(lat)) && !isNaN(Number(lon)) && (Number(lat) !== 0 || Number(lon) !== 0)) {
+					rows.push(['Position', `${Number(lat).toFixed(5)}°, ${Number(lon).toFixed(5)}°`]);
+				}
+
+				// Altitude
+				const alt = r.alt ?? r.altitude ?? r.Altitude ?? r.z;
+				if (alt !== undefined && alt !== null && !isNaN(Number(alt))) {
+					rows.push(['Altitude', `${Number(alt).toFixed(0)} ft`]);
+				}
+
+				// Destination
+				const dest = r.destination ?? r.Destination ?? r.dest ?? r.DEST;
+				if (dest && String(dest).trim()) rows.push(['Destination', String(dest).trim()]);
+
+				// ETA
+				const eta = r.eta ?? r.ETA;
+				if (eta && String(eta).trim()) rows.push(['ETA', String(eta).trim()]);
+
+				// Draught / Dimensions
+				const draught = r.draught ?? r.draft ?? r.Draught;
+				if (draught && !isNaN(Number(draught))) rows.push(['Draught', `${Number(draught).toFixed(1)} m`]);
+				if (r.length && r.width) rows.push(['Dimensions', `${r.length}m × ${r.width}m`]);
+
+				// Rate of Turn
+				const rot = r.rot ?? r.ROT ?? r.rateOfTurn;
+				if (rot !== undefined && rot !== null && !isNaN(Number(rot))) rows.push(['Rate of Turn', String(rot)]);
+
+				// ADS-B / Flight
+				const icao = r.icao ?? r.ICAO ?? r.hex ?? r.HEX;
+				if (icao && !mmsi) rows.push(['ICAO', String(icao)]);
+				const flight = r.flight ?? r.FLIGHT;
+				if (flight && String(flight).trim()) rows.push(['Flight', String(flight).trim()]);
+				const squawk = r.squawk ?? r.SQUAWK;
+				if (squawk) rows.push(['Squawk', String(squawk)]);
+
+				// Fallback: If no recognized fields were found, enumerate all non-internal primitive fields in record
+				if (rows.length === 0) {
+					const skipKeys = new Set(['raw', 'bytes', 'data', 'blob', 'buffer', 'timestamp', 'time', '_id', 'id']);
+					for (const [key, val] of Object.entries(r)) {
+						if (skipKeys.has(key)) continue;
+						if (val !== undefined && val !== null && typeof val !== 'object' && String(val).trim() !== '') {
+							rows.push([key, String(val).trim()]);
+						}
+					}
+				}
+
+				if (rows.length === 0) return viz.description || '';
+
+				return `
+<table style="width:100%; border-collapse:collapse; font-size:12px; line-height:1.4;">
+  <tbody>
+    ${rows
+			.map(
+				([label, val]) =>
+					`<tr><td style="padding:3px 6px; font-weight:600; color:#aaa; vertical-align:top; border-bottom:1px solid #333; white-space:nowrap;">${label}</td><td style="padding:3px 6px; color:#fff; border-bottom:1px solid #333;">${val}</td></tr>`
+			)
+			.join('')}
+  </tbody>
+</table>`.trim();
+			},
+		};
+
 		// Check for milsymbol property
-		if (dsProps.properties.milSymbol) {
+		if (dsProps.properties?.milSymbol) {
 			getIcon = {
 				dataSourceIds: [dsInstance.id],
 				handler: (rec: any) => {
@@ -161,9 +414,13 @@ export async function createPointMarkerLayer(
 		if (viz.visualizationComponents.dataLayer.milSymbol) {
 			icon = getMilSymbol(viz.visualizationComponents.dataLayer.milSymbol);
 		} else {
+			// If getIconColor is dynamic (e.g. per-vessel auto-color), generate the base icon as pure white (#FFFFFF).
+			// In Cesium, billboard.color multiplies the icon image pixels; using a white base icon ensures the
+			// resulting billboard renders in the exact, brilliant target color rather than being darkened or muddied!
+			const baseColor = getIconColor ? '#FFFFFF' : viz.visualizationComponents.dataLayer.iconColor;
 			icon = await getColoredIconUrl(
 				`${ICON_BASE}${viz.visualizationComponents.dataLayer.icon}`,
-				viz.visualizationComponents.dataLayer.iconColor
+				baseColor
 			);
 		}
 	}
@@ -174,12 +431,14 @@ export async function createPointMarkerLayer(
 		id: viz.id,
 		...(icon ? { icon } : {}),
 		dataSourceIds: dsInstances.map((ds) => ds.id),
+		...(filter ? { filter } : {}),
 		...(getLocation ? { getLocation } : {}),
 		...(getOrientation ? { getOrientation } : {}),
 		...(getMarkerId ? { getMarkerId } : {}),
 		...(getIconColor ? { getIconColor } : {}),
 		...(getLabel ? { getLabel } : {}),
 		...(getIcon ? { getIcon } : {}),
+		...(getDescription ? { getDescription } : {}),
 	});
 
 	const props = setLayerData(pmLayer);

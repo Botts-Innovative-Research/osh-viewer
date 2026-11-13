@@ -13,6 +13,7 @@ import { PolylineDescriptor } from '../visualizations/polyline/Descriptor';
 import { FrustumDescriptor } from '../visualizations/frustum/Descriptor';
 import { MiniMapDescriptor } from '../visualizations/minimap/Descriptor';
 import { TableDescriptor } from '@/modules/visualization/visualizations/table/Descriptor';
+import { SdrDescriptor } from '../visualizations/sdr/Descriptor';
 
 /**
  * Central registry for all visualizations available in the Visualization Wizard.
@@ -33,7 +34,9 @@ export const VisualizationRegistry: { [key: string]: VisualizationDescriptor } =
 	[FrustumDescriptor.id]: FrustumDescriptor,
 	[MiniMapDescriptor.id]: MiniMapDescriptor,
 	[TableDescriptor.id]: TableDescriptor,
+	[SdrDescriptor.id]: SdrDescriptor,
 };
+
 
 export type VisualizationType = keyof typeof VisualizationRegistry;
 

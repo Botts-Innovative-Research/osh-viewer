@@ -24,3 +24,14 @@ export interface IVideoViewProperties extends DataViewProperties {
 		fisheyeFovDeg: number;
 	};
 }
+
+export interface ISdrViewProperties extends DataViewProperties {
+	autoDb?: boolean;
+	minDb?: number;
+	maxDb?: number;
+	waterfall?: boolean;
+	waterfallSpeed?: number;
+	averaging?: number;
+	colorPalette?: string;
+}
+

@@ -50,6 +50,7 @@ export function useConfig(configRoles: VisualizationConfigRole[], defaultInclude
 	function syncConfigState() {
 		if (include.value) {
 			applyRequiredDefaults();
+			autoMap(false);
 		} else {
 			clearAllRoles();
 		}
@@ -61,17 +62,21 @@ export function useConfig(configRoles: VisualizationConfigRole[], defaultInclude
 	// React to toggle
 	watch(include, syncConfigState);
 
-	function autoMap() {
+	function autoMap(force = false) {
 		const mappedCs = autoMapControlStreams(vizwizStore.controlstreams);
 		for (const [role, csId] of Object.entries(mappedCs)) {
-			checkedRoles[role] = true;
-			vizwizStore.updateCsConfig(role, { csId, property: null, selected: true });
+			if (force || !vizwizStore.csConfig[role]?.selected) {
+				checkedRoles[role] = true;
+				vizwizStore.updateCsConfig(role, { csId, property: null, selected: true });
+			}
 		}
 
 		const mappedDs = autoMapDataStreams(vizwizStore.datastreams);
 		for (const [role, dsId] of Object.entries(mappedDs)) {
-			checkedRoles[role] = true;
-			vizwizStore.updateDsConfig(role, { dsId, property: null, selected: true });
+			if (force || !vizwizStore.dsConfig[role]?.selected) {
+				checkedRoles[role] = true;
+				vizwizStore.updateDsConfig(role, { dsId, property: null, selected: true });
+			}
 		}
 	}
 

@@ -22,7 +22,10 @@ const csRoleKeywords: Record<string, string[]> = {
 	// geoptz
 	lla: ['location', 'lla', 'gps', 'position', 'platform location'],
 	flyToLocation: ['location'],
+	// sdr
+	sdrControl: ['receivercontrol', 'receiver_control', 'sdrcontrol', 'sdr_control', 'sdr', 'rxcontrol', 'receiver', 'rtlsdr', 'hackrf', 'bladerf', 'usrp', 'rx'],
 };
+
 
 export function autoMapControlStreams(
 	controlstreams: OSHControlStream[]
@@ -31,8 +34,10 @@ export function autoMapControlStreams(
 
 	for (const [role, keywords] of Object.entries(csRoleKeywords)) {
 		for (const cs of controlstreams) {
-			const name = cs.name.toLowerCase();
-			if (keywords.some((kw) => name.includes(kw))) {
+			const name = (cs.name || '').toLowerCase();
+			const id = (cs.id || '').toLowerCase();
+			const controlName = (cs.controlstream?.properties?.controlName || cs.controlstream?.properties?.name || '').toLowerCase();
+			if (keywords.some((kw) => name.includes(kw) || id.includes(kw) || controlName.includes(kw))) {
 				result[role] = cs.id;
 				break;
 			}
@@ -41,3 +46,4 @@ export function autoMapControlStreams(
 
 	return result;
 }
+

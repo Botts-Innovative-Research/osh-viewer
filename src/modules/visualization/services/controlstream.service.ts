@@ -10,24 +10,26 @@ type CommandType = {
 
 export function mineControlObsPropsFromCS(csID: string): { cs: any; controlledProperties: any } {
 	const controlStreamStore = useControlStreamStore();
-	const cs = controlStreamStore.getControlStreamsById([csID])[0];
+	const cs = csID ? controlStreamStore.getControlStreamsById([csID])[0] : null;
 
 	if (!cs) {
-		console.warn('No controlstream given');
+		return { cs: null, controlledProperties: [] };
 	}
 
-	const controlledProperties = cs.controlstream.properties.controlledProperties || [];
+	const controlledProperties = cs.controlstream?.properties?.controlledProperties || [];
 
 	return { cs, controlledProperties };
 }
 
 export async function fetchCsSchema(controlstream: any): Promise<any> {
-	let checkedFormat = controlstream.properties.formats.filter(
+	if (!controlstream || !controlstream.properties) return null;
+	const formats = controlstream.properties.formats || [];
+	let checkedFormat = formats.filter(
 		(format: any) =>
 			format.includes('application/swe+json') || format.includes('application/swe+binary')
 	);
 
-	if (!checkedFormat) {
+	if (!checkedFormat || checkedFormat.length === 0) {
 		checkedFormat = ['application/om+json']; // Fallback to om+json which should be available always
 	}
 
@@ -38,6 +40,7 @@ export async function fetchCsSchema(controlstream: any): Promise<any> {
 			if (schemaRes) {
 				return schemaRes;
 			}
+			return null;
 		})
 		.catch((error: any) => {
 			console.error('[fetchCsSchema] Error fetching schema:', error);
@@ -60,45 +63,72 @@ export function sendCommand(
 	auth: string,
     label?: string
 ) {
-	console.log(
-		`Sending command to ${commandBaseUrl}/controlstreams/${controlStreamId}/commands `,
-		command
-	);
+	const name = label ?? 'Command';
+	const effectiveAuth = auth || 'admin:test';
+	let encoded = btoa(effectiveAuth);
 
-	let encoded = btoa(auth);
+	const candidateUrls: string[] = [];
+	if (commandBaseUrl) {
+		candidateUrls.push(`${commandBaseUrl.replace(/\/+$/, '')}/controlstreams/${controlStreamId}/commands`);
+	}
+	if (typeof window !== 'undefined' && window.location) {
+		const proxyUrl = `/sensorhub/api/controlstreams/${controlStreamId}/commands`;
+		if (!candidateUrls.includes(proxyUrl)) {
+			candidateUrls.push(proxyUrl);
+		}
+	}
 
-	// Command sending logic
-	fetch(`${commandBaseUrl}/controlstreams/${controlStreamId}/commands`, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			...(auth && { Authorization: `Basic ${encoded}` }),
-		},
-		mode: 'cors',
-		body: JSON.stringify(command),
-	})
-		.then((response) => {
+	async function tryPost(index: number) {
+		if (index >= candidateUrls.length) {
+			console.error(`Error sending ${name}: all candidate endpoints failed`);
+			showToast(`Error sending ${name}`, 'ERROR');
+			return;
+		}
+
+		const targetUrl = candidateUrls[index];
+		console.log(`Sending command to ${targetUrl}:`, command);
+
+		try {
+			const response = await fetch(targetUrl, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Basic ${encoded}`,
+				},
+				credentials: 'include',
+				mode: 'cors',
+				body: JSON.stringify(command),
+			});
+
 			if (!response.ok) {
-                showToast(`API call failed`, 'ERROR');
-                throw new Error('API call failed: ' + response.statusText);
+				const errText = await response.text();
+				console.warn(`Command attempt (${targetUrl}) returned ${response.status}:`, errText);
+				if (index + 1 < candidateUrls.length) {
+					return tryPost(index + 1);
+				}
+				showToast(`${name} failed (${response.status})`, 'ERROR');
+				return;
 			}
-			return response.json();
-		})
-		.then((data) => {
-            const name = label ?? 'Command';
-            if (data.statusCode === 'COMPLETED'){
-				// showToast(`${name} successful`, 'SUCCESS');
+
+			const data = await response.json();
+			if (data.statusCode === 'COMPLETED') {
+				showToast(`${name} applied`, 'SUCCESS');
+			} else if (data.statusCode === 'FAILED') {
+				showToast(`${name} failed`, 'ERROR');
+			} else {
+				showToast(`${name}: ${data.statusCode}`, 'INFO');
 			}
-            else if (data.statusCode === 'FAILED')
-                showToast(`${name} failed`, 'ERROR');
-            else
-                showToast(`${name} : ${data.statusCode}}`, 'INFO');
-		})
-		.catch((error) => {
-            const name = label ?? 'command';
+		} catch (error) {
+			console.warn(`Fetch error on ${targetUrl}:`, error);
+			if (index + 1 < candidateUrls.length) {
+				return tryPost(index + 1);
+			}
 			console.error(`Error sending ${name}: `, error);
 			showToast(`Error sending ${name}`, 'ERROR');
-		});
+		}
+	}
+
+	tryPost(0);
 }
 
 /**

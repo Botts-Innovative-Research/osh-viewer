@@ -1,59 +1,62 @@
 /**
- * Generate a color based on given input string and alpha number
+ * Generate a bright, high-visibility color based on an input string.
+ * Optimized for map displays over both dark water and terrain.
+ * Favors light, vibrant colors (cyan, yellow, light green, bright blue, coral red, orange, magenta).
+ * Eliminates dark, muddy tones (black, dark green, dark brown, navy, dark red).
+ *
  * @param inputString
  * @param alpha
  * @returns
  */
 export function colorHash(inputString: string, alpha: number = 1.0): any {
-	let sum: number = 0;
-
-	for (let idx: number = 0; idx < inputString.length; ++idx) {
-		// sum += inputString.charCodeAt(idx);
-		sum = (sum * 31 + inputString.charCodeAt(idx)) | 0; // bitwise OR with 0 to ensure sum is a 32-bit integer
+	const str = String(inputString ?? '').trim();
+	if (!str) {
+		return {
+			r: 255,
+			g: 204,
+			b: 0,
+			a: alpha,
+			rgba: `rgba(255, 204, 0, ${alpha})`,
+			hex: '#FFCC00',
+		};
 	}
-	sum = sum >>> 0; // convert to unsigned 32-bit integer
 
-	let r: number = ~~(
-		parseFloat(
-			'0.' +
-				Math.sin(sum + 1)
-					.toString()
-					.substr(6)
-		) * 256
-	);
-	let g: number = ~~(
-		parseFloat(
-			'0.' +
-				Math.sin(sum + 2)
-					.toString()
-					.substr(6)
-		) * 256
-	);
-	let b: number = ~~(
-		parseFloat(
-			'0.' +
-				Math.sin(sum + 3)
-					.toString()
-					.substr(6)
-		) * 256
-	);
+	let sum: number = 0;
+	for (let idx: number = 0; idx < str.length; ++idx) {
+		sum = (sum * 31 + str.charCodeAt(idx)) | 0;
+	}
+	sum = Math.abs(sum);
 
-	// Ensure colors are brighter by boosting saturation
-	let hsl: any = rgb2hsl(r / 255, g / 255, b / 255);
-	let rgbF: any = hsl2rgb(hsl.h, hsl.s, hsl.l);
-	let rgb: any = {
-		r: Math.round(rgbF.r * 255),
-		g: Math.round(rgbF.g * 255),
-		b: Math.round(rgbF.b * 255),
-	};
+	// Golden angle distribution ensures sequential / similar IDs get widely distinct hues
+	const h = (sum * 137.508) % 360;
+	const s = 0.95; // High saturation for vividness
 
-	let rgba: string = 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', ' + alpha + ')';
+	// Tune lightness by hue so every color stands out cleanly against dark satellite/ocean
+	let l = 0.6;
+	if (h >= 220 && h <= 285) {
+		// Blues, indigos, and purples need high lightness (70%) to avoid looking like dark navy on water
+		l = 0.7;
+	} else if (h >= 45 && h <= 70) {
+		// Yellows are naturally luminous and bright around 53%
+		l = 0.53;
+	} else if (h >= 75 && h <= 160) {
+		// Greens/limes are bright and vivid at 56% without looking like dark forest/olive
+		l = 0.56;
+	} else if (h >= 165 && h <= 215) {
+		// Cyans and light blues: bright and electric at 62%
+		l = 0.62;
+	} else {
+		// Reds, oranges, magentas, pinks: bright and punchy at 62%
+		l = 0.62;
+	}
 
-	let hex: string = '#';
+	const rgb = hsl2rgb(h, s, l);
+	const rgba = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
 
-	hex += ('00' + rgb.r.toString(16)).substr(-2, 2).toUpperCase();
-	hex += ('00' + rgb.g.toString(16)).substr(-2, 2).toUpperCase();
-	hex += ('00' + rgb.b.toString(16)).substr(-2, 2).toUpperCase();
+	let hex = '#';
+	hex += ('00' + rgb.r.toString(16)).slice(-2).toUpperCase();
+	hex += ('00' + rgb.g.toString(16)).slice(-2).toUpperCase();
+	hex += ('00' + rgb.b.toString(16)).slice(-2).toUpperCase();
 
 	return {
 		r: rgb.r,
@@ -62,6 +65,46 @@ export function colorHash(inputString: string, alpha: number = 1.0): any {
 		a: alpha,
 		rgba: rgba,
 		hex: hex,
+	};
+}
+
+// Convert HSL (h in [0, 360), s in [0, 1], l in [0, 1]) to RGB [0, 255]
+function hsl2rgb(h: number, s: number, l: number): { r: number; g: number; b: number } {
+	const c = (1 - Math.abs(2 * l - 1)) * s;
+	const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+	const m = l - c / 2;
+	let r = 0,
+		g = 0,
+		b = 0;
+	if (0 <= h && h < 60) {
+		r = c;
+		g = x;
+		b = 0;
+	} else if (60 <= h && h < 120) {
+		r = x;
+		g = c;
+		b = 0;
+	} else if (120 <= h && h < 180) {
+		r = 0;
+		g = c;
+		b = x;
+	} else if (180 <= h && h < 240) {
+		r = 0;
+		g = x;
+		b = c;
+	} else if (240 <= h && h < 300) {
+		r = x;
+		g = 0;
+		b = c;
+	} else if (300 <= h && h < 360) {
+		r = c;
+		g = 0;
+		b = x;
+	}
+	return {
+		r: Math.round((r + m) * 255),
+		g: Math.round((g + m) * 255),
+		b: Math.round((b + m) * 255),
 	};
 }
 
@@ -77,21 +120,6 @@ function rgb2hsl(r: number, g: number, b: number): any {
 		l: (v + v - c) / 2,
 	};
 	return hsl;
-}
-
-// input: h as an angle in [0,360] and s,l in [0,1] - output: r,g,b in [0,1]
-// If s < 0 then ensures s > 0, and if s < .5, boosts s by .5 making the resulting color brighter
-function hsl2rgb(h: number, s: number, l: number): any {
-	if (s < 0) s *= -1;
-	if (s < 0.5) s += 0.5;
-	let a: number = s * Math.min(l, 1 - l);
-	let f = (n: number, k = (n + h / 30) % 12) => l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-	let rgb: any = {
-		r: f(0),
-		g: f(8),
-		b: f(4),
-	};
-	return rgb;
 }
 
 /** COLOR FOR LEAFLET */

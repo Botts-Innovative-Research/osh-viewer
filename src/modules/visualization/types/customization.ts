@@ -61,3 +61,14 @@ export interface IFrustumCustomizationOptions extends CustomizationOptions {
 	range: number;
 	aspectRatio: number;
 }
+
+export interface ISdrCustomizationOptions extends CustomizationOptions {
+	autoDb: boolean;
+	minDb: number;
+	maxDb: number;
+	waterfall: boolean;
+	waterfallSpeed: number;
+	averaging: number;
+	colorPalette?: string;
+}
+

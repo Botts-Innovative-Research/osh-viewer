@@ -7,7 +7,9 @@ import Audio from '@/modules/visualization/visualizations/audio/Audio.vue';
 import Table from '@/modules/visualization/visualizations/table/Table.vue';
 import MissionBuilder from '@/modules/visualization/visualizations/mission/MissionBuilder.vue';
 import MiniMapView from '@/modules/visualization/visualizations/minimap/MiniMapView.vue';
-import { onMounted, ref } from 'vue';
+import Sdr from '@/modules/visualization/visualizations/sdr/Sdr.vue';
+import { onMounted, ref, watch } from 'vue';
+
 
 const { viz, customClass = '' } = defineProps<{
 	viz: OSHVisualization;
@@ -21,15 +23,31 @@ const dataLayer = ref();
 const dataView = ref();
 const controlstream = ref();
 
-onMounted(() => {
-	isLoading.value = true;
-	if (Array.isArray(viz.visualizationComponents)) return;
-	dataSource.value = viz.visualizationComponents.dataSource;
-	dataLayer.value = viz.visualizationComponents.dataLayer;
-	dataView.value = viz.visualizationComponents.dataView;
-	controlstream.value = viz.visualizationComponents.controlstream;
+function init() {
+	if (!viz || !viz.visualizationComponents) return;
+	const comps = Array.isArray(viz.visualizationComponents)
+		? viz.visualizationComponents[0]
+		: viz.visualizationComponents;
+	if (!comps) return;
+	dataSource.value = comps.dataSource;
+	dataLayer.value = comps.dataLayer;
+	dataView.value = comps.dataView;
+	controlstream.value = comps.controlstream;
 	isLoading.value = false;
+}
+
+onMounted(() => {
+	init();
 });
+
+watch(
+	() => viz.visualizationComponents,
+	() => {
+		init();
+	},
+	{ deep: true, immediate: true }
+);
+
 </script>
 
 <template>
@@ -85,7 +103,15 @@ onMounted(() => {
 			:datasource="dataSource"
 			v-if="viz.type === 'minimap'"
 		></MiniMapView>
+		<Sdr
+			:visualization="viz"
+			:datasource="dataSource"
+			:sdr-view="dataView"
+			:controlstream="viz.controlstream ? viz.controlstream[0] : undefined"
+			v-if="viz.type === 'sdr'"
+		></Sdr>
 		<slot name="after"></slot>
+
 		<slot name="overlay"></slot>
 	</div>
 </template>

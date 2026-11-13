@@ -48,6 +48,12 @@ export default defineConfig(({ mode }) => {
 					target: env.VITE_FILE_SERVER_URL,
 					changeOrigin: true,
 				},
+				'/sensorhub': {
+					target: 'http://localhost:8181',
+					changeOrigin: true,
+					ws: true,
+					auth: 'admin:test',
+				},
 			},
 		},
 		resolve: {

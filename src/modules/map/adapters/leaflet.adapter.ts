@@ -106,6 +106,7 @@ export function createLeafletAdapter(): MapAdapter {
 	}
 
 	function updateMarker(props: any) {
+		if (!props || !props.location || isNaN(props.location.x) || isNaN(props.location.y)) return;
 		mapView.updateMarker(props);
 	}
 
