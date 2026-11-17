@@ -56,6 +56,9 @@ export interface ILineOfBearingLayerProperties extends DataLayerProperties {
 	length: number;
 	iconName: string; // Used for display in map visualizations list
 	label: string;
+	lineStyle?: 'solid' | 'dashed' | 'dotted';
+	showLabel?: boolean;
+	showArrow?: boolean;
 }
 
 export interface IEllipseLayerProperties extends DataLayerProperties {

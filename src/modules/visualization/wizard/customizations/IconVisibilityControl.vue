@@ -6,10 +6,12 @@ const props = withDefaults(
 	defineProps<{
 		roleName: string; // Name to store in the vizwizstore, default is 'icon'
 		label: string; // Label for the checkbox, default is 'Show Icon'
+		defaultValue?: boolean;
 	}>(),
 	{
 		roleName: 'showIcon',
 		label: 'Show Icon',
+		defaultValue: true,
 	}
 );
 
