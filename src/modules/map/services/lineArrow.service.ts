@@ -1,5 +1,5 @@
 import L from 'leaflet';
-import { Cartesian3, Color, VerticalOrigin, HorizontalOrigin } from '@cesium/engine';
+import * as Cesium from 'cesium';
 
 
 type LonLat = { x: number; y: number; z?: number };
@@ -21,7 +21,6 @@ function arrowPose(props: any) {
 	const locs: LonLat[] = props.locations;
 	const start = locs[locs.length - 2];
 	const end = locs[locs.length - 1];
-	// reverse of the bearing from end back to start = heading at the end point
 	const heading = (bearingDeg(end, start) + 180) % 360;
 	return { end, heading };
 }
@@ -90,6 +89,23 @@ export function patchLeafletLineArrows(view: any) {
 	view.__lineArrowPatched = true;
 }
 
+function lerpLonLat(a: LonLat, b: LonLat, t: number): LonLat {
+	return {
+		x: a.x + (b.x - a.x) * t,
+		y: a.y + (b.y - a.y) * t,
+		z: (a.z ?? 0) + ((b.z ?? 0) - (a.z ?? 0)) * t,
+	};
+}
+
+function cesiumPosition(view: any, p: LonLat, clampToGround: boolean) {
+	let height = p.z ?? 0;
+	if (clampToGround) {
+		const cartographic = Cesium.Cartographic.fromDegrees(p.x, p.y);
+		height = view.viewer.scene.globe.getHeight(cartographic) ?? 0;
+	}
+	return Cesium.Cartesian3.fromDegrees(p.x, p.y, height);
+}
+
 const CESIUM_ARROW_IMAGE =
 	'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(triangleSvg(64, '#ffffff'));
 
@@ -98,31 +114,59 @@ export function patchCesiumLineArrows(view: any) {
 	const originalAdd = view.addPolyline.bind(view);
 	const originalRemove = view.removePolylineFromLayer.bind(view);
 
+	const arrows = new Set<any>();
+	const scratchBack = new Cesium.Cartesian2();
+	const scratchEnd = new Cesium.Cartesian2();
+
+	view.viewer.scene.preRender.addEventListener((scene: any) => {
+		for (const arrow of arrows) {
+			const { start, end, clampToGround } = arrow.__lineInfo;
+			const endPos = cesiumPosition(view, end, clampToGround);
+			const backPos = cesiumPosition(view, lerpLonLat(start, end, 0.9), clampToGround);
+			arrow.position = endPos;
+
+			const back = scene.cartesianToCanvasCoordinates(backPos, scratchBack);
+			const tip = scene.cartesianToCanvasCoordinates(endPos, scratchEnd);
+			if (!back || !tip) continue;
+
+			const dx = tip.x - back.x;
+			const dy = tip.y - back.y;
+			if (dx === 0 && dy === 0) continue;
+
+			arrow.rotation = Math.atan2(-dy, dx) - Math.PI / 2;
+		}
+	});
 
 	view.addPolyline = (props: any) => {
 		const primitive = originalAdd(props);
 		if (primitive && wantsArrow(props)) {
-			const { end, heading } = arrowPose(props);
+			const locs: LonLat[] = props.locations;
+			const start = locs[locs.length - 2];
+			const end = locs[locs.length - 1];
 			const size = arrowSize(props.weight);
-			primitive.__arrow = view.billboardCollection.add({
-				position: Cartesian3.fromDegrees(end.x, end.y, props.clampToGround ? 0 : end.z ?? 0),
+
+			const arrow = view.billboardCollection.add({
+				position: cesiumPosition(view, end, !!props.clampToGround),
 				image: CESIUM_ARROW_IMAGE,
 				width: size,
 				height: size,
-				color: Color.fromCssColorString(props.color).withAlpha(props.opacity ?? 1),
-				alignedAxis: Cartesian3.UNIT_Z,
-				rotation: -heading * toRad,
-				horizontalOrigin: HorizontalOrigin.CENTER,
-				verticalOrigin: VerticalOrigin.CENTER,
+				color: Cesium.Color.fromCssColorString(props.color).withAlpha(props.opacity ?? 1),
+				rotation: 0,
+				horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+				verticalOrigin: Cesium.VerticalOrigin.CENTER,
 				disableDepthTestDistance: Number.POSITIVE_INFINITY,
 				show: props.visible !== false,
 			});
+			arrow.__lineInfo = { start, end, clampToGround: !!props.clampToGround };
+			arrows.add(arrow);
+			primitive.__arrow = arrow;
 		}
 		return primitive;
 	};
 
 	view.removePolylineFromLayer = (polyline: any) => {
 		if (polyline?.__arrow) {
+			arrows.delete(polyline.__arrow);
 			view.billboardCollection.remove(polyline.__arrow);
 			polyline.__arrow = undefined;
 		}
@@ -131,3 +175,4 @@ export function patchCesiumLineArrows(view: any) {
 
 	view.__lineArrowPatched = true;
 }
+
