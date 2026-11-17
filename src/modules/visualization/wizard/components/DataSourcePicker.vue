@@ -166,20 +166,22 @@ async function fetchProps() {
 					(roleLower.includes('marker') && (fn.includes('icao') || fn.includes('mmsi') || fn.includes('id') || fl.includes('icao') || fl.includes('mmsi'))) ||
 					(roleLower.includes('label') && (fn.includes('callsign') || fn.includes('vessel') || fn.includes('name') || fl.includes('callsign') || fl.includes('name'))) ||
 					(roleLower.includes('orient') && (fn.includes('heading') || fn.includes('track') || fn.includes('cog') || fl.includes('heading') || fl.includes('track'))) ||
-					(roleLower.includes('amp') && !fn.includes('time') && !fl.includes('time') && !fn.includes('count') && !fn.includes('size') && (fn.includes('amplitude') || fn === 'amp' || fn.includes('spectrum') || fn.includes('psd') || fl.includes('amplitude') || fl.includes('spectrum') || fl.includes('psd'))) ||
-					(roleLower.includes('centerfreq') && !fn.includes('count') && !fn.includes('size') && (fn.includes('center') || fl.includes('center'))) ||
-					(roleLower.includes('frequencyaxis') && !fn.includes('count') && !fn.includes('size') && (fn.includes('axis') || fl.includes('axis'))) ||
-					(roleLower.includes('freq') && !fn.includes('count') && !fn.includes('size') && (fn.includes('freq') || fl.includes('freq'))) ||
-					(roleLower.includes('rate') && !fn.includes('time') && !fl.includes('time') && (fn.includes('rate') || fl.includes('rate') || fn.includes('span') || fn.includes('bandwidth'))) ||
+					(roleLower.includes('amp') && (fn.includes('amp') || fn.includes('spectrum') || fn.includes('psd') || fn.includes('power') || fl.includes('amp') || fl.includes('spectrum') || fl.includes('power'))) ||
+					(roleLower === 'centerfrequency' && (fn.includes('center') || fl.includes('center'))) ||
+					(roleLower === 'startfrequency' && (fn.includes('start') || fl.includes('start') || fn.includes('min') || fl.includes('min'))) ||
+					(roleLower === 'stopfrequency' && (fn.includes('stop') || fl.includes('stop') || fn.includes('max') || fl.includes('max'))) ||
+					(roleLower === 'frequencyaxis' && (fn.includes('axis') || fl.includes('axis'))) ||
+					(!['centerfrequency', 'startfrequency', 'stopfrequency', 'frequencyaxis'].includes(roleLower) && roleLower.includes('freq') && (fn.includes('freq') || fl.includes('freq'))) ||
+					(roleLower.includes('rate') && (fn.includes('rate') || fl.includes('rate') || fl.includes('span') || fn.includes('bandwidth') || fl.includes('bandwidth'))) ||
 					(roleLower.includes('video') && (fn.includes('video') || fn.includes('image') || fl.includes('video'))) ||
-					(roleLower.includes('sample') && !roleLower.includes('rate') && !fn.includes('time') && !fl.includes('time') && (fn.includes('audio') || fn.includes('samples') || fn === 'sample'))
+					(roleLower.includes('sample') && (fn.includes('sample') || fn.includes('audio') || fl.includes('sample')))
 				);
 			}) || (fields.length === 1 ? fields[0] : null);
 
 		if (match) {
 			vizwizStore.updateDsConfig(props.role, {
-				property: props.multiple ? [match.name] : match.name,
-				label: props.multiple ? [display(match)] : display(match),
+				property: match.name,
+				label: display(match),
 				uom: match.uom?.code ?? '',
 			});
 		}

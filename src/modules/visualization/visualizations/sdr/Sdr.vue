@@ -12,7 +12,6 @@ import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { ISdrViewProperties } from '../../types/views';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { useNodeStore } from '@/stores/nodestore';
-import { useDataStreamStore } from '@/stores/datastreamstore';
 import { sendCommand } from '../../services/controlstream.service';
 
 const props = defineProps<{
@@ -24,7 +23,6 @@ const props = defineProps<{
 
 const controlstreamStore = useControlStreamStore();
 const nodeStore = useNodeStore();
-const datastreamStore = useDataStreamStore();
 const sdrContainerId = ref(`sdr-${randomUUID()}`);
 const spectrumCanvasRef = ref<HTMLCanvasElement | null>(null);
 const waterfallCanvasRef = ref<HTMLCanvasElement | null>(null);
@@ -38,21 +36,12 @@ function getDatasourceList(): any[] {
 	}
 
 	if (list.length === 0) {
-		// Discover spectrum datastream from datastreamStore
-		const allStreams = (datastreamStore.dataStreams as any[]) || [];
-		const spectrumStream = allStreams.find((s: any) => {
-			const n = (s.name || s.datastream?.name || '').toLowerCase();
-			const o = (s.outputName || s.datastream?.outputName || '').toLowerCase();
-			return o.includes('spectrum') || n.includes('spectrum') || o.includes('rtlsdr_spectrum');
-		});
-
-		const dsId = spectrumStream?.id || spectrumStream?.datastream?.id || '0410';
 		const activeNode = nodeStore.nodes?.[0];
 		const host = activeNode?.getEndpointUrl() || 'localhost:8181/sensorhub/api';
 		list.push({
-			id: dsId,
-			datastreamId: dsId,
-			resource: `/datastreams/${dsId}/observations`,
+			id: '0410',
+			datastreamId: '0410',
+			resource: '/datastreams/0410/observations',
 			endpointUrl: host,
 			tls: activeNode?.tls ?? false,
 			connectorOpts: {
@@ -78,6 +67,7 @@ const numBins = ref<number>(1024);
 const peakFreqMhz = ref<string>('---');
 const peakDbVal = ref<string>('---');
 const fps = ref<number>(0);
+const hasStartStopActive = ref<boolean>(false);
 
 // Visual settings
 const autoDb = ref<boolean>(props.sdrView?.autoDb ?? true);
@@ -97,16 +87,25 @@ const tooltipY = ref<number>(0);
 
 // Hardware / Tuning state
 const tuneMhzInput = ref<number>(98.0);
-const userIsEditing = ref<boolean>(false);
-let userEditTimeout: any = null;
+const isEditingTuneInput = ref<boolean>(false);
+const editTuneText = ref<string>('98.000');
 
-function onTuneInputChange() {
-	userIsEditing.value = true;
-	if (userEditTimeout) clearTimeout(userEditTimeout);
-	userEditTimeout = setTimeout(() => {
-		userIsEditing.value = false;
-	}, 10000);
+function formatFreqMhz(mhz: number): string {
+	if (isNaN(mhz) || mhz <= 0) return '0.000';
+	return mhz.toFixed(3);
 }
+
+const tuneMhzDisplay = computed({
+	get: () => {
+		if (isEditingTuneInput.value) {
+			return editTuneText.value;
+		}
+		return formatFreqMhz(tuneMhzInput.value);
+	},
+	set: (val: string) => {
+		editTuneText.value = val;
+	},
+});
 
 const gainVal = ref<number>(20.7);
 const autoGain = ref<boolean>(true);
@@ -203,93 +202,35 @@ function initPalette(scheme: string) {
 
 // Control Stream binding
 const receiverControl = computed(() => {
-	let cs: any = null;
-	let csId = props.controlstream?.id;
-	if (csId) {
-		const found = controlstreamStore.getControlStreamsById([csId]);
-		if (found && found.length > 0) cs = found[0];
-	}
-	// Auto-discovery fallback if props.controlstream wasn't passed or found
-	if (!cs) {
-		const allStreams = (controlstreamStore.controlStreams as any[]) || [];
-		cs = allStreams.find((s: any) => {
-			const name = (s.controlstream?.name || s.name || '').toLowerCase();
-			const id = (s.controlstream?.id || s.id || '').toLowerCase();
-			return name.includes('receiver') || name.includes('control') || name.includes('rtlsdr') ||
-				id.includes('receiver') || id.includes('control');
-		}) || allStreams[0];
-		if (cs) csId = cs.controlstream?.id || cs.id;
-	}
+	if (props.controlstream && Object.keys(props.controlstream).length > 0) {
+		const csId = props.controlstream.id;
+		if (!csId) return { hasControl: false, commandBaseUrl: '', id: '', auth: '' };
 
-	if (!csId) {
-		csId = '040g';
+		const controlStreams = controlstreamStore.getControlStreamsById([csId]);
+		if (!controlStreams || controlStreams.length === 0)
+			return { hasControl: false, commandBaseUrl: '', id: '', auth: '' };
+
+		const cs = controlStreams[0];
+		const networkProps = cs.controlstream.networkProperties;
+		const protocol = networkProps.tls ? 'https' : 'http';
+		const baseUrl = `${protocol}://${networkProps.endpointUrl}`;
+		const auth = `${networkProps.connectorOpts?.username ?? ''}:${networkProps.connectorOpts?.password ?? ''}`;
+
+		return {
+			hasControl: true,
+			commandBaseUrl: baseUrl,
+			id: csId,
+			auth: auth,
+		};
 	}
-
-	const activeNode = nodeStore.nodes?.[0];
-	const networkProps = cs?.controlstream?.networkProperties || cs?.networkProperties;
-	const protocol = (networkProps?.tls ?? activeNode?.tls) ? 'https' : 'http';
-	const endpoint = networkProps?.endpointUrl || activeNode?.getEndpointUrl() || 'localhost:8181/sensorhub/api';
-	const baseUrl = `${protocol}://${endpoint.replace(/^https?:\/\//, '').replace(/\/+$/, '')}`;
-	const username = networkProps?.connectorOpts?.username || activeNode?.username || 'admin';
-	const password = networkProps?.connectorOpts?.password || activeNode?.password || 'test';
-	const auth = `${username}:${password}`;
-
-	return {
-		hasControl: true,
-		commandBaseUrl: baseUrl,
-		id: csId,
-		auth: auth,
-	};
+	return { hasControl: false, commandBaseUrl: '', id: '', auth: '' };
 });
 
-function buildReceiverParameters(overrides: Record<string, any>) {
-	const currentMhz = overrides.centerFreq !== undefined
-		? Number(overrides.centerFreq)
-		: (tuneMhzInput.value || (centerFreqHz.value / 1e6) || 98.0);
-
-	const isAg = overrides.autoGain !== undefined ? Boolean(overrides.autoGain) : autoGain.value;
-	let gVal: number | null = null;
-	if (!isAg) {
-		gVal = overrides.gain !== undefined ? Number(overrides.gain) : Number(gainVal.value);
-		if (isNaN(gVal)) gVal = 20.7;
-	}
-
-	const opMode = overrides.operatingMode || operatingMode.value || 'SPECTRUM_AUDIO';
-	const aMode = overrides.audioMode !== undefined
-		? (overrides.audioMode === 'OFF' ? null : String(overrides.audioMode))
-		: (audioMode.value === 'OFF' ? null : String(audioMode.value));
-
-	const sr = overrides.sampleRate !== undefined
-		? Number(overrides.sampleRate)
-		: (sampleRateHz.value || 2000000.0);
-
-	return {
-		operatingMode: opMode,
-		centerFreq: parseFloat(currentMhz.toFixed(4)),
-		gain: gVal,
-		autoGain: isAg,
-		sampleRate: sr,
-		agcMode: false,
-		audioMode: aMode,
-	};
-}
-
 function sendReceiverCommand(params: Record<string, any>, label: string) {
-	if (!receiverControl.value.hasControl) {
-		console.warn('[SDR.vue] Cannot send command: receiverControl has no control stream');
-		return;
-	}
-	const fullParams = buildReceiverParameters(params);
-	console.log(`[SDR.vue] Sending ${label}:`, fullParams);
-	const payload = { parameters: fullParams };
-
-	// Prefer relative /sensorhub/api in browser
-	const baseUrl = (typeof window !== 'undefined' && window.location)
-		? '/sensorhub/api'
-		: receiverControl.value.commandBaseUrl;
-
+	if (!receiverControl.value.hasControl) return;
+	const payload = { parameters: params };
 	sendCommand(
-		baseUrl,
+		receiverControl.value.commandBaseUrl,
 		receiverControl.value.id,
 		payload,
 		receiverControl.value.auth,
@@ -298,42 +239,69 @@ function sendReceiverCommand(params: Record<string, any>, label: string) {
 }
 
 // Interactive Tune actions
-function tuneToMhz(targetMhz: any) {
-	const num = typeof targetMhz === 'number' ? targetMhz : parseFloat(String(targetMhz));
-	if (isNaN(num) || num <= 0) return;
-	tuneMhzInput.value = parseFloat(num.toFixed(4));
-	centerFreqHz.value = Math.round(num * 1e6);
-	userIsEditing.value = true;
-	if (userEditTimeout) clearTimeout(userEditTimeout);
-	userEditTimeout = setTimeout(() => {
-		userIsEditing.value = false;
-	}, 2000);
-	sendReceiverCommand({ centerFreq: num }, `Tune to ${num} MHz`);
+function tuneToMhz(targetMhz: number) {
+	if (targetMhz <= 0) return;
+	tuneMhzInput.value = parseFloat(targetMhz.toFixed(4));
+	if (!isEditingTuneInput.value) {
+		editTuneText.value = formatFreqMhz(tuneMhzInput.value);
+	}
+	if (!hasStartStopActive.value) {
+		centerFreqHz.value = Math.round(targetMhz * 1e6);
+	}
+	if (receiverControl.value.hasControl) {
+		sendReceiverCommand({ centerFreq: targetMhz }, `Tune to ${targetMhz} MHz`);
+	}
+}
+
+function onTuneFocus() {
+	isEditingTuneInput.value = true;
+	editTuneText.value = tuneMhzDisplay.value;
+}
+
+function onTuneBlur() {
+	applyTuneInput();
+}
+
+function applyTuneInput() {
+	const val = parseFloat(editTuneText.value);
+	if (!isNaN(val) && val > 0) {
+		tuneToMhz(val);
+	}
+	isEditingTuneInput.value = false;
+	editTuneText.value = formatFreqMhz(tuneMhzInput.value);
 }
 
 function stepFreq(deltaMhz: number) {
-	const newFreq = parseFloat((tuneMhzInput.value + deltaMhz).toFixed(4));
+	const current = Number(tuneMhzInput.value) || 0;
+	const newFreq = parseFloat((current + deltaMhz).toFixed(4));
 	tuneToMhz(newFreq);
 }
 
 function applyGain() {
-	autoGain.value = false;
-	sendReceiverCommand({ gain: gainVal.value, autoGain: false }, `Set Gain ${gainVal.value} dB`);
+	if (receiverControl.value.hasControl) {
+		sendReceiverCommand({ gain: String(gainVal.value) }, `Set Gain ${gainVal.value} dB`);
+	}
 }
 
 function toggleAutoGain() {
 	autoGain.value = !autoGain.value;
-	sendReceiverCommand({ autoGain: autoGain.value }, `Auto Gain ${autoGain.value ? 'ON' : 'OFF'}`);
+	if (receiverControl.value.hasControl) {
+		sendReceiverCommand({ autoGain: autoGain.value }, `Auto Gain ${autoGain.value ? 'ON' : 'OFF'}`);
+	}
 }
 
 function applyAudioMode(mode: string) {
 	audioMode.value = mode;
-	sendReceiverCommand({ audioMode: mode }, `Demod Mode ${mode}`);
+	if (receiverControl.value.hasControl) {
+		sendReceiverCommand({ audioMode: mode }, `Demod Mode ${mode}`);
+	}
 }
 
 function applyOperatingMode(mode: string) {
 	operatingMode.value = mode;
-	sendReceiverCommand({ operatingMode: mode }, `Operating Mode ${mode}`);
+	if (receiverControl.value.hasControl) {
+		sendReceiverCommand({ operatingMode: mode }, `Operating Mode ${mode}`);
+	}
 }
 
 // Helpers to unpack SWE-JSON / OM-JSON / ConSys records
@@ -455,9 +423,7 @@ function handleCsvObservation(text: string) {
 		if (!isNaN(cf) && cf > 0) {
 			const freqHz = cf < 10000 ? cf * 1e6 : cf;
 			centerFreqHz.value = freqHz;
-			if (!userIsEditing.value) {
-				tuneMhzInput.value = parseFloat((freqHz / 1e6).toFixed(4));
-			}
+			tuneMhzInput.value = parseFloat((freqHz / 1e6).toFixed(4));
 		}
 
 		// Field 2: freq_count
@@ -539,23 +505,69 @@ function handleObservationData(input: any) {
 		audioMode.value = String(am);
 	}
 
+	// Start & Stop Frequency detection (e.g. HTL driver, swept spectrum, or frequency-range streams)
+	const startKey = props.sdrView?.roles?.startFrequency;
+	const stopKey = props.sdrView?.roles?.stopFrequency;
+	const rawStartFreq =
+		(startKey && data[startKey] !== undefined ? data[startKey] : undefined) ??
+		data.startFrequency ??
+		data.start_frequency ??
+		data['Start Frequency'] ??
+		data.startFreq ??
+		data.start_freq ??
+		data.freqStart ??
+		data.minFrequency ??
+		data.min_frequency;
+
+	const rawStopFreq =
+		(stopKey && data[stopKey] !== undefined ? data[stopKey] : undefined) ??
+		data.stopFrequency ??
+		data.stop_frequency ??
+		data['Stop Frequency'] ??
+		data.stopFreq ??
+		data.stop_freq ??
+		data.freqStop ??
+		data.maxFrequency ??
+		data.max_frequency;
+
+	let numStartFreq = Number(rawStartFreq);
+	let numStopFreq = Number(rawStopFreq);
+	if (!isNaN(numStartFreq) && numStartFreq > 0 && numStartFreq < 10000) numStartFreq *= 1e6;
+	if (!isNaN(numStopFreq) && numStopFreq > 0 && numStopFreq < 10000) numStopFreq *= 1e6;
+
+	const hasStartStop = !isNaN(numStartFreq) && !isNaN(numStopFreq) && numStopFreq > numStartFreq && numStartFreq > 0;
+	hasStartStopActive.value = hasStartStop;
+
+	if (hasStartStop) {
+		const spanFromBounds = numStopFreq - numStartFreq;
+		const centerFromBounds = (numStartFreq + numStopFreq) / 2.0;
+		sampleRateHz.value = Math.round(spanFromBounds);
+		centerFreqHz.value = Math.round(centerFromBounds);
+		if (Math.abs(tuneMhzInput.value * 1e6 - centerFromBounds) > spanFromBounds / 2.0 || tuneMhzInput.value === 98.0) {
+			tuneMhzInput.value = parseFloat((centerFromBounds / 1e6).toFixed(4));
+		}
+	}
+
 	// Center Frequency (Hz)
 	const cfKey = props.sdrView?.roles?.centerFrequency;
-	const rawCenterFreq =
-		(cfKey && data[cfKey] !== undefined ? data[cfKey] : undefined) ??
-		data.center_frequency ??
-		data.centerFrequency ??
-		data['Center Frequency'] ??
-		data.centerFreq ??
-		data.center_freq ??
-		data.frequency;
+	const isCfKeyStart = cfKey && (cfKey === 'startFrequency' || cfKey === 'start_frequency' || cfKey === 'startFreq');
+	if (!hasStartStop || !isCfKeyStart) {
+		const rawCenterFreq =
+			(cfKey && !isCfKeyStart && data[cfKey] !== undefined ? data[cfKey] : undefined) ??
+			data.center_frequency ??
+			data.centerFrequency ??
+			data['Center Frequency'] ??
+			data.centerFreq ??
+			data.center_freq ??
+			data.frequency;
 
-	const numCenterFreq = Number(rawCenterFreq);
-	if (!isNaN(numCenterFreq) && numCenterFreq > 0) {
-		const freqHz = numCenterFreq < 10000 ? numCenterFreq * 1e6 : numCenterFreq;
-		centerFreqHz.value = freqHz;
-		if (!userIsEditing.value) {
-			tuneMhzInput.value = parseFloat((freqHz / 1e6).toFixed(4));
+		const numCenterFreq = Number(rawCenterFreq);
+		if (!isNaN(numCenterFreq) && numCenterFreq > 0) {
+			const freqHz = numCenterFreq < 10000 ? numCenterFreq * 1e6 : numCenterFreq;
+			if (!hasStartStop || (freqHz > numStartFreq && freqHz < numStopFreq)) {
+				centerFreqHz.value = freqHz;
+				tuneMhzInput.value = parseFloat((freqHz / 1e6).toFixed(4));
+			}
 		}
 	}
 
@@ -567,7 +579,9 @@ function handleObservationData(input: any) {
 		data.sample_rate ??
 		data['Sample Rate'] ??
 		data.bandwidth ??
-		data.bandwidthHz;
+		data.bandwidthHz ??
+		data.span ??
+		data.spanHz;
 
 	const numSampleRate = Number(rawSampleRate);
 	if (!isNaN(numSampleRate) && numSampleRate > 0) {
@@ -584,27 +598,27 @@ function handleObservationData(input: any) {
 		data.freq_axis;
 	const freqAxis = extractNumericArray(rawFreqAxis);
 	if (freqAxis && freqAxis.length >= 2) {
-		const span = freqAxis[freqAxis.length - 1] - freqAxis[0];
-		if (span > 0 && isNaN(numSampleRate)) {
+		const span = Math.abs(freqAxis[freqAxis.length - 1] - freqAxis[0]);
+		const mid = (freqAxis[0] + freqAxis[freqAxis.length - 1]) / 2.0;
+		if (span > 0 && !hasStartStop && isNaN(numSampleRate)) {
 			sampleRateHz.value = Math.round(span);
 		}
-		if (isNaN(numCenterFreq)) {
-			const mid = (freqAxis[0] + freqAxis[freqAxis.length - 1]) / 2.0;
+		if (!hasStartStop && isNaN(Number(data.center_frequency ?? data.centerFrequency))) {
 			centerFreqHz.value = Math.round(mid);
-			if (!userIsEditing.value) {
-				tuneMhzInput.value = parseFloat((mid / 1e6).toFixed(4));
-			}
+			tuneMhzInput.value = parseFloat((mid / 1e6).toFixed(4));
 		}
 	}
 
 	// 2. Spectrum amplitude bins
 	const ampKey = props.sdrView?.roles?.amplitude;
-	const safeAmpKey = (ampKey && !ampKey.toLowerCase().includes('time')) ? ampKey : undefined;
 	const rawAmp =
-		(safeAmpKey && data[safeAmpKey] !== undefined ? data[safeAmpKey] : undefined) ??
+		(ampKey && data[ampKey] !== undefined ? data[ampKey] : undefined) ??
 		data.amplitude ??
 		data.SpectrumAmplitude ??
 		data['Spectrum Amplitude'] ??
+		data.powerSpectrum ??
+		data.power_spectrum ??
+		data['Power Spectrum'] ??
 		data.values ??
 		data.value ??
 		data.psd ??
@@ -708,6 +722,10 @@ function renderSpectrum() {
 	const max = maxDb.value;
 	const dbRange = Math.max(1, max - min);
 
+	const plotTop = 10;
+	const plotBottom = h - 28;
+	const plotH = Math.max(1, plotBottom - plotTop);
+
 	// dBFS Horizontal grid lines
 	ctx.strokeStyle = '#172033';
 	ctx.lineWidth = 1;
@@ -717,7 +735,7 @@ function renderSpectrum() {
 	const stepDb = dbRange <= 40 ? 10 : dbRange <= 80 ? 20 : 30;
 	const startDb = Math.ceil(min / stepDb) * stepDb;
 	for (let db = startDb; db <= max; db += stepDb) {
-		const y = h - ((db - min) / dbRange) * (h - 20) - 10;
+		const y = plotBottom - ((db - min) / dbRange) * plotH;
 		ctx.beginPath();
 		ctx.moveTo(0, y);
 		ctx.lineTo(w, y);
@@ -733,12 +751,35 @@ function renderSpectrum() {
 		const x = (f / numDivs) * w;
 		ctx.beginPath();
 		ctx.moveTo(x, 0);
-		ctx.lineTo(x, h);
+		ctx.lineTo(x, plotBottom);
 		ctx.stroke();
-
-		const freqAtX = (startFreqHz + (f / numDivs) * spanHz) / 1e6;
-		ctx.fillText(`${freqAtX.toFixed(3)} MHz`, Math.min(x + 4, w - 65), h - 4);
 	}
+
+	// X-axis baseline
+	ctx.strokeStyle = '#334155';
+	ctx.lineWidth = 1;
+	ctx.beginPath();
+	ctx.moveTo(0, plotBottom);
+	ctx.lineTo(w, plotBottom);
+	ctx.stroke();
+
+	// Frequency tick numbers (numbers only without "MHz")
+	ctx.font = 'bold 10px monospace';
+	ctx.fillStyle = '#94a3b8';
+	for (let f = 0; f <= numDivs; f++) {
+		const x = (f / numDivs) * w;
+		const freqAtX = (startFreqHz + (f / numDivs) * spanHz) / 1e6;
+		ctx.textAlign = f === 0 ? 'left' : f === numDivs ? 'right' : 'center';
+		const posX = f === 0 ? 4 : f === numDivs ? w - 4 : x;
+		ctx.fillText(freqAtX.toFixed(3), posX, plotBottom + 13);
+	}
+
+	// X-axis unit label "MHz" in slightly larger font below the axis numbers
+	ctx.font = 'bold 12px sans-serif';
+	ctx.fillStyle = '#38bdf8';
+	ctx.textAlign = 'center';
+	ctx.fillText('MHz', w / 2.0, h - 3);
+	ctx.textAlign = 'left';
 
 	// Center frequency marker (Amber dash)
 	const centerX = w / 2.0;
@@ -747,15 +788,33 @@ function renderSpectrum() {
 	ctx.setLineDash([4, 4]);
 	ctx.beginPath();
 	ctx.moveTo(centerX, 0);
-	ctx.lineTo(centerX, h);
+	ctx.lineTo(centerX, plotBottom);
 	ctx.stroke();
 	ctx.restore();
+
+	// Tuned frequency marker (Rose-500) if within visible span and distinct from center
+	const tunedHz = tuneMhzInput.value * 1e6;
+	if (tunedHz >= startFreqHz && tunedHz <= startFreqHz + spanHz && Math.abs(tunedHz - centerFreqHz.value) > 100) {
+		const tunedX = ((tunedHz - startFreqHz) / spanHz) * w;
+		ctx.save();
+		ctx.strokeStyle = '#f43f5e';
+		ctx.lineWidth = 1.5;
+		ctx.setLineDash([2, 2]);
+		ctx.beginPath();
+		ctx.moveTo(tunedX, 0);
+		ctx.lineTo(tunedX, plotBottom);
+		ctx.stroke();
+		ctx.fillStyle = '#f43f5e';
+		ctx.font = 'bold 9px monospace';
+		ctx.fillText(`${tuneMhzInput.value.toFixed(3)}`, Math.min(Math.max(tunedX + 4, 4), w - 65), 14);
+		ctx.restore();
+	}
 
 	if (!smoothedBins || smoothedBins.length < 2) {
 		ctx.fillStyle = '#64748b';
 		ctx.font = '13px sans-serif';
 		ctx.textAlign = 'center';
-		ctx.fillText('Awaiting SDR RF spectrum data...', w / 2, h / 2);
+		ctx.fillText('Awaiting SDR RF spectrum data...', w / 2, (plotTop + plotBottom) / 2);
 		ctx.textAlign = 'left';
 		return;
 	}
@@ -770,7 +829,7 @@ function renderSpectrum() {
 		for (let i = 0; i < count; i++) {
 			const x = (i / denom) * w;
 			const val = Math.max(min, Math.min(max, peakHoldBins[i]));
-			const y = h - ((val - min) / dbRange) * (h - 20) - 10;
+			const y = plotBottom - ((val - min) / dbRange) * plotH;
 			if (i === 0) ctx.moveTo(x, y);
 			else ctx.lineTo(x, y);
 		}
@@ -781,17 +840,17 @@ function renderSpectrum() {
 
 	// Spectrum fill polygon
 	ctx.beginPath();
-	ctx.moveTo(0, h);
+	ctx.moveTo(0, plotBottom);
 	for (let i = 0; i < count; i++) {
 		const x = (i / denom) * w;
 		const val = Math.max(min, Math.min(max, bins[i]));
-		const y = h - ((val - min) / dbRange) * (h - 20) - 10;
+		const y = plotBottom - ((val - min) / dbRange) * plotH;
 		ctx.lineTo(x, y);
 	}
-	ctx.lineTo(w, h);
+	ctx.lineTo(w, plotBottom);
 	ctx.closePath();
 
-	const grad = ctx.createLinearGradient(0, 0, 0, h);
+	const grad = ctx.createLinearGradient(0, plotTop, 0, plotBottom);
 	grad.addColorStop(0, 'rgba(56, 189, 248, 0.45)');
 	grad.addColorStop(0.5, 'rgba(14, 165, 233, 0.15)');
 	grad.addColorStop(1, 'rgba(14, 165, 233, 0.0)');
@@ -806,7 +865,7 @@ function renderSpectrum() {
 	for (let i = 0; i < count; i++) {
 		const x = (i / denom) * w;
 		const val = Math.max(min, Math.min(max, bins[i]));
-		const y = h - ((val - min) / dbRange) * (h - 20) - 10;
+		const y = plotBottom - ((val - min) / dbRange) * plotH;
 		if (i === 0) ctx.moveTo(x, y);
 		else ctx.lineTo(x, y);
 	}
@@ -816,13 +875,13 @@ function renderSpectrum() {
 	ctx.restore();
 
 	// Hover crosshair on spectrum canvas
-	if (tooltipVisible.value && tooltipX.value >= 0 && tooltipY.value >= 0) {
+	if (tooltipVisible.value && tooltipX.value >= 0 && tooltipY.value >= 0 && tooltipY.value <= plotBottom) {
 		ctx.save();
 		ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
 		ctx.setLineDash([2, 3]);
 		ctx.beginPath();
 		ctx.moveTo(tooltipX.value, 0);
-		ctx.lineTo(tooltipX.value, h);
+		ctx.lineTo(tooltipX.value, plotBottom);
 		ctx.moveTo(0, tooltipY.value);
 		ctx.lineTo(w, tooltipY.value);
 		ctx.stroke();
@@ -900,10 +959,17 @@ function onCanvasMouseMove(e: MouseEvent, isSpectrum: boolean) {
 	const mhz = (freqAtX / 1e6).toFixed(4);
 
 	const dbRange = Math.max(1, maxDb.value - minDb.value);
-	const dbAtY = maxDb.value - (y / rect.height) * dbRange;
-
+	if (isSpectrum) {
+		const plotTop = 10;
+		const plotBottom = rect.height - 28;
+		const plotH = Math.max(1, plotBottom - plotTop);
+		const clampedY = Math.max(plotTop, Math.min(plotBottom, y));
+		const dbAtY = maxDb.value - ((clampedY - plotTop) / plotH) * dbRange;
+		hoverDbText.value = `${dbAtY.toFixed(1)} dBFS`;
+	} else {
+		hoverDbText.value = '';
+	}
 	hoverFreqText.value = `${mhz} MHz`;
-	hoverDbText.value = isSpectrum ? `${dbAtY.toFixed(1)} dBFS` : '';
 }
 
 function onCanvasMouseLeave() {
@@ -972,7 +1038,7 @@ let activeDataStreams: any[] = [];
 
 async function resolveActiveDatastreamId(dsId: string, dsProps: any): Promise<string> {
 	const user = dsProps.connectorOpts?.username || 'admin';
-	const pass = dsProps.connectorOpts?.password || 'test';
+	const pass = dsProps.connectorOpts?.password || 'admin';
 	const httpProto = dsProps.tls ? 'https' : 'http';
 	let cleanEndpoint = (dsProps.endpointUrl || '')
 		.replace(/^https?:\/\//, '')
@@ -980,33 +1046,29 @@ async function resolveActiveDatastreamId(dsId: string, dsProps: any): Promise<st
 		.replace(/\/datastreams.*$/, '')
 		.replace(/\/+$/, '');
 
-	const authHeaders: Record<string, string> = {
-		Authorization: 'Basic ' + btoa(`${user}:${pass}`),
-	};
+	const candidatePasswords = Array.from(new Set([dsProps.connectorOpts?.password, 'admin', 'test'])).filter(Boolean) as string[];
 
-	const candidateBases = [
-		`/sensorhub/api`,
-		`${httpProto}://${cleanEndpoint}`,
-	];
+	for (const candidatePass of candidatePasswords) {
+		const authHeaders: Record<string, string> = {
+			Authorization: 'Basic ' + btoa(`${user}:${candidatePass}`),
+		};
 
-	for (const base of candidateBases) {
 		try {
-			const checkRes = await fetch(`${base}/datastreams/${dsId}`, {
+			const checkRes = await fetch(`${httpProto}://${cleanEndpoint}/datastreams/${dsId}`, {
 				method: 'GET',
 				headers: authHeaders,
 				credentials: 'include',
 			});
 			if (checkRes.ok) {
+				if (!dsProps.connectorOpts) dsProps.connectorOpts = { username: user, password: candidatePass };
+				else dsProps.connectorOpts.password = candidatePass;
 				return dsId;
 			}
 		} catch (_) {}
-	}
 
-	// If 404 or unreachable, auto-discover active spectrum datastream from SensorHub
-	for (const base of candidateBases) {
+		// If 404 or unreachable, auto-discover active spectrum datastream from SensorHub
 		try {
-			console.warn(`[SDR.vue] Datastream ${dsId} not found (404). Querying node for active spectrum datastreams...`);
-			const listRes = await fetch(`${base}/datastreams`, {
+			const listRes = await fetch(`${httpProto}://${cleanEndpoint}/datastreams`, {
 				method: 'GET',
 				headers: authHeaders,
 				credentials: 'include',
@@ -1021,6 +1083,8 @@ async function resolveActiveDatastreamId(dsId: string, dsProps: any): Promise<st
 				});
 				if (matched && matched.id) {
 					console.log(`[SDR.vue] Successfully auto-recovered active spectrum datastream ID: ${matched.id} (${matched.name})`);
+					if (!dsProps.connectorOpts) dsProps.connectorOpts = { username: user, password: candidatePass };
+					else dsProps.connectorOpts.password = candidatePass;
 					return matched.id;
 				}
 			}
@@ -1034,7 +1098,7 @@ async function resolveActiveDatastreamId(dsId: string, dsProps: any): Promise<st
 
 async function authenticateSession(dsId: string, dsProps: any): Promise<boolean> {
 	const user = dsProps.connectorOpts?.username || 'admin';
-	const pass = dsProps.connectorOpts?.password || 'test';
+	const pass = dsProps.connectorOpts?.password || 'admin';
 	const httpProto = dsProps.tls ? 'https' : 'http';
 	let cleanEndpoint = (dsProps.endpointUrl || '')
 		.replace(/^https?:\/\//, '')
@@ -1042,35 +1106,29 @@ async function authenticateSession(dsId: string, dsProps: any): Promise<boolean>
 		.replace(/\/datastreams.*$/, '')
 		.replace(/\/+$/, '');
 
-	const authHeaders: Record<string, string> = {
-		Authorization: 'Basic ' + btoa(`${user}:${pass}`),
-	};
+	const url = `${httpProto}://${cleanEndpoint}/datastreams/${dsId}`;
+	const candidatePasswords = Array.from(new Set([dsProps.connectorOpts?.password, 'admin', 'test'])).filter(Boolean) as string[];
 
-	const candidateBases = [
-		`/sensorhub/api`,
-		`${httpProto}://${cleanEndpoint}`,
-	];
-
-	for (const base of candidateBases) {
+	for (const candidatePass of candidatePasswords) {
 		try {
-			console.log('[SDR.vue] Performing preflight authentication fetch to:', `${base}/datastreams/${dsId}`);
-			let res = await fetch(`${base}/datastreams/${dsId}`, {
+			console.log(`[SDR.vue] Performing preflight authentication fetch to: ${url} (user: ${user}, pass: ${candidatePass})`);
+			const res = await fetch(url, {
 				method: 'GET',
-				headers: authHeaders,
+				headers: {
+					Authorization: 'Basic ' + btoa(`${user}:${candidatePass}`),
+				},
 				credentials: 'include',
 				mode: 'cors',
 			});
-			if (res.status === 401 && (user !== 'admin' || pass !== 'test')) {
-				authHeaders['Authorization'] = 'Basic ' + btoa('admin:test');
-				res = await fetch(`${base}/datastreams/${dsId}`, {
-					method: 'GET',
-					headers: authHeaders,
-					credentials: 'include',
-					mode: 'cors',
-				});
-			}
 			console.log('[SDR.vue] Preflight authentication result status:', res.status);
-			if (res.ok) return true;
+			if (res.ok) {
+				if (!dsProps.connectorOpts) dsProps.connectorOpts = { username: user, password: candidatePass };
+				else dsProps.connectorOpts.password = candidatePass;
+				return true;
+			}
+			if (res.status !== 401) {
+				return false;
+			}
 		} catch (e) {
 			console.warn('[SDR.vue] Preflight authentication warning:', e);
 		}
@@ -1090,82 +1148,56 @@ async function connectDirectWs(dsId: string, dsProps: any, attemptFormat?: strin
 			.replace(/\/+$/, '');
 		const format = attemptFormat || dsProps.responseFormat || 'application/om+json';
 		const encodedFormat = format.replaceAll('+', '%2B');
+		const directWsUrl = `${wsProtocol}://${endpoint}/datastreams/${dsId}/observations?format=${encodedFormat}`;
 
-		// Candidate URLs in priority order:
-		// 1. Proxied dev/reverse proxy WebSocket on current host (passes Basic Auth automatically)
-		// 2. Direct SensorHub WebSocket
-		const candidateUrls: string[] = [];
-		if (typeof window !== 'undefined' && window.location && window.location.host) {
-			const locProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-			candidateUrls.push(`${locProto}://${window.location.host}/sensorhub/api/datastreams/${dsId}/observations?format=${encodedFormat}`);
-		}
-		candidateUrls.push(`${wsProtocol}://${endpoint}/datastreams/${dsId}/observations?format=${encodedFormat}`);
+		console.log('[SDR.vue] Connecting direct WebSocket to:', directWsUrl);
+		const ws = new WebSocket(directWsUrl);
+		ws.binaryType = 'arraybuffer';
 
-		let urlIdx = 0;
-		function tryNextUrl() {
-			if (!isRunning || urlIdx >= candidateUrls.length) return;
-			const wsUrl = candidateUrls[urlIdx++];
-			console.log(`[SDR.vue] Attempting WebSocket (${urlIdx}/${candidateUrls.length}) to: ${wsUrl}`);
+		let receivedAnyMessage = false;
 
-			let ws: WebSocket;
+		ws.onopen = () => {
+			console.log('[SDR.vue] Direct WebSocket connected to:', directWsUrl);
+		};
+
+		ws.onmessage = (event) => {
+			receivedAnyMessage = true;
 			try {
-				ws = new WebSocket(wsUrl);
+				if (typeof event.data === 'string') {
+					processIncomingText(event.data);
+				} else if (event.data instanceof ArrayBuffer) {
+					const text = new TextDecoder().decode(event.data);
+					processIncomingText(text);
+				} else if (event.data instanceof Blob) {
+					event.data.text().then((t) => processIncomingText(t));
+				}
 			} catch (e) {
-				console.warn('[SDR.vue] WebSocket constructor error:', e);
-				tryNextUrl();
-				return;
+				console.warn('[SDR.vue] Direct WS frame parse warning:', e);
 			}
-			ws.binaryType = 'arraybuffer';
-			let receivedAnyMessage = false;
+		};
 
-			ws.onopen = () => {
-				console.log('[SDR.vue] WebSocket connected to:', wsUrl);
-			};
+		ws.onerror = (e) => {
+			console.warn('[SDR.vue] Direct WS error for ' + dsId + ' (' + format + '):', e);
+		};
 
-			ws.onmessage = (event) => {
-				receivedAnyMessage = true;
-				try {
-					if (typeof event.data === 'string') {
-						processIncomingText(event.data);
-					} else if (event.data instanceof ArrayBuffer) {
-						const text = new TextDecoder().decode(event.data);
-						processIncomingText(text);
-					} else if (event.data instanceof Blob) {
-						event.data.text().then((t) => processIncomingText(t));
-					}
-				} catch (e) {
-					console.warn('[SDR.vue] WS frame parse warning:', e);
+		ws.onclose = (e) => {
+			console.log('[SDR.vue] Direct WS closed for ' + dsId + ' (' + format + ') code=' + e.code + ', reason=' + e.reason);
+			if (!receivedAnyMessage && isRunning) {
+				if (format.includes('om+json')) {
+					console.log('[SDR.vue] Retrying direct WS with application/swe+json for ' + dsId);
+					setTimeout(() => {
+						if (isRunning) connectDirectWs(dsId, dsProps, 'application/swe+json');
+					}, 800);
+				} else if (format.includes('swe+json')) {
+					console.log('[SDR.vue] Retrying direct WS with text/csv for ' + dsId);
+					setTimeout(() => {
+						if (isRunning) connectDirectWs(dsId, dsProps, 'text/csv');
+					}, 800);
 				}
-			};
+			}
+		};
 
-			ws.onerror = (e) => {
-				console.warn('[SDR.vue] WS error for ' + wsUrl + ':', e);
-			};
-
-			ws.onclose = (e) => {
-				console.log(`[SDR.vue] WS closed (${wsUrl}) code=${e.code}, reason=${e.reason}`);
-				if (!receivedAnyMessage && isRunning) {
-					if (urlIdx < candidateUrls.length) {
-						console.log('[SDR.vue] Trying next candidate WebSocket...');
-						setTimeout(() => { if (isRunning) tryNextUrl(); }, 300);
-					} else if (format.includes('om+json')) {
-						console.log('[SDR.vue] Retrying with application/swe+json for ' + dsId);
-						setTimeout(() => {
-							if (isRunning) connectDirectWs(dsId, dsProps, 'application/swe+json');
-						}, 800);
-					} else if (format.includes('swe+json')) {
-						console.log('[SDR.vue] Retrying with text/csv for ' + dsId);
-						setTimeout(() => {
-							if (isRunning) connectDirectWs(dsId, dsProps, 'text/csv');
-						}, 800);
-					}
-				}
-			};
-
-			directWebSockets.push(ws);
-		}
-
-		tryNextUrl();
+		directWebSockets.push(ws);
 	} catch (wsErr) {
 		console.warn('[SDR.vue] Direct WebSocket creation failed:', wsErr);
 	}
@@ -1209,9 +1241,9 @@ function startPollingFallback() {
 	pollIntervalId = setInterval(async () => {
 		if (isPaused.value) return;
 		// Only skip poll if high-speed stream is actively delivering frames
-		if (fps.value >= 1) return;
+		if (fps.value >= 2) return;
 
-		for (const dsProps of getDatasourceList()) {
+		for (const dsProps of props.datasource) {
 			const resourceMatch = (dsProps.resource || '').match(/\/datastreams\/([^/?#]+)/);
 			const initialDsId = (dsProps as any).datastreamId || (resourceMatch ? resourceMatch[1] : dsProps.id);
 			const activeDsId = await resolveActiveDatastreamId(initialDsId, dsProps);
@@ -1230,7 +1262,7 @@ function startPollingFallback() {
 				}
 			} catch (_) {}
 		}
-	}, 500);
+	}, 1000);
 }
 
 onMounted(() => {
@@ -1251,7 +1283,7 @@ onMounted(() => {
 	}, 200);
 
 	// Setup datasources, direct WebSockets, and BroadcastChannels
-	for (const dsProps of getDatasourceList()) {
+	for (const dsProps of props.datasource) {
 		const resourceMatch = (dsProps.resource || '').match(/\/datastreams\/([^/?#]+)/);
 		const initialDsId = (dsProps as any).datastreamId || (resourceMatch ? resourceMatch[1] : dsProps.id);
 
@@ -1429,25 +1461,23 @@ useVisualizationCleanup(ref(dsInstances));
 		<div class="sdr-controls-bar mb-2">
 			<div class="sdr-group">
 				<v-text-field
-					v-model.number="tuneMhzInput"
+					v-model="tuneMhzDisplay"
 					label="Center (MHz)"
-					type="number"
+					class="sdr-tune-input"
 					density="compact"
 					variant="outlined"
 					hide-details
-					style="min-width: 170px; max-width: 190px;"
-					class="sdr-tune-input"
-					step="0.01"
-					@input="onTuneInputChange"
-					@focus="onTuneInputChange"
-					@keydown.enter="tuneToMhz(tuneMhzInput)"
+					placeholder="0000.000"
+					@focus="onTuneFocus"
+					@blur="onTuneBlur"
+					@keydown.enter="applyTuneInput"
 				></v-text-field>
 
 				<v-btn
 					size="small"
 					color="primary"
 					variant="flat"
-					@click="tuneToMhz(tuneMhzInput)"
+					@click="applyTuneInput"
 				>
 					Tune
 				</v-btn>
@@ -1601,7 +1631,7 @@ useVisualizationCleanup(ref(dsInstances));
 			<canvas
 				ref="spectrumCanvasRef"
 				class="sdr-canvas"
-				height="200"
+				height="215"
 				@mousemove="onCanvasMouseMove($event, true)"
 				@mouseleave="onCanvasMouseLeave"
 				@click="onCanvasClick($event, true)"
@@ -1723,6 +1753,20 @@ useVisualizationCleanup(ref(dsInstances));
 	letter-spacing: 0.5px;
 }
 
+.sdr-tune-input {
+	width: 175px;
+	min-width: 160px;
+}
+
+.sdr-tune-input :deep(input) {
+	font-family: Consolas, 'Courier New', monospace;
+	font-weight: 600;
+	font-size: 14px;
+	letter-spacing: 0.5px;
+	text-align: right;
+	padding-right: 8px;
+}
+
 .sdr-canvas-wrapper {
 	position: relative;
 	width: 100%;
@@ -1774,13 +1818,5 @@ useVisualizationCleanup(ref(dsInstances));
 		#ffffff
 	);
 	border: 1px solid #334155;
-}
-
-.sdr-tune-input :deep(input) {
-	min-width: 110px !important;
-	font-family: Consolas, monospace;
-	font-size: 14px;
-	font-weight: 600;
-	letter-spacing: 0.5px;
 }
 </style>

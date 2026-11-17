@@ -52,7 +52,6 @@ export default defineConfig(({ mode }) => {
 					target: 'http://localhost:8181',
 					changeOrigin: true,
 					ws: true,
-					auth: 'admin:test',
 				},
 			},
 		},

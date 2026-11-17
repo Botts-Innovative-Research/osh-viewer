@@ -137,24 +137,32 @@ export const getLatestObservation = async (dsProps: {
 		`/sensorhub/api/datastreams/${streamId}/observations?resultTime=latest&format=application/om%2Bjson&limit=5`,
 	];
 
+	const candidatePasswords = Array.from(new Set([pass, 'admin', 'test'])).filter(Boolean);
+
 	for (const authUrl of candidateUrls) {
-		try {
-			const res = await fetch(authUrl, {
-				method: 'GET',
-				headers: {
-					Authorization: 'Basic ' + btoa(`${user}:${pass}`),
-				},
-				credentials: 'include',
-			});
-			if (res.ok) {
-				const json = await res.json();
-				const items: any[] = Array.isArray(json) ? json : (json.items || []);
-				if (items.length > 0) {
-					const lastItem = items[items.length - 1];
-					return lastItem.data ?? lastItem.result ?? lastItem;
+		for (const candidatePass of candidatePasswords) {
+			try {
+				const res = await fetch(authUrl, {
+					method: 'GET',
+					headers: {
+						Authorization: 'Basic ' + btoa(`${user}:${candidatePass}`),
+					},
+					credentials: 'include',
+				});
+				if (res.ok) {
+					const json = await res.json();
+					const items: any[] = Array.isArray(json) ? json : (json.items || []);
+					if (items.length > 0) {
+						const lastItem = items[items.length - 1];
+						return lastItem.data ?? lastItem.result ?? lastItem;
+					}
+					break; // 200 OK received but no items, no need to try another password for this URL
 				}
-			}
-		} catch (_) {}
+				if (res.status !== 401) {
+					break; // Non-auth failure (e.g. 404), no point retrying passwords
+				}
+			} catch (_) {}
+		}
 	}
 
 

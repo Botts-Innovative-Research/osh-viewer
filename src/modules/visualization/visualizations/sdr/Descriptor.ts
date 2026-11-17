@@ -35,6 +35,20 @@ export const SdrConfigRoles: VisualizationConfigRole[] = [
 		required: false,
 	},
 	{
+		role: 'startFrequency',
+		label: 'Start Frequency',
+		description: 'Select start frequency property (e.g. for swept/banded spectrums like HTL).',
+		type: 'ds',
+		required: false,
+	},
+	{
+		role: 'stopFrequency',
+		label: 'Stop Frequency',
+		description: 'Select stop frequency property (e.g. for swept/banded spectrums like HTL).',
+		type: 'ds',
+		required: false,
+	},
+	{
 		role: 'sdrControl',
 		label: 'SDR Receiver Control',
 		description: 'Select the controlstream to enable interactive center frequency tuning, gain, and demodulation.',

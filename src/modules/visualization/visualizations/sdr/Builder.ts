@@ -72,44 +72,17 @@ export function CreateSdrVizProps(
 		waterfallSpeed: visOptions?.waterfallSpeed ?? 2,
 		colorPalette: visOptions?.colorPalette ?? 'heat',
 		roles: {
-			amplitude: (() => {
-				const prop = Array.isArray(vizwizStore.dsConfig?.amplitude?.property)
-					? vizwizStore.dsConfig.amplitude.property[0]
-					: vizwizStore.dsConfig?.amplitude?.property;
-				if (!prop || String(prop).toLowerCase().includes('time')) return 'amplitude';
-				return prop;
-			})(),
+			amplitude: vizwizStore.dsConfig?.amplitude?.property ?? 'amplitude',
 			amplitudeOutputName: vizwizStore.dsConfig?.amplitude?.outputName ?? 'rtlsdr_spectrum',
-			centerFrequency: (() => {
-				const prop = Array.isArray(vizwizStore.dsConfig?.centerFrequency?.property)
-					? vizwizStore.dsConfig.centerFrequency.property[0]
-					: vizwizStore.dsConfig?.centerFrequency?.property;
-				if (!prop || String(prop).toLowerCase().includes('count')) return 'center_frequency';
-				return prop;
-			})(),
-			frequencyAxis: Array.isArray(vizwizStore.dsConfig?.frequencyAxis?.property)
-				? vizwizStore.dsConfig.frequencyAxis.property[0]
-				: vizwizStore.dsConfig?.frequencyAxis?.property ?? 'frequency_axis',
-			sampleRate: Array.isArray(vizwizStore.dsConfig?.sampleRate?.property)
-				? vizwizStore.dsConfig.sampleRate.property[0]
-				: vizwizStore.dsConfig?.sampleRate?.property ?? 'sampleRate',
+			centerFrequency: vizwizStore.dsConfig?.centerFrequency?.property ?? 'center_frequency',
+			frequencyAxis: vizwizStore.dsConfig?.frequencyAxis?.property ?? 'frequency_axis',
+			sampleRate: vizwizStore.dsConfig?.sampleRate?.property ?? 'sampleRate',
+			startFrequency: vizwizStore.dsConfig?.startFrequency?.property ?? 'startFrequency',
+			stopFrequency: vizwizStore.dsConfig?.stopFrequency?.property ?? 'stopFrequency',
 		},
 	};
 
-	let targetEntries = Object.entries(datastreams);
-	if (targetEntries.length === 0) {
-		const allStreams = datastreamStore.dataStreams || [];
-		const spectrumStream = allStreams.find((d: any) => {
-			const o = (d.datastream?.properties?.outputName || '').toLowerCase();
-			const n = (d.name || '').toLowerCase();
-			return o.includes('spectrum') || n.includes('spectrum') || o.includes('rtlsdr_spectrum');
-		});
-		if (spectrumStream) {
-			targetEntries = [[spectrumStream.id, { amplitude: { property: 'amplitude', selected: true } }]];
-		}
-	}
-
-	for (const [dsId, entry] of targetEntries) {
+	for (const [dsId, entry] of Object.entries(datastreams)) {
 		const properties = BuildRoleProperty(entry);
 		const currentOSHDatastream = datastreamStore.getDataStreamsById([dsId]);
 
@@ -137,9 +110,9 @@ export function CreateSdrVizProps(
 
 			connectorOpts: {
 				username:
-					currentOSHDatastream[0].datastream.networkProperties.connectorOpts?.username || 'admin',
+					currentOSHDatastream[0].datastream.networkProperties.connectorOpts?.username ?? '',
 				password:
-					currentOSHDatastream[0].datastream.networkProperties.connectorOpts?.password || 'test',
+					currentOSHDatastream[0].datastream.networkProperties.connectorOpts?.password ?? '',
 			},
 		};
 		vizDatasources.push(currentDataSource);

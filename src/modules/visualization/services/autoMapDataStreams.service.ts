@@ -28,9 +28,11 @@ const dsRoleKeywords: Record<string, string[]> = {
 	sampleRate: ['sample rate', 'sample_rate', 'samplerate', 'bandwidth', 'audio', 'samples', 'AAC', 'AMR-NB', 'AMR-WB', 'FLAC', 'VORBIS', 'OPUS', 'PCM'],
 	samples: ['audio', 'samples', 'AAC', 'AMR-NB', 'AMR-WB', 'FLAC', 'VORBIS', 'OPUS', 'PCM'],
 	// sdr
-	amplitude: ['spectrum', 'power_spectral_density', 'psd', 'amplitude', 'fft', 'rf_spectrum', 'rtlsdr_spectrum'],
-	centerFrequency: ['center frequency', 'center_frequency', 'center_freq', 'centerfreq', 'settings', 'rtlsdr_settings', 'spectrum', 'rtlsdr_spectrum'],
-	frequencyAxis: ['frequency axis', 'frequency_axis', 'freq_axis', 'freqaxis', 'spectrum', 'rtlsdr_spectrum'],
+	amplitude: ['spectrum', 'power_spectral_density', 'psd', 'amplitude', 'fft', 'rf_spectrum', 'rtlsdr_spectrum', 'powerspectrum', 'power_spectrum'],
+	centerFrequency: ['center frequency', 'center_frequency', 'center_freq', 'centerfreq', 'settings', 'rtlsdr_settings'],
+	startFrequency: ['start frequency', 'start_frequency', 'startfrequency', 'startfreq', 'freq_start', 'spectrum'],
+	stopFrequency: ['stop frequency', 'stop_frequency', 'stopfrequency', 'stopfreq', 'freq_stop', 'spectrum'],
+	frequencyAxis: ['frequency axis', 'frequency_axis', 'freq_axis', 'freqaxis'],
 };
 
 export function autoMapDataStreams(
