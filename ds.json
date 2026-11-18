@@ -1,0 +1,437 @@
+{
+  "items": [
+    {
+      "id": "041g",
+      "name": "RTL-SDR Receiver - ADS-B Aircraft",
+      "system@id": "040g",
+      "system@link": {
+        "href": "http://localhost:8181/sensorhub/api/systems/040g?f=json",
+        "uid": "urn:osh:sensor:rtlsdr:rtlsdr001",
+        "type": "application/geo+json"
+      },
+      "outputName": "adsbOutput",
+      "validTime": [
+        "2026-11-03T22:57:05.23Z",
+        "now"
+      ],
+      "phenomenonTime": [
+        "2026-11-12T16:04:56.485Z",
+        "2026-11-17T17:13:16.178Z"
+      ],
+      "resultTime": [
+        "2026-11-12T16:04:56.485Z",
+        "2026-11-17T17:13:16.178Z"
+      ],
+      "observedProperties": [
+        {
+          "definition": "http://sensorml.com/ont/swe/property/IcaoAddress",
+          "label": "ICAO Address",
+          "description": "24-bit ICAO transponder address uniquely identifying the aircraft"
+        },
+        {
+          "definition": "urn:osh:def:aero:Callsign",
+          "label": "Callsign",
+          "description": "Assigned flight number or aircraft callsign"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/LocationVector",
+          "label": "Location",
+          "description": "Aircraft geographic position (latitude, longitude, altitude)"
+        },
+        {
+          "definition": "http://sweetontology.net/propSpaceDistance/BarometricAltitude",
+          "label": "Barometric Altitude",
+          "description": "Barometric pressure altitude in feet"
+        },
+        {
+          "definition": "http://sweetontology.net/propSpeed/GroundSpeed",
+          "label": "Ground Speed",
+          "description": "Aircraft ground speed in knots"
+        },
+        {
+          "definition": "urn:osh:def:aero:TrueTrack",
+          "label": "True Track",
+          "description": "Aircraft true track angle in degrees"
+        },
+        {
+          "definition": "http://sweetontology.net/propSpeed/VerticalVelocity",
+          "label": "Vertical Rate",
+          "description": "Climb or descent rate in feet per minute"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/SquawkCode",
+          "label": "Squawk Code",
+          "description": "4-digit octal transponder code"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/AlertFlag",
+          "label": "Alert Flag",
+          "description": "Transponder alert flag"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/EmergencyFlag",
+          "label": "Emergency Flag",
+          "description": "Aircraft emergency status"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/IsOnGround",
+          "label": "Is On Ground",
+          "description": "Indicates whether aircraft is on the ground"
+        }
+      ],
+      "resultType": "record",
+      "formats": [
+        "application/om+json",
+        "application/swe+json",
+        "application/swe+csv",
+        "application/swe+xml",
+        "application/swe+binary"
+      ]
+    },
+    {
+      "id": "0420",
+      "name": "RTL-SDR Receiver - AIS Maritime Vessels",
+      "system@id": "040g",
+      "system@link": {
+        "href": "http://localhost:8181/sensorhub/api/systems/040g?f=json",
+        "uid": "urn:osh:sensor:rtlsdr:rtlsdr001",
+        "type": "application/geo+json"
+      },
+      "outputName": "aisOutput",
+      "validTime": [
+        "2026-11-03T22:57:05.23Z",
+        "now"
+      ],
+      "phenomenonTime": [
+        "2026-11-12T16:54:02.265Z",
+        "2026-11-12T19:16:37.665Z"
+      ],
+      "resultTime": [
+        "2026-11-12T16:54:02.265Z",
+        "2026-11-12T19:16:37.665Z"
+      ],
+      "observedProperties": [
+        {
+          "definition": "http://sensorml.com/ont/swe/property/MessageId",
+          "label": "Message ID",
+          "description": "AIS Message Type ID (1, 2, 3, 5, 18, 19)"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/Mmsi",
+          "label": "MMSI",
+          "description": "Maritime Mobile Service Identity uniquely identifying the vessel"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/VesselName",
+          "label": "Vessel Name",
+          "description": "Name of the ship or station"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/Callsign",
+          "label": "Callsign",
+          "description": "Vessel radio callsign"
+        },
+        {
+          "definition": "http://sweetontology.net/propSpeed/GroundSpeed",
+          "label": "Speed Over Ground",
+          "description": "Vessel speed over ground in knots"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/PositionAccuracy",
+          "label": "Position Accuracy",
+          "description": "DGPS accuracy flag (true = high < 10m, false = low > 10m)"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/LocationVector",
+          "label": "Location",
+          "description": "Geographic position (latitude, longitude)"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/CourseOverGround",
+          "label": "Course Over Ground",
+          "description": "Course over ground in degrees"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/TrueHeading",
+          "label": "True Heading",
+          "description": "True ship heading in degrees"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/NavigationStatus",
+          "label": "Navigation Status",
+          "description": "Current navigational status description"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/ShipType",
+          "label": "Ship Type",
+          "description": "Vessel or cargo type"
+        }
+      ],
+      "resultType": "record",
+      "formats": [
+        "application/om+json",
+        "application/swe+json",
+        "application/swe+csv",
+        "application/swe+xml",
+        "application/swe+binary"
+      ]
+    },
+    {
+      "id": "0430",
+      "name": "RTL-SDR Receiver - Demodulated Audio",
+      "system@id": "040g",
+      "system@link": {
+        "href": "http://localhost:8181/sensorhub/api/systems/040g?f=json",
+        "uid": "urn:osh:sensor:rtlsdr:rtlsdr001",
+        "type": "application/geo+json"
+      },
+      "outputName": "audioOutput",
+      "validTime": [
+        "2026-11-03T22:57:05.23Z",
+        "now"
+      ],
+      "phenomenonTime": [
+        "2026-11-17T19:16:53.167Z",
+        "2026-11-17T20:20:12.575Z"
+      ],
+      "resultTime": [
+        "2026-11-17T19:16:53.167Z",
+        "2026-11-17T20:20:12.575Z"
+      ],
+      "observedProperties": [
+        {
+          "definition": "http://qudt.org/vocab/quantitykind/DataRate",
+          "label": "Sample Rate",
+          "description": "Number of audio samples per second"
+        },
+        {
+          "label": "Channels",
+          "description": "Number of audio channels (1=Mono, 2=Stereo)"
+        },
+        {
+          "label": "Num Samples",
+          "description": "Number of audio bytes/samples packaged in this record"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/DN",
+          "label": "Audio Sample"
+        }
+      ],
+      "resultType": "coverage",
+      "formats": [
+        "application/om+json",
+        "application/swe+binary"
+      ]
+    },
+    {
+      "id": "042g",
+      "name": "RTL-SDR Receiver - Current Receiver Settings",
+      "system@id": "040g",
+      "system@link": {
+        "href": "http://localhost:8181/sensorhub/api/systems/040g?f=json",
+        "uid": "urn:osh:sensor:rtlsdr:rtlsdr001",
+        "type": "application/geo+json"
+      },
+      "outputName": "rtlsdr_settings",
+      "validTime": [
+        "2026-11-17T19:16:24.3473857Z",
+        "now"
+      ],
+      "phenomenonTime": [
+        "2026-11-17T19:16:26.682Z",
+        "2026-11-17T20:20:32.582Z"
+      ],
+      "resultTime": [
+        "2026-11-17T19:16:26.682Z",
+        "2026-11-17T20:20:32.582Z"
+      ],
+      "observedProperties": [
+        {
+          "definition": "http://qudt.org/vocab/quantitykind/Frequency",
+          "label": "Center Frequency",
+          "description": "Currently tuned center frequency in MHz"
+        },
+        {
+          "definition": "http://qudt.org/vocab/quantitykind/Frequency",
+          "label": "Sample Rate",
+          "description": "Active sample rate in samples/second"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/UniformGain",
+          "label": "Tuner Gain",
+          "description": "Tuner gain in dB"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/AutoGain",
+          "label": "Auto Gain",
+          "description": "Indicates whether tuner automatic gain control is active"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/AgcMode",
+          "label": "RTL AGC",
+          "description": "Indicates whether RTL chip AGC is enabled"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/FrequencyCorrection",
+          "label": "PPM Correction",
+          "description": "Frequency correction in parts per million"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/StreamingActive",
+          "label": "Streaming Active",
+          "description": "Indicates whether receiver is actively streaming samples"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/AudioRecordingActive",
+          "label": "Audio Recording Active",
+          "description": "Indicates whether audio demodulator output is actively being recorded to file"
+        }
+      ],
+      "resultType": "record",
+      "formats": [
+        "application/om+json",
+        "application/swe+json",
+        "application/swe+csv",
+        "application/swe+xml",
+        "application/swe+binary"
+      ]
+    },
+    {
+      "id": "040g",
+      "name": "RTL-SDR Receiver - Current Receiver Settings",
+      "system@id": "040g",
+      "system@link": {
+        "href": "http://localhost:8181/sensorhub/api/systems/040g?f=json",
+        "uid": "urn:osh:sensor:rtlsdr:rtlsdr001",
+        "type": "application/geo+json"
+      },
+      "outputName": "rtlsdr_settings",
+      "validTime": [
+        "2026-11-03T22:57:05.23Z",
+        "2026-11-17T19:16:24Z"
+      ],
+      "phenomenonTime": [
+        "2026-11-12T16:02:57.335Z",
+        "2026-11-17T17:13:12.779Z"
+      ],
+      "resultTime": [
+        "2026-11-12T16:02:57.335Z",
+        "2026-11-17T17:13:12.779Z"
+      ],
+      "observedProperties": [
+        {
+          "definition": "http://qudt.org/vocab/quantitykind/Frequency",
+          "label": "Center Frequency",
+          "description": "Currently tuned center frequency in MHz"
+        },
+        {
+          "definition": "http://qudt.org/vocab/quantitykind/Frequency",
+          "label": "Sample Rate",
+          "description": "Active sample rate in samples/second"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/UniformGain",
+          "label": "Tuner Gain",
+          "description": "Tuner gain in dB"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/AutoGain",
+          "label": "Auto Gain",
+          "description": "Indicates whether tuner automatic gain control is active"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/AgcMode",
+          "label": "RTL AGC",
+          "description": "Indicates whether RTL chip AGC is enabled"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/FrequencyCorrection",
+          "label": "PPM Correction",
+          "description": "Frequency correction in parts per million"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/StreamingActive",
+          "label": "Streaming Active",
+          "description": "Indicates whether receiver is actively streaming samples"
+        }
+      ],
+      "resultType": "record",
+      "formats": [
+        "application/om+json",
+        "application/swe+json",
+        "application/swe+csv",
+        "application/swe+xml",
+        "application/swe+binary"
+      ]
+    },
+    {
+      "id": "0410",
+      "name": "RTL-SDR Receiver - Spectrum",
+      "system@id": "040g",
+      "system@link": {
+        "href": "http://localhost:8181/sensorhub/api/systems/040g?f=json",
+        "uid": "urn:osh:sensor:rtlsdr:rtlsdr001",
+        "type": "application/geo+json"
+      },
+      "outputName": "rtlsdr_spectrum",
+      "validTime": [
+        "2026-11-03T22:57:05.23Z",
+        "now"
+      ],
+      "phenomenonTime": [
+        "2026-11-12T16:02:57.414Z",
+        "2026-11-17T20:20:35.958Z"
+      ],
+      "resultTime": [
+        "2026-11-12T16:02:57.414Z",
+        "2026-11-17T20:20:35.958Z"
+      ],
+      "observedProperties": [
+        {
+          "definition": "http://qudt.org/vocab/quantitykind/Time",
+          "label": "Sample Time",
+          "description": "Time of RF spectrum measurement"
+        },
+        {
+          "definition": "http://qudt.org/vocab/quantitykind/Frequency",
+          "label": "Center Frequency",
+          "description": "Tuned center frequency in Hz"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/NumberOfFrequencyPoints",
+          "label": "Frequency Axis Size",
+          "description": "Number of points in the frequency_axis array"
+        },
+        {
+          "definition": "http://qudt.org/vocab/quantitykind/Frequency",
+          "label": "Frequency Axis",
+          "description": "Center frequency of each sample point in Hz"
+        },
+        {
+          "definition": "http://qudt.org/vocab/quantitykind/Frequency"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/NumberOfAmplitudePoints",
+          "label": "Amplitude Axis Size",
+          "description": "Number of points in the amplitude array"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/SpectrumAmplitude",
+          "label": "Spectrum Amplitude",
+          "description": "Signal amplitude in dBFS across the spectrum"
+        },
+        {
+          "definition": "http://sensorml.com/ont/swe/property/DecibelFullScale"
+        }
+      ],
+      "resultType": "coverage",
+      "formats": [
+        "application/om+json",
+        "application/swe+json",
+        "application/swe+csv",
+        "application/swe+xml",
+        "application/swe+binary"
+      ]
+    }
+  ]
+}

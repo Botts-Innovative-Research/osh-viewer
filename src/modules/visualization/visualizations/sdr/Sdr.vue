@@ -14,6 +14,7 @@ import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useSystemStore } from '@/stores/systemstore';
 import { useNodeStore } from '@/stores/nodestore';
+import { useDataStreamStore } from '@/stores/datastreamstore';
 import { sendCommand } from '../../services/controlstream.service';
 
 const props = defineProps<{
@@ -27,6 +28,7 @@ const controlstreamStore = useControlStreamStore();
 const datastreamStore = useDataStreamStore();
 const systemStore = useSystemStore();
 const nodeStore = useNodeStore();
+const datastreamStore = useDataStreamStore();
 const sdrContainerId = ref(`sdr-${randomUUID()}`);
 const spectrumCanvasRef = ref<HTMLCanvasElement | null>(null);
 const waterfallCanvasRef = ref<HTMLCanvasElement | null>(null);
@@ -115,6 +117,18 @@ const gainVal = ref<number>(20.7);
 const autoGain = ref<boolean>(true);
 const audioMode = ref<string>('OFF');
 const operatingMode = ref<string>('SPECTRUM_AUDIO');
+
+// Audio listening & recording state
+const isListening = ref<boolean>(false);
+const audioVolume = ref<number>(80);
+const isRecordingAudio = ref<boolean>(false);
+
+// Web Audio API engine
+let audioCtx: any = null;
+let audioGainNode: any = null;
+let nextAudioStartTime = 0;
+let audioWs: WebSocket | null = null;
+let audioReconnectTimer: any = null;
 
 // Internal DSP buffers
 let smoothedBins: Float32Array | null = null;
@@ -312,6 +326,7 @@ const is10GbeCapable = computed(() => {
 
 // Control Stream binding
 const receiverControl = computed(() => {
+<<<<<<< HEAD
 	let csId = props.controlstream?.id;
 	if (!csId && isHtlDriver.value) {
 		const found = controlstreamStore.controlStreams.find(
@@ -342,15 +357,99 @@ const receiverControl = computed(() => {
 			id: csId,
 			auth: auth,
 		};
+=======
+	let cs: any = null;
+	let csId = props.controlstream?.id;
+	if (csId) {
+		const found = controlstreamStore.getControlStreamsById([csId]);
+		if (found && found.length > 0) cs = found[0];
+>>>>>>> 2be0f592220eaaef39cc15ff2ff6a89387485912
 	}
-	return { hasControl: false, commandBaseUrl: '', id: '', auth: '' };
+	// Auto-discovery fallback if props.controlstream wasn't passed or found
+	if (!cs) {
+		const allStreams = (controlstreamStore.controlStreams as any[]) || [];
+		cs = allStreams.find((s: any) => {
+			const name = (s.controlstream?.name || s.name || '').toLowerCase();
+			const id = (s.controlstream?.id || s.id || '').toLowerCase();
+			return name.includes('receiver') || name.includes('control') || name.includes('rtlsdr') ||
+				id.includes('receiver') || id.includes('control');
+		}) || allStreams[0];
+		if (cs) csId = cs.controlstream?.id || cs.id;
+	}
+
+	if (!csId) {
+		csId = '0410';
+	}
+
+	const activeNode = nodeStore.nodes?.[0];
+	const networkProps = cs?.controlstream?.networkProperties || cs?.networkProperties;
+	const protocol = (networkProps?.tls ?? activeNode?.tls) ? 'https' : 'http';
+	const endpoint = networkProps?.endpointUrl || activeNode?.getEndpointUrl() || 'localhost:8181/sensorhub/api';
+	const baseUrl = `${protocol}://${endpoint.replace(/^https?:\/\//, '').replace(/\/+$/, '')}`;
+	const username = networkProps?.connectorOpts?.username || activeNode?.username || 'admin';
+	const password = networkProps?.connectorOpts?.password || activeNode?.password || 'test';
+	const auth = `${username}:${password}`;
+
+	return {
+		hasControl: true,
+		commandBaseUrl: baseUrl,
+		id: csId,
+		auth: auth,
+	};
 });
 
+function buildReceiverParameters(overrides: Record<string, any>) {
+	const currentMhz = overrides.centerFreq !== undefined
+		? Number(overrides.centerFreq)
+		: (tuneMhzInput.value || (centerFreqHz.value / 1e6) || 98.0);
+
+	const isAg = overrides.autoGain !== undefined ? Boolean(overrides.autoGain) : autoGain.value;
+	let gVal: number | null = null;
+	if (!isAg) {
+		gVal = overrides.gain !== undefined ? Number(overrides.gain) : Number(gainVal.value);
+		if (isNaN(gVal)) gVal = 20.7;
+	}
+
+	const opMode = overrides.operatingMode || operatingMode.value || 'SPECTRUM_AUDIO';
+	const aMode = overrides.audioMode !== undefined
+		? (overrides.audioMode === 'OFF' ? 'OFF' : String(overrides.audioMode))
+		: (audioMode.value === 'OFF' ? 'OFF' : String(audioMode.value));
+
+	const sr = overrides.sampleRate !== undefined
+		? Number(overrides.sampleRate)
+		: (sampleRateHz.value || 2000000.0);
+
+	const rec = overrides.recordAudio !== undefined
+		? Boolean(overrides.recordAudio)
+		: Boolean(isRecordingAudio.value);
+
+	return {
+		operatingMode: opMode,
+		centerFreq: parseFloat(currentMhz.toFixed(4)),
+		gain: gVal,
+		autoGain: isAg,
+		sampleRate: sr,
+		agcMode: false,
+		audioMode: aMode,
+		recordAudio: rec,
+	};
+}
+
 function sendReceiverCommand(params: Record<string, any>, label: string) {
-	if (!receiverControl.value.hasControl) return;
-	const payload = { parameters: params };
+	if (!receiverControl.value.hasControl) {
+		console.warn('[SDR.vue] Cannot send command: receiverControl has no control stream');
+		return;
+	}
+	const fullParams = buildReceiverParameters(params);
+	console.log(`[SDR.vue] Sending ${label}:`, fullParams);
+	const payload = { parameters: fullParams };
+
+	const baseUrl = (typeof window !== 'undefined' && window.location)
+		? '/sensorhub/api'
+		: receiverControl.value.commandBaseUrl;
+
 	sendCommand(
-		receiverControl.value.commandBaseUrl,
+		baseUrl,
 		receiverControl.value.id,
 		payload,
 		receiverControl.value.auth,
@@ -358,6 +457,7 @@ function sendReceiverCommand(params: Record<string, any>, label: string) {
 	);
 }
 
+<<<<<<< HEAD
 function sendHtlCommand(choiceName: string, params: Record<string, any>, label: string) {
 	if (!receiverControl.value.hasControl) return;
 	const payload = {
@@ -680,6 +780,209 @@ function confirmHtlReboot() {
 			confirm: true,
 		},
 		'Reboot Unit'
+=======
+// Web Audio API playback engine
+function initAudioEngine() {
+	if (!audioCtx) {
+		const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+		if (AudioContextClass) {
+			audioCtx = new AudioContextClass({ sampleRate: 48000 });
+			audioGainNode = audioCtx.createGain();
+			const volNorm = audioVolume.value / 100.0;
+			audioGainNode.gain.setValueAtTime(volNorm, audioCtx.currentTime);
+			audioGainNode.connect(audioCtx.destination);
+		}
+	}
+	if (audioCtx && audioCtx.state === 'suspended') {
+		audioCtx.resume();
+	}
+}
+
+function playPcmChunk(pcmBytes: Uint8Array, channels: number, sampleRate: number = 48000) {
+	if (!isListening.value || !audioCtx || audioCtx.state !== 'running') return;
+	const ch = channels === 2 ? 2 : 1;
+	const int16Samples = new Int16Array(pcmBytes.buffer, pcmBytes.byteOffset, Math.floor(pcmBytes.byteLength / 2));
+	const totalSamples = int16Samples.length;
+	if (totalSamples === 0) return;
+
+	let audioBuf: AudioBuffer;
+	if (ch === 2) {
+		const numFrames = Math.floor(totalSamples / 2);
+		audioBuf = audioCtx.createBuffer(2, numFrames, sampleRate);
+		const left = audioBuf.getChannelData(0);
+		const right = audioBuf.getChannelData(1);
+		for (let i = 0; i < numFrames; i++) {
+			left[i] = int16Samples[i * 2] / 32768.0;
+			right[i] = int16Samples[i * 2 + 1] / 32768.0;
+		}
+	} else {
+		audioBuf = audioCtx.createBuffer(1, totalSamples, sampleRate);
+		const mono = audioBuf.getChannelData(0);
+		for (let i = 0; i < totalSamples; i++) {
+			mono[i] = int16Samples[i] / 32768.0;
+		}
+	}
+
+	const now = audioCtx.currentTime;
+	if (nextAudioStartTime < now || nextAudioStartTime > now + 0.35) {
+		nextAudioStartTime = now + 0.05; // 50ms buffer lead
+	}
+
+	const src = audioCtx.createBufferSource();
+	src.buffer = audioBuf;
+	if (audioGainNode) {
+		src.connect(audioGainNode);
+	} else {
+		src.connect(audioCtx.destination);
+	}
+	src.start(nextAudioStartTime);
+	nextAudioStartTime += audioBuf.duration;
+}
+
+function processIncomingAudioBinary(buffer: ArrayBuffer) {
+	if (buffer.byteLength < 20) return;
+	const dv = new DataView(buffer);
+	const sampleRate = dv.getInt32(8, false); // big-endian
+	const channels = dv.getInt32(12, false);   // big-endian
+	const numBytes = dv.getInt32(16, false);   // big-endian
+
+	if (numBytes > 0 && buffer.byteLength >= 20 + numBytes) {
+		const pcmBytes = new Uint8Array(buffer, 20, numBytes);
+		playPcmChunk(pcmBytes, channels, sampleRate || 48000);
+	}
+}
+
+async function connectAudioStream() {
+	if (!isRunning) return;
+
+	// Look up audio datastream
+	const allStreams = (datastreamStore.dataStreams as any[]) || [];
+	const audioStream = allStreams.find((s: any) => {
+		const outName = (s.outputName || s.datastream?.properties?.outputName || '').toLowerCase();
+		const name = (s.name || s.datastream?.properties?.name || '').toLowerCase();
+		return outName.includes('audio') || name.includes('audio') || name.includes('demodulated');
+	});
+
+	let audioDsId = audioStream?.id || audioStream?.datastream?.id || '0430';
+
+	const activeNode = nodeStore.nodes?.[0];
+	const endpoint = (activeNode?.getEndpointUrl() || 'localhost:8181/sensorhub/api')
+		.replace(/^https?:\/\//, '')
+		.replace(/^wss?:\/\//, '')
+		.replace(/\/datastreams.*$/, '')
+		.replace(/\/+$/, '');
+	const wsProtocol = activeNode?.tls ? 'wss' : 'ws';
+
+	const user = activeNode?.username || 'admin';
+	const pass = activeNode?.password || 'test';
+	const authHeaders: Record<string, string> = {
+		Authorization: 'Basic ' + btoa(`${user}:${pass}`),
+	};
+
+	try {
+		const listRes = await fetch(`/sensorhub/api/datastreams`, {
+			headers: authHeaders,
+			credentials: 'include',
+		});
+		if (listRes.ok) {
+			const list = await listRes.json();
+			const items: any[] = Array.isArray(list) ? list : (list.items || []);
+			const matched = items.find((d: any) => {
+				const n = (d.name || '').toLowerCase();
+				const o = (d.outputName || '').toLowerCase();
+				return o.includes('audio') || n.includes('demodulated audio') || n.includes('audio');
+			});
+			if (matched && matched.id) {
+				audioDsId = matched.id;
+			}
+		}
+	} catch (_) {}
+
+	console.log('[SDR.vue] Connecting to audio stream ID:', audioDsId);
+
+	const candidateUrls: string[] = [];
+	if (typeof window !== 'undefined' && window.location && window.location.host) {
+		const locProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+		candidateUrls.push(`${locProto}://${window.location.host}/sensorhub/api/datastreams/${audioDsId}/observations?format=application/swe%2Bbinary`);
+	}
+	candidateUrls.push(`${wsProtocol}://${endpoint}/datastreams/${audioDsId}/observations?format=application/swe%2Bbinary`);
+
+	let candIdx = 0;
+	function tryNextAudioUrl() {
+		if (!isRunning || candIdx >= candidateUrls.length) return;
+		const url = candidateUrls[candIdx++];
+		console.log(`[SDR.vue] Attempting Audio WebSocket to: ${url}`);
+
+		try {
+			const ws = new WebSocket(url);
+			ws.binaryType = 'arraybuffer';
+			audioWs = ws;
+
+			ws.onopen = () => {
+				console.log('[SDR.vue] Audio WebSocket connected successfully to:', url);
+			};
+
+			ws.onmessage = (event) => {
+				if (event.data instanceof ArrayBuffer) {
+					processIncomingAudioBinary(event.data);
+				}
+			};
+
+			ws.onerror = (e) => {
+				console.warn('[SDR.vue] Audio WS error on ' + url + ':', e);
+			};
+
+			ws.onclose = (e) => {
+				console.log(`[SDR.vue] Audio WS closed (${url}) code=${e.code}`);
+				if (isRunning) {
+					if (candIdx < candidateUrls.length) {
+						setTimeout(() => { if (isRunning) tryNextAudioUrl(); }, 500);
+					} else {
+						if (audioReconnectTimer) clearTimeout(audioReconnectTimer);
+						audioReconnectTimer = setTimeout(() => {
+							if (isRunning) {
+								candIdx = 0;
+								tryNextAudioUrl();
+							}
+						}, 3000);
+					}
+				}
+			};
+		} catch (err) {
+			console.warn('[SDR.vue] Error creating Audio WebSocket:', err);
+			tryNextAudioUrl();
+		}
+	}
+
+	tryNextAudioUrl();
+}
+
+function toggleAudioListen() {
+	isListening.value = !isListening.value;
+	if (isListening.value) {
+		initAudioEngine();
+		if (audioMode.value === 'OFF') {
+			const mhz = tuneMhzInput.value;
+			const defaultMode = (mhz >= 88.0 && mhz <= 108.0) ? 'WFM' : (mhz >= 118.0 && mhz <= 137.0 ? 'AM' : 'NFM');
+			applyAudioMode(defaultMode);
+		}
+	}
+}
+
+function onVolumeChange(val: number) {
+	audioVolume.value = val;
+	const volNorm = val / 100.0;
+	if (audioGainNode && audioCtx) {
+		audioGainNode.gain.setValueAtTime(volNorm, audioCtx.currentTime);
+	}
+}
+
+function toggleAudioRecord() {
+	isRecordingAudio.value = !isRecordingAudio.value;
+	sendReceiverCommand(
+		{ recordAudio: isRecordingAudio.value },
+		isRecordingAudio.value ? 'Start Audio Recording' : 'Stop Audio Recording'
+>>>>>>> 2be0f592220eaaef39cc15ff2ff6a89387485912
 	);
 }
 
@@ -693,6 +996,7 @@ function tuneToMhz(targetMhz: number) {
 	if (!hasStartStopActive.value) {
 		centerFreqHz.value = Math.round(targetMhz * 1e6);
 	}
+<<<<<<< HEAD
 	if (receiverControl.value.hasControl) {
 		if (isHtlDriver.value) {
 			if (connectionMode.value === '10GbE') {
@@ -705,6 +1009,9 @@ function tuneToMhz(targetMhz: number) {
 			sendReceiverCommand({ centerFreq: targetMhz }, `Tune to ${targetMhz} MHz`);
 		}
 	}
+=======
+	sendReceiverCommand({ centerFreq: targetMhz }, `Tune to ${targetMhz} MHz`);
+>>>>>>> 2be0f592220eaaef39cc15ff2ff6a89387485912
 }
 
 function onTuneFocus() {
@@ -732,30 +1039,28 @@ function stepFreq(deltaMhz: number) {
 }
 
 function applyGain() {
-	if (receiverControl.value.hasControl) {
-		sendReceiverCommand({ gain: String(gainVal.value) }, `Set Gain ${gainVal.value} dB`);
-	}
+	sendReceiverCommand({ gain: String(gainVal.value), autoGain: false }, `Set Gain ${gainVal.value} dB`);
 }
 
 function toggleAutoGain() {
 	autoGain.value = !autoGain.value;
-	if (receiverControl.value.hasControl) {
-		sendReceiverCommand({ autoGain: autoGain.value }, `Auto Gain ${autoGain.value ? 'ON' : 'OFF'}`);
-	}
+	sendReceiverCommand({ autoGain: autoGain.value }, `Auto Gain ${autoGain.value ? 'ON' : 'OFF'}`);
 }
 
 function applyAudioMode(mode: string) {
 	audioMode.value = mode;
-	if (receiverControl.value.hasControl) {
-		sendReceiverCommand({ audioMode: mode }, `Demod Mode ${mode}`);
+	if (mode !== 'OFF' && !isListening.value) {
+		initAudioEngine();
+		isListening.value = true;
+	} else if (mode === 'OFF' && isListening.value) {
+		isListening.value = false;
 	}
+	sendReceiverCommand({ audioMode: mode }, `Demod Mode ${mode}`);
 }
 
 function applyOperatingMode(mode: string) {
 	operatingMode.value = mode;
-	if (receiverControl.value.hasControl) {
-		sendReceiverCommand({ operatingMode: mode }, `Operating Mode ${mode}`);
-	}
+	sendReceiverCommand({ operatingMode: mode }, `Operating Mode ${mode}`);
 }
 
 // Helpers to unpack SWE-JSON / OM-JSON / ConSys records
@@ -989,6 +1294,10 @@ function handleObservationData(input: any) {
 	const am = data.audioMode ?? data.audio_mode ?? data.demodMode;
 	if (am) {
 		audioMode.value = String(am);
+	}
+	const isRec = data.AudioRecordingActive ?? data.audioRecordingActive ?? data.recordAudio ?? data.isRecordingAudio;
+	if (isRec !== undefined) {
+		isRecordingAudio.value = Boolean(isRec);
 	}
 
 	// Start & Stop Frequency detection (e.g. HTL driver, swept spectrum, or frequency-range streams)
@@ -1860,7 +2169,11 @@ onMounted(() => {
 	handleResize();
 	initWaterfallCanvas();
 	startRenderLoop();
+<<<<<<< HEAD
 	detectHtlConnection();
+=======
+	connectAudioStream();
+>>>>>>> 2be0f592220eaaef39cc15ff2ff6a89387485912
 
 	setTimeout(() => {
 		handleResize();
@@ -1979,6 +2292,22 @@ onUnmounted(() => {
 	if (pollIntervalId) {
 		clearInterval(pollIntervalId);
 		pollIntervalId = null;
+	}
+	if (audioReconnectTimer) {
+		clearTimeout(audioReconnectTimer);
+		audioReconnectTimer = null;
+	}
+	if (audioWs) {
+		try {
+			audioWs.close();
+		} catch (_) {}
+		audioWs = null;
+	}
+	if (audioCtx) {
+		try {
+			audioCtx.close();
+		} catch (_) {}
+		audioCtx = null;
 	}
 	for (const bc of broadcastChannels) {
 		bc.close();
@@ -2671,12 +3000,12 @@ useVisualizationCleanup(ref(dsInstances));
 			</div>
 
 			<div
-				class="d-flex align-center"
-				style="width: 120px;"
+				class="d-flex align-center mr-2"
+				style="width: 155px;"
 			>
 				<v-select
 					v-model="audioMode"
-					:items="['OFF', 'WFM', 'NFM', 'AM', 'USB', 'LSB', 'CW']"
+					:items="['OFF', 'WFM', 'WFM_STEREO', 'NFM', 'AM', 'USB', 'LSB', 'CW']"
 					density="compact"
 					label="Demod"
 					variant="outlined"
@@ -2685,6 +3014,7 @@ useVisualizationCleanup(ref(dsInstances));
 				></v-select>
 			</div>
 
+<<<<<<< HEAD
 			<v-btn
 				v-if="audioMode !== 'OFF'"
 				size="x-small"
@@ -2696,6 +3026,47 @@ useVisualizationCleanup(ref(dsInstances));
 				:title="isAudioListening ? 'Mute audio' : 'Listen to demodulated audio in browser'"
 			>
 				{{ isAudioListening ? 'Listening' : 'Listen' }}
+=======
+			<!-- Audio Listen / Mute Toggle -->
+			<v-btn
+				size="x-small"
+				:color="isListening ? 'success' : 'grey-darken-2'"
+				:variant="isListening ? 'flat' : 'outlined'"
+				@click="toggleAudioListen"
+				class="mr-2"
+				:prepend-icon="isListening ? 'mdi-volume-high' : 'mdi-volume-mute'"
+			>
+				{{ isListening ? 'Listen' : 'Muted' }}
+			</v-btn>
+
+			<!-- Volume Slider (shown when listening) -->
+			<div
+				v-if="isListening"
+				class="d-flex align-center mr-2"
+				style="width: 100px;"
+			>
+				<v-slider
+					v-model="audioVolume"
+					:min="0"
+					:max="100"
+					:step="1"
+					density="compact"
+					hide-details
+					@update:model-value="onVolumeChange"
+				></v-slider>
+			</div>
+
+			<!-- Audio Record Toggle -->
+			<v-btn
+				size="x-small"
+				:color="isRecordingAudio ? 'error' : 'grey-darken-2'"
+				:variant="isRecordingAudio ? 'flat' : 'outlined'"
+				@click="toggleAudioRecord"
+				class="mr-2"
+				:prepend-icon="isRecordingAudio ? 'mdi-record-rec' : 'mdi-record'"
+			>
+				{{ isRecordingAudio ? 'Recording' : 'Record' }}
+>>>>>>> 2be0f592220eaaef39cc15ff2ff6a89387485912
 			</v-btn>
 		</div>
 
@@ -2854,6 +3225,7 @@ useVisualizationCleanup(ref(dsInstances));
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
+	gap: 8px;
 	background: #111a24;
 	border: 1px solid #1e293b;
 	border-radius: 6px;
