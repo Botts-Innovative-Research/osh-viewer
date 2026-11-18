@@ -23,7 +23,7 @@ const csRoleKeywords: Record<string, string[]> = {
 	lla: ['location', 'lla', 'gps', 'position', 'platform location'],
 	flyToLocation: ['location'],
 	// sdr
-	sdrControl: ['receivercontrol', 'receiver_control', 'sdrcontrol', 'sdr_control', 'sdr', 'rxcontrol', 'receiver', 'rtlsdr', 'hackrf', 'bladerf', 'usrp', 'rx'],
+	sdrControl: ['receivercontrol', 'receiver_control', 'sdrcontrol', 'sdr_control', 'sdr', 'rxcontrol', 'receiver', 'rtlsdr', 'hackrf', 'bladerf', 'usrp', 'rx', 'htl', 'htlcommand', 'htl_command'],
 };
 
 

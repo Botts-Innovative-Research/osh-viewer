@@ -79,6 +79,7 @@ export function CreateSdrVizProps(
 			sampleRate: vizwizStore.dsConfig?.sampleRate?.property ?? 'sampleRate',
 			startFrequency: vizwizStore.dsConfig?.startFrequency?.property ?? 'startFrequency',
 			stopFrequency: vizwizStore.dsConfig?.stopFrequency?.property ?? 'stopFrequency',
+			audio: vizwizStore.dsConfig?.audio?.property ?? 'audioData',
 		},
 	};
 

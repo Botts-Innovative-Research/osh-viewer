@@ -174,6 +174,7 @@ async function fetchProps() {
 					(!['centerfrequency', 'startfrequency', 'stopfrequency', 'frequencyaxis'].includes(roleLower) && roleLower.includes('freq') && (fn.includes('freq') || fl.includes('freq'))) ||
 					(roleLower.includes('rate') && (fn.includes('rate') || fl.includes('rate') || fl.includes('span') || fn.includes('bandwidth') || fl.includes('bandwidth'))) ||
 					(roleLower.includes('video') && (fn.includes('video') || fn.includes('image') || fl.includes('video'))) ||
+					(roleLower.includes('audio') && (fn.includes('audio') || fl.includes('audio') || fn.includes('pcm') || fn.includes('sample') || fl.includes('sample'))) ||
 					(roleLower.includes('sample') && (fn.includes('sample') || fn.includes('audio') || fl.includes('sample')))
 				);
 			}) || (fields.length === 1 ? fields[0] : null);

@@ -49,6 +49,13 @@ export const SdrConfigRoles: VisualizationConfigRole[] = [
 		required: false,
 	},
 	{
+		role: 'audio',
+		label: 'Demodulated Audio',
+		description: 'Select property or datastream containing demodulated audio samples (e.g. from HTL scout or receiver audio).',
+		type: 'ds',
+		required: false,
+	},
+	{
 		role: 'sdrControl',
 		label: 'SDR Receiver Control',
 		description: 'Select the controlstream to enable interactive center frequency tuning, gain, and demodulation.',

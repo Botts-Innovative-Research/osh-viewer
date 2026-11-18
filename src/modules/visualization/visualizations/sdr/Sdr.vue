@@ -11,6 +11,8 @@ import { useVisualizationCleanup } from '../../sidebar/composables/useVisualizat
 import { IConSysApiDataSourceProperties } from '../../types/datasource';
 import { ISdrViewProperties } from '../../types/views';
 import { useControlStreamStore } from '@/stores/controlstreamstore';
+import { useDataStreamStore } from '@/stores/datastreamstore';
+import { useSystemStore } from '@/stores/systemstore';
 import { useNodeStore } from '@/stores/nodestore';
 import { sendCommand } from '../../services/controlstream.service';
 
@@ -22,6 +24,8 @@ const props = defineProps<{
 }>();
 
 const controlstreamStore = useControlStreamStore();
+const datastreamStore = useDataStreamStore();
+const systemStore = useSystemStore();
 const nodeStore = useNodeStore();
 const sdrContainerId = ref(`sdr-${randomUUID()}`);
 const spectrumCanvasRef = ref<HTMLCanvasElement | null>(null);
@@ -200,12 +204,128 @@ function initPalette(scheme: string) {
 	}
 }
 
+// HTL Driver & Connection Mode state
+const isHtlDriver = ref<boolean>(false);
+type HtlConnectionMode = '1GbE' | '10GbE' | 'BOTH' | 'UNKNOWN';
+const connectionMode = ref<HtlConnectionMode>('UNKNOWN');
+const showHtlControls = ref<boolean>(false);
+
+// HTL 1GbE Sweep Configuration state
+const htlStartFreqMhz = ref<number>(130.0);
+const htlStopFreqMhz = ref<number>(170.0);
+const htlNumPoints = ref<number>(1024);
+const htlUpdateRate = ref<number>(10.0);
+
+// HTL 1GbE Scout & Demod state
+const htlScoutId = ref<number>(0);
+const htlScoutFreqMhz = ref<number>(145.0);
+const htlDemodMode = ref<string>('FM');
+const htlSquelch = ref<number>(-80.0);
+const htlVolume = ref<number>(75.0);
+
+// Web Audio Demodulation & Playback state
+const isAudioListening = ref<boolean>(false);
+const audioSampleRate = ref<number>(44100);
+const audioChannels = ref<number>(1);
+const audioLevelDbfs = ref<number>(-100);
+const audioFramesReceived = ref<number>(0);
+const isAudioConnected = ref<boolean>(false);
+const isRecordingAudio = ref<boolean>(false);
+const recordingDurationSec = ref<number>(0);
+let recordingTimerId: any = null;
+let audioDsConnected = false;
+
+const formattedRecordingTime = computed(() => {
+	const mins = Math.floor(recordingDurationSec.value / 60);
+	const secs = recordingDurationSec.value % 60;
+	return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+});
+
+const isAudioGateOpen = computed(() => {
+	return audioLevelDbfs.value >= htlSquelch.value;
+});
+
+// HTL System Actions state
+const htlServiceName = ref<string>('DDC');
+const showRebootDialog = ref<boolean>(false);
+const showResetDialog = ref<boolean>(false);
+
+// HTL 10GbE DDC Tuner state
+const htlTunerId = ref<number>(0);
+const htlTunerMode = ref<string>('AutoTune');
+const htlTunerFreqMhz = ref<number>(150.0);
+const htlTxRxMode = ref<string>('Rx');
+const htlTunerAgc = ref<boolean>(true);
+const htlTunerAtten = ref<number>(0.0);
+const htlTunerTxPower = ref<number>(0.0);
+const htlTunerPreamp = ref<boolean>(false);
+const htlTunerDrop = ref<boolean>(false);
+
+// HTL 10GbE DDC Collector state
+const htlCollectorSlot = ref<string>('iq0');
+const htlCollectorTunerId = ref<number>(-1);
+const htlCollectorFreqMhz = ref<number>(150.0);
+const htlCollectorBwMhz = ref<number>(2.0);
+const htlCollectorSampleRate = ref<number>(0);
+const htlCollectorSnapshot = ref<number>(0);
+const htlCollectorAgc = ref<boolean>(true);
+const htlCollectorAtten = ref<number>(0.0);
+const htlCollectorPreamp = ref<boolean>(false);
+const htlCollectorTriggerType = ref<string>('None');
+const htlCollectorId = ref<number>(-1);
+const htlHaltType = ref<string>('All');
+
+const connectionModeLabel = computed(() => {
+	if (!isHtlDriver.value) return '';
+	switch (connectionMode.value) {
+		case '1GbE':
+			return 'HTL 1 GbE';
+		case '10GbE':
+			return 'HTL 10 GbE';
+		case 'BOTH':
+			return 'HTL Dual 1/10 GbE';
+		default:
+			return 'HTL SDR';
+	}
+});
+
+const connectionModeColor = computed(() => {
+	switch (connectionMode.value) {
+		case '1GbE':
+			return 'success';
+		case '10GbE':
+			return 'purple';
+		case 'BOTH':
+			return 'cyan';
+		default:
+			return 'grey';
+	}
+});
+
+const is1GbeCapable = computed(() => {
+	return connectionMode.value === '1GbE' || connectionMode.value === 'BOTH' || connectionMode.value === 'UNKNOWN';
+});
+
+const is10GbeCapable = computed(() => {
+	return connectionMode.value === '10GbE' || connectionMode.value === 'BOTH';
+});
+
 // Control Stream binding
 const receiverControl = computed(() => {
-	if (props.controlstream && Object.keys(props.controlstream).length > 0) {
-		const csId = props.controlstream.id;
-		if (!csId) return { hasControl: false, commandBaseUrl: '', id: '', auth: '' };
+	let csId = props.controlstream?.id;
+	if (!csId && isHtlDriver.value) {
+		const found = controlstreamStore.controlStreams.find(
+			(cs: any) =>
+				(cs.name || '').toLowerCase().includes('htl') ||
+				(cs.id || '').toLowerCase().includes('htl') ||
+				(cs.controlstream?.properties?.controlName || '').toLowerCase().includes('htl')
+		);
+		if (found) {
+			csId = found.id;
+		}
+	}
 
+	if (csId) {
 		const controlStreams = controlstreamStore.getControlStreamsById([csId]);
 		if (!controlStreams || controlStreams.length === 0)
 			return { hasControl: false, commandBaseUrl: '', id: '', auth: '' };
@@ -238,6 +358,331 @@ function sendReceiverCommand(params: Record<string, any>, label: string) {
 	);
 }
 
+function sendHtlCommand(choiceName: string, params: Record<string, any>, label: string) {
+	if (!receiverControl.value.hasControl) return;
+	const payload = {
+		parameters: {
+			[choiceName]: params,
+		},
+	};
+	sendCommand(
+		receiverControl.value.commandBaseUrl,
+		receiverControl.value.id,
+		payload,
+		receiverControl.value.auth,
+		label
+	);
+}
+
+function applyHtlSpectrumConfig() {
+	const startHz = Number(htlStartFreqMhz.value) * 1e6;
+	const stopHz = Number(htlStopFreqMhz.value) * 1e6;
+	if (isNaN(startHz) || isNaN(stopHz) || stopHz <= startHz) return;
+	sendHtlCommand(
+		'configureSpectrum',
+		{
+			startFrequency: startHz,
+			stopFrequency: stopHz,
+			numPoints: Number(htlNumPoints.value),
+			updateRate: Number(htlUpdateRate.value),
+		},
+		'Configure Spectrum'
+	);
+}
+
+function applyHtlScout() {
+	const cfHz = Number(htlScoutFreqMhz.value) * 1e6;
+	if (isNaN(cfHz) || cfHz <= 0) return;
+	sendHtlCommand(
+		'controlScout',
+		{
+			scoutId: Number(htlScoutId.value),
+			centerFrequency: cfHz,
+			demodMode: htlDemodMode.value,
+			squelch: Number(htlSquelch.value),
+			volume: Number(htlVolume.value),
+		},
+		`Control Scout ${htlScoutId.value}`
+	);
+}
+
+let audioCtx: AudioContext | null = null;
+let audioGainNode: GainNode | null = null;
+let nextPlayTime = 0;
+
+function initAudioContext(sampleRate = 44100) {
+	if (!audioCtx || audioCtx.state === 'closed') {
+		const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+		if (!AudioContextClass) return;
+		try {
+			audioCtx = new AudioContextClass({
+				sampleRate: sampleRate > 0 ? sampleRate : 44100,
+				latencyHint: 'interactive',
+			});
+			audioGainNode = audioCtx.createGain();
+			const vol = isAudioListening.value ? Math.max(0, Math.min(1, Number(htlVolume.value) / 100.0)) : 0;
+			audioGainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
+			audioGainNode.connect(audioCtx.destination);
+			nextPlayTime = 0;
+		} catch (e) {
+			console.warn('[SDR.vue] AudioContext init error:', e);
+		}
+	}
+}
+
+function toggleAudioListening() {
+	isAudioListening.value = !isAudioListening.value;
+	if (isAudioListening.value) {
+		initAudioContext(audioSampleRate.value);
+		if (audioCtx && audioCtx.state === 'suspended') {
+			audioCtx.resume();
+		}
+		if (audioGainNode && audioCtx) {
+			const vol = Math.max(0, Math.min(1, Number(htlVolume.value) / 100.0));
+			audioGainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
+		}
+	} else {
+		if (audioGainNode && audioCtx) {
+			audioGainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+		}
+	}
+}
+
+function onVolumeChanged(newVol: number) {
+	if (audioGainNode && audioCtx && isAudioListening.value) {
+		const vol = Math.max(0, Math.min(1, Number(newVol) / 100.0));
+		audioGainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
+	}
+}
+
+function toggleAudioRecording() {
+	if (isRecordingAudio.value) {
+		sendHtlCommand('stopAudioRecording', { confirm: true }, 'Stop Audio Recording');
+		isRecordingAudio.value = false;
+		if (recordingTimerId) {
+			clearInterval(recordingTimerId);
+			recordingTimerId = null;
+		}
+	} else {
+		sendHtlCommand('startAudioRecording', { directory: '', prefix: '' }, 'Start Audio Recording');
+		isRecordingAudio.value = true;
+		recordingDurationSec.value = 0;
+		if (recordingTimerId) clearInterval(recordingTimerId);
+		recordingTimerId = setInterval(() => {
+			recordingDurationSec.value++;
+		}, 1000);
+	}
+}
+
+function pcmToFloat32(raw: any): Float32Array | null {
+	if (!raw) return null;
+	if (raw instanceof Float32Array) return raw;
+
+	let uint8: Uint8Array;
+	if (raw instanceof Uint8Array) {
+		uint8 = raw;
+	} else if (raw instanceof Int8Array) {
+		uint8 = new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength);
+	} else if (raw instanceof ArrayBuffer) {
+		uint8 = new Uint8Array(raw);
+	} else if (Array.isArray(raw)) {
+		if (raw.length === 0) return null;
+		uint8 = new Uint8Array(raw.length);
+		for (let i = 0; i < raw.length; i++) {
+			uint8[i] = raw[i] & 0xff;
+		}
+	} else if (typeof raw === 'string') {
+		try {
+			const binStr = atob(raw);
+			uint8 = new Uint8Array(binStr.length);
+			for (let i = 0; i < binStr.length; i++) {
+				uint8[i] = binStr.charCodeAt(i);
+			}
+		} catch (_) {
+			return null;
+		}
+	} else {
+		return null;
+	}
+
+	const numSamples = Math.floor(uint8.byteLength / 2);
+	if (numSamples === 0) return null;
+
+	const view = new DataView(uint8.buffer, uint8.byteOffset, uint8.byteLength);
+	const floats = new Float32Array(numSamples);
+	for (let i = 0; i < numSamples; i++) {
+		floats[i] = view.getInt16(i * 2, true) / 32768.0;
+	}
+	return floats;
+}
+
+function handleAudioObservation(rawAudio: any, rate = 44100, channels = 1) {
+	audioFramesReceived.value++;
+	isAudioConnected.value = true;
+	if (rate > 0) audioSampleRate.value = rate;
+	if (channels > 0) audioChannels.value = channels;
+
+	const floatData = pcmToFloat32(rawAudio);
+	if (!floatData || floatData.length === 0) return;
+
+	// Calculate RMS dBFS level
+	let sumSq = 0;
+	for (let i = 0; i < floatData.length; i++) {
+		sumSq += floatData[i] * floatData[i];
+	}
+	const rms = Math.sqrt(sumSq / floatData.length);
+	const dbfs = 20 * Math.log10(Math.max(1e-5, rms));
+	audioLevelDbfs.value = Math.round(dbfs);
+
+	if (!isAudioListening.value) return;
+
+	// Squelch gating: if signal is below squelch threshold, do not play
+	if (dbfs < htlSquelch.value) {
+		return;
+	}
+
+	if (!audioCtx) {
+		initAudioContext(rate);
+	}
+	if (!audioCtx) return;
+
+	if (audioCtx.state === 'suspended') {
+		audioCtx.resume();
+	}
+
+	if (audioGainNode) {
+		const vol = Math.max(0, Math.min(1, Number(htlVolume.value) / 100.0));
+		audioGainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
+	}
+
+	try {
+		const audioBuffer = audioCtx.createBuffer(1, floatData.length, rate);
+		audioBuffer.copyToChannel(floatData, 0, 0);
+
+		const source = audioCtx.createBufferSource();
+		source.buffer = audioBuffer;
+		source.connect(audioGainNode!);
+
+		const now = audioCtx.currentTime;
+		if (nextPlayTime < now || nextPlayTime > now + 0.5) {
+			nextPlayTime = now + 0.04;
+		}
+		source.start(nextPlayTime);
+		nextPlayTime += audioBuffer.duration;
+	} catch (playErr) {
+		console.warn('[SDR.vue] Web Audio playback error:', playErr);
+	}
+}
+
+function applyHtlTuner(freqMhz?: number) {
+	const targetMhz = freqMhz ?? Number(htlTunerFreqMhz.value);
+	const cfHz = targetMhz * 1e6;
+	if (isNaN(cfHz) || cfHz <= 0) return;
+	htlTunerFreqMhz.value = targetMhz;
+	sendHtlCommand(
+		'configureTuner',
+		{
+			tunerId: Number(htlTunerId.value),
+			mode: htlTunerMode.value,
+			centerFrequency: cfHz,
+			txRxMode: htlTxRxMode.value,
+			agcEnabled: Boolean(htlTunerAgc.value),
+			attenuation: Number(htlTunerAtten.value || 0),
+			txPower: Number(htlTunerTxPower.value || 0),
+			enablePreamp: Boolean(htlTunerPreamp.value),
+			dropResources: Boolean(htlTunerDrop.value),
+		},
+		`Configure Tuner ${htlTunerId.value}`
+	);
+}
+
+function applyHtlCollectorStart() {
+	const cfHz = Number(htlCollectorFreqMhz.value) * 1e6;
+	const bwHz = Number(htlCollectorBwMhz.value) * 1e6;
+	sendHtlCommand(
+		'startCollector',
+		{
+			slot: htlCollectorSlot.value,
+			tunerId: Number(htlCollectorTunerId.value),
+			centerFrequency: cfHz,
+			bandwidth: bwHz,
+			sampleRate: Number(htlCollectorSampleRate.value || 0),
+			snapshotNumSamples: Number(htlCollectorSnapshot.value || 0),
+			agcEnabled: Boolean(htlCollectorAgc.value),
+			attenuation: Number(htlCollectorAtten.value || 0),
+			enablePreamp: Boolean(htlCollectorPreamp.value),
+			triggerType: htlCollectorTriggerType.value,
+			triggerStartTime: new Date().toISOString(),
+			collectorId: Number(htlCollectorId.value),
+		},
+		`Start Collector ${htlCollectorSlot.value}`
+	);
+}
+
+function applyHtlCollectorStop() {
+	sendHtlCommand(
+		'stopCollector',
+		{
+			slot: htlCollectorSlot.value,
+			collectorId: -1,
+		},
+		`Stop Collector ${htlCollectorSlot.value}`
+	);
+}
+
+function applyHtlHalt() {
+	sendHtlCommand(
+		'halt',
+		{
+			type: htlHaltType.value,
+		},
+		`Halt ${htlHaltType.value}`
+	);
+}
+
+function applyHtlRefreshStatus() {
+	sendHtlCommand(
+		'refreshStatus',
+		{
+			confirm: true,
+		},
+		'Refresh Status'
+	);
+}
+
+function applyHtlStartService() {
+	if (!htlServiceName.value) return;
+	sendHtlCommand(
+		'startService',
+		{
+			serviceName: htlServiceName.value,
+		},
+		`Start Service ${htlServiceName.value}`
+	);
+}
+
+function confirmHtlReset() {
+	showResetDialog.value = false;
+	sendHtlCommand(
+		'resetUnit',
+		{
+			confirm: true,
+		},
+		'Reset Unit'
+	);
+}
+
+function confirmHtlReboot() {
+	showRebootDialog.value = false;
+	sendHtlCommand(
+		'rebootUnit',
+		{
+			confirm: true,
+		},
+		'Reboot Unit'
+	);
+}
+
 // Interactive Tune actions
 function tuneToMhz(targetMhz: number) {
 	if (targetMhz <= 0) return;
@@ -249,7 +694,16 @@ function tuneToMhz(targetMhz: number) {
 		centerFreqHz.value = Math.round(targetMhz * 1e6);
 	}
 	if (receiverControl.value.hasControl) {
-		sendReceiverCommand({ centerFreq: targetMhz }, `Tune to ${targetMhz} MHz`);
+		if (isHtlDriver.value) {
+			if (connectionMode.value === '10GbE') {
+				applyHtlTuner(targetMhz);
+			} else {
+				htlScoutFreqMhz.value = targetMhz;
+				applyHtlScout();
+			}
+		} else {
+			sendReceiverCommand({ centerFreq: targetMhz }, `Tune to ${targetMhz} MHz`);
+		}
 	}
 }
 
@@ -487,6 +941,38 @@ function handleObservationData(input: any) {
 	}
 	logCount++;
 
+	// 0. Demodulated audio payload handling
+	const audioKey = props.sdrView?.roles?.audio;
+	const rawAudio =
+		(audioKey && data[audioKey] !== undefined ? data[audioKey] : undefined) ??
+		data.audioData ??
+		data.pcmAudio ??
+		data.audio_data ??
+		data['Audio Data'] ??
+		data.pcm_data ??
+		data.audio;
+
+	if (rawAudio !== undefined && rawAudio !== null) {
+		const rate = Number(data.sampleRate ?? data.sample_rate ?? data['Sample Rate'] ?? 44100);
+		const ch = Number(data.channels ?? data.channelCount ?? 1);
+		handleAudioObservation(rawAudio, rate, ch);
+
+		if (data.scoutId !== undefined && !isNaN(Number(data.scoutId))) {
+			htlScoutId.value = Number(data.scoutId);
+		}
+		if (data.centerFrequency && Number(data.centerFrequency) > 0) {
+			const cfMhz = Number(data.centerFrequency) / 1e6;
+			if (htlScoutFreqMhz.value === 145.0 || Math.abs(htlScoutFreqMhz.value - cfMhz) > 0.001) {
+				htlScoutFreqMhz.value = parseFloat(cfMhz.toFixed(3));
+			}
+		}
+
+		// If purely an audio record without RF spectrum bins, return early
+		if (!data.amplitude && !data.rtlsdr_spectrum && !data.psd && !data.spectrum && !data.values) {
+			return;
+		}
+	}
+
 	// 1. Settings / status updates
 	const mode = data.operatingMode ?? data.operating_mode ?? data.mode;
 	if (mode) {
@@ -545,6 +1031,10 @@ function handleObservationData(input: any) {
 		centerFreqHz.value = Math.round(centerFromBounds);
 		if (Math.abs(tuneMhzInput.value * 1e6 - centerFromBounds) > spanFromBounds / 2.0 || tuneMhzInput.value === 98.0) {
 			tuneMhzInput.value = parseFloat((centerFromBounds / 1e6).toFixed(4));
+		}
+		if (htlStartFreqMhz.value === 130.0 && htlStopFreqMhz.value === 170.0) {
+			htlStartFreqMhz.value = parseFloat((numStartFreq / 1e6).toFixed(3));
+			htlStopFreqMhz.value = parseFloat((numStopFreq / 1e6).toFixed(3));
 		}
 	}
 
@@ -1265,6 +1755,104 @@ function startPollingFallback() {
 	}, 1000);
 }
 
+async function detectHtlConnection() {
+	const dsList = getDatasourceList();
+	const cs = receiverControl.value.id ? controlstreamStore.getControlStreamsById([receiverControl.value.id])[0] : null;
+
+	// 1. Check controlstream name or id
+	const csName = (cs?.name || cs?.controlstream?.properties?.name || props.controlstream?.name || '').toLowerCase();
+	const csId = (receiverControl.value.id || props.controlstream?.id || '').toLowerCase();
+	const isCsHtl = csName.includes('htl') || csId.includes('htl');
+
+	// 2. Check datasource resources or names
+	const isDsHtl = dsList.some((d: any) => {
+		const n = (d.name || '').toLowerCase();
+		const r = (d.resource || '').toLowerCase();
+		return n.includes('htl') || r.includes('htl');
+	});
+
+	if (isCsHtl || isDsHtl) {
+		isHtlDriver.value = true;
+	}
+
+	// 3. Inspect datastreams from SensorHub to determine connection mode (1GbE vs 10GbE vs BOTH)
+	for (const dsProps of dsList) {
+		const user = dsProps.connectorOpts?.username || 'admin';
+		const pass = dsProps.connectorOpts?.password || 'admin';
+		const httpProto = dsProps.tls ? 'https' : 'http';
+		let cleanEndpoint = (dsProps.endpointUrl || '')
+			.replace(/^https?:\/\//, '')
+			.replace(/^wss?:\/\//, '')
+			.replace(/\/datastreams.*$/, '')
+			.replace(/\/+$/, '');
+
+		if (!cleanEndpoint) continue;
+
+		try {
+			const res = await fetch(`${httpProto}://${cleanEndpoint}/datastreams`, {
+				headers: { Authorization: 'Basic ' + btoa(`${user}:${pass}`) },
+				credentials: 'include',
+			});
+			if (res.ok) {
+				const list = await res.json();
+				const items: any[] = Array.isArray(list) ? list : (list.items || []);
+				const htlItems = items.filter((d: any) => {
+					const n = (d.name || '').toLowerCase();
+					const o = (d.outputName || '').toLowerCase();
+					return n.includes('htl') || o.includes('spectrum') || o.includes('tunerstatus') || o.startsWith('iq');
+				});
+
+				if (htlItems.length > 0) {
+					isHtlDriver.value = true;
+					const hasSpectrum = htlItems.some((d: any) => {
+						const o = (d.outputName || '').toLowerCase();
+						const n = (d.name || '').toLowerCase();
+						return o === 'spectrum' || n.includes('spectrum');
+					});
+					const hasDdc = htlItems.some((d: any) => {
+						const o = (d.outputName || '').toLowerCase();
+						return o === 'tunerstatus' || o === 'collectorstatus' || o.startsWith('iq');
+					});
+
+					if (hasSpectrum && hasDdc) {
+						connectionMode.value = 'BOTH';
+					} else if (hasSpectrum) {
+						connectionMode.value = '1GbE';
+					} else if (hasDdc) {
+						connectionMode.value = '10GbE';
+					}
+
+					// Auto-discover and connect audio datastream if available
+					const audioItem = items.find((d: any) => {
+						const o = (d.outputName || '').toLowerCase();
+						const n = (d.name || '').toLowerCase();
+						return o === 'audio' || n.includes('audio');
+					});
+					if (audioItem && audioItem.id && !audioDsConnected) {
+						const alreadyHasAudio = dsList.some((d: any) => (d.resource || '').includes(audioItem.id));
+						if (!alreadyHasAudio) {
+							audioDsConnected = true;
+							console.log(`[SDR.vue] Auto-subscribing to audio datastream: ${audioItem.id} (${audioItem.name})`);
+							connectDirectWs(audioItem.id, dsProps);
+							connectDataStream(audioItem.id, dsProps);
+						}
+					}
+					return;
+				}
+			}
+		} catch (e) {
+			console.warn('[SDR.vue] Error detecting HTL connection mode:', e);
+		}
+	}
+
+	// Fallback based on swept spectrum status
+	if (isHtlDriver.value && connectionMode.value === 'UNKNOWN') {
+		if (hasStartStopActive.value) {
+			connectionMode.value = '1GbE';
+		}
+	}
+}
+
 onMounted(() => {
 	isRunning = true;
 	initPalette(colorPalette.value);
@@ -1272,6 +1860,7 @@ onMounted(() => {
 	handleResize();
 	initWaterfallCanvas();
 	startRenderLoop();
+	detectHtlConnection();
 
 	setTimeout(() => {
 		handleResize();
@@ -1410,6 +1999,16 @@ onUnmounted(() => {
 	if (resizeObserver) {
 		resizeObserver.disconnect();
 	}
+	if (audioCtx) {
+		try {
+			audioCtx.close();
+		} catch (_) {}
+		audioCtx = null;
+	}
+	if (recordingTimerId) {
+		clearInterval(recordingTimerId);
+		recordingTimerId = null;
+	}
 });
 
 useVisualizationCleanup(ref(dsInstances));
@@ -1441,6 +2040,16 @@ useVisualizationCleanup(ref(dsInstances));
 					class="ml-1 font-weight-bold"
 				>
 					{{ operatingMode.replace('_', ' ') }}
+				</v-chip>
+
+				<v-chip
+					v-if="isHtlDriver"
+					size="x-small"
+					:color="connectionModeColor"
+					variant="flat"
+					class="ml-1 font-weight-bold"
+				>
+					{{ connectionModeLabel }}
 				</v-chip>
 			</div>
 
@@ -1519,6 +2128,18 @@ useVisualizationCleanup(ref(dsInstances));
 
 			<div class="sdr-group">
 				<v-btn
+					v-if="isHtlDriver"
+					size="small"
+					:color="showHtlControls ? 'primary' : 'grey-darken-3'"
+					variant="flat"
+					@click="showHtlControls = !showHtlControls"
+					title="Toggle HTL Controls Panel"
+				>
+					HTL Controls
+					<v-icon end size="small">{{ showHtlControls ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+				</v-btn>
+
+				<v-btn
 					size="small"
 					:color="autoDb ? 'primary' : 'grey-darken-3'"
 					variant="flat"
@@ -1548,9 +2169,457 @@ useVisualizationCleanup(ref(dsInstances));
 			</div>
 		</div>
 
-		<!-- Optional Receiver Hardware Control Bar (if controlstream bound) -->
+		<!-- HTL Expanded Controls Panel -->
 		<div
-			v-if="receiverControl.hasControl"
+			v-if="isHtlDriver && showHtlControls"
+			class="htl-panel pa-3 mb-2"
+		>
+			<div class="d-flex align-center justify-space-between mb-2 flex-wrap ga-2">
+				<div class="d-flex align-center ga-2">
+					<span class="htl-title">HTL RADIO CONTROLS</span>
+					<v-chip
+						size="x-small"
+						:color="connectionModeColor"
+						variant="outlined"
+						class="font-weight-bold"
+					>
+						{{ connectionModeLabel }}
+					</v-chip>
+				</div>
+
+				<div class="d-flex align-center ga-2 flex-wrap">
+					<v-btn
+						size="x-small"
+						color="info"
+						variant="tonal"
+						@click="applyHtlRefreshStatus"
+						title="Publish latest core unit status"
+					>
+						Refresh Status
+					</v-btn>
+					<v-btn
+						size="x-small"
+						color="warning"
+						variant="tonal"
+						@click="showResetDialog = true"
+						title="Reset tuners and collectors to factory defaults"
+					>
+						Reset Unit
+					</v-btn>
+					<v-btn
+						size="x-small"
+						color="error"
+						variant="flat"
+						@click="showRebootDialog = true"
+						title="Reboot HTL radio unit"
+					>
+						Reboot Radio
+					</v-btn>
+				</div>
+			</div>
+
+			<!-- Section 1: 1 GbE & Both - Sweep & Scanner Range Configuration -->
+			<div class="htl-section mb-3">
+				<div class="htl-section-header">
+					<span class="htl-section-title">SPECTRUM SCANNER CONFIGURATION</span>
+					<span v-if="!is1GbeCapable" class="text-caption text-error font-italic">
+						(Requires 1 GbE connection)
+					</span>
+				</div>
+				<div class="d-flex flex-wrap align-center ga-2 mt-1">
+					<v-text-field
+						v-model.number="htlStartFreqMhz"
+						label="Start (MHz)"
+						density="compact"
+						variant="outlined"
+						hide-details
+						style="width: 130px;"
+						type="number"
+						step="1.0"
+						:disabled="!is1GbeCapable"
+					></v-text-field>
+
+					<v-text-field
+						v-model.number="htlStopFreqMhz"
+						label="Stop (MHz)"
+						density="compact"
+						variant="outlined"
+						hide-details
+						style="width: 130px;"
+						type="number"
+						step="1.0"
+						:disabled="!is1GbeCapable"
+					></v-text-field>
+
+					<v-select
+						v-model="htlNumPoints"
+						:items="[512, 1024, 2048, 4096, 8192]"
+						label="FFT Bins"
+						density="compact"
+						variant="outlined"
+						hide-details
+						style="width: 110px;"
+						:disabled="!is1GbeCapable"
+					></v-select>
+
+					<v-select
+						v-model="htlUpdateRate"
+						:items="[1, 2, 5, 10, 15, 20, 25, 30]"
+						label="Rate (Hz)"
+						density="compact"
+						variant="outlined"
+						hide-details
+						style="width: 100px;"
+						:disabled="!is1GbeCapable"
+					></v-select>
+
+					<v-btn
+						size="small"
+						color="primary"
+						variant="flat"
+						@click="applyHtlSpectrumConfig"
+						:disabled="!is1GbeCapable"
+					>
+						Apply Sweep
+					</v-btn>
+				</div>
+			</div>
+
+			<!-- Section 2: 1 GbE & Both - Signal Scout & Audio Demodulation -->
+			<div class="htl-section mb-3">
+				<div class="htl-section-header">
+					<div class="d-flex align-center ga-2 flex-wrap">
+						<span class="htl-section-title">SIGNAL SCOUT & AUDIO DEMODULATION</span>
+						<v-chip
+							v-if="isAudioConnected"
+							size="x-small"
+							color="success"
+							variant="flat"
+							class="font-weight-medium"
+						>
+							AUDIO: {{ Math.round(audioSampleRate / 1000) }} kHz {{ audioChannels === 1 ? 'Mono' : 'Stereo' }}
+						</v-chip>
+						<v-chip
+							v-if="isRecordingAudio"
+							size="x-small"
+							color="error"
+							variant="flat"
+							class="font-weight-bold"
+						>
+							● REC {{ formattedRecordingTime }}
+						</v-chip>
+					</div>
+					<span v-if="!is1GbeCapable" class="text-caption text-error font-italic">
+						(Requires 1 GbE connection)
+					</span>
+				</div>
+				<div class="d-flex flex-wrap align-center ga-2 mt-1">
+					<v-select
+						v-model="htlScoutId"
+						:items="[0, 1, 2, 3]"
+						label="Scout ID"
+						density="compact"
+						variant="outlined"
+						hide-details
+						style="width: 100px;"
+						:disabled="!is1GbeCapable"
+					></v-select>
+
+					<v-text-field
+						v-model.number="htlScoutFreqMhz"
+						label="Scout Freq (MHz)"
+						density="compact"
+						variant="outlined"
+						hide-details
+						style="width: 140px;"
+						type="number"
+						step="0.025"
+						:disabled="!is1GbeCapable"
+					></v-text-field>
+
+					<v-btn
+						size="x-small"
+						variant="tonal"
+						color="info"
+						@click="htlScoutFreqMhz = parseFloat(peakFreqMhz)"
+						:disabled="!is1GbeCapable || peakFreqMhz === '---'"
+						title="Set scout frequency to detected peak frequency"
+					>
+						Set Peak
+					</v-btn>
+
+					<v-select
+						v-model="htlDemodMode"
+						:items="['FM', 'WFM', 'AM', 'USB', 'LSB', 'CW']"
+						label="Demod"
+						density="compact"
+						variant="outlined"
+						hide-details
+						style="width: 110px;"
+						:disabled="!is1GbeCapable"
+					></v-select>
+
+					<div class="d-flex align-center ga-1" style="min-width: 170px; max-width: 210px; flex: 1 1 170px;">
+						<span class="text-caption text-grey font-weight-medium" style="white-space: nowrap;">SQL:</span>
+						<v-slider
+							v-model="htlSquelch"
+							:min="-120"
+							:max="0"
+							:step="1"
+							density="compact"
+							hide-details
+							color="primary"
+							class="flex-grow-1 mx-1"
+							:disabled="!is1GbeCapable"
+						></v-slider>
+						<span class="text-caption font-monospace text-right" style="min-width: 45px;">{{ htlSquelch }}dB</span>
+					</div>
+
+					<div class="d-flex align-center ga-1" style="min-width: 150px; max-width: 190px; flex: 1 1 150px;">
+						<span class="text-caption text-grey font-weight-medium" style="white-space: nowrap;">VOL:</span>
+						<v-slider
+							v-model="htlVolume"
+							:min="0"
+							:max="100"
+							:step="5"
+							density="compact"
+							hide-details
+							color="primary"
+							class="flex-grow-1 mx-1"
+							:disabled="!is1GbeCapable"
+							@update:model-value="onVolumeChanged"
+						></v-slider>
+						<span class="text-caption font-monospace text-right" style="min-width: 35px;">{{ htlVolume }}%</span>
+					</div>
+
+					<v-btn
+						size="small"
+						:color="isAudioListening ? 'success' : 'grey-darken-2'"
+						:variant="isAudioListening ? 'flat' : 'tonal'"
+						@click="toggleAudioListening"
+						:disabled="!is1GbeCapable"
+						:prepend-icon="isAudioListening ? 'mdi-volume-high' : 'mdi-volume-off'"
+						:title="isAudioListening ? 'Mute demodulated audio' : 'Listen to demodulated audio in browser'"
+					>
+						{{ isAudioListening ? 'Listening' : 'Listen' }}
+					</v-btn>
+
+					<v-btn
+						size="small"
+						:color="isRecordingAudio ? 'error' : 'grey-darken-2'"
+						:variant="isRecordingAudio ? 'flat' : 'tonal'"
+						@click="toggleAudioRecording"
+						:disabled="!is1GbeCapable || !receiverControl.hasControl"
+						:prepend-icon="isRecordingAudio ? 'mdi-record-rec' : 'mdi-record'"
+						:title="isRecordingAudio ? 'Stop recording audio' : 'Record scout audio to WAV file on driver'"
+					>
+						{{ isRecordingAudio ? 'Stop Rec' : 'Record' }}
+					</v-btn>
+
+					<v-btn
+						size="small"
+						color="primary"
+						variant="flat"
+						@click="applyHtlScout"
+						:disabled="!is1GbeCapable"
+					>
+						Apply Scout
+					</v-btn>
+				</div>
+
+				<!-- Live Audio Level Meter & Status Bar -->
+				<div
+					v-if="isAudioConnected"
+					class="d-flex align-center ga-2 mt-2 px-2 py-1 rounded bg-grey-darken-4 text-caption"
+					style="font-size: 0.75rem;"
+				>
+					<span class="text-grey">Audio Level:</span>
+					<div
+						class="flex-grow-1 rounded overflow-hidden position-relative bg-grey-darken-3"
+						style="height: 10px; max-width: 250px;"
+					>
+						<div
+							class="h-100 transition-swing"
+							:class="isAudioGateOpen ? 'bg-success' : 'bg-warning'"
+							:style="{ width: `${Math.max(0, Math.min(100, (audioLevelDbfs + 100) * 1.25))}%` }"
+						></div>
+					</div>
+					<span class="font-monospace text-grey-lighten-1" style="min-width: 45px;">{{ audioLevelDbfs }} dBFS</span>
+					<v-chip
+						size="x-small"
+						:color="isAudioGateOpen ? 'success' : 'grey'"
+						variant="tonal"
+						class="text-uppercase"
+					>
+						{{ isAudioGateOpen ? 'Gate Open' : 'Squelched' }}
+					</v-chip>
+				</div>
+			</div>
+
+			<!-- Section 3: 10 GbE & Both - DDC Tuner & Collector Tasking -->
+			<div class="htl-section mb-3" :class="{ 'htl-section-disabled': !is10GbeCapable }">
+				<div class="htl-section-header">
+					<span class="htl-section-title">10 GbE DDC TUNER & COLLECTOR TASKING</span>
+					<span v-if="!is10GbeCapable" class="text-caption text-warning font-italic">
+						(Disabled: requires 10 GbE connection, current mode is {{ connectionModeLabel }})
+					</span>
+				</div>
+				<div class="d-flex flex-wrap align-center ga-2 mt-1">
+					<v-select
+						v-model="htlTunerId"
+						:items="[0, 1]"
+						label="Tuner"
+						density="compact"
+						variant="outlined"
+						hide-details
+						style="width: 90px;"
+						:disabled="!is10GbeCapable"
+					></v-select>
+
+					<v-select
+						v-model="htlTunerMode"
+						:items="['AutoTune', 'ManualTune']"
+						label="Tune Mode"
+						density="compact"
+						variant="outlined"
+						hide-details
+						style="width: 130px;"
+						:disabled="!is10GbeCapable"
+					></v-select>
+
+					<v-text-field
+						v-model.number="htlTunerFreqMhz"
+						label="Tuner (MHz)"
+						density="compact"
+						variant="outlined"
+						hide-details
+						style="width: 130px;"
+						type="number"
+						step="0.1"
+						:disabled="!is10GbeCapable"
+					></v-text-field>
+
+					<v-select
+						v-model="htlTxRxMode"
+						:items="['Rx', 'Tx', 'FullDuplex']"
+						label="Tx/Rx"
+						density="compact"
+						variant="outlined"
+						hide-details
+						style="width: 100px;"
+						:disabled="!is10GbeCapable"
+					></v-select>
+
+					<v-checkbox
+						v-model="htlTunerAgc"
+						label="AGC"
+						density="compact"
+						hide-details
+						:disabled="!is10GbeCapable"
+						class="ma-0"
+					></v-checkbox>
+
+					<v-checkbox
+						v-model="htlTunerPreamp"
+						label="Preamp"
+						density="compact"
+						hide-details
+						:disabled="!is10GbeCapable"
+						class="ma-0"
+					></v-checkbox>
+
+					<v-btn
+						size="small"
+						color="secondary"
+						variant="flat"
+						@click="applyHtlTuner()"
+						:disabled="!is10GbeCapable"
+					>
+						Apply Tuner
+					</v-btn>
+
+					<!-- Collector Controls -->
+					<v-divider vertical class="mx-1 my-1"></v-divider>
+
+					<v-select
+						v-model="htlCollectorSlot"
+						:items="['iq0', 'iq1']"
+						label="IQ Slot"
+						density="compact"
+						variant="outlined"
+						hide-details
+						style="width: 95px;"
+						:disabled="!is10GbeCapable"
+					></v-select>
+
+					<v-select
+						v-model="htlCollectorBwMhz"
+						:items="[0.5, 1.0, 2.0, 5.0, 10.0, 20.0]"
+						label="BW (MHz)"
+						density="compact"
+						variant="outlined"
+						hide-details
+						style="width: 105px;"
+						:disabled="!is10GbeCapable"
+					></v-select>
+
+					<v-btn
+						size="small"
+						color="success"
+						variant="flat"
+						@click="applyHtlCollectorStart"
+						:disabled="!is10GbeCapable"
+					>
+						Start Collect
+					</v-btn>
+
+					<v-btn
+						size="small"
+						color="error"
+						variant="outlined"
+						@click="applyHtlCollectorStop"
+						:disabled="!is10GbeCapable"
+					>
+						Stop
+					</v-btn>
+
+					<v-btn
+						size="small"
+						color="warning"
+						variant="outlined"
+						@click="applyHtlHalt"
+						:disabled="!is10GbeCapable"
+					>
+						Halt All
+					</v-btn>
+				</div>
+			</div>
+
+			<!-- Section 4: Format Service Management -->
+			<div class="d-flex align-center ga-2 mt-2 pt-2 border-t">
+				<span class="text-caption text-grey">Format Service:</span>
+				<v-select
+					v-model="htlServiceName"
+					:items="['DDC', 'HSTA']"
+					density="compact"
+					variant="outlined"
+					hide-details
+					style="width: 110px;"
+				></v-select>
+				<v-btn
+					size="x-small"
+					color="info"
+					variant="flat"
+					@click="applyHtlStartService"
+				>
+					Start Service
+				</v-btn>
+			</div>
+		</div>
+
+		<!-- Optional Receiver Hardware Control Bar (if controlstream bound and non-HTL) -->
+		<div
+			v-if="receiverControl.hasControl && !isHtlDriver"
 			class="sdr-rx-controls mb-2 pa-2"
 		>
 			<span class="sdr-sublabel mr-2">RECEIVER:</span>
@@ -1615,6 +2684,19 @@ useVisualizationCleanup(ref(dsInstances));
 					@update:model-value="applyAudioMode"
 				></v-select>
 			</div>
+
+			<v-btn
+				v-if="audioMode !== 'OFF'"
+				size="x-small"
+				:color="isAudioListening ? 'success' : 'grey-darken-2'"
+				:variant="isAudioListening ? 'flat' : 'tonal'"
+				@click="toggleAudioListening"
+				class="ml-2"
+				:prepend-icon="isAudioListening ? 'mdi-volume-high' : 'mdi-volume-off'"
+				:title="isAudioListening ? 'Mute audio' : 'Listen to demodulated audio in browser'"
+			>
+				{{ isAudioListening ? 'Listening' : 'Listen' }}
+			</v-btn>
 		</div>
 
 		<!-- Upper Canvas: RF Spectrum Analyzer -->
@@ -1660,6 +2742,37 @@ useVisualizationCleanup(ref(dsInstances));
 				@click="onCanvasClick($event, false)"
 			></canvas>
 		</div>
+
+		<!-- Confirmation Dialogs -->
+		<v-dialog v-model="showRebootDialog" max-width="420">
+			<v-card color="#111a24" class="pa-3">
+				<v-card-title class="text-error font-weight-bold">
+					Confirm Radio Reboot
+				</v-card-title>
+				<v-card-text>
+					Are you sure you want to reboot the HTL Radio unit? All active streams and connections will temporarily disconnect while the unit restarts.
+				</v-card-text>
+				<v-card-actions class="justify-end ga-2">
+					<v-btn variant="text" @click="showRebootDialog = false">Cancel</v-btn>
+					<v-btn color="error" variant="flat" @click="confirmHtlReboot">Reboot</v-btn>
+				</v-card-actions>
+			</v-card>
+		</v-dialog>
+
+		<v-dialog v-model="showResetDialog" max-width="420">
+			<v-card color="#111a24" class="pa-3">
+				<v-card-title class="text-warning font-weight-bold">
+					Confirm Unit Reset
+				</v-card-title>
+				<v-card-text>
+					Are you sure you want to reset all tuners and collectors to factory defaults?
+				</v-card-text>
+				<v-card-actions class="justify-end ga-2">
+					<v-btn variant="text" @click="showResetDialog = false">Cancel</v-btn>
+					<v-btn color="warning" variant="flat" @click="confirmHtlReset">Reset</v-btn>
+				</v-card-actions>
+			</v-card>
+		</v-dialog>
 	</v-card>
 </template>
 
@@ -1818,5 +2931,44 @@ useVisualizationCleanup(ref(dsInstances));
 		#ffffff
 	);
 	border: 1px solid #334155;
+}
+
+.htl-panel {
+	background: #0d1520;
+	border: 1px solid #1e2d42;
+	border-radius: 6px;
+}
+
+.htl-title {
+	font-size: 11px;
+	font-weight: 700;
+	color: #38bdf8;
+	letter-spacing: 0.5px;
+}
+
+.htl-section {
+	background: #111a26;
+	border: 1px solid #1b2636;
+	border-radius: 4px;
+	padding: 8px;
+}
+
+.htl-section-disabled {
+	opacity: 0.55;
+	background: #0d131c;
+}
+
+.htl-section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 4px;
+}
+
+.htl-section-title {
+	font-size: 10px;
+	font-weight: 700;
+	color: #94a3b8;
+	letter-spacing: 0.5px;
 }
 </style>

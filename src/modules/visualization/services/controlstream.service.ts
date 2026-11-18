@@ -114,7 +114,8 @@ export function sendCommand(
 			if (data.statusCode === 'COMPLETED') {
 				showToast(`${name} applied`, 'SUCCESS');
 			} else if (data.statusCode === 'FAILED') {
-				showToast(`${name} failed`, 'ERROR');
+				const msg = data.message ? `${name} failed: ${data.message}` : `${name} failed`;
+				showToast(msg, 'ERROR');
 			} else {
 				showToast(`${name}: ${data.statusCode}`, 'INFO');
 			}
