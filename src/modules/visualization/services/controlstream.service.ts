@@ -199,31 +199,47 @@ export function getCommandType(schema: any, id: string) {
 		// Check for DataRecord commands
 		if (schema.some((item: any) => item.type === 'DataRecord')) isDataRecord = true;
 
+		const hasZoom =
+			schema.some(
+				(item: any) =>
+					item.name === 'zoom' &&
+					item.constraint?.intervals?.[0] &&
+					item.constraint.intervals[0][1] > item.constraint.intervals[0][0]
+			) || schema.some((item: any) => item.name === 'rzoom');
+
 		commandType = {
 			type: type,
 			details: {
 				hasRelative: isRelative,
 				hasPreset: isPreset,
 				hasDataRecord: isDataRecord,
+				hasZoom: hasZoom,
 			},
 		};
 
 		if (schema.some((item: any) => item.name === 'pan')) {
 			// Add absolute PTZ command schema
-			commandSchema.pan = {
-				type: 'number',
-				constraint: schema.find((item: any) => item.name === 'pan').constraint.intervals[0],
-			};
-			commandSchema.tilt = {
-				type: 'number',
-				constraint: schema.find((item: any) => item.name === 'tilt').constraint
-					.intervals[0],
-			};
-			commandSchema.zoom = {
-				type: 'number',
-				constraint: schema.find((item: any) => item.name === 'zoom').constraint
-					.intervals[0],
-			};
+			const panItem = schema.find((item: any) => item.name === 'pan');
+			if (panItem?.constraint?.intervals?.[0]) {
+				commandSchema.pan = {
+					type: 'number',
+					constraint: panItem.constraint.intervals[0],
+				};
+			}
+			const tiltItem = schema.find((item: any) => item.name === 'tilt');
+			if (tiltItem?.constraint?.intervals?.[0]) {
+				commandSchema.tilt = {
+					type: 'number',
+					constraint: tiltItem.constraint.intervals[0],
+				};
+			}
+			const zoomItem = schema.find((item: any) => item.name === 'zoom');
+			if (zoomItem?.constraint?.intervals?.[0]) {
+				commandSchema.zoom = {
+					type: 'number',
+					constraint: zoomItem.constraint.intervals[0],
+				};
+			}
 		}
 		if (schema.some((item: any) => item.name === 'rpan')) {
 			// Add relative PTZ command schema
@@ -233,25 +249,28 @@ export function getCommandType(schema: any, id: string) {
 			commandSchema.rtilt = {
 				type: 'number',
 			};
-			commandSchema.rzoom = {
-				type: 'number',
-			};
+			if (schema.some((item: any) => item.name === 'rzoom')) {
+				commandSchema.rzoom = {
+					type: 'number',
+				};
+			}
 		}
 		if (schema.some((item: any) => item.name === 'preset')) {
 			// Add Preset PTZ command schema
 			const presetItem = schema.find((item: any) => item.name === 'preset');
 			// Add all possible preset values as an array
-			commandSchema.preset = { type: presetItem.type, values: presetItem.constraint.values };
+			commandSchema.preset = { type: presetItem.type, values: presetItem.constraint?.values || [] };
 		}
 		if (schema.some((item: any) => item.type === 'DataRecord')) {
 			// Add DataRecord PTZ command schema
 			const dataRecItem = schema.find((item: any) => item.type === 'DataRecord');
-			commandSchema[dataRecItem.name] = {
+			const recordSchema: any = {
 				type: dataRecItem.type,
-				pan: { type: 'number', constraint: commandSchema.pan.constraint },
-				tilt: { type: 'number', constraint: commandSchema.tilt.constraint },
-				zoom: { type: 'number', constraint: commandSchema.zoom.constraint },
+				...(commandSchema.pan ? { pan: { type: 'number', constraint: commandSchema.pan.constraint } } : {}),
+				...(commandSchema.tilt ? { tilt: { type: 'number', constraint: commandSchema.tilt.constraint } } : {}),
+				...(commandSchema.zoom ? { zoom: { type: 'number', constraint: commandSchema.zoom.constraint } } : {}),
 			};
+			commandSchema[dataRecItem.name] = recordSchema;
 		}
 	}
 	// Check for LLA command schema

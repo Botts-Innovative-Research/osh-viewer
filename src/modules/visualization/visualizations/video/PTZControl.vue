@@ -177,17 +177,17 @@ const constraints = computed(() => {
 		maxPan,
 		minTilt,
 		maxTilt,
-		minZoom,
+		minZoom = 0,
 		maxZoom = 0;
-	if (controlStreamSchema.value.pan) {
+	if (controlStreamSchema.value?.pan?.constraint) {
 		minPan = controlStreamSchema.value.pan.constraint[0];
 		maxPan = controlStreamSchema.value.pan.constraint[1];
 	}
-	if (controlStreamSchema.value.tilt) {
+	if (controlStreamSchema.value?.tilt?.constraint) {
 		minTilt = controlStreamSchema.value.tilt.constraint[0];
 		maxTilt = controlStreamSchema.value.tilt.constraint[1];
 	}
-	if (controlStreamSchema.value.zoom) {
+	if (controlStreamSchema.value?.zoom?.constraint) {
 		minZoom = controlStreamSchema.value.zoom.constraint[0];
 		maxZoom = controlStreamSchema.value.zoom.constraint[1];
 	}
@@ -219,7 +219,7 @@ const constraintTooltip = computed(() => {
 							: `mdi-arrow-${dir}-drop-circle`
 					"
 					:alt="`${dir}`"
-					v-for="{ dir, angle, scale } in buttonConfig"
+					v-for="{ dir, angle, scale } in displayedButtons"
 					:key="dir"
 					@mousedown="
 						handleMove(dir === 'minus' ? 'zoomOut' : dir === 'plus' ? 'zoomIn' : dir)
@@ -298,7 +298,10 @@ const constraintTooltip = computed(() => {
 						/>
 					</template>
 				</v-tooltip>
-				<v-tooltip :text="`min: ${constraints.minZoom}, max: ${constraints.maxZoom}`">
+				<v-tooltip
+					v-if="hasZoom"
+					:text="`min: ${constraints.minZoom}, max: ${constraints.maxZoom}`"
+				>
 					<template #activator="{ props }">
 						<v-number-input
 							v-model.number="absZoom"
