@@ -111,6 +111,11 @@ const controlStreamStore = useControlStreamStore();
 const controlStreamSchema = computed(() => controlStreamStore.getCSSchemaById(props.id) || {});
 const controlStreamType = computed(() => controlStreamStore.getCSTypeById(props.id) || {});
 
+const displayedButtons = computed(() => {
+	if (controlStreamType.value?.details?.hasZoom) return buttonConfig;
+	return buttonConfig.filter((b) => b.dir !== 'plus' && b.dir !== 'minus');
+});
+
 // List of command options based on schema
 const commandOptions = computed(() => {
 	return Object.keys(controlStreamSchema.value);
