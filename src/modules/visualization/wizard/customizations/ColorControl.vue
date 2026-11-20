@@ -7,14 +7,16 @@ const props = withDefaults(
 		roleName: string; // Name to store in the vizwizstore
 		label: string; // Label to display above input
 		hideInputs?: boolean; // Whether to hide the RGBA input fields in the color picker
+		defaultColor?: string; // Starting color if none is saved yet
 	}>(),
 	{
 		hideInputs: false,
+		defaultColor: '#ff0000',
 	}
 );
 
 const vwStore = useVizWizStore();
-const color = ref<string>('#ff0000');
+const color = ref<string>(props.defaultColor);
 
 watch(color, (val) => {
 	vwStore.updateVisualizationCustomizationOptions({ [props.roleName]: val });

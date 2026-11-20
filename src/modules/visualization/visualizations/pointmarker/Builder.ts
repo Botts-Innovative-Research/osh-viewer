@@ -71,6 +71,14 @@ export async function CreatePointMarkerVizProps(
 		iconColor: visOptions.iconColor || DEFAULT_POINTMARKER_LAYER_PROPERTIES.iconColor,
 		iconName: visOptions.iconName ?? DEFAULT_POINTMARKER_LAYER_PROPERTIES.iconName,
 		iconAnchor: getIconAnchor(visOptions.icon ?? ''),
+
+		labelOffset: getLabelOffset(visOptions.labelPosition),
+		...(visOptions.labelColor ? { labelColor: visOptions.labelColor } : {}),
+		...(visOptions.labelOutlineColor ? { labelOutlineColor: visOptions.labelOutlineColor } : {}),
+		...(visOptions.labelBackgroundColor
+			? { labelBackgroundColor: visOptions.labelBackgroundColor }
+			: {}),
+		...(visOptions.labelSize ? { labelSize: visOptions.labelSize } : {}),
 	};
 
 	if (visOptions.useMilSymbol && visOptions.milSymbol) {
@@ -118,4 +126,18 @@ export async function CreatePointMarkerVizProps(
 		vizDatasources,
 		pointMarkerLayer,
 	};
+}
+
+function getLabelOffset(position?: string): number[] {
+	switch (position) {
+		case 'below':
+			return [0, 48];
+		case 'left':
+			return [-60, 0];
+		case 'right':
+			return [60, 0];
+		case 'above':
+		default:
+			return [0, -48];
+	}
 }

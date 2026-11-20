@@ -180,6 +180,7 @@ export async function createPointMarkerLayer(
 		...(getIconColor ? { getIconColor } : {}),
 		...(getLabel ? { getLabel } : {}),
 		...(getIcon ? { getIcon } : {}),
+
 	});
 
 	const props = setLayerData(pmLayer);

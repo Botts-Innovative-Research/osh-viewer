@@ -12,6 +12,12 @@ export interface IPointMarkerCustomizationOptions extends CustomizationOptions {
 	iconName: string;
 	milSymbol?: string;
 	useMilSymbol?: boolean;
+	labelText?: string;
+	labelColor?: string;
+	labelOutlineColor?: string;
+	labelBackgroundColor?: string;
+	labelSize?: number;
+	labelPosition?: 'above' | 'below' | 'left' | 'right';
 }
 
 export interface ILineOfBearingCustomizationOptions extends CustomizationOptions {
