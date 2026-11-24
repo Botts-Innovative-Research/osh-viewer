@@ -6,24 +6,47 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 import { Mode } from 'osh-js/source/core/datasource/Mode';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import { SdrDescriptor } from './Descriptor';
+import { SdrConfigRoles, SdrDescriptor } from './Descriptor';
 import {
 	AggregateDatastreams,
 	BuildRoleProperty,
+	PickConfigRoles,
 	getUsedControlstreams,
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
 import { VisualizationComponents } from '../../types/visualization';
 import { ISdrCustomizationOptions } from '../../types/customization';
 import { IConSysApiDataSourceProperties } from '../../types/datasource';
+import { ISdrLayerProperties } from '../../types/layers';
 import { ISdrViewProperties } from '../../types/views';
+
+// The spectrum roles of the osh-js SdrLayer, mapped to a record field by the wizard. Any role
+// left unmapped is detected from the record by the layer itself
+const SDR_LAYER_ROLES = [
+	'amplitude',
+	'centerFrequency',
+	'frequencyAxis',
+	'sampleRate',
+	'startFrequency',
+	'stopFrequency',
+	'audio',
+];
+
+// The roles of the SDR wizard step, which are the only ones the visualization is built from
+const SDR_DS_ROLES = SdrConfigRoles.filter((config) => config.type === 'ds').map((c) => c.role);
+const SDR_CS_ROLES = SdrConfigRoles.filter((config) => config.type === 'cs').map((c) => c.role);
 
 export default function build() {
 	console.log('Building SDR Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
 
-	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
+	// only the roles of this visualization are built: a role left in the store by another
+	// visualization type would otherwise connect the SDR view to a stream carrying no spectrum
+	const sdrDsConfig = PickConfigRoles(vizwizStore.dsConfig, SDR_DS_ROLES);
+	const sdrCsConfig = PickConfigRoles(vizwizStore.csConfig, SDR_CS_ROLES);
+
+	const datastreams = AggregateDatastreams(sdrDsConfig);
 
 	const sdrResult = CreateSdrVizProps(
 		datastreams,
@@ -32,7 +55,7 @@ export default function build() {
 
 	const visualizationComponents: VisualizationComponents = {
 		dataSource: sdrResult.vizDatasources,
-		dataLayer: null,
+		dataLayer: sdrResult.sdrLayer,
 		dataView: sdrResult.sdrView,
 	};
 
@@ -41,8 +64,8 @@ export default function build() {
 		vizwizStore.visualizationCustomizationOptions.name || 'SDR Spectrum',
 		'sdr',
 		SdrDescriptor.viewLocation,
-		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
-		getUsedControlstreams(vizwizStore.controlstreams, vizwizStore.csConfig)
+		getUsedDatastreams(vizwizStore.datastreams, sdrDsConfig),
+		getUsedControlstreams(vizwizStore.controlstreams, sdrCsConfig)
 	);
 
 	newViz.setVisualizationComponents(visualizationComponents);
@@ -60,7 +83,22 @@ export function CreateSdrVizProps(
 
 	const vizDatasources: IConSysApiDataSourceProperties[] = [];
 
-	const sdrView: ISdrViewProperties & { roles?: any } = {
+	// only the roles the user actually mapped are given to the layer, so that the ones left out
+	// fall back to the field detection of the SdrLayer instead of to a guessed field name
+	const roles: { [role: string]: string } = {};
+	for (const role of SDR_LAYER_ROLES) {
+		const entry = vizwizStore.dsConfig?.[role];
+		if (entry?.selected && entry?.property) {
+			roles[role] = entry.property;
+		}
+	}
+
+	const sdrLayer: ISdrLayerProperties = {
+		name: visOptions?.name || 'RF Spectrum',
+		roles: roles,
+	};
+
+	const sdrView: ISdrViewProperties = {
 		container: `sdr-container-${randomUUID()}`,
 		css: 'sdr-view',
 		layers: null,
@@ -71,16 +109,9 @@ export function CreateSdrVizProps(
 		waterfall: visOptions?.waterfall ?? true,
 		waterfallSpeed: visOptions?.waterfallSpeed ?? 2,
 		colorPalette: visOptions?.colorPalette ?? 'heat',
-		roles: {
-			amplitude: vizwizStore.dsConfig?.amplitude?.property ?? 'amplitude',
-			amplitudeOutputName: vizwizStore.dsConfig?.amplitude?.outputName ?? 'rtlsdr_spectrum',
-			centerFrequency: vizwizStore.dsConfig?.centerFrequency?.property ?? 'center_frequency',
-			frequencyAxis: vizwizStore.dsConfig?.frequencyAxis?.property ?? 'frequency_axis',
-			sampleRate: vizwizStore.dsConfig?.sampleRate?.property ?? 'sampleRate',
-			startFrequency: vizwizStore.dsConfig?.startFrequency?.property ?? 'startFrequency',
-			stopFrequency: vizwizStore.dsConfig?.stopFrequency?.property ?? 'stopFrequency',
-			audio: vizwizStore.dsConfig?.audio?.property ?? 'audioData',
-		},
+		// the demodulated audio is carried by the observations of the audio datastream, so the
+		// listening controls are only offered when one was mapped
+		showAudioControls: roles.audio !== undefined,
 	};
 
 	for (const [dsId, entry] of Object.entries(datastreams)) {
@@ -121,6 +152,7 @@ export function CreateSdrVizProps(
 
 	return {
 		vizDatasources,
+		sdrLayer,
 		sdrView,
 	};
 }

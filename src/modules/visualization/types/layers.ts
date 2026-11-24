@@ -25,6 +25,13 @@ export interface IVideoLayerProperties extends DataLayerProperties {
 	getTimestamp: (rec: any, timestamp: any) => any;
 }
 
+export interface ISdrLayerProperties extends DataLayerProperties {
+	// Maps an SdrLayer spectrum role ('amplitude', 'centerFrequency', ...) to the name of the
+	// record field carrying it. Roles left out are detected from the record by the layer
+	roles: { [role: string]: string };
+	amplitudeUnit?: string;
+}
+
 export interface IPointMarkerLayerProperties extends DataLayerProperties {
 	getCoordinates?: (rec: any) => { lat: number; lon: number };
 	label: string;

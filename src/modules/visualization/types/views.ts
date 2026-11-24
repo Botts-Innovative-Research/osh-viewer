@@ -1,4 +1,9 @@
-import { DataLayerProperties, ICurveLayerProperties, IVideoLayerProperties } from './layers';
+import {
+	DataLayerProperties,
+	ICurveLayerProperties,
+	ISdrLayerProperties,
+	IVideoLayerProperties,
+} from './layers';
 
 export interface DataViewProperties {
 	container: string;
@@ -26,6 +31,7 @@ export interface IVideoViewProperties extends DataViewProperties {
 }
 
 export interface ISdrViewProperties extends DataViewProperties {
+	layers: ISdrLayerProperties[] | null;
 	autoDb?: boolean;
 	minDb?: number;
 	maxDb?: number;
@@ -33,5 +39,15 @@ export interface ISdrViewProperties extends DataViewProperties {
 	waterfallSpeed?: number;
 	averaging?: number;
 	colorPalette?: string;
+	// Frequency plan used until the data reports the one it was recorded with
+	centerFrequency?: number;
+	sampleRate?: number;
+	// The command set of the receiver and, for an HTL radio, the connection it is reached by
+	receiverType?: 'rtlsdr' | 'htl';
+	connectionMode?: '1GbE' | '10GbE' | 'BOTH' | 'UNKNOWN';
+	showAudioControls?: boolean;
+	showReceiverControls?: boolean;
+	volume?: number;
+	squelch?: number;
 }
 

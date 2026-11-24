@@ -13,9 +13,15 @@ import {
 	IEllipseLayerProperties,
 	ILineOfBearingLayerProperties,
 	IPointMarkerLayerProperties,
+	ISdrLayerProperties,
 	IVideoLayerProperties,
 } from './layers';
-import { DataViewProperties, IChartViewProperties, IVideoViewProperties } from './views';
+import {
+	DataViewProperties,
+	IChartViewProperties,
+	ISdrViewProperties,
+	IVideoViewProperties,
+} from './views';
 
 export interface VisualizationComponents {
 	dataSource?: IConSysApiDataSourceProperties[];
@@ -30,12 +36,14 @@ export type VisualizationLayerProperties =
 	| IVideoLayerProperties
 	| IPointMarkerLayerProperties
 	| ILineOfBearingLayerProperties
-	| IEllipseLayerProperties;
+	| IEllipseLayerProperties
+	| ISdrLayerProperties;
 
 export type VisualizationViewProperties =
 	| DataViewProperties
 	| IChartViewProperties
-	| IVideoViewProperties;
+	| IVideoViewProperties
+	| ISdrViewProperties;
 
 export type VisualizationCustomizationOptions =
 	| CustomizationOptions

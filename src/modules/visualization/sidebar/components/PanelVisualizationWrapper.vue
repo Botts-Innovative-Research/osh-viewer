@@ -106,6 +106,7 @@ watch(
 		<Sdr
 			:visualization="viz"
 			:datasource="dataSource"
+			:sdr-layer="dataLayer"
 			:sdr-view="dataView"
 			:controlstream="viz.controlstream ? viz.controlstream[0] : undefined"
 			v-if="viz.type === 'sdr'"
