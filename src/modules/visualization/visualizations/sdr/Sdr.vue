@@ -14,7 +14,6 @@ import { useControlStreamStore } from '@/stores/controlstreamstore';
 import { useDataStreamStore } from '@/stores/datastreamstore';
 import { useSystemStore } from '@/stores/systemstore';
 import { useNodeStore } from '@/stores/nodestore';
-import { useDataStreamStore } from '@/stores/datastreamstore';
 import { sendCommand } from '../../services/controlstream.service';
 
 const props = defineProps<{
@@ -28,7 +27,6 @@ const controlstreamStore = useControlStreamStore();
 const datastreamStore = useDataStreamStore();
 const systemStore = useSystemStore();
 const nodeStore = useNodeStore();
-const datastreamStore = useDataStreamStore();
 const sdrContainerId = ref(`sdr-${randomUUID()}`);
 const spectrumCanvasRef = ref<HTMLCanvasElement | null>(null);
 const waterfallCanvasRef = ref<HTMLCanvasElement | null>(null);
@@ -121,7 +119,6 @@ const operatingMode = ref<string>('SPECTRUM_AUDIO');
 // Audio listening & recording state
 const isListening = ref<boolean>(false);
 const audioVolume = ref<number>(80);
-const isRecordingAudio = ref<boolean>(false);
 
 // Web Audio API engine
 let audioCtx: any = null;
@@ -227,6 +224,7 @@ const showHtlControls = ref<boolean>(false);
 // HTL 1GbE Sweep Configuration state
 const htlStartFreqMhz = ref<number>(130.0);
 const htlStopFreqMhz = ref<number>(170.0);
+const isEditingHtlSweep = ref<boolean>(false);
 const htlNumPoints = ref<number>(1024);
 const htlUpdateRate = ref<number>(10.0);
 
@@ -234,8 +232,9 @@ const htlUpdateRate = ref<number>(10.0);
 const htlScoutId = ref<number>(0);
 const htlScoutFreqMhz = ref<number>(145.0);
 const htlDemodMode = ref<string>('FM');
-const htlSquelch = ref<number>(-80.0);
+const htlSquelch = ref<number>(-100.0);
 const htlVolume = ref<number>(75.0);
+const discoveredControlStreamId = ref<string>('');
 
 // Web Audio Demodulation & Playback state
 const isAudioListening = ref<boolean>(false);
@@ -248,6 +247,7 @@ const isRecordingAudio = ref<boolean>(false);
 const recordingDurationSec = ref<number>(0);
 let recordingTimerId: any = null;
 let audioDsConnected = false;
+let lastLiveMessageTime = 0;
 
 const formattedRecordingTime = computed(() => {
 	const mins = Math.floor(recordingDurationSec.value / 60);
@@ -326,44 +326,23 @@ const is10GbeCapable = computed(() => {
 
 // Control Stream binding
 const receiverControl = computed(() => {
-<<<<<<< HEAD
-	let csId = props.controlstream?.id;
-	if (!csId && isHtlDriver.value) {
-		const found = controlstreamStore.controlStreams.find(
-			(cs: any) =>
-				(cs.name || '').toLowerCase().includes('htl') ||
-				(cs.id || '').toLowerCase().includes('htl') ||
-				(cs.controlstream?.properties?.controlName || '').toLowerCase().includes('htl')
-		);
-		if (found) {
-			csId = found.id;
-		}
-	}
-
-	if (csId) {
-		const controlStreams = controlstreamStore.getControlStreamsById([csId]);
-		if (!controlStreams || controlStreams.length === 0)
-			return { hasControl: false, commandBaseUrl: '', id: '', auth: '' };
-
-		const cs = controlStreams[0];
-		const networkProps = cs.controlstream.networkProperties;
-		const protocol = networkProps.tls ? 'https' : 'http';
-		const baseUrl = `${protocol}://${networkProps.endpointUrl}`;
-		const auth = `${networkProps.connectorOpts?.username ?? ''}:${networkProps.connectorOpts?.password ?? ''}`;
-
-		return {
-			hasControl: true,
-			commandBaseUrl: baseUrl,
-			id: csId,
-			auth: auth,
-		};
-=======
 	let cs: any = null;
-	let csId = props.controlstream?.id;
+	let csId = props.controlstream?.id || discoveredControlStreamId.value;
 	if (csId) {
 		const found = controlstreamStore.getControlStreamsById([csId]);
 		if (found && found.length > 0) cs = found[0];
->>>>>>> 2be0f592220eaaef39cc15ff2ff6a89387485912
+	}
+	if (!csId && isHtlDriver.value) {
+		const found = controlstreamStore.controlStreams.find(
+			(s: any) =>
+				(s.name || '').toLowerCase().includes('htl') ||
+				(s.id || '').toLowerCase().includes('htl') ||
+				(s.controlstream?.properties?.controlName || '').toLowerCase().includes('htl')
+		);
+		if (found) {
+			cs = found;
+			csId = found.id;
+		}
 	}
 	// Auto-discovery fallback if props.controlstream wasn't passed or found
 	if (!cs) {
@@ -378,7 +357,7 @@ const receiverControl = computed(() => {
 	}
 
 	if (!csId) {
-		csId = '0410';
+		csId = isHtlDriver.value ? '040g' : '0410';
 	}
 
 	const activeNode = nodeStore.nodes?.[0];
@@ -387,7 +366,7 @@ const receiverControl = computed(() => {
 	const endpoint = networkProps?.endpointUrl || activeNode?.getEndpointUrl() || 'localhost:8181/sensorhub/api';
 	const baseUrl = `${protocol}://${endpoint.replace(/^https?:\/\//, '').replace(/\/+$/, '')}`;
 	const username = networkProps?.connectorOpts?.username || activeNode?.username || 'admin';
-	const password = networkProps?.connectorOpts?.password || activeNode?.password || 'test';
+	const password = networkProps?.connectorOpts?.password || activeNode?.password || 'admin';
 	const auth = `${username}:${password}`;
 
 	return {
@@ -457,7 +436,6 @@ function sendReceiverCommand(params: Record<string, any>, label: string) {
 	);
 }
 
-<<<<<<< HEAD
 function sendHtlCommand(choiceName: string, params: Record<string, any>, label: string) {
 	if (!receiverControl.value.hasControl) return;
 	const payload = {
@@ -465,8 +443,12 @@ function sendHtlCommand(choiceName: string, params: Record<string, any>, label: 
 			[choiceName]: params,
 		},
 	};
+	const baseUrl = (typeof window !== 'undefined' && window.location)
+		? '/sensorhub/api'
+		: receiverControl.value.commandBaseUrl;
+
 	sendCommand(
-		receiverControl.value.commandBaseUrl,
+		baseUrl,
 		receiverControl.value.id,
 		payload,
 		receiverControl.value.auth,
@@ -475,14 +457,15 @@ function sendHtlCommand(choiceName: string, params: Record<string, any>, label: 
 }
 
 function applyHtlSpectrumConfig() {
-	const startHz = Number(htlStartFreqMhz.value) * 1e6;
-	const stopHz = Number(htlStopFreqMhz.value) * 1e6;
-	if (isNaN(startHz) || isNaN(stopHz) || stopHz <= startHz) return;
+	const startMhz = Number(htlStartFreqMhz.value);
+	const stopMhz = Number(htlStopFreqMhz.value);
+	if (isNaN(startMhz) || isNaN(stopMhz) || stopMhz <= startMhz) return;
+	isEditingHtlSweep.value = false;
 	sendHtlCommand(
 		'configureSpectrum',
 		{
-			startFrequency: startHz,
-			stopFrequency: stopHz,
+			startFrequency: startMhz,
+			stopFrequency: stopMhz,
 			numPoints: Number(htlNumPoints.value),
 			updateRate: Number(htlUpdateRate.value),
 		},
@@ -506,41 +489,65 @@ function applyHtlScout() {
 	);
 }
 
-let audioCtx: AudioContext | null = null;
-let audioGainNode: GainNode | null = null;
-let nextPlayTime = 0;
-
-function initAudioContext(sampleRate = 44100) {
+function initAudioContext(sampleRate = 48000) {
 	if (!audioCtx || audioCtx.state === 'closed') {
 		const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
 		if (!AudioContextClass) return;
 		try {
 			audioCtx = new AudioContextClass({
-				sampleRate: sampleRate > 0 ? sampleRate : 44100,
+				sampleRate: sampleRate > 0 ? sampleRate : 48000,
 				latencyHint: 'interactive',
 			});
 			audioGainNode = audioCtx.createGain();
-			const vol = isAudioListening.value ? Math.max(0, Math.min(1, Number(htlVolume.value) / 100.0)) : 0;
+			const currentVol = isHtlDriver.value ? htlVolume.value : audioVolume.value;
+			const vol = (isListening.value || isAudioListening.value) ? Math.max(0, Math.min(1, Number(currentVol) / 100.0)) : 0;
 			audioGainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
 			audioGainNode.connect(audioCtx.destination);
-			nextPlayTime = 0;
+			nextAudioStartTime = 0;
 		} catch (e) {
 			console.warn('[SDR.vue] AudioContext init error:', e);
 		}
 	}
+	if (audioCtx && audioCtx.state === 'suspended') {
+		audioCtx.resume();
+	}
 }
 
 function toggleAudioListening() {
-	isAudioListening.value = !isAudioListening.value;
-	if (isAudioListening.value) {
-		initAudioContext(audioSampleRate.value);
+	isListening.value = !isListening.value;
+	isAudioListening.value = isListening.value;
+	if (isListening.value) {
+		initAudioContext(audioSampleRate.value || 48000);
 		if (audioCtx && audioCtx.state === 'suspended') {
 			audioCtx.resume();
 		}
 		if (audioGainNode && audioCtx) {
-			const vol = Math.max(0, Math.min(1, Number(htlVolume.value) / 100.0));
+			const currentVol = isHtlDriver.value ? htlVolume.value : audioVolume.value;
+			const vol = Math.max(0, Math.min(1, Number(currentVol) / 100.0));
 			audioGainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
 		}
+		if (isHtlDriver.value) {
+			if (hasStartStopActive.value) {
+				const startMhz = Math.min(htlStartFreqMhz.value, htlStopFreqMhz.value);
+				const stopMhz = Math.max(htlStartFreqMhz.value, htlStopFreqMhz.value);
+				if (htlScoutFreqMhz.value < startMhz || htlScoutFreqMhz.value > stopMhz) {
+					if (tuneMhzInput.value >= startMhz && tuneMhzInput.value <= stopMhz) {
+						htlScoutFreqMhz.value = tuneMhzInput.value;
+					} else {
+						htlScoutFreqMhz.value = parseFloat(((startMhz + stopMhz) / 2.0).toFixed(3));
+					}
+				}
+			}
+			if (htlScoutFreqMhz.value >= 88.0 && htlScoutFreqMhz.value <= 108.0) {
+				htlDemodMode.value = 'FM';
+			}
+			applyHtlScout();
+		} else if (audioMode.value === 'OFF') {
+			const mhz = tuneMhzInput.value;
+			const defaultMode = (mhz >= 88.0 && mhz <= 108.0) ? 'WFM' : (mhz >= 118.0 && mhz <= 137.0 ? 'AM' : 'NFM');
+			applyAudioMode(defaultMode);
+		}
+		connectAudioStream();
 	} else {
 		if (audioGainNode && audioCtx) {
 			audioGainNode.gain.setValueAtTime(0, audioCtx.currentTime);
@@ -549,28 +556,36 @@ function toggleAudioListening() {
 }
 
 function onVolumeChanged(newVol: number) {
-	if (audioGainNode && audioCtx && isAudioListening.value) {
+	audioVolume.value = newVol;
+	htlVolume.value = newVol;
+	if (audioGainNode && audioCtx && (isListening.value || isAudioListening.value)) {
 		const vol = Math.max(0, Math.min(1, Number(newVol) / 100.0));
 		audioGainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
 	}
 }
 
 function toggleAudioRecording() {
-	if (isRecordingAudio.value) {
-		sendHtlCommand('stopAudioRecording', { confirm: true }, 'Stop Audio Recording');
-		isRecordingAudio.value = false;
-		if (recordingTimerId) {
-			clearInterval(recordingTimerId);
-			recordingTimerId = null;
+	isRecordingAudio.value = !isRecordingAudio.value;
+	if (isHtlDriver.value) {
+		if (!isRecordingAudio.value) {
+			sendHtlCommand('stopAudioRecording', { confirm: true }, 'Stop Audio Recording');
+			if (recordingTimerId) {
+				clearInterval(recordingTimerId);
+				recordingTimerId = null;
+			}
+		} else {
+			sendHtlCommand('startAudioRecording', { directory: '', prefix: '' }, 'Start Audio Recording');
+			recordingDurationSec.value = 0;
+			if (recordingTimerId) clearInterval(recordingTimerId);
+			recordingTimerId = setInterval(() => {
+				recordingDurationSec.value++;
+			}, 1000);
 		}
 	} else {
-		sendHtlCommand('startAudioRecording', { directory: '', prefix: '' }, 'Start Audio Recording');
-		isRecordingAudio.value = true;
-		recordingDurationSec.value = 0;
-		if (recordingTimerId) clearInterval(recordingTimerId);
-		recordingTimerId = setInterval(() => {
-			recordingDurationSec.value++;
-		}, 1000);
+		sendReceiverCommand(
+			{ recordAudio: isRecordingAudio.value },
+			isRecordingAudio.value ? 'Start Audio Recording' : 'Stop Audio Recording'
+		);
 	}
 }
 
@@ -616,7 +631,7 @@ function pcmToFloat32(raw: any): Float32Array | null {
 	return floats;
 }
 
-function handleAudioObservation(rawAudio: any, rate = 44100, channels = 1) {
+function handleAudioObservation(rawAudio: any, rate = 48000, channels = 1) {
 	audioFramesReceived.value++;
 	isAudioConnected.value = true;
 	if (rate > 0) audioSampleRate.value = rate;
@@ -634,10 +649,10 @@ function handleAudioObservation(rawAudio: any, rate = 44100, channels = 1) {
 	const dbfs = 20 * Math.log10(Math.max(1e-5, rms));
 	audioLevelDbfs.value = Math.round(dbfs);
 
-	if (!isAudioListening.value) return;
+	if (!isListening.value && !isAudioListening.value) return;
 
-	// Squelch gating: if signal is below squelch threshold, do not play
-	if (dbfs < htlSquelch.value) {
+	// Hardware DSP on HTL unit performs squelch. Only apply software gate if user explicitly set a high threshold (e.g. > -95 dB)
+	if (htlSquelch.value > -95 && dbfs < htlSquelch.value) {
 		return;
 	}
 
@@ -651,7 +666,8 @@ function handleAudioObservation(rawAudio: any, rate = 44100, channels = 1) {
 	}
 
 	if (audioGainNode) {
-		const vol = Math.max(0, Math.min(1, Number(htlVolume.value) / 100.0));
+		const currentVol = isHtlDriver.value ? htlVolume.value : audioVolume.value;
+		const vol = Math.max(0, Math.min(1, Number(currentVol) / 100.0));
 		audioGainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
 	}
 
@@ -664,14 +680,211 @@ function handleAudioObservation(rawAudio: any, rate = 44100, channels = 1) {
 		source.connect(audioGainNode!);
 
 		const now = audioCtx.currentTime;
-		if (nextPlayTime < now || nextPlayTime > now + 0.5) {
-			nextPlayTime = now + 0.04;
+		if (nextAudioStartTime < now || nextAudioStartTime > now + 0.35) {
+			nextAudioStartTime = now + 0.05;
 		}
-		source.start(nextPlayTime);
-		nextPlayTime += audioBuffer.duration;
+		source.start(nextAudioStartTime);
+		nextAudioStartTime += audioBuffer.duration;
 	} catch (playErr) {
 		console.warn('[SDR.vue] Web Audio playback error:', playErr);
 	}
+}
+
+function playPcmChunk(pcmBytes: Uint8Array, channels: number, sampleRate: number = 48000) {
+	if (!isListening.value || !audioCtx || audioCtx.state !== 'running') return;
+	const ch = channels === 2 ? 2 : 1;
+	const int16Samples = new Int16Array(pcmBytes.buffer, pcmBytes.byteOffset, Math.floor(pcmBytes.byteLength / 2));
+	const totalSamples = int16Samples.length;
+	if (totalSamples === 0) return;
+
+	let audioBuf: AudioBuffer;
+	if (ch === 2) {
+		const numFrames = Math.floor(totalSamples / 2);
+		audioBuf = audioCtx.createBuffer(2, numFrames, sampleRate);
+		const left = audioBuf.getChannelData(0);
+		const right = audioBuf.getChannelData(1);
+		for (let i = 0; i < numFrames; i++) {
+			left[i] = int16Samples[i * 2] / 32768.0;
+			right[i] = int16Samples[i * 2 + 1] / 32768.0;
+		}
+	} else {
+		audioBuf = audioCtx.createBuffer(1, totalSamples, sampleRate);
+		const mono = audioBuf.getChannelData(0);
+		for (let i = 0; i < totalSamples; i++) {
+			mono[i] = int16Samples[i] / 32768.0;
+		}
+	}
+
+	const now = audioCtx.currentTime;
+	if (nextAudioStartTime < now || nextAudioStartTime > now + 0.35) {
+		nextAudioStartTime = now + 0.05;
+	}
+
+	const src = audioCtx.createBufferSource();
+	src.buffer = audioBuf;
+	if (audioGainNode) {
+		src.connect(audioGainNode);
+	} else {
+		src.connect(audioCtx.destination);
+	}
+	src.start(nextAudioStartTime);
+	nextAudioStartTime += audioBuf.duration;
+}
+
+function processIncomingAudioBinary(buffer: ArrayBuffer) {
+	if (buffer.byteLength < 20) return;
+	const dv = new DataView(buffer);
+	const sampleRate = dv.getInt32(8, false); // big-endian
+	const channels = dv.getInt32(12, false);   // big-endian
+	const numBytes = dv.getInt32(16, false);   // big-endian
+
+	if (numBytes > 0 && buffer.byteLength >= 20 + numBytes) {
+		const pcmBytes = new Uint8Array(buffer, 20, numBytes);
+		playPcmChunk(pcmBytes, channels, sampleRate || 48000);
+	}
+}
+
+async function connectAudioStream(preferredDsId?: string) {
+	if (!isRunning) return;
+	if (audioWs && (audioWs.readyState === WebSocket.OPEN || audioWs.readyState === WebSocket.CONNECTING)) {
+		return;
+	}
+
+	let audioDsId = preferredDsId || '';
+
+	if (!audioDsId) {
+		// Look up audio datastream
+		const allStreams = (datastreamStore.dataStreams as any[]) || [];
+		const audioStream = allStreams.find((s: any) => {
+			const outName = (s.outputName || s.datastream?.properties?.outputName || '').toLowerCase();
+			const name = (s.name || s.datastream?.properties?.name || '').toLowerCase();
+			return outName.includes('audio') || name.includes('audio') || name.includes('demodulated');
+		});
+
+		audioDsId = audioStream?.id || audioStream?.datastream?.id || '';
+	}
+
+	const activeNode = nodeStore.nodes?.[0];
+	const endpoint = (activeNode?.getEndpointUrl() || 'localhost:8181/sensorhub/api')
+		.replace(/^https?:\/\//, '')
+		.replace(/^wss?:\/\//, '')
+		.replace(/\/datastreams.*$/, '')
+		.replace(/\/+$/, '');
+	const wsProtocol = activeNode?.tls ? 'wss' : 'ws';
+
+	const user = activeNode?.username || 'admin';
+	const pass = activeNode?.password || 'admin';
+	const authHeaders: Record<string, string> = {
+		Authorization: 'Basic ' + btoa(`${user}:${pass}`),
+	};
+	const authPrefix = user && pass ? `${encodeURIComponent(user)}:${encodeURIComponent(pass)}@` : '';
+
+	if (!audioDsId) {
+		try {
+			const listRes = await fetch(`/sensorhub/api/datastreams`, {
+				headers: authHeaders,
+				credentials: 'include',
+			});
+			if (listRes.ok) {
+				const list = await listRes.json();
+				const items: any[] = Array.isArray(list) ? list : (list.items || []);
+				const matched = items.find((d: any) => {
+					const n = (d.name || '').toLowerCase();
+					const o = (d.outputName || '').toLowerCase();
+					return o.includes('audio') || n.includes('demodulated audio') || n.includes('audio');
+				});
+				if (matched && matched.id) {
+					audioDsId = matched.id;
+				}
+			}
+		} catch (_) {}
+	}
+
+	if (!audioDsId && isHtlDriver.value) {
+		audioDsId = '0420';
+	}
+
+	if (!audioDsId) {
+		console.log('[SDR.vue] No active audio datastream found.');
+		return;
+	}
+
+	console.log('[SDR.vue] Connecting to audio stream ID:', audioDsId);
+
+	const encodedFormat = 'application/om%2Bjson';
+	const candidateUrls: string[] = [];
+	if (typeof window !== 'undefined' && window.location && window.location.host) {
+		const locProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+		candidateUrls.push(
+			`${locProto}://${authPrefix}${window.location.host}/sensorhub/api/datastreams/${audioDsId}/observations?format=${encodedFormat}`
+		);
+		candidateUrls.push(
+			`${locProto}://${window.location.host}/sensorhub/api/datastreams/${audioDsId}/observations?format=${encodedFormat}`
+		);
+	}
+	candidateUrls.push(`${wsProtocol}://${authPrefix}${endpoint}/datastreams/${audioDsId}/observations?format=${encodedFormat}`);
+	candidateUrls.push(`${wsProtocol}://${endpoint}/datastreams/${audioDsId}/observations?format=${encodedFormat}`);
+
+	let candIdx = 0;
+	function tryNextAudioUrl() {
+		if (!isRunning || candIdx >= candidateUrls.length) return;
+		const url = candidateUrls[candIdx++];
+		console.log(`[SDR.vue] Attempting Audio WebSocket to: ${url}`);
+
+		try {
+			const ws = new WebSocket(url);
+			audioWs = ws;
+			let receivedMsg = false;
+
+			ws.onopen = () => {
+				console.log('[SDR.vue] Audio WebSocket connected successfully to:', url);
+			};
+
+			ws.onmessage = (event) => {
+				receivedMsg = true;
+				try {
+					let text = '';
+					if (typeof event.data === 'string') {
+						text = event.data;
+					} else if (event.data instanceof ArrayBuffer) {
+						text = new TextDecoder().decode(event.data);
+					} else if (event.data instanceof Blob) {
+						event.data.text().then((t) => processIncomingText(t));
+						return;
+					}
+					if (text) {
+						processIncomingText(text);
+					}
+				} catch (e) {
+					console.warn('[SDR.vue] Audio frame parse error:', e);
+				}
+			};
+
+			ws.onerror = (e) => {
+				console.warn('[SDR.vue] Audio WS error on ' + url + ':', e);
+			};
+
+			ws.onclose = (e) => {
+				console.log(`[SDR.vue] Audio WS closed (${url}) code=${e.code}`);
+				if (isRunning) {
+					if (receivedMsg) {
+						candIdx = Math.max(0, candIdx - 1);
+						audioReconnectTimer = setTimeout(() => { if (isRunning) tryNextAudioUrl(); }, 1500);
+					} else if (candIdx < candidateUrls.length) {
+						setTimeout(() => { if (isRunning) tryNextAudioUrl(); }, 500);
+					} else {
+						candIdx = 0;
+						audioReconnectTimer = setTimeout(() => { if (isRunning) tryNextAudioUrl(); }, 3000);
+					}
+				}
+			};
+		} catch (err) {
+			console.warn('[SDR.vue] Error creating Audio WebSocket:', err);
+			audioReconnectTimer = setTimeout(() => { if (isRunning) tryNextAudioUrl(); }, 500);
+		}
+	}
+
+	tryNextAudioUrl();
 }
 
 function applyHtlTuner(freqMhz?: number) {
@@ -741,35 +954,16 @@ function applyHtlHalt() {
 }
 
 function applyHtlRefreshStatus() {
-	sendHtlCommand(
-		'refreshStatus',
-		{
-			confirm: true,
-		},
-		'Refresh Status'
-	);
+	sendHtlCommand('refreshStatus', {}, 'Refresh Status');
 }
 
 function applyHtlStartService() {
-	if (!htlServiceName.value) return;
-	sendHtlCommand(
-		'startService',
-		{
-			serviceName: htlServiceName.value,
-		},
-		`Start Service ${htlServiceName.value}`
-	);
+	sendHtlCommand('startService', { serviceName: htlServiceName.value }, `Start Service ${htlServiceName.value}`);
 }
 
 function confirmHtlReset() {
 	showResetDialog.value = false;
-	sendHtlCommand(
-		'resetUnit',
-		{
-			confirm: true,
-		},
-		'Reset Unit'
-	);
+	sendHtlCommand('resetUnit', {}, 'Reset Unit');
 }
 
 function confirmHtlReboot() {
@@ -780,209 +974,6 @@ function confirmHtlReboot() {
 			confirm: true,
 		},
 		'Reboot Unit'
-=======
-// Web Audio API playback engine
-function initAudioEngine() {
-	if (!audioCtx) {
-		const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
-		if (AudioContextClass) {
-			audioCtx = new AudioContextClass({ sampleRate: 48000 });
-			audioGainNode = audioCtx.createGain();
-			const volNorm = audioVolume.value / 100.0;
-			audioGainNode.gain.setValueAtTime(volNorm, audioCtx.currentTime);
-			audioGainNode.connect(audioCtx.destination);
-		}
-	}
-	if (audioCtx && audioCtx.state === 'suspended') {
-		audioCtx.resume();
-	}
-}
-
-function playPcmChunk(pcmBytes: Uint8Array, channels: number, sampleRate: number = 48000) {
-	if (!isListening.value || !audioCtx || audioCtx.state !== 'running') return;
-	const ch = channels === 2 ? 2 : 1;
-	const int16Samples = new Int16Array(pcmBytes.buffer, pcmBytes.byteOffset, Math.floor(pcmBytes.byteLength / 2));
-	const totalSamples = int16Samples.length;
-	if (totalSamples === 0) return;
-
-	let audioBuf: AudioBuffer;
-	if (ch === 2) {
-		const numFrames = Math.floor(totalSamples / 2);
-		audioBuf = audioCtx.createBuffer(2, numFrames, sampleRate);
-		const left = audioBuf.getChannelData(0);
-		const right = audioBuf.getChannelData(1);
-		for (let i = 0; i < numFrames; i++) {
-			left[i] = int16Samples[i * 2] / 32768.0;
-			right[i] = int16Samples[i * 2 + 1] / 32768.0;
-		}
-	} else {
-		audioBuf = audioCtx.createBuffer(1, totalSamples, sampleRate);
-		const mono = audioBuf.getChannelData(0);
-		for (let i = 0; i < totalSamples; i++) {
-			mono[i] = int16Samples[i] / 32768.0;
-		}
-	}
-
-	const now = audioCtx.currentTime;
-	if (nextAudioStartTime < now || nextAudioStartTime > now + 0.35) {
-		nextAudioStartTime = now + 0.05; // 50ms buffer lead
-	}
-
-	const src = audioCtx.createBufferSource();
-	src.buffer = audioBuf;
-	if (audioGainNode) {
-		src.connect(audioGainNode);
-	} else {
-		src.connect(audioCtx.destination);
-	}
-	src.start(nextAudioStartTime);
-	nextAudioStartTime += audioBuf.duration;
-}
-
-function processIncomingAudioBinary(buffer: ArrayBuffer) {
-	if (buffer.byteLength < 20) return;
-	const dv = new DataView(buffer);
-	const sampleRate = dv.getInt32(8, false); // big-endian
-	const channels = dv.getInt32(12, false);   // big-endian
-	const numBytes = dv.getInt32(16, false);   // big-endian
-
-	if (numBytes > 0 && buffer.byteLength >= 20 + numBytes) {
-		const pcmBytes = new Uint8Array(buffer, 20, numBytes);
-		playPcmChunk(pcmBytes, channels, sampleRate || 48000);
-	}
-}
-
-async function connectAudioStream() {
-	if (!isRunning) return;
-
-	// Look up audio datastream
-	const allStreams = (datastreamStore.dataStreams as any[]) || [];
-	const audioStream = allStreams.find((s: any) => {
-		const outName = (s.outputName || s.datastream?.properties?.outputName || '').toLowerCase();
-		const name = (s.name || s.datastream?.properties?.name || '').toLowerCase();
-		return outName.includes('audio') || name.includes('audio') || name.includes('demodulated');
-	});
-
-	let audioDsId = audioStream?.id || audioStream?.datastream?.id || '0430';
-
-	const activeNode = nodeStore.nodes?.[0];
-	const endpoint = (activeNode?.getEndpointUrl() || 'localhost:8181/sensorhub/api')
-		.replace(/^https?:\/\//, '')
-		.replace(/^wss?:\/\//, '')
-		.replace(/\/datastreams.*$/, '')
-		.replace(/\/+$/, '');
-	const wsProtocol = activeNode?.tls ? 'wss' : 'ws';
-
-	const user = activeNode?.username || 'admin';
-	const pass = activeNode?.password || 'test';
-	const authHeaders: Record<string, string> = {
-		Authorization: 'Basic ' + btoa(`${user}:${pass}`),
-	};
-
-	try {
-		const listRes = await fetch(`/sensorhub/api/datastreams`, {
-			headers: authHeaders,
-			credentials: 'include',
-		});
-		if (listRes.ok) {
-			const list = await listRes.json();
-			const items: any[] = Array.isArray(list) ? list : (list.items || []);
-			const matched = items.find((d: any) => {
-				const n = (d.name || '').toLowerCase();
-				const o = (d.outputName || '').toLowerCase();
-				return o.includes('audio') || n.includes('demodulated audio') || n.includes('audio');
-			});
-			if (matched && matched.id) {
-				audioDsId = matched.id;
-			}
-		}
-	} catch (_) {}
-
-	console.log('[SDR.vue] Connecting to audio stream ID:', audioDsId);
-
-	const candidateUrls: string[] = [];
-	if (typeof window !== 'undefined' && window.location && window.location.host) {
-		const locProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-		candidateUrls.push(`${locProto}://${window.location.host}/sensorhub/api/datastreams/${audioDsId}/observations?format=application/swe%2Bbinary`);
-	}
-	candidateUrls.push(`${wsProtocol}://${endpoint}/datastreams/${audioDsId}/observations?format=application/swe%2Bbinary`);
-
-	let candIdx = 0;
-	function tryNextAudioUrl() {
-		if (!isRunning || candIdx >= candidateUrls.length) return;
-		const url = candidateUrls[candIdx++];
-		console.log(`[SDR.vue] Attempting Audio WebSocket to: ${url}`);
-
-		try {
-			const ws = new WebSocket(url);
-			ws.binaryType = 'arraybuffer';
-			audioWs = ws;
-
-			ws.onopen = () => {
-				console.log('[SDR.vue] Audio WebSocket connected successfully to:', url);
-			};
-
-			ws.onmessage = (event) => {
-				if (event.data instanceof ArrayBuffer) {
-					processIncomingAudioBinary(event.data);
-				}
-			};
-
-			ws.onerror = (e) => {
-				console.warn('[SDR.vue] Audio WS error on ' + url + ':', e);
-			};
-
-			ws.onclose = (e) => {
-				console.log(`[SDR.vue] Audio WS closed (${url}) code=${e.code}`);
-				if (isRunning) {
-					if (candIdx < candidateUrls.length) {
-						setTimeout(() => { if (isRunning) tryNextAudioUrl(); }, 500);
-					} else {
-						if (audioReconnectTimer) clearTimeout(audioReconnectTimer);
-						audioReconnectTimer = setTimeout(() => {
-							if (isRunning) {
-								candIdx = 0;
-								tryNextAudioUrl();
-							}
-						}, 3000);
-					}
-				}
-			};
-		} catch (err) {
-			console.warn('[SDR.vue] Error creating Audio WebSocket:', err);
-			tryNextAudioUrl();
-		}
-	}
-
-	tryNextAudioUrl();
-}
-
-function toggleAudioListen() {
-	isListening.value = !isListening.value;
-	if (isListening.value) {
-		initAudioEngine();
-		if (audioMode.value === 'OFF') {
-			const mhz = tuneMhzInput.value;
-			const defaultMode = (mhz >= 88.0 && mhz <= 108.0) ? 'WFM' : (mhz >= 118.0 && mhz <= 137.0 ? 'AM' : 'NFM');
-			applyAudioMode(defaultMode);
-		}
-	}
-}
-
-function onVolumeChange(val: number) {
-	audioVolume.value = val;
-	const volNorm = val / 100.0;
-	if (audioGainNode && audioCtx) {
-		audioGainNode.gain.setValueAtTime(volNorm, audioCtx.currentTime);
-	}
-}
-
-function toggleAudioRecord() {
-	isRecordingAudio.value = !isRecordingAudio.value;
-	sendReceiverCommand(
-		{ recordAudio: isRecordingAudio.value },
-		isRecordingAudio.value ? 'Start Audio Recording' : 'Stop Audio Recording'
->>>>>>> 2be0f592220eaaef39cc15ff2ff6a89387485912
 	);
 }
 
@@ -996,22 +987,21 @@ function tuneToMhz(targetMhz: number) {
 	if (!hasStartStopActive.value) {
 		centerFreqHz.value = Math.round(targetMhz * 1e6);
 	}
-<<<<<<< HEAD
 	if (receiverControl.value.hasControl) {
 		if (isHtlDriver.value) {
 			if (connectionMode.value === '10GbE') {
 				applyHtlTuner(targetMhz);
 			} else {
 				htlScoutFreqMhz.value = targetMhz;
+				if (targetMhz >= 88.0 && targetMhz <= 108.0) {
+					htlDemodMode.value = 'FM';
+				}
 				applyHtlScout();
 			}
 		} else {
 			sendReceiverCommand({ centerFreq: targetMhz }, `Tune to ${targetMhz} MHz`);
 		}
 	}
-=======
-	sendReceiverCommand({ centerFreq: targetMhz }, `Tune to ${targetMhz} MHz`);
->>>>>>> 2be0f592220eaaef39cc15ff2ff6a89387485912
 }
 
 function onTuneFocus() {
@@ -1092,6 +1082,10 @@ function flattenRecord(raw: any): Record<string, any> {
 	if (raw.data && typeof raw.data === 'object') {
 		const unData = flattenRecord(raw.data);
 		merged = { ...merged, ...unData };
+	}
+	if (Array.isArray(raw.items) && raw.items.length > 0) {
+		const unItem = flattenRecord(raw.items[raw.items.length - 1]);
+		merged = { ...merged, ...unItem };
 	}
 	if (Array.isArray(raw.values) && raw.values.length > 0) {
 		if (typeof raw.values[0] === 'object') {
@@ -1273,7 +1267,16 @@ function handleObservationData(input: any) {
 		}
 
 		// If purely an audio record without RF spectrum bins, return early
-		if (!data.amplitude && !data.rtlsdr_spectrum && !data.psd && !data.spectrum && !data.values) {
+		if (
+			!data.amplitude &&
+			!data.rtlsdr_spectrum &&
+			!data.psd &&
+			!data.spectrum &&
+			!data.powerSpectrum &&
+			!data.power_spectrum &&
+			!data['Power Spectrum'] &&
+			!data.values
+		) {
 			return;
 		}
 	}
@@ -1341,9 +1344,11 @@ function handleObservationData(input: any) {
 		if (Math.abs(tuneMhzInput.value * 1e6 - centerFromBounds) > spanFromBounds / 2.0 || tuneMhzInput.value === 98.0) {
 			tuneMhzInput.value = parseFloat((centerFromBounds / 1e6).toFixed(4));
 		}
-		if (htlStartFreqMhz.value === 130.0 && htlStopFreqMhz.value === 170.0) {
-			htlStartFreqMhz.value = parseFloat((numStartFreq / 1e6).toFixed(3));
-			htlStopFreqMhz.value = parseFloat((numStopFreq / 1e6).toFixed(3));
+		if (!isEditingHtlSweep.value) {
+			const startMhz = parseFloat((numStartFreq / 1e6).toFixed(3));
+			const stopMhz = parseFloat((numStopFreq / 1e6).toFixed(3));
+			if (htlStartFreqMhz.value !== startMhz) htlStartFreqMhz.value = startMhz;
+			if (htlStopFreqMhz.value !== stopMhz) htlStopFreqMhz.value = stopMhz;
 		}
 	}
 
@@ -1431,6 +1436,7 @@ function handleObservationData(input: any) {
 	}
 
 	const count = ampArray.length;
+	lastLiveMessageTime = Date.now();
 	numBins.value = count;
 	isLive.value = true;
 	frameCounter++;
@@ -1745,8 +1751,14 @@ function onCanvasMouseMove(e: MouseEvent, isSpectrum: boolean) {
 	if (!canvas) return;
 
 	const rect = canvas.getBoundingClientRect();
-	const x = e.clientX - rect.left;
-	const y = e.clientY - rect.top;
+	const scaleX = rect.width > 0 ? canvas.width / rect.width : 1;
+	const scaleY = rect.height > 0 ? canvas.height / rect.height : 1;
+
+	const clientX = e.clientX - rect.left;
+	const clientY = e.clientY - rect.top;
+
+	const x = clientX * scaleX;
+	const y = clientY * scaleY;
 
 	tooltipX.value = x;
 	tooltipY.value = y;
@@ -1754,13 +1766,13 @@ function onCanvasMouseMove(e: MouseEvent, isSpectrum: boolean) {
 
 	const spanHz = sampleRateHz.value;
 	const startHz = centerFreqHz.value - spanHz / 2.0;
-	const freqAtX = startHz + (x / rect.width) * spanHz;
+	const freqAtX = startHz + (x / canvas.width) * spanHz;
 	const mhz = (freqAtX / 1e6).toFixed(4);
 
 	const dbRange = Math.max(1, maxDb.value - minDb.value);
 	if (isSpectrum) {
 		const plotTop = 10;
-		const plotBottom = rect.height - 28;
+		const plotBottom = canvas.height - 28;
 		const plotH = Math.max(1, plotBottom - plotTop);
 		const clampedY = Math.max(plotTop, Math.min(plotBottom, y));
 		const dbAtY = maxDb.value - ((clampedY - plotTop) / plotH) * dbRange;
@@ -1782,19 +1794,30 @@ function onCanvasClick(e: MouseEvent, isSpectrum: boolean) {
 	if (!canvas) return;
 
 	const rect = canvas.getBoundingClientRect();
-	const x = e.clientX - rect.left;
+	const scaleX = rect.width > 0 ? canvas.width / rect.width : 1;
+	const x = (e.clientX - rect.left) * scaleX;
 	const spanHz = sampleRateHz.value;
 	const startHz = centerFreqHz.value - spanHz / 2.0;
-	const clickedFreqHz = startHz + (x / rect.width) * spanHz;
+	const clickedFreqHz = startHz + (x / canvas.width) * spanHz;
 	const clickedMhz = parseFloat((clickedFreqHz / 1e6).toFixed(4));
 	tuneToMhz(clickedMhz);
 }
 
 // Responsive resize
 function handleResize() {
+	const specEl = spectrumCanvasRef.value;
 	const container = document.getElementById(sdrContainerId.value);
-	const targetWidth = container && container.clientWidth > 40 ? container.clientWidth - 24 : 600;
-	const w = Math.max(300, targetWidth);
+	let targetWidth = 0;
+	if (specEl && specEl.clientWidth > 0) {
+		targetWidth = specEl.clientWidth;
+	} else if (specEl?.parentElement?.clientWidth) {
+		targetWidth = specEl.parentElement.clientWidth;
+	} else if (container && container.clientWidth > 40) {
+		targetWidth = container.clientWidth - 24;
+	} else {
+		targetWidth = 600;
+	}
+	const w = Math.max(300, Math.round(targetWidth));
 
 	if (spectrumCanvasRef.value && spectrumCanvasRef.value.width !== w) {
 		spectrumCanvasRef.value.width = w;
@@ -1825,6 +1848,9 @@ function handleResize() {
 function startRenderLoop() {
 	function loop() {
 		if (!isRunning) return;
+		if (Date.now() - lastFpsTime >= 2000 && Date.now() - lastLiveMessageTime > 2000) {
+			fps.value = 0;
+		}
 		renderSpectrum();
 		animFrameId = requestAnimationFrame(loop);
 	}
@@ -1939,64 +1965,116 @@ async function connectDirectWs(dsId: string, dsProps: any, attemptFormat?: strin
 	try {
 		await authenticateSession(dsId, dsProps);
 
+		const activeNode = nodeStore.nodes?.[0];
+		const user = dsProps.connectorOpts?.username || activeNode?.username || 'admin';
+		const pass = dsProps.connectorOpts?.password || activeNode?.password || 'admin';
+		const authPrefix = user && pass ? `${encodeURIComponent(user)}:${encodeURIComponent(pass)}@` : '';
+
 		const wsProtocol = dsProps.tls ? 'wss' : 'ws';
-		let endpoint = (dsProps.endpointUrl || '')
+		let endpoint = (dsProps.endpointUrl || activeNode?.getEndpointUrl() || 'localhost:8181/sensorhub/api')
 			.replace(/^https?:\/\//, '')
 			.replace(/^wss?:\/\//, '')
 			.replace(/\/datastreams.*$/, '')
 			.replace(/\/+$/, '');
 		const format = attemptFormat || dsProps.responseFormat || 'application/om+json';
 		const encodedFormat = format.replaceAll('+', '%2B');
-		const directWsUrl = `${wsProtocol}://${endpoint}/datastreams/${dsId}/observations?format=${encodedFormat}`;
 
-		console.log('[SDR.vue] Connecting direct WebSocket to:', directWsUrl);
-		const ws = new WebSocket(directWsUrl);
-		ws.binaryType = 'arraybuffer';
+		// Candidate WebSocket URLs: 1) local proxy with auth, 2) local proxy without auth, 3) direct endpoint with auth, 4) direct endpoint without auth
+		const candidateUrls: string[] = [];
+		if (typeof window !== 'undefined' && window.location && window.location.host) {
+			const locProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+			candidateUrls.push(
+				`${locProto}://${authPrefix}${window.location.host}/sensorhub/api/datastreams/${dsId}/observations?format=${encodedFormat}`
+			);
+			candidateUrls.push(
+				`${locProto}://${window.location.host}/sensorhub/api/datastreams/${dsId}/observations?format=${encodedFormat}`
+			);
+		}
+		candidateUrls.push(`${wsProtocol}://${authPrefix}${endpoint}/datastreams/${dsId}/observations?format=${encodedFormat}`);
+		candidateUrls.push(`${wsProtocol}://${endpoint}/datastreams/${dsId}/observations?format=${encodedFormat}`);
 
-		let receivedAnyMessage = false;
+		let candIdx = 0;
+		let reconnectTimer: any = null;
 
-		ws.onopen = () => {
-			console.log('[SDR.vue] Direct WebSocket connected to:', directWsUrl);
-		};
-
-		ws.onmessage = (event) => {
-			receivedAnyMessage = true;
-			try {
-				if (typeof event.data === 'string') {
-					processIncomingText(event.data);
-				} else if (event.data instanceof ArrayBuffer) {
-					const text = new TextDecoder().decode(event.data);
-					processIncomingText(text);
-				} else if (event.data instanceof Blob) {
-					event.data.text().then((t) => processIncomingText(t));
-				}
-			} catch (e) {
-				console.warn('[SDR.vue] Direct WS frame parse warning:', e);
-			}
-		};
-
-		ws.onerror = (e) => {
-			console.warn('[SDR.vue] Direct WS error for ' + dsId + ' (' + format + '):', e);
-		};
-
-		ws.onclose = (e) => {
-			console.log('[SDR.vue] Direct WS closed for ' + dsId + ' (' + format + ') code=' + e.code + ', reason=' + e.reason);
-			if (!receivedAnyMessage && isRunning) {
+		function tryNextWs() {
+			if (!isRunning) return;
+			if (candIdx >= candidateUrls.length) {
 				if (format.includes('om+json')) {
 					console.log('[SDR.vue] Retrying direct WS with application/swe+json for ' + dsId);
-					setTimeout(() => {
-						if (isRunning) connectDirectWs(dsId, dsProps, 'application/swe+json');
-					}, 800);
-				} else if (format.includes('swe+json')) {
-					console.log('[SDR.vue] Retrying direct WS with text/csv for ' + dsId);
-					setTimeout(() => {
-						if (isRunning) connectDirectWs(dsId, dsProps, 'text/csv');
-					}, 800);
+					connectDirectWs(dsId, dsProps, 'application/swe+json');
+					return;
+				}
+				candIdx = 0;
+				reconnectTimer = setTimeout(() => {
+					if (isRunning) tryNextWs();
+				}, 3000);
+				return;
+			}
+
+			const directWsUrl = candidateUrls[candIdx++];
+			console.log('[SDR.vue] Connecting direct WebSocket to:', directWsUrl);
+
+			try {
+				const ws = new WebSocket(directWsUrl);
+				ws.binaryType = 'arraybuffer';
+				directWebSockets.push(ws);
+
+				let receivedMessage = false;
+
+				ws.onopen = () => {
+					console.log('[SDR.vue] Direct WebSocket connected to:', directWsUrl);
+				};
+
+				ws.onmessage = (event) => {
+					receivedMessage = true;
+					lastLiveMessageTime = Date.now();
+					try {
+						if (typeof event.data === 'string') {
+							processIncomingText(event.data);
+						} else if (event.data instanceof ArrayBuffer) {
+							const text = new TextDecoder().decode(event.data);
+							processIncomingText(text);
+						} else if (event.data instanceof Blob) {
+							event.data.text().then((t) => processIncomingText(t));
+						}
+					} catch (e) {
+						console.warn('[SDR.vue] Direct WS frame parse warning:', e);
+					}
+				};
+
+				ws.onerror = (e) => {
+					console.warn('[SDR.vue] Direct WS error for ' + dsId + ' (' + directWsUrl + '):', e);
+				};
+
+				ws.onclose = (e) => {
+					console.log('[SDR.vue] Direct WS closed for ' + dsId + ' code=' + e.code + ', reason=' + e.reason);
+					if (isRunning) {
+						const idx = directWebSockets.indexOf(ws);
+						if (idx !== -1) directWebSockets.splice(idx, 1);
+
+						if (receivedMessage) {
+							candIdx = Math.max(0, candIdx - 1);
+							reconnectTimer = setTimeout(() => {
+								if (isRunning) tryNextWs();
+							}, 1500);
+						} else {
+							reconnectTimer = setTimeout(() => {
+								if (isRunning) tryNextWs();
+							}, 500);
+						}
+					}
+				};
+			} catch (wsErr) {
+				console.warn('[SDR.vue] Direct WebSocket creation failed:', wsErr);
+				if (isRunning) {
+					reconnectTimer = setTimeout(() => {
+						if (isRunning) tryNextWs();
+					}, 500);
 				}
 			}
-		};
+		}
 
-		directWebSockets.push(ws);
+		tryNextWs();
 	} catch (wsErr) {
 		console.warn('[SDR.vue] Direct WebSocket creation failed:', wsErr);
 	}
@@ -2039,8 +2117,8 @@ function startPollingFallback() {
 	if (pollIntervalId) return;
 	pollIntervalId = setInterval(async () => {
 		if (isPaused.value) return;
-		// Only skip poll if high-speed stream is actively delivering frames
-		if (fps.value >= 2) return;
+		// Only skip poll if live WebSocket data was received within the last 2.5 seconds
+		if (Date.now() - lastLiveMessageTime < 2500) return;
 
 		for (const dsProps of props.datasource) {
 			const resourceMatch = (dsProps.resource || '').match(/\/datastreams\/([^/?#]+)/);
@@ -2065,6 +2143,29 @@ function startPollingFallback() {
 }
 
 async function detectHtlConnection() {
+	if (!discoveredControlStreamId.value) {
+		try {
+			const csRes = await fetch(`/sensorhub/api/controlstreams`, {
+				headers: { Authorization: 'Basic ' + btoa('admin:admin') },
+				credentials: 'include',
+			});
+			if (csRes.ok) {
+				const csData = await csRes.json();
+				const items: any[] = Array.isArray(csData) ? csData : (csData.items || []);
+				const matchedCs = items.find((c: any) => {
+					const n = (c.name || '').toLowerCase();
+					const id = (c.id || '').toLowerCase();
+					return n.includes('htl') || id.includes('htl') || id === '040g';
+				});
+				if (matchedCs && matchedCs.id) {
+					discoveredControlStreamId.value = matchedCs.id;
+					isHtlDriver.value = true;
+					console.log(`[SDR.vue] Auto-discovered HTL controlstream ID: ${matchedCs.id} (${matchedCs.name})`);
+				}
+			}
+		} catch (_) {}
+	}
+
 	const dsList = getDatasourceList();
 	const cs = receiverControl.value.id ? controlstreamStore.getControlStreamsById([receiverControl.value.id])[0] : null;
 
@@ -2131,20 +2232,16 @@ async function detectHtlConnection() {
 						connectionMode.value = '10GbE';
 					}
 
-					// Auto-discover and connect audio datastream if available
+					// Auto-discover audio datastream if available
 					const audioItem = items.find((d: any) => {
 						const o = (d.outputName || '').toLowerCase();
 						const n = (d.name || '').toLowerCase();
 						return o === 'audio' || n.includes('audio');
 					});
 					if (audioItem && audioItem.id && !audioDsConnected) {
-						const alreadyHasAudio = dsList.some((d: any) => (d.resource || '').includes(audioItem.id));
-						if (!alreadyHasAudio) {
-							audioDsConnected = true;
-							console.log(`[SDR.vue] Auto-subscribing to audio datastream: ${audioItem.id} (${audioItem.name})`);
-							connectDirectWs(audioItem.id, dsProps);
-							connectDataStream(audioItem.id, dsProps);
-						}
+						audioDsConnected = true;
+						console.log(`[SDR.vue] Auto-discovered audio datastream: ${audioItem.id} (${audioItem.name})`);
+						connectAudioStream(audioItem.id);
 					}
 					return;
 				}
@@ -2169,11 +2266,8 @@ onMounted(() => {
 	handleResize();
 	initWaterfallCanvas();
 	startRenderLoop();
-<<<<<<< HEAD
 	detectHtlConnection();
-=======
 	connectAudioStream();
->>>>>>> 2be0f592220eaaef39cc15ff2ff6a89387485912
 
 	setTimeout(() => {
 		handleResize();
@@ -2566,6 +2660,8 @@ useVisualizationCleanup(ref(dsInstances));
 						type="number"
 						step="1.0"
 						:disabled="!is1GbeCapable"
+						@focus="isEditingHtlSweep = true"
+						@input="isEditingHtlSweep = true"
 					></v-text-field>
 
 					<v-text-field
@@ -2578,6 +2674,8 @@ useVisualizationCleanup(ref(dsInstances));
 						type="number"
 						step="1.0"
 						:disabled="!is1GbeCapable"
+						@focus="isEditingHtlSweep = true"
+						@input="isEditingHtlSweep = true"
 					></v-text-field>
 
 					<v-select
@@ -2664,13 +2762,15 @@ useVisualizationCleanup(ref(dsInstances));
 						type="number"
 						step="0.025"
 						:disabled="!is1GbeCapable"
+						@change="applyHtlScout"
+						@keydown.enter="applyHtlScout"
 					></v-text-field>
 
 					<v-btn
 						size="x-small"
 						variant="tonal"
 						color="info"
-						@click="htlScoutFreqMhz = parseFloat(peakFreqMhz)"
+						@click="() => { htlScoutFreqMhz = parseFloat(peakFreqMhz); applyHtlScout(); }"
 						:disabled="!is1GbeCapable || peakFreqMhz === '---'"
 						title="Set scout frequency to detected peak frequency"
 					>
@@ -2686,6 +2786,7 @@ useVisualizationCleanup(ref(dsInstances));
 						hide-details
 						style="width: 110px;"
 						:disabled="!is1GbeCapable"
+						@update:model-value="applyHtlScout"
 					></v-select>
 
 					<div class="d-flex align-center ga-1" style="min-width: 170px; max-width: 210px; flex: 1 1 170px;">
@@ -2700,6 +2801,7 @@ useVisualizationCleanup(ref(dsInstances));
 							color="primary"
 							class="flex-grow-1 mx-1"
 							:disabled="!is1GbeCapable"
+							@end="applyHtlScout"
 						></v-slider>
 						<span class="text-caption font-monospace text-right" style="min-width: 45px;">{{ htlSquelch }}dB</span>
 					</div>
@@ -2717,6 +2819,7 @@ useVisualizationCleanup(ref(dsInstances));
 							class="flex-grow-1 mx-1"
 							:disabled="!is1GbeCapable"
 							@update:model-value="onVolumeChanged"
+							@end="applyHtlScout"
 						></v-slider>
 						<span class="text-caption font-monospace text-right" style="min-width: 35px;">{{ htlVolume }}%</span>
 					</div>
@@ -3014,25 +3117,12 @@ useVisualizationCleanup(ref(dsInstances));
 				></v-select>
 			</div>
 
-<<<<<<< HEAD
-			<v-btn
-				v-if="audioMode !== 'OFF'"
-				size="x-small"
-				:color="isAudioListening ? 'success' : 'grey-darken-2'"
-				:variant="isAudioListening ? 'flat' : 'tonal'"
-				@click="toggleAudioListening"
-				class="ml-2"
-				:prepend-icon="isAudioListening ? 'mdi-volume-high' : 'mdi-volume-off'"
-				:title="isAudioListening ? 'Mute audio' : 'Listen to demodulated audio in browser'"
-			>
-				{{ isAudioListening ? 'Listening' : 'Listen' }}
-=======
 			<!-- Audio Listen / Mute Toggle -->
 			<v-btn
 				size="x-small"
 				:color="isListening ? 'success' : 'grey-darken-2'"
 				:variant="isListening ? 'flat' : 'outlined'"
-				@click="toggleAudioListen"
+				@click="toggleAudioListening"
 				class="mr-2"
 				:prepend-icon="isListening ? 'mdi-volume-high' : 'mdi-volume-mute'"
 			>
@@ -3052,7 +3142,7 @@ useVisualizationCleanup(ref(dsInstances));
 					:step="1"
 					density="compact"
 					hide-details
-					@update:model-value="onVolumeChange"
+					@update:model-value="onVolumeChanged"
 				></v-slider>
 			</div>
 
@@ -3061,12 +3151,11 @@ useVisualizationCleanup(ref(dsInstances));
 				size="x-small"
 				:color="isRecordingAudio ? 'error' : 'grey-darken-2'"
 				:variant="isRecordingAudio ? 'flat' : 'outlined'"
-				@click="toggleAudioRecord"
+				@click="toggleAudioRecording"
 				class="mr-2"
 				:prepend-icon="isRecordingAudio ? 'mdi-record-rec' : 'mdi-record'"
 			>
 				{{ isRecordingAudio ? 'Recording' : 'Record' }}
->>>>>>> 2be0f592220eaaef39cc15ff2ff6a89387485912
 			</v-btn>
 		</div>
 

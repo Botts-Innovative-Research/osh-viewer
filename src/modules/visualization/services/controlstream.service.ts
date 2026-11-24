@@ -64,7 +64,7 @@ export function sendCommand(
     label?: string
 ) {
 	const name = label ?? 'Command';
-	const effectiveAuth = auth || 'admin:test';
+	const effectiveAuth = auth || 'admin:admin';
 	let encoded = btoa(effectiveAuth);
 
 	const candidateUrls: string[] = [];
