@@ -21,6 +21,43 @@ import { getMilSymbol } from './services/milIcon.service';
 import { MapPoint } from '@/modules/map/types';
 import { DEFAULT_POINTMARKER_LAYER_PROPERTIES } from '@/modules/visualization/types/layers';
 
+function escapeHtml(value: string): string {
+	return value
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;');
+}
+
+function formatValue(value: any): string {
+	if (value === undefined || value === null) return '—';
+	if (typeof value === 'object') return JSON.stringify(value);
+	return String(value);
+}
+
+function buildDescriptionHtml(rec: any, timestamp?: number): string {
+	const rows = Object.entries(rec ?? {})
+		.map(
+			([key, value]) => `
+				<tr>
+					<td style="padding: 2px 12px 2px 0; opacity: 0.7;">${escapeHtml(key)}</td>
+					<td style="padding: 2px 0;">${escapeHtml(formatValue(value))}</td>
+				</tr>`
+		)
+		.join('');
+
+	const time = timestamp
+		? `<div style="margin-bottom: 6px; opacity: 0.7;">${escapeHtml(new Date(timestamp).toLocaleString())}</div>`
+		: '';
+
+	return `
+	<div style="background-color: #242424; color: #ffffff; padding: 8px; border-radius: 4px;">
+		${time}
+		<table style="border-collapse: collapse; color: #ffffff;">${rows}</table>
+	</div>`;
+}
+
 export interface ICreateMapVisualizationResult {
 	vizLayer: SupportedMapLayer;
 	dsInstances: (typeof ConSysApi)[];
@@ -59,6 +96,7 @@ export async function createPointMarkerLayer(
 	let getIconColor: any;
 	let getLabel: any;
 	let getIcon: any;
+	let getDescription: any;
 
 	for (const dsProps of dsArray) {
 		const dsInstance = createDatasource(dsProps);
@@ -168,6 +206,11 @@ export async function createPointMarkerLayer(
 		}
 	}
 
+	getDescription = {
+		dataSourceIds: dsInstances.map((ds) => ds.id),
+		handler: (rec: any, timestamp: number) => buildDescriptionHtml(rec, timestamp),
+	};
+
 	const pmLayer = new PointMarkerLayer({
 		...viz.visualizationComponents.dataLayer,
 		name: viz.name,
@@ -180,6 +223,7 @@ export async function createPointMarkerLayer(
 		...(getIconColor ? { getIconColor } : {}),
 		...(getLabel ? { getLabel } : {}),
 		...(getIcon ? { getIcon } : {}),
+		...(getDescription ? { getDescription } : {}),
 
 	});
 
