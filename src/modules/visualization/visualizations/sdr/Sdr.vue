@@ -153,10 +153,6 @@ function initializeSdr() {
 	if (!viz || viz.type !== 'sdr') return;
 
 	const dsList = getDatasourceList();
-	console.log(
-		'[Sdr.vue] Connecting datasources:',
-		dsList.map((dsProps) => dsProps.resource)
-	);
 
 	for (const dsProps of dsList) {
 		const dsInstance = createDatasource(dsProps);
@@ -165,7 +161,6 @@ function initializeSdr() {
 	}
 
 	const roles = buildRoles();
-	console.log('[Sdr.vue] Spectrum roles:', roles);
 
 	sdrLayerInstance = new SdrLayer({
 		...(props.sdrLayer ?? {}),

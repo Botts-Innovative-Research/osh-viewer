@@ -6,11 +6,10 @@ import { useVizWizStore } from '@/stores/vizwizstore';
 import { Mode } from 'osh-js/source/core/datasource/Mode';
 // @ts-ignore
 import { randomUUID } from 'osh-js/source/core/utils/Utils.js';
-import { SdrConfigRoles, SdrDescriptor } from './Descriptor';
+import { SdrDescriptor } from './Descriptor';
 import {
 	AggregateDatastreams,
 	BuildRoleProperty,
-	PickConfigRoles,
 	getUsedControlstreams,
 	getUsedDatastreams,
 } from '../../services/aggregation.service';
@@ -32,21 +31,12 @@ const SDR_LAYER_ROLES = [
 	'audio',
 ];
 
-// The roles of the SDR wizard step, which are the only ones the visualization is built from
-const SDR_DS_ROLES = SdrConfigRoles.filter((config) => config.type === 'ds').map((c) => c.role);
-const SDR_CS_ROLES = SdrConfigRoles.filter((config) => config.type === 'cs').map((c) => c.role);
-
 export default function build() {
 	console.log('Building SDR Visualization...');
 	const vizwizStore = useVizWizStore();
 	const visualizationStore = useVisualizationStore();
 
-	// only the roles of this visualization are built: a role left in the store by another
-	// visualization type would otherwise connect the SDR view to a stream carrying no spectrum
-	const sdrDsConfig = PickConfigRoles(vizwizStore.dsConfig, SDR_DS_ROLES);
-	const sdrCsConfig = PickConfigRoles(vizwizStore.csConfig, SDR_CS_ROLES);
-
-	const datastreams = AggregateDatastreams(sdrDsConfig);
+	const datastreams = AggregateDatastreams(vizwizStore.dsConfig);
 
 	const sdrResult = CreateSdrVizProps(
 		datastreams,
@@ -64,8 +54,8 @@ export default function build() {
 		vizwizStore.visualizationCustomizationOptions.name || 'SDR Spectrum',
 		'sdr',
 		SdrDescriptor.viewLocation,
-		getUsedDatastreams(vizwizStore.datastreams, sdrDsConfig),
-		getUsedControlstreams(vizwizStore.controlstreams, sdrCsConfig)
+		getUsedDatastreams(vizwizStore.datastreams, vizwizStore.dsConfig),
+		getUsedControlstreams(vizwizStore.controlstreams, vizwizStore.csConfig)
 	);
 
 	newViz.setVisualizationComponents(visualizationComponents);
