@@ -360,13 +360,20 @@ const receiverControl = computed(() => {
 		csId = isHtlDriver.value ? '040g' : '0410';
 	}
 
+	const dsList = getDatasourceList();
+	const firstDs = dsList[0];
 	const activeNode = nodeStore.nodes?.[0];
 	const networkProps = cs?.controlstream?.networkProperties || cs?.networkProperties;
-	const protocol = (networkProps?.tls ?? activeNode?.tls) ? 'https' : 'http';
-	const endpoint = networkProps?.endpointUrl || activeNode?.getEndpointUrl() || 'localhost:8181/sensorhub/api';
+	const protocol = (networkProps?.tls ?? firstDs?.tls ?? activeNode?.tls) ? 'https' : 'http';
+	let endpoint = networkProps?.endpointUrl || firstDs?.endpointUrl || activeNode?.getEndpointUrl() || 'localhost:8181/sensorhub/api';
+	if (typeof window !== 'undefined' && window.location && window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+		if (endpoint.startsWith('localhost:') || endpoint.startsWith('127.0.0.1:')) {
+			endpoint = endpoint.replace(/^(localhost|127\.0\.0\.1)/, window.location.hostname);
+		}
+	}
 	const baseUrl = `${protocol}://${endpoint.replace(/^https?:\/\//, '').replace(/\/+$/, '')}`;
-	const username = networkProps?.connectorOpts?.username || activeNode?.username || 'admin';
-	const password = networkProps?.connectorOpts?.password || activeNode?.password || 'admin';
+	const username = networkProps?.connectorOpts?.username || firstDs?.connectorOpts?.username || activeNode?.username || 'admin';
+	const password = networkProps?.connectorOpts?.password || firstDs?.connectorOpts?.password || activeNode?.password || 'admin';
 	const auth = `${username}:${password}`;
 
 	return {
@@ -423,12 +430,8 @@ function sendReceiverCommand(params: Record<string, any>, label: string) {
 	console.log(`[SDR.vue] Sending ${label}:`, fullParams);
 	const payload = { parameters: fullParams };
 
-	const baseUrl = (typeof window !== 'undefined' && window.location)
-		? '/sensorhub/api'
-		: receiverControl.value.commandBaseUrl;
-
 	sendCommand(
-		baseUrl,
+		receiverControl.value.commandBaseUrl,
 		receiverControl.value.id,
 		payload,
 		receiverControl.value.auth,
@@ -443,12 +446,9 @@ function sendHtlCommand(choiceName: string, params: Record<string, any>, label: 
 			[choiceName]: params,
 		},
 	};
-	const baseUrl = (typeof window !== 'undefined' && window.location)
-		? '/sensorhub/api'
-		: receiverControl.value.commandBaseUrl;
 
 	sendCommand(
-		baseUrl,
+		receiverControl.value.commandBaseUrl,
 		receiverControl.value.id,
 		payload,
 		receiverControl.value.auth,
@@ -780,24 +780,31 @@ async function connectAudioStream(preferredDsId?: string) {
 	const authPrefix = user && pass ? `${encodeURIComponent(user)}:${encodeURIComponent(pass)}@` : '';
 
 	if (!audioDsId) {
-		try {
-			const listRes = await fetch(`/sensorhub/api/datastreams`, {
-				headers: authHeaders,
-				credentials: 'include',
-			});
-			if (listRes.ok) {
-				const list = await listRes.json();
-				const items: any[] = Array.isArray(list) ? list : (list.items || []);
-				const matched = items.find((d: any) => {
-					const n = (d.name || '').toLowerCase();
-					const o = (d.outputName || '').toLowerCase();
-					return o.includes('audio') || n.includes('demodulated audio') || n.includes('audio');
+		const candidateUrls = [
+			`${receiverControl.value.commandBaseUrl.replace(/\/+$/, '')}/datastreams`,
+			'/sensorhub/api/datastreams',
+		];
+		for (const url of candidateUrls) {
+			try {
+				const listRes = await fetch(url, {
+					headers: authHeaders,
+					credentials: 'include',
 				});
-				if (matched && matched.id) {
-					audioDsId = matched.id;
+				if (listRes.ok) {
+					const list = await listRes.json();
+					const items: any[] = Array.isArray(list) ? list : (list.items || []);
+					const matched = items.find((d: any) => {
+						const n = (d.name || '').toLowerCase();
+						const o = (d.outputName || '').toLowerCase();
+						return o.includes('audio') || n.includes('demodulated audio') || n.includes('audio');
+					});
+					if (matched && matched.id) {
+						audioDsId = matched.id;
+						break;
+					}
 				}
-			}
-		} catch (_) {}
+			} catch (_) {}
+		}
 	}
 
 	if (!audioDsId && isHtlDriver.value) {
@@ -2144,26 +2151,33 @@ function startPollingFallback() {
 
 async function detectHtlConnection() {
 	if (!discoveredControlStreamId.value) {
-		try {
-			const csRes = await fetch(`/sensorhub/api/controlstreams`, {
-				headers: { Authorization: 'Basic ' + btoa('admin:admin') },
-				credentials: 'include',
-			});
-			if (csRes.ok) {
-				const csData = await csRes.json();
-				const items: any[] = Array.isArray(csData) ? csData : (csData.items || []);
-				const matchedCs = items.find((c: any) => {
-					const n = (c.name || '').toLowerCase();
-					const id = (c.id || '').toLowerCase();
-					return n.includes('htl') || id.includes('htl') || id === '040g';
+		const candidateUrls = [
+			`${receiverControl.value.commandBaseUrl.replace(/\/+$/, '')}/controlstreams`,
+			'/sensorhub/api/controlstreams',
+		];
+		for (const url of candidateUrls) {
+			try {
+				const csRes = await fetch(url, {
+					headers: { Authorization: 'Basic ' + btoa('admin:admin') },
+					credentials: 'include',
 				});
-				if (matchedCs && matchedCs.id) {
-					discoveredControlStreamId.value = matchedCs.id;
-					isHtlDriver.value = true;
-					console.log(`[SDR.vue] Auto-discovered HTL controlstream ID: ${matchedCs.id} (${matchedCs.name})`);
+				if (csRes.ok) {
+					const csData = await csRes.json();
+					const items: any[] = Array.isArray(csData) ? csData : (csData.items || []);
+					const matchedCs = items.find((c: any) => {
+						const n = (c.name || '').toLowerCase();
+						const id = (c.id || '').toLowerCase();
+						return n.includes('htl') || id.includes('htl') || id === '040g';
+					});
+					if (matchedCs && matchedCs.id) {
+						discoveredControlStreamId.value = matchedCs.id;
+						isHtlDriver.value = true;
+						console.log(`[SDR.vue] Auto-discovered HTL controlstream ID: ${matchedCs.id} (${matchedCs.name}) via ${url}`);
+						break;
+					}
 				}
-			}
-		} catch (_) {}
+			} catch (_) {}
+		}
 	}
 
 	const dsList = getDatasourceList();
